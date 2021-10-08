@@ -11,4 +11,4 @@ The sample spreadsheet in this repo includes two macros (find the source code bo
 
 Now you can source-control the JSON file with the checklist items. Changes to the JSON file with the check content can be tracked, while changes to the format of the spreadsheet can be ignored (the spreadsheet is here just as a reference).
 
-Another benefit is that you can use the same engine for different checklists. In this repo you find two checklists as example: one for reviewing generic Azure Landing Zones ([lz_checklist.json](lz_checklist.json)), and a second one for verifying Azure Kubernetes Service environments ([aks_checklist.json](aks_checklist.json)). The check categories are also stored in the JSON export.
+Another potential benefit is that you can use the same engine for different checklists. In this repo you find two checklists as example: one for reviewing generic Azure Landing Zones ([lz_checklist.json](lz_checklist.json)), and a second one for verifying Azure Kubernetes Service environments ([aks_checklist.json](aks_checklist.json)). The check categories are also stored in the JSON export.
