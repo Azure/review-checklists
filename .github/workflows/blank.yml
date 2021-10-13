@@ -1,0 +1,43 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  translate:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: Machine Translator
+        # You may pin to the exact commit or the version.
+        # uses: IEvangelist/resource-translator@bc8c002f7970e145ef2c5c50483feb52a928c0d6
+        uses: IEvangelist/resource-translator@v2.1.6
+        with:
+          sourceLocale: en
+          subscriptionKey: ${{ secrets.AZURE_TRANSLATOR_SUBSCRIPTION_KEY }}
+          endpoint: ${{ secrets.AZURE_TRANSLATOR_ENDPOINT }}
+          region: ${{ secrets.AZURE_TRANSLATOR_REGION }}
+          toLocales: es
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v3.10.1
+        if: ${{ steps.resource-translator.outputs.has-new-translations }} == 'true'
+        with:
+          title: '${{ steps.resource-translator.outputs.summary-title }}'
+          body: '${{ steps.resource-translator.outputs.summary-details }}'
