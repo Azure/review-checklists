@@ -6,13 +6,16 @@ This repo will showcase the idea of having a JSON version of the checklist that 
 
 The provided sample spreadsheet leverages code to interpret JSON from the VBA module in [https://github.com/VBA-tools/VBA-JSON/](https://github.com/VBA-tools/VBA-JSON/), from which I put a copy in this repo to be self-contained (make sure you use the latest version though).
 
-The sample spreadsheet in this repo includes three buttons linked to macros (find the source code both in the spreadsheet as well as [here](./code/Sheet1.cls)), which are accessible from buttons in the main sheet:
+Additionally, a Github action in this repository translates after every commit the English version of the checklist to additional languages (Japanese in the first release), using the cognitive service [Azure Translator](https://azure.microsoft.com/services/cognitive-services/translator/).
+
+The sample spreadsheet in this repo includes some macros (find the source code both in the spreadsheet as well as [here](./code/Sheet1.cls)), which are accessible from buttons in the main sheet:
 
 ![](./pictures/spreadsheet_screenshot.png)
 
-- `Import latest reference`: most frequently used, to import the latest set of checks from a git repo (whose URL is hard-coded in the spreadsheet)
-- `Export checklist to JSON`: it will export the checks as a JSON file (you can find two examples in [lz_checklist.json](./samples/lz_checklist.json) and [aks_checklist.json](./samples/aks_checklist.json))
-- `Import checklist from JSON`: it will import a JSON checklist stored in the local file system
+- **"Easy"** section (circled in red in the snapshot above): most frequently used, to import the latest set of checks from a git repo (whose URL is hard-coded in the spreadsheet). The user can select the checklist (today Landing Zone and AKS review checklists are supported) as well as the language
+- **"Advanced"** section (circlued in blue in the snapshot above): it allows exporting/importing to specific files, that the user needs to provide:
+    - `Import latest reference`:  `Export checklist to JSON`: it will export the checks as a JSON file (you can find two examples in [lz_checklist.json](./samples/lz_checklist.json) and [aks_checklist.json](./samples/aks_checklist.json))
+    - `Import checklist from JSON`: it will import a JSON checklist stored in the local file system
 
 Now you can source-control the JSON file with the checklist items. Changes to the JSON file with the check content can be tracked with issues and PRs, and the checklist set can be then imported in any tool, such as the provided sample spreadsheet.
 
