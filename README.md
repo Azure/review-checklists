@@ -34,9 +34,25 @@ Accompanying the spreadsheet this repo includes the script [checklist_graph.sh](
 For example, to use the script in Azure Cloud Shell:
 
 1. Open an Azure cloud **Bash** shell, for example at [https://shell.azure.com](http://shell.azure.com)
-1. Download the `checklist_graph.sh` script with `wget –quiet –output-document ./checklist_graph.sh https://raw.githubusercontent.com/Azure/review-checklists/main/samples/checklist_graph.sh`
-1. Make sure that the script has execute permissions with `chmod +x ./checklist_graph.sh`
-1. Run the script first to only show the categories of a checklist. For example, for AKS: `./checklist_graph.sh -l -t=aks`. You should get an output similar to this:
+1. Download the `checklist_graph.sh` script with:
+
+```
+wget –quiet –output-document ./checklist_graph.sh https://raw.githubusercontent.com/Azure/review-checklists/main/samples/checklist_graph.sh
+```
+
+2. Make sure that the script has execute permissions with:
+
+```
+chmod +x ./checklist_graph.sh
+```
+
+3. Run the script first to only show the categories of a checklist. For example, for AKS with:
+
+```
+./checklist_graph.sh -l -t=aks
+```
+
+4. You should get an output similar to this:
 
 ```
 0: - Identity and Access Management
@@ -48,9 +64,17 @@ For example, to use the script in Azure Cloud Shell:
 6: - Application Deployment
 ```
 
-1. Now pick a category, and let the script run the Azure Resource Graph queries. For example, to run the graph queries of the network category of the AKS checklist: `./checklist_graph.sh -t=aks -c=1` (the network category was listed as option 1 of the previous output). You should get an output similar to this:
+5. As you can see in the previous output, the network category was listed as option 1. Now let the script run the Azure Resource Graph queries. For example, to run the graph queries of the network category of the AKS checklist:
 
 ```
+./checklist_graph.sh -t=aks -c=1
+```
+
+6. You should get an output similar to this:
+
+```
+Azure CLI extension resource-graph found with version 2.1.0, trying to upgrade...
+Azure CLI extension resource-graph installed with version 2.1.0
 INFO: Checking graph queries for category Network Topology and Connectivity...
 Success: akstest/aks. Fail: akstest2/aks2
 N/A
@@ -71,6 +95,8 @@ N/A
 N/A
 ```
 
-You can see in the previous output that for certain checks there are no graph queries documented (`N/A`). For the ones with queries, the AKS clusters that pass the check are shown under `Success`. The AKS clusters that do not pass the check are shown under `Failure`. The clusters are displayed with the syntax `resourceGroup/name`.
+The script will try to install or update the Azure CLI extension `resource-graph`. You can see in the previous output that for certain checks there are no graph queries documented (`N/A`). For the ones with queries, the AKS clusters that pass the check are shown under `Success`. The AKS clusters that do not pass the check are shown under `Failure`. The clusters are displayed with the syntax `resourceGroup/name`.
 
-1. You can now copy the previous output, and past the contents in the comments field of the spreadsheet, so that you don't have to fill in every cell manually.
+1. You can now copy the previous output, and past the contents in the comments field of the spreadsheet, so that you don't have to fill in every cell manually. The following image shows the spreadsheet (filtered for the Network category) after pasting the results of the Azure Resource Graph checks in the Comment column:
+
+![Azure Resource Graph paste](./pictures/spreadsheet_paste_query_result.png)

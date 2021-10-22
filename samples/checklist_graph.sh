@@ -98,13 +98,20 @@ fi
 # Debug
 if [[ "$debug" == "yes" ]]; then echo "DEBUG: $(echo $graph_success_list | wc -l) graph queries for success tests found in the checklist."; fi
 if [[ "$debug" == "yes" ]]; then echo "DEBUG: $(echo $graph_failure_list | wc -l) graph queries for failure tests found in the checklist."; fi
-# if [[ "$debug" == "yes" ]]; then echo "DEBUG: The following categories have been found in the checklist:"; fi
-# if [[ "$debug" == "yes" ]]; then 
-#     category_list_sorted=$(echo $category_list | sort -u)
-#     while IFS= read -r category; do
-#         echo "DEBUG: - $category"
-#     done <<< "$category_list_sorted"
-# fi
+
+# Make sure the Azure CLI extension for Azure Resource Graph is installed and updated
+extension_name=resource-graph
+extension_version=$(az extension show -n $extension_name --query version -o tsv 2>/dev/null)
+if [[ -z "$extension_version" ]]
+then
+    echo "Azure CLI extension $extension_name not found, installing now..."
+    az extension add -n $extension_name -o none 2>/dev/null
+else
+    echo "Azure CLI extension $extension_name found with version $extension_version, trying to upgrade..."
+    az extension update -n $extension_name -o none 2>/dev/null
+fi
+extension_version=$(az extension show -n $extension_name --query version -o tsv 2>/dev/null)
+echo "Azure CLI extension $extension_name running with version $extension_version"
 
 # Run queries
 i=0
@@ -125,12 +132,20 @@ while IFS= read -r graph_success_query; do
         echo "N/A"
     else
         rm $error_file 2>/dev/null; touch $error_file
+        if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running success query $graph_success_query..."; fi
         success_result=$(az graph query -q "$graph_success_query" -o json 2>$error_file | jq -r '.data[] | "\(.resourceGroup)/\(.name)"' 2>>$error_file | tr '\n' ',')
-        if [[ -s $error_file ]]; then success_result="Error"; fi
+        if [[ -s $error_file ]]; then
+            success_result="Error ";
+            if [[ "$debug" == "yes" ]]; then cat $error_file; fi
+        fi
         rm $error_file 2>/dev/null; touch $error_file
         graph_failure_query=$(echo $graph_failure_list | head -$i | tail -1)
+        if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running failure query $graph_failure_query..."; fi
         failure_result=$(az graph query -q "$graph_failure_query" -o json 2>$error_file | jq -r '.data[] | "\(.resourceGroup)/\(.name)"' 2>>$error_file | tr '\n' ',')
-        if [[ -s $error_file ]]; then success_failure="Error"; fi
+        if [[ -s $error_file ]]; then
+            failure_result="Error "
+            if [[ "$debug" == "yes" ]]; then cat $error_file; fi
+        fi
         # Remove last comma
         failure_result=${failure_result%?}
         success_result=${success_result%?}
