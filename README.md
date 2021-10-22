@@ -19,4 +19,58 @@ The sample spreadsheet in this repo includes some macros (find the source code b
 
 Now you can source-control the JSON file with the checklist items. Changes to the JSON file with the check content can be tracked with issues and PRs, and the checklist set can be then imported in any tool, such as the provided sample spreadsheet.
 
-Another potential benefit of separating the delivery tool from the actual content is the same engine (in this example the same spreadsheet) can be used for different checklists. In this repo you find two checklists as example that can be loaded in the sample spreadsheet: one for reviewing generic Azure Landing Zones ([./samples/lz_checklist.json](lz_checklist.json)), and a second one for verifying Azure Kubernetes Service environments ([aks_checklist.json](./samples/aks_checklist.json)). The check categories are also stored in the JSON export.
+Another potential benefit of separating the delivery tool from the actual content is the same engine (in this example the same spreadsheet) can be used for different checklists. In this repo you find two checklists as example that can be loaded in the sample spreadsheet:
+
+- Generic Azure Landing Zones (LZ) reviews: [./samples/lz_checklist.en.json](./samples/lz_checklist.en.json)
+- Azure Kubernetes Service (AKS) Design Reviews: [aks_checklist.en.json](./samples/aks_checklist.en.json)
+- Azure Virtual Desktop (AVD) Design Reviews: [avd_checklist.en.json](./samples/avd_checklist.en.json)
+
+## Using Azure Resource Graph to verify Azure environments
+
+As you can see for example in [aks_checklist.en.json](./samples/aks_checklist.en.json), some of the checks have associated two [Azure Resource Graph](https://docs.microsoft.com/azure/governance/resource-graph/overview) queries: one for Azure resources satisfying the condition ("success"), and another one for Azure resources that do not satisfy the condition ("failure").
+
+Accompanying the spreadsheet this repo includes the script [checklist_graph.sh](./samples/checklist_graph.sh). This script will run the graph queries stored in the JSON checklists and produce an output that can easily be copied and pasted into the spreadsheet.
+
+For example, to use the script in Azure Cloud Shell:
+
+1. Open an Azure cloud **Bash** shell, for example at [https://shell.azure.com](http://shell.azure.com)
+1. Download the `checklist_graph.sh` script with `wget –quiet –output-document ./checklist_graph.sh https://raw.githubusercontent.com/Azure/review-checklists/main/samples/checklist_graph.sh`
+1. Make sure that the script has execute permissions with `chmod +x ./checklist_graph.sh`
+1. Run the script first to only show the categories of a checklist. For example, for AKS: `./checklist_graph.sh -l -t=aks`. You should get an output similar to this:
+
+```
+0: - Identity and Access Management
+1: - Network Topology and Connectivity
+2: - BC and DR
+3: - Governance and Security
+4: - Cost Governance
+5: - Operations
+6: - Application Deployment
+```
+
+1. Now pick a category, and let the script run the Azure Resource Graph queries. For example, to run the graph queries of the network category of the AKS checklist: `./checklist_graph.sh -t=aks -c=1` (the network category was listed as option 1 of the previous output). You should get an output similar to this:
+
+```
+INFO: Checking graph queries for category Network Topology and Connectivity...
+Success: akstest/aks. Fail: akstest2/aks2
+N/A
+N/A
+N/A
+Success: None. Fail: akstest2/aks2,akstest/aks
+Success: akstest/aks. Fail: akstest2/aks2
+N/A
+N/A
+N/A
+Success: None. Fail: akstest2/aks2,akstest/aks
+Success: akstest/aks. Fail: akstest2/aks2
+N/A
+N/A
+N/A
+Success: akstest/aks. Fail: akstest2/aks2
+N/A
+N/A
+```
+
+You can see in the previous output that for certain checks there are no graph queries documented (`N/A`). For the ones with queries, the AKS clusters that pass the check are shown under `Success`. The AKS clusters that do not pass the check are shown under `Failure`. The clusters are displayed with the syntax `resourceGroup/name`.
+
+1. You can now copy the previous output, and past the contents in the comments field of the spreadsheet, so that you don't have to fill in every cell manually.
