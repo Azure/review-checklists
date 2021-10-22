@@ -70,7 +70,7 @@ chmod +x ./checklist_graph.sh
 ./checklist_graph.sh -t=aks -c=1
 ```
 
-6. You should get an output similar to this:
+6. You should get an output similar to the following. This example has been run with two AKS clusters in the subscriptions configured in different ways, so that the test results are different:
 
 ```
 Azure CLI extension resource-graph found with version 2.1.0, trying to upgrade...
@@ -97,6 +97,12 @@ N/A
 
 The script will try to install or update the Azure CLI extension `resource-graph`. You can see in the previous output that for certain checks there are no graph queries documented (`N/A`). For the ones with queries, the AKS clusters that pass the check are shown under `Success`. The AKS clusters that do not pass the check are shown under `Failure`. The clusters are displayed with the syntax `resourceGroup/name`.
 
-1. You can now copy the previous output, and past the contents in the comments field of the spreadsheet, so that you don't have to fill in every cell manually. The following image shows the spreadsheet (filtered for the Network category) after pasting the results of the Azure Resource Graph checks in the Comment column:
+7. You can now copy the previous output, and past the contents in the comments field of the spreadsheet, so that you don't have to fill in every cell manually. The following image shows the spreadsheet (filtered for the Network category) after pasting the results of the Azure Resource Graph checks in the Comment column:
 
 ![Azure Resource Graph paste](./pictures/spreadsheet_paste_query_result.png)
+
+8. It is also possible running all the Azure Resource Graph queries at once instead on for each category, just by omitting the category selection option:
+
+```
+./checklist_graph.sh -t=aks -c=1
+```

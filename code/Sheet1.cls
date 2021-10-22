@@ -20,14 +20,18 @@ Const status_column = 5
 Const comments_column = 6
 Const link_column = 7
 Const training_column = 8
+Const graph_success_column = 9
+Const graph_failure_column = 10
 Const checklist_name_row = 2
 Const checklist_name_col = 1
 Const values_sheet = "values"
 Const values_sev_column = 1
+Const values_status_column = 2
 Const values_category_column = 3
 
 Dim selected_language As String
 Dim selected_technology As String
+Dim import_graph_queries As Boolean
 
 'Modifies text so that it can be stored in JSON format
 ' * Removes line breaks (chr10 and chr13)
@@ -57,11 +61,11 @@ Sub export_json()
     ' Variables
     Dim row As Integer
     Dim json As String
-    Dim check_category, check_subcategory, check_text, check_severity, check_status, check_link, check_training As String
-    Dim category_name, severity_name As String
+    Dim check_category, check_subcategory, check_text, check_severity, check_status, check_link, check_training, check_graph_success, check_graph_failure As String
+    Dim category_name, severity_name, status_name As String
     Dim export_file_path As Variant
     Dim double_quote As String
-    Dim item_count, category_count As Integer
+    Dim item_count, category_count, status_count As Integer
     ' Initialization
     double_quote = Chr(34) ' double quote as a variable
     row = row1
@@ -69,6 +73,7 @@ Sub export_json()
     json = json + "  " + double_quote + "items" + double_quote + ": ["
     item_count = 0
     category_count = 0
+    status_count = 0
     ' Loop through all rows as long as there is content
     Do While row < row_limit And Len(Cells(row, category_column)) > 0
         If row > row1 Then json = json + ","
@@ -77,6 +82,8 @@ Sub export_json()
         check_subcategory = Cells(row, subcategory_column)
         check_text = Cells(row, text_column)
         check_severity = Cells(row, severity_column)
+        check_graph_success = Cells(row, graph_success_column)
+        check_graph_failure = Cells(row, graph_failure_column)
         If Cells(row, link_column).Hyperlinks.Count > 0 Then
             check_link = Cells(row, link_column).Hyperlinks(1).Address
         Else
@@ -89,13 +96,15 @@ Sub export_json()
         End If
         row = row + 1
         json = json + "    {" + line_break
-        json = json + "      " + double_quote + "category" + double_quote + ": " + double_quote + correct_format_for_JSON(check_category) + double_quote + "," + line_break
-        json = json + "      " + double_quote + "subcategory" + double_quote + ": " + double_quote + correct_format_for_JSON(check_subcategory) + double_quote + "," + line_break
-        json = json + "      " + double_quote + "text" + double_quote + ": " + double_quote + correct_format_for_JSON(check_text) + double_quote + "," + line_break
-        json = json + "      " + double_quote + "severity" + double_quote + ": " + double_quote + check_severity + double_quote + "," + line_break
-        json = json + "      " + double_quote + "training" + double_quote + ": " + double_quote + correct_format_for_JSON(check_training) + double_quote + "," + line_break
-        json = json + "      " + double_quote + "link" + double_quote + ": " + double_quote + correct_format_for_JSON(check_link) + double_quote + line_break
-        json = json + "    }"
+        json = json + "      " + double_quote + "category" + double_quote + ": " + double_quote + correct_format_for_JSON(check_category) + double_quote + ","
+        json = json + line_break + "      " + double_quote + "subcategory" + double_quote + ": " + double_quote + correct_format_for_JSON(check_subcategory) + double_quote
+        json = json + "," + line_break + "      " + double_quote + "text" + double_quote + ": " + double_quote + correct_format_for_JSON(check_text) + double_quote
+        If Len(check_severity) > 0 Then json = json + "," + line_break + "      " + double_quote + "severity" + double_quote + ": " + double_quote + check_severity + double_quote
+        If Len(check_graph_success) > 0 Then json = json + "," + line_break + "      " + double_quote + "graph_success" + double_quote + ": " + double_quote + check_graph_success + double_quote
+        If Len(check_graph_failure) > 0 Then json = json + "," + line_break + "      " + double_quote + "graph_failure" + double_quote + ": " + double_quote + check_graph_failure + double_quote
+        If Len(check_training) > 0 Then json = json + "," + line_break + "      " + double_quote + "training" + double_quote + ": " + double_quote + correct_format_for_JSON(check_training) + double_quote
+        If Len(check_link) > 0 Then json = json + "," + line_break + "      " + double_quote + "link" + double_quote + ": " + double_quote + correct_format_for_JSON(check_link) + double_quote
+        json = json + line_break + "    }"
         item_count = item_count + 1
     Loop
     ' Finish items section
@@ -114,6 +123,21 @@ Sub export_json()
         category_count = category_count + 1
     Loop
     ' Finish category section
+    json = json + line_break + "  ]," + line_break
+    ' Create status section
+    json = json + "  " + double_quote + "status" + double_quote + ": ["
+    row = 2
+    Do While row < row_limit And Len(Sheets(values_sheet).Cells(row, values_status_column)) > 0
+        If row > 2 Then json = json + ","
+        json = json + line_break
+        status_name = Sheets(values_sheet).Cells(row, values_status_column)
+        json = json + "    {" + line_break
+        json = json + "      " + double_quote + "name" + double_quote + ": " + double_quote + correct_format_for_JSON(status_name) + double_quote + line_break
+        json = json + "    }"
+        row = row + 1
+        status_count = status_count + 1
+    Loop
+    ' Finish status section
     json = json + line_break + "  ]," + line_break
     ' Create severities section
     json = json + "  " + double_quote + "severities" + double_quote + ": ["
@@ -226,13 +250,14 @@ Sub import_checklist_fromfile(json_file As Variant)
     Dim json_object, json_item As Object
     Dim double_quote As String
     Dim line_elements() As String
-    Dim row, item_count, category_count, i As Integer
+    Dim row, item_count, category_count, status_count, i As Integer
     'Initialization
     row = row1
     double_quote = Chr(34) ' double quote as a variable
     json = ""
     item_count = 0
     category_count = 0
+    status_count = 0
     'Go through the file line by line
     
     ' Read .json file with FSO.OpenTextFile
@@ -257,6 +282,30 @@ Sub import_checklist_fromfile(json_file As Variant)
         If json_object("metadata").Exists("name") Then
             Cells(checklist_name_row, checklist_name_col) = json_object("metadata")("name")
         End If
+    End If
+    'Import status
+    If json_object.Exists("status") Then
+        row = 2
+        If TypeName(json_object("status")) = "Dictionary" Then
+            i = 0
+            Do
+                Sheets(values_sheet).Cells(row, values_status_column) = json_object("categories")(CStr(i))("name")
+                row = row + 1
+                status_count = status_count + 1
+                i = i + 1
+            Loop While json_object("status").Exists(CStr(i))
+        Else
+            For Each json_item In json_object("status")
+                Sheets(values_sheet).Cells(row, values_status_column) = json_item("name")
+                row = row + 1
+                status_count = status_count + 1
+            Next json_item
+        End If
+        'Blank the rest of the status rows, although for status this shouldnt be required
+        Do While row < row_limit And Len(Cells(row, values_status_column)) > 0
+            Sheets(values_sheet).Cells(row, values_status_column) = ""
+            row = row + 1
+        Loop
     End If
     'Import checklist items
     row = row1
@@ -287,6 +336,8 @@ Sub import_checklist_fromfile(json_file As Variant)
         Cells(row, status_column) = ""
         Cells(row, comments_column) = ""
         Cells(row, training_column) = ""
+        Cells(row, graph_success_column) = ""
+        Cells(row, graph_failure_column) = ""
         row = row + 1
     Loop
     'Import categories
@@ -360,7 +411,7 @@ End Function
 ' Updates a checklist row with the information in the object
 Sub update_row(ByVal json_item As Object, ByVal row As Integer)
     ' Variables and constants
-    Dim check_category, check_subcategory, check_text, check_severity, check_status, check_link, check_training As String
+    Dim check_category, check_subcategory, check_text, check_severity, check_status, check_link, check_training, check_graph_success, check_graph_failure As String
     ' Code
     check_category = get_object_property(json_item, "category")
     check_subcategory = get_object_property(json_item, "subcategory")
@@ -368,12 +419,21 @@ Sub update_row(ByVal json_item As Object, ByVal row As Integer)
     check_severity = get_object_property(json_item, "severity")
     check_link = get_object_property(json_item, "link")
     check_training = get_object_property(json_item, "training")
+    check_graph_success = get_object_property(json_item, "graph_success")
+    check_graph_failure = get_object_property(json_item, "graph_failure")
     Cells(row, category_column) = check_category
     Cells(row, subcategory_column) = check_subcategory
     Cells(row, text_column) = check_text
     Cells(row, severity_column) = check_severity
     Cells(row, status_column) = "Not verified"
     Cells(row, comments_column) = ""
+    If import_graph_queries Then
+        Cells(row, graph_success_column) = check_graph_success
+        Cells(row, graph_failure_column) = check_graph_failure
+    Else
+        Cells(row, graph_success_column) = ""
+        Cells(row, graph_failure_column) = ""
+    End If
     If Len(check_link) > 0 Then
         Cells(row, link_column).Hyperlinks.Add Address:=check_link, TextToDisplay:="More info", Anchor:=Cells(row, link_column), ScreenTip:=check_link
     Else
@@ -389,12 +449,15 @@ End Sub
 ' Functions to set global variables when option buttons are pushed
 Sub set_japanese()
     selected_language = "ja"
+    import_graph_queries = False
 End Sub
 Sub set_english()
     selected_language = "en"
+    import_graph_queries = True
 End Sub
 Sub set_korean()
     selected_language = "ko"
+    import_graph_queries = False
 End Sub
 Sub set_aks()
     selected_technology = "aks"
