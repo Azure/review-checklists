@@ -26,6 +26,8 @@
       "subcategory": "High Availability",
       "text": "Use Availability Zones",
       "severity": "Medium",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where isnotnull(zones) | distinct name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where isnull(zones) | distinct name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/availability-zones"
     },
     {
@@ -56,6 +58,8 @@
       "subcategory": "Identity",
       "text": "Use managed identities instead of Service Principals",
       "severity": "High",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where properties.servicePrincipalProfile.clientId=='msi' | distinct name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where properties.servicePrincipalProfile.clientId!='msi' | distinct name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/use-managed-identity"
     },
     {
@@ -63,6 +67,8 @@
       "subcategory": "Identity",
       "text": "Integrate authentication with AAD (using the managed integration)",
       "severity": "Medium",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where isnotnull(properties.aadProfile) | distinct name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where isnull(properties.aadProfile) | distinct name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/managed-aad"
     },
     {
@@ -250,6 +256,8 @@
       "subcategory": "Compliance",
       "text": "Separate applications from the control plane with user/system nodepools",
       "severity": "Medium",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | project resourceGroup,name,pools=properties.agentPoolProfiles | project name,resourceGroup,poolcount=array_length(pools) | where poolcount > 1",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | project resourceGroup,name,pools=properties.agentPoolProfiles | project name,resourceGroup,poolcount=array_length(pools) | where poolcount == 1",
       "link": "https://docs.microsoft.com/azure/aks/use-system-pools"
     },
     {
@@ -299,6 +307,8 @@
       "subcategory": "Storage",
       "text": "Use ephemeral OS disks",
       "severity": "High",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | project resourceGroup,name,pools=properties.agentPoolProfiles | mvexpand pools | where pools.osDiskType=='Ephemeral' | project name=strcat(name,'-',pools.name), resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | project resourceGroup,name,pools=properties.agentPoolProfiles | mvexpand pools | where pools.osDiskType=='Managed' | project name=strcat(name,'-',pools.name), resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/cluster-configuration"
     },
     {

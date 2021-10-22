@@ -251,6 +251,7 @@ Sub import_checklist_fromfile(json_file As Variant)
     Dim double_quote As String
     Dim line_elements() As String
     Dim row, item_count, category_count, status_count, i As Integer
+    Dim notverified As String
     'Initialization
     row = row1
     double_quote = Chr(34) ' double quote as a variable
@@ -287,14 +288,16 @@ Sub import_checklist_fromfile(json_file As Variant)
     If json_object.Exists("status") Then
         row = 2
         If TypeName(json_object("status")) = "Dictionary" Then
+            notverified = json_object("status")("0")("name") ' The "Not Verified" status is the first one
             i = 0
             Do
-                Sheets(values_sheet).Cells(row, values_status_column) = json_object("categories")(CStr(i))("name")
+                Sheets(values_sheet).Cells(row, values_status_column) = json_object("status")(CStr(i))("name")
                 row = row + 1
                 status_count = status_count + 1
                 i = i + 1
             Loop While json_object("status").Exists(CStr(i))
         Else
+            notverified = json_object("status")(1)("name") ' The "Not Verified" status is the first one
             For Each json_item In json_object("status")
                 Sheets(values_sheet).Cells(row, values_status_column) = json_item("name")
                 row = row + 1
@@ -313,7 +316,7 @@ Sub import_checklist_fromfile(json_file As Variant)
     If TypeName(json_object("items")) = "Dictionary" Then
         i = 0
         Do
-            update_row json_object("items")(CStr(i)), row
+            update_row json_object("items")(CStr(i)), row, notverified
             row = row + 1
             item_count = item_count + 1
             i = i + 1
@@ -321,7 +324,7 @@ Sub import_checklist_fromfile(json_file As Variant)
     'Otherwise, it is just an array
     Else
         For Each json_item In json_object("items")
-            update_row json_item, row
+            update_row json_item, row, notverified
             row = row + 1
             item_count = item_count + 1
         Next json_item
@@ -409,9 +412,11 @@ fncerrh:
 End Function
 
 ' Updates a checklist row with the information in the object
-Sub update_row(ByVal json_item As Object, ByVal row As Integer)
+Sub update_row(ByVal json_item As Object, ByVal row As Integer, notverified As String)
     ' Variables and constants
     Dim check_category, check_subcategory, check_text, check_severity, check_status, check_link, check_training, check_graph_success, check_graph_failure As String
+    ' Defaults to English "Not Verified"
+    If Len(notverified) = 0 Then notverified = "Not verified"
     ' Code
     check_category = get_object_property(json_item, "category")
     check_subcategory = get_object_property(json_item, "subcategory")
@@ -425,7 +430,7 @@ Sub update_row(ByVal json_item As Object, ByVal row As Integer)
     Cells(row, subcategory_column) = check_subcategory
     Cells(row, text_column) = check_text
     Cells(row, severity_column) = check_severity
-    Cells(row, status_column) = "Not verified"
+    Cells(row, status_column) = notverified
     Cells(row, comments_column) = ""
     If import_graph_queries Then
         Cells(row, graph_success_column) = check_graph_success
