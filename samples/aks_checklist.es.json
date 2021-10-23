@@ -173,8 +173,8 @@
 			"subcategory": "Seguridad",
 			"text": "Usar clústeres privados si sus requisitos lo exigen",
 			"severity": "Alto",
-			"graph_success": "donde tipo=='microsoft.containerservice/managedclusters' | where properties.publicNetworkAccess=='Disabled' | nombre distinto,resourceGroup",
-			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | where properties.publicNetworkAccess=='Enabled' | nombre distinto,resourceGroup",
+			"graph_success": "donde tipo=='microsoft.containerservice/managedclusters' | donde isnotnull(properties.apiServerAccessProfile.enablePrivateCluster) | nombre distinto,resourceGroup",
+			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | donde isnull(properties.apiServerAccessProfile.enablePrivateCluster) | nombre distinto,resourceGroup",
 			"link": "https://docs.microsoft.com/azure/aks/private-clusters"
 		},
 		"23": {
@@ -205,6 +205,8 @@
 			"subcategory": "Seguridad",
 			"text": "Usar el estándar DDoS en la red virtual de AKS",
 			"severity": "Medio",
+			"graph_success": "Recursos | donde type=~'microsoft.containerservice/managedclusters' | project resourceGroup,name,pools=properties.agentPoolProfiles | | de grupos mv-expand project subnetId=tostring(pools.vnetSubnetID) | donde isnotempty(subnetId) | join (Resources | where type=='microsoft.network/virtualnetworks' | project resourceGroup,name,enableDdosProtection=tostring(properties.enableDdosProtection),subnets=properties.subnets | mv-expand subnets | project resourceGroup,name,enableDdosProtection,subnetId=tostring(subnets.id)) on subnetId | distinto resourceGroup,name,enableDdosProtection | donde enableDdosProtection == 'true'",
+			"graph_failure": "Recursos | donde type=~'microsoft.containerservice/managedclusters' | project resourceGroup,name,pools=properties.agentPoolProfiles | | de grupos mv-expand project subnetId=tostring(pools.vnetSubnetID) | donde isnotempty(subnetId) | join (Resources | where type=='microsoft.network/virtualnetworks' | project resourceGroup,name,enableDdosProtection=tostring(properties.enableDdosProtection),subnets=properties.subnets | mv-expand subnets | project resourceGroup,name,enableDdosProtection,subnetId=tostring(subnets.id)) on subnetId | distinto resourceGroup,name,enableDdosProtection | donde enableDdosProtection == 'false'",
 			"link": "https://docs.microsoft.com/azure/virtual-network/ddos-protection-overview"
 		},
 		"27": {
@@ -212,8 +214,8 @@
 			"subcategory": "Prácticas recomendadas",
 			"text": "No utilice el complemento aks application routing",
 			"severity": "Alto",
-			"graph_success": "donde tipo=='microsoft.containerservice/managedclusters' | donde isnull(properties.addonProfiles.httpApplicationRouting) | nombre distinto,resourceGroup",
-			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | donde isnotnull(properties.addonProfiles.httpApplicationRouting) | nombre distinto,resourceGroup",
+			"graph_success": "donde tipo=='microsoft.containerservice/managedclusters' | donde isnull(properties.addonProfiles.httpApplicationRouting) o properties.addonProfiles.httpApplicationRouting.enabled==false | nombre distinto,resourceGroup",
+			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | donde isnotnull(properties.addonProfiles.httpApplicationRouting) y properties.addonProfiles.httpApplicationRouting.enabled==true | nombre distinto,resourceGroup",
 			"link": "https://docs.microsoft.com/azure/aks/http-application-routing"
 		},
 		"28": {
@@ -249,6 +251,8 @@
 			"subcategory": "Conformidad",
 			"text": "Usar Azure Policy for Kubernetes para garantizar el cumplimiento del clúster",
 			"severity": "Medio",
+			"graph_success": "donde tipo=='microsoft.containerservice/managedclusters' | donde isnotnull(properties.addonProfiles.azurepolicy) y properties.addonProfiles.azurepolicy.enabled==true | nombre distinto,resourceGroup",
+			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | donde isnull(properties.addonProfiles.azurepolicy) o properties.addonProfiles.azurepolicy.enabled==false | nombre distinto,resourceGroup",
 			"link": "https://docs.microsoft.com/azure/governance/policy/concepts/policy-for-kubernetes"
 		},
 		"33": {
@@ -356,200 +360,215 @@
 		"47": {
 			"category": "Operaciones",
 			"subcategory": "Monitorización",
-			"text": "Supervise las métricas de clúster con Azure Monitor, Prometheus o similar",
+			"text": "Supervise las métricas de su clúster con Container Insights (u otras herramientas como Prometheus)",
 			"severity": "Alto",
 			"link": "https://docs.microsoft.com/azure/azure-monitor/insights/container-insights-overview"
 		},
 		"48": {
 			"category": "Operaciones",
 			"subcategory": "Monitorización",
-			"text": "Almacene y analice los registros de clúster con Azure Monitor, Telegraf/ElasticSearch o similar",
+			"text": "Almacene y analice los registros de su clúster con Container Insights (u otras herramientas como Telegraf/ElasticSearch)",
 			"severity": "Alto",
+			"graph_success": "donde tipo=='microsoft.containerservice/managedclusters' | donde isnotnull(properties.addonProfiles.omsagent) y properties.addonProfiles.omsagent.enabled==true | nombre distinto,resourceGroup",
+			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | donde isnull(properties.addonProfiles.omsagent) o properties.addonProfiles.omsagent.enabled==false | nombre distinto,resourceGroup",
 			"link": "https://docs.microsoft.com/azure/azure-monitor/insights/container-insights-overview"
 		},
 		"49": {
 			"category": "Operaciones",
+			"subcategory": "Monitorización",
+			"text": "Configuración de settinas de diagnóstico en los clústeres para enviar registros de API a Azure Monitor",
+			"severity": "Medio",
+			"link": "https://docs.microsoft.com/azure/aks/monitor-aks"
+		},
+		"50": {
+			"category": "Operaciones",
 			"subcategory": "Alertas",
-			"text": "Configurar alertas en las métricas más críticas (Container Insights para recomendaciones)",
+			"text": "Configurar alertas en las métricas más críticas (consulte Container Insights para obtener recomendaciones)",
 			"severity": "Alto",
 			"link": "https://docs.microsoft.com/azure/azure-monitor/insights/container-insights-metric-alerts"
 		},
-		"50": {
+		"51": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
 			"text": "Tener un proceso regular para actualizar el clúster periódicamente (trimestralmente, por ejemplo)",
 			"severity": "Alto",
 			"link": "https://docs.microsoft.com/azure/aks/supported-kubernetes-versions"
 		},
-		"51": {
+		"52": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
 			"text": "Usar kured para actualizaciones de nodos Linux",
 			"severity": "Alto",
 			"link": "https://docs.microsoft.com/azure/aks/node-updates-kured"
 		},
-		"52": {
+		"53": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
 			"text": "Considere gitops para implementar aplicaciones o configuración de clúster en varios clústeres",
 			"severity": "Bajo",
 			"link": "https://docs.microsoft.com/azure/architecture/example-scenario/bedrock/bedrock-automated-deployments"
 		},
-		"53": {
+		"54": {
 			"category": "Operaciones",
 			"subcategory": "Costar",
 			"text": "Considere los grupos de nodos puntuales para cargas de trabajo no sensibles al tiempo",
 			"severity": "Bajo",
 			"link": "https://docs.microsoft.com/azure/aks/spot-node-pool"
 		},
-		"54": {
+		"55": {
 			"category": "Operaciones",
 			"subcategory": "Costar",
-			"text": "Considere el nodo virtual para ráfagas rápidas",
+			"text": "Considere el nodo virtual AKS para ráfagas rápidas",
 			"severity": "Bajo",
+			"graph_success": "donde tipo=='microsoft.containerservice/managedclusters' | donde isnotnull(properties.addonProfiles.aciConnectorLinux) y properties.addonProfiles.aciConnectorLinux.enabled==true | nombre distinto,resourceGroup",
+			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | donde isnull(properties.addonProfiles.aciConnectorLinux) o properties.addonProfiles.aciConnectorLinux.enabled==false | nombre distinto,resourceGroup",
 			"link": "https://docs.microsoft.com/azure/aks/concepts-scale"
 		},
-		"55": {
+		"56": {
 			"category": "Operaciones",
 			"subcategory": "Costar",
 			"text": "Utilice herramientas como kubecost para asignar costos a diferentes departamentos",
 			"severity": "Bajo",
 			"link": "https://kubecost.com/"
 		},
-		"56": {
+		"57": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
 			"text": "Asegúrese de que los operadores del nodo RG no realicen ningún cambio (también conocido como 'infra RG')",
 			"severity": "Alto",
 			"link": "https://docs.microsoft.com/azure/aks/faq"
 		},
-		"57": {
+		"58": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
 			"text": "Usar el nombre personalizado de Node RG (también conocido como 'Infra RG')",
 			"severity": "Bajo",
+			"graph_success": "donde tipo=='microsoft.containerservice/managedclusters' | donde properties.nodeResourceGroup !startswith 'MC_' | nombre distinto,resourceGroup",
+			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | donde properties.nodeResourceGroup comienza con el | 'MC_' nombre distinto,resourceGroup",
 			"link": "https://docs.microsoft.com/azure/aks/cluster-configuration"
 		},
-		"58": {
+		"59": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
 			"text": "No utilice API de Kubernetes obsoletas en los manifiestos de YAML",
 			"severity": "Medio",
 			"link": "https://kubernetes.io/docs/setup/release/notes/"
 		},
-		"59": {
+		"60": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
 			"text": "Nodos de Windows taint",
 			"severity": "Bajo",
 			"link": "https://docs.microsoft.com/azure-stack/aks-hci/adapt-apps-mixed-os-clusters"
 		},
-		"60": {
+		"61": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
 			"text": "Mantenga sincronizado el nivel de revisión de contenedores de Windows con el nivel de revisión de host",
 			"severity": "Bajo",
 			"link": "https://docs.microsoft.com/virtualization/windowscontainers/deploy-containers/version-compatibility?tabs=windows-server-20H2%2Cwindows-10-20H2"
 		},
-		"61": {
+		"62": {
 			"category": "Operaciones",
 			"subcategory": "Monitorización",
 			"text": "Supervisar la utilización de la CPU y la memoria de los nodos",
 			"severity": "Medio",
 			"link": "https://docs.microsoft.com/azure/azure-monitor/containers/container-insights-analyze"
 		},
-		"62": {
+		"63": {
 			"category": "Operaciones",
 			"subcategory": "Monitorización",
 			"text": "Si usa Azure CNI, supervise % de ip de pod consumidas por nodo",
 			"severity": "Medio",
 			"link": "https://docs.microsoft.com/azure/aks/configure-azure-cni"
 		},
-		"63": {
+		"64": {
 			"category": "Operaciones",
 			"subcategory": "Monitorización",
 			"text": "Supervisar la profundidad de la cola de disco del sistema operativo en los nodos",
 			"severity": "Medio",
 			"link": "https://docs.microsoft.com/azure/virtual-machines/premium-storage-performance"
 		},
-		"64": {
+		"65": {
 			"category": "Operaciones",
 			"subcategory": "Monitorización",
 			"text": "Si no utiliza el filtrado de salida con AzFW/NVA, supervise los puertos SNAT alB estándar asignados",
 			"severity": "Medio",
 			"link": "https://docs.microsoft.com/azure/aks/load-balancer-standard"
 		},
-		"65": {
+		"66": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
 			"text": "Enviar registros maestros (también conocidos como registros de API) a Log Analytics",
 			"severity": "Bajo",
 			"link": "https://docs.microsoft.com/azure/aks/monitor-aks"
 		},
-		"66": {
+		"67": {
 			"category": "Operaciones",
 			"subcategory": "Escalabilidad",
 			"text": "Usar el escalador automático de clústeres",
 			"severity": "Medio",
+			"graph_success": "donde tipo=='microsoft.containerservice/managedclusters' | donde isnotnull(properties.austoscalerProfile) | nombre distinto,resourceGroup",
+			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | donde isnull(properties.austoscalerProfile) | nombre distinto,resourceGroup",
 			"link": "https://docs.microsoft.com/azure/aks/concepts-scale"
 		},
-		"67": {
+		"68": {
 			"category": "Operaciones",
 			"subcategory": "Escalabilidad",
 			"text": "Utilice el escalador automático de pod horizontal cuando sea necesario",
 			"severity": "Medio",
 			"link": "https://docs.microsoft.com/azure/aks/concepts-scale"
 		},
-		"68": {
+		"69": {
 			"category": "Operaciones",
 			"subcategory": "Escalabilidad",
 			"text": "Considere un tamaño de nodo apropiado, no demasiado grande o demasiado pequeño",
 			"severity": "Alto",
 			"link": "https://blog.cloudtrooper.net/2020/10/23/which-vm-size-should-i-choose-as-aks-node/"
 		},
-		"69": {
+		"70": {
 			"category": "Operaciones",
 			"subcategory": "Recursos",
-			"text": "Solicitudes y límites de Configre en las especificaciones de su pod",
+			"text": "Configurar solicitudes y límites en las especificaciones del pod",
 			"severity": "Alto",
 			"link": "https://docs.microsoft.com/azure/aks/operator-best-practices-scheduler"
 		},
-		"70": {
+		"71": {
 			"category": "Operaciones",
 			"subcategory": "Recursos",
 			"text": "Aplicar cuotas de recursos para espacios de nombres",
 			"severity": "Medio",
 			"link": "https://docs.microsoft.com/azure/aks/operator-best-practices-scheduler"
 		},
-		"71": {
+		"72": {
 			"category": "Operaciones",
 			"subcategory": "Recursos",
 			"text": "Asegúrese de que su suscripción tenga suficiente cuota para escalar horizontalmente sus nodos",
 			"severity": "Alto",
 			"link": "https://docs.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits"
 		},
-		"72": {
+		"73": {
 			"category": "Implementación de aplicaciones",
 			"subcategory": "Infraestructura como código",
 			"text": "Uso de la automatización a través de ARM/TF para crear los recursos de Azure",
 			"severity": "Medio",
 			"link": "https://docs.microsoft.com/azure/developer/terraform/create-k8s-cluster-with-tf-and-aks"
 		},
-		"73": {
+		"74": {
 			"category": "Implementación de aplicaciones",
 			"subcategory": "Desarrollo",
 			"text": "Usar implementaciones canarias o azules/verdes",
 			"severity": "Medio",
 			"link": "https://docs.microsoft.com/azure/architecture/reference-architectures/containers/aks/secure-baseline-aks"
 		},
-		"74": {
+		"75": {
 			"category": "Implementación de aplicaciones",
 			"subcategory": "Desarrollo",
 			"text": "Usar KEDA si se ejecutan cargas de trabajo controladas por eventos",
 			"severity": "Bajo",
 			"link": "https://docs.microsoft.com/azure/azure-functions/functions-kubernetes-keda"
 		},
-		"75": {
+		"76": {
 			"category": "Implementación de aplicaciones",
 			"subcategory": "Desarrollo",
 			"text": "Utilice Dapr para facilitar el desarrollo de microservicios",
