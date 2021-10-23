@@ -173,8 +173,8 @@
       "subcategory": "Security",
       "text": "Use private clusters if your requirements mandate it",
       "severity": "High",
-      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where properties.publicNetworkAccess=='Disabled' | distinct name,resourceGroup",
-      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where properties.publicNetworkAccess=='Enabled' | distinct name,resourceGroup",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where isnotnull(properties.apiServerAccessProfile.enablePrivateCluster) | distinct name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where isnull(properties.apiServerAccessProfile.enablePrivateCluster) | distinct name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/private-clusters"
     },
     {
@@ -205,6 +205,8 @@
       "subcategory": "Security",
       "text": "Use DDoS Standard in the AKS VNet",
       "severity": "Medium",
+      "graph_success": "Resources | where type=~'microsoft.containerservice/managedclusters' | project resourceGroup,name,pools=properties.agentPoolProfiles | mv-expand pools | project subnetId=tostring(pools.vnetSubnetID) | where isnotempty(subnetId) | join (Resources | where type=='microsoft.network/virtualnetworks' | project resourceGroup,name,enableDdosProtection=tostring(properties.enableDdosProtection),subnets=properties.subnets | mv-expand subnets | project resourceGroup,name,enableDdosProtection,subnetId=tostring(subnets.id)) on subnetId | distinct resourceGroup,name,enableDdosProtection | where enableDdosProtection == 'true'",
+      "graph_failure": "Resources | where type=~'microsoft.containerservice/managedclusters' | project resourceGroup,name,pools=properties.agentPoolProfiles | mv-expand pools | project subnetId=tostring(pools.vnetSubnetID) | where isnotempty(subnetId) | join (Resources | where type=='microsoft.network/virtualnetworks' | project resourceGroup,name,enableDdosProtection=tostring(properties.enableDdosProtection),subnets=properties.subnets | mv-expand subnets | project resourceGroup,name,enableDdosProtection,subnetId=tostring(subnets.id)) on subnetId | distinct resourceGroup,name,enableDdosProtection | where enableDdosProtection == 'false'",
       "link": "https://docs.microsoft.com/azure/virtual-network/ddos-protection-overview"
     },
     {
@@ -356,21 +358,30 @@
     {
       "category": "Operations",
       "subcategory": "Monitoring",
-      "text": "Monitor your cluster metrics with Azure Monitor, Prometheus or similar",
+      "text": "Monitor your cluster metrics with Container Insights (or other tools like Prometheus)",
       "severity": "High",
       "link": "https://docs.microsoft.com/azure/azure-monitor/insights/container-insights-overview"
     },
     {
       "category": "Operations",
       "subcategory": "Monitoring",
-      "text": "Store and analyze your cluster logs with Azure Monitor, Telegraf/ElasticSearch or similar",
+      "text": "Store and analyze your cluster logs with Container Insights (or other tools like Telegraf/ElasticSearch)",
       "severity": "High",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where isnotnull(properties.addonProfiles.omsagent) | distinct name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where isnull(properties.addonProfiles.omsagent) | distinct name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/azure-monitor/insights/container-insights-overview"
     },
     {
       "category": "Operations",
+      "subcategory": "Monitoring",
+      "text": "Configure Diagnostic Settins in your clusters to send API logs to Azure Monitor",
+      "severity": "Medium",
+      "link": "https://docs.microsoft.com/azure/aks/monitor-aks"
+    },
+    {
+      "category": "Operations",
       "subcategory": "Alerting",
-      "text": "Configure alerts on the most critical metrics (Container Insights for recommendations)",
+      "text": "Configure alerts on the most critical metrics (see Container Insights for recommendations)",
       "severity": "High",
       "link": "https://docs.microsoft.com/azure/azure-monitor/insights/container-insights-metric-alerts"
     },
@@ -405,8 +416,10 @@
     {
       "category": "Operations",
       "subcategory": "Cost",
-      "text": "Consider the virtual node for quick bursting",
+      "text": "Consider AKS virtual node for quick bursting",
       "severity": "Low",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where isnotnull(properties.addonProfiles.aciConnectorLinux) and properties.addonProfiles.aciConnectorLinux.enabled==true | distinct name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where isnull(properties.addonProfiles.aciConnectorLinux) or properties.addonProfiles.aciConnectorLinux.enabled==false | distinct name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/concepts-scale"
     },
     {
@@ -428,6 +441,8 @@
       "subcategory": "Compliance",
       "text": "Use custom Node RG (aka 'Infra RG') name",
       "severity": "Low",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where properties.nodeResourceGroup !startswith 'MC_' | distinct name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where properties.nodeResourceGroup startswith 'MC_' | distinct name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/cluster-configuration"
     },
     {
@@ -491,6 +506,8 @@
       "subcategory": "Scalability",
       "text": "Use the Cluster Autoscaler",
       "severity": "Medium",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where isnotnull(properties.austoscalerProfile) | distinct name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where isnull(properties.austoscalerProfile) | distinct name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/concepts-scale"
     },
     {
@@ -510,7 +527,7 @@
     {
       "category": "Operations",
       "subcategory": "Resources",
-      "text": "Configre requests and limits in your pod specs",
+      "text": "Configure requests and limits in your pod specs",
       "severity": "High",
       "link": "https://docs.microsoft.com/azure/aks/operator-best-practices-scheduler"
     },

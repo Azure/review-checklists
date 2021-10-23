@@ -12,6 +12,8 @@
 #    -c/--category: category to filter the tests. Accepted values: 0 to (number_of_categories-1)
 #    -d/--debug: increase verbosity
 #    -l/--list-categories: instead of running Azure Graph queries, it only displays the categories in the file and its corresponding indexes
+#    -s/--show-text: shows the check text (good for troubleshooting, not so good to copy/paste to Excel)
+#    -n/--no-empty: does not show checks without an associated query
 #
 # Example:
 #       ./checklist_graph.sh -l -t=aks
@@ -26,8 +28,20 @@ base_url="https://raw.githubusercontent.com/Azure/review-checklists/main/samples
 technology="aks"
 category_id=""
 debug="no"
+help="no"
 error_file=/tmp/error.json
 list_categories=no
+check_text=no
+no_empty=no
+
+# Color format variables
+normal="\e[0m"
+underline="\e[4m"
+red="\e[31m"
+green="\e[32m"
+yellow="\e[33m"
+
+# Parse arguments
 for i in "$@"
 do
      case $i in
@@ -47,13 +61,38 @@ do
                category_id="${i#*=}"
                shift # past argument=value
                ;;
+          -s*|--show-text*)
+               check_text="yes"
+               shift # past argument with no value
+               ;;
+          -n*|--no-empty*)
+               no_empty="yes"
+               shift # past argument with no value
+               ;;
           -d*|--debug*)
                debug="yes"
                shift # past argument with no value
                ;;
+          --help|-h)
+               help=yes
+               shift # past argument with no value
+               ;;
+          *)
+                    # unknown option
+               ;;
      esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
+
+# Print help message
+if [[ "$help" == "yes" ]]
+then
+    script_name="$0"
+     echo "Please run this script as:
+        $script_name [--category=<category_id>] [--technology=lz|aks|avd] [--base-url=<base_url>] [--show-text] [--no-empty] [--debug]
+        $script_name [--list-categories] [--base-url=<base_url>] [--technology=lz|aks|avd] [--debug]"
+    exit
+fi
 
 # Set URL and download checklist from base URL
 checklist_url="${base_url}${technology}_checklist.en.json"
@@ -87,11 +126,13 @@ then
     graph_success_list=$(echo $checklist_json | jq -r '.items[] | select(.category=="'$category_name'") | .graph_success')
     graph_failure_list=$(echo $checklist_json | jq -r '.items[] | select(.category=="'$category_name'") | .graph_failure')
     category_list=$(echo $checklist_json | jq -r '.items[] | select(.category=="'$category_name'") | .category')
+    text_list=$(echo $checklist_json | jq -r '.items[] | select(.category=="'$category_name'") | .text')
     if [[ "$debug" == "yes" ]]; then echo "DEBUG: $(echo $category_list | wc -l) tests found in the checklist for category ${category_name}."; fi
 else
     graph_success_list=$(echo $checklist_json | jq -r '.items[] | .graph_success')
     graph_failure_list=$(echo $checklist_json | jq -r '.items[] | .graph_failure')
     category_list=$(echo $checklist_json | jq -r '.items[] | .category')
+    text_list=$(echo $checklist_json | jq -r '.items[] | .text')
     if [[ "$debug" == "yes" ]]; then echo "DEBUG: $(echo $category_list | wc -l) tests found in the checklist."; fi
 fi
 
@@ -125,12 +166,23 @@ while IFS= read -r graph_success_query; do
         this_category_name=$(echo $category_list | head -$i | tail -1)
         echo "INFO: Checking graph queries for category $this_category_name..."
     fi
-    # Check if there is any query stored
-    if [[ "$graph_success_query" == "null" ]]
-    then
-        # Print output
-        echo "N/A"
+    # Check if there is any query
+    if [[ "$graph_success_query" == "null" ]]; then
+        if [[ "$no_empty" != "yes" ]]; then
+            # Print title if required
+            if [[ "$check_text" == "yes" ]]; then
+                this_text=$(echo $text_list | head -$i | tail -1)
+                echo "CHECKLIST ITEM: ${this_text}:"
+            fi
+            # Print output
+            echo "N/A"
+        fi
     else
+        # Print title if required
+        if [[ "$check_text" == "yes" ]]; then
+            this_text=$(echo $text_list | head -$i | tail -1)
+            echo "CHECKLIST ITEM: ${this_text}:"
+        fi
         rm $error_file 2>/dev/null; touch $error_file
         if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running success query $graph_success_query..."; fi
         success_result=$(az graph query -q "$graph_success_query" -o json 2>$error_file | jq -r '.data[] | "\(.resourceGroup)/\(.name)"' 2>>$error_file | tr '\n' ',')
@@ -152,7 +204,17 @@ while IFS= read -r graph_success_query; do
         # Replace empty string with 'none'
         if [[ -z "$success_result" ]]; then success_result='None'; fi
         if [[ -z "$failure_result" ]]; then failure_result='None'; fi
-        # Print output
-        echo "Success: $success_result. Fail: $failure_result"
+        # Print output in color format
+        if [[ "$success_result" == "None" ]]; then
+            success_color=$yellow
+        else
+            success_color=$green;
+        fi
+        if [[ "$failure_result" == "None" ]]; then
+            failure_color=$green
+        else
+            failure_color=$red;
+        fi
+        echo "Success: ${success_color}${success_result}${normal}. Fail: ${failure_color}${failure_result}${normal}"
     fi
 done <<< "$graph_success_list"

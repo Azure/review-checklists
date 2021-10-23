@@ -49,7 +49,7 @@ chmod +x ./checklist_graph.sh
 3. Run the script first to only show the categories of a checklist. For example, for AKS with:
 
 ```
-./checklist_graph.sh -l -t=aks
+./checklist_graph.sh --list-categories --technology=aks
 ```
 
 4. You should get an output similar to this:
@@ -67,7 +67,7 @@ chmod +x ./checklist_graph.sh
 5. As you can see in the previous output, the network category was listed as option 1. Now let the script run the Azure Resource Graph queries. For example, to run the graph queries of the network category of the AKS checklist:
 
 ```
-./checklist_graph.sh -t=aks -c=1
+./checklist_graph.sh --technology=aks --category=1
 ```
 
 6. You should get an output similar to the following. This example has been run with two AKS clusters in the subscriptions configured in different ways, so that the test results are different:
@@ -104,5 +104,11 @@ The script will try to install or update the Azure CLI extension `resource-graph
 8. It is also possible running all the Azure Resource Graph queries at once instead on for each category, just by omitting the category selection option:
 
 ```
-./checklist_graph.sh -t=aks -c=1
+./checklist_graph.sh --technology=aks --category=1
+```
+
+9. Alternatively, if you are running the script but not planning to copy and paste the output anywhere, you might want to show the check texts and omit the ones for which there are no Graph queries stored:
+
+```
+./checklist_graph.sh --technology=aks --no-empty
 ```
