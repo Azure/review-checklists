@@ -110,5 +110,5 @@ The script will try to install or update the Azure CLI extension `resource-graph
 9. Alternatively, if you are running the script but not planning to copy and paste the output anywhere, you might want to show the check texts and omit the ones for which there are no Graph queries stored:
 
 ```
-./checklist_graph.sh --technology=aks --no-empty
+./checklist_graph.sh --technology=aks --show-text --no-empty
 ```
