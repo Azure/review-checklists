@@ -230,6 +230,7 @@ Sub import_checklist()
         MsgBox "No file selected.", vbExclamation, "Sorry!"
         Exit Sub
     Else
+        import_graph_queries = True 'Always import graph queries in advanced mode.
         import_checklist_fromfile json_file
     End If
 End Sub
