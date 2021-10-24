@@ -40,6 +40,8 @@ underline="\e[4m"
 red="\e[31m"
 green="\e[32m"
 yellow="\e[33m"
+blue="\e[34m"
+bold="\e[1m"
 
 # Parse arguments
 for i in "$@"
@@ -164,7 +166,7 @@ while IFS= read -r graph_success_query; do
     if [[ "$this_category_name" != "$(echo $category_list | head -$i | tail -1)" ]]
     then
         this_category_name=$(echo $category_list | head -$i | tail -1)
-        echo "INFO: Checking graph queries for category $this_category_name..."
+        echo "${bold}${blue}CHECKLIST CATEGORY: ${this_category_name}${normal}"
     fi
     # Check if there is any query
     if [[ "$graph_success_query" == "null" ]]; then
