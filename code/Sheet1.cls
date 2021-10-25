@@ -22,12 +22,15 @@ Const link_column = 7
 Const training_column = 8
 Const graph_success_column = 9
 Const graph_failure_column = 10
+Const guid_column = 11
 Const checklist_name_row = 2
 Const checklist_name_col = 1
 Const values_sheet = "values"
 Const values_sev_column = 1
 Const values_status_column = 2
 Const values_category_column = 3
+Const row1 = 5
+Const row_limit = 2000   'Safety net
 
 Dim selected_language As String
 Dim selected_technology As String
@@ -53,15 +56,13 @@ End Function
 Sub export_json()
     On Error GoTo errh
     ' Constants
-    Const row1 = 5
-    Const row_limit = 2000   'Safety net
     Const export_file_name = "checklist.json"
     Const values_sheet = "values"
     Const values_category_column = 3
     ' Variables
     Dim row As Integer
     Dim json As String
-    Dim check_category, check_subcategory, check_text, check_severity, check_status, check_link, check_training, check_graph_success, check_graph_failure As String
+    Dim check_category, check_subcategory, check_text, check_severity, check_status, check_link, check_training, check_graph_success, check_graph_failure, check_guid As String
     Dim category_name, severity_name, status_name As String
     Dim export_file_path As Variant
     Dim double_quote As String
@@ -84,11 +85,16 @@ Sub export_json()
         check_severity = Cells(row, severity_column)
         check_graph_success = Cells(row, graph_success_column)
         check_graph_failure = Cells(row, graph_failure_column)
+        check_guid = Cells(row, guid_column)
+        'If there was no GUID, generate one
+        If Len(check_guid) = 0 Then check_guid = generate_guid()
+        'Only read More Info hyperlink if the cell contains one
         If Cells(row, link_column).Hyperlinks.Count > 0 Then
             check_link = Cells(row, link_column).Hyperlinks(1).Address
         Else
             check_link = Cells(row, link_column)
         End If
+        'Only read Training hyperlink if the cell contains one
         If Cells(row, training_column).Hyperlinks.Count > 0 Then
             check_training = Cells(row, training_column).Hyperlinks(1).Address
         Else
@@ -99,6 +105,7 @@ Sub export_json()
         json = json + "      " + double_quote + "category" + double_quote + ": " + double_quote + correct_format_for_JSON(check_category) + double_quote + ","
         json = json + line_break + "      " + double_quote + "subcategory" + double_quote + ": " + double_quote + correct_format_for_JSON(check_subcategory) + double_quote
         json = json + "," + line_break + "      " + double_quote + "text" + double_quote + ": " + double_quote + correct_format_for_JSON(check_text) + double_quote
+        If Len(check_guid) > 0 Then json = json + "," + line_break + "      " + double_quote + "guid" + double_quote + ": " + double_quote + check_guid + double_quote
         If Len(check_severity) > 0 Then json = json + "," + line_break + "      " + double_quote + "severity" + double_quote + ": " + double_quote + check_severity + double_quote
         If Len(check_graph_success) > 0 Then json = json + "," + line_break + "      " + double_quote + "graph_success" + double_quote + ": " + double_quote + check_graph_success + double_quote
         If Len(check_graph_failure) > 0 Then json = json + "," + line_break + "      " + double_quote + "graph_failure" + double_quote + ": " + double_quote + check_graph_failure + double_quote
@@ -227,7 +234,7 @@ Sub import_checklist()
     ChDir ActiveWorkbook.Path
     json_file = Application.GetOpenFilename(Title:="Please choose a file to open", FileFilter:="JSON Files *.json* (*.json),")
     If json_file = False Then
-        MsgBox "No file selected.", vbExclamation, "Sorry!"
+        MsgBox "No file selected.", vbExclamation, "Action canceled"
         Exit Sub
     Else
         import_graph_queries = True 'Always import graph queries in advanced mode.
@@ -415,7 +422,7 @@ End Function
 ' Updates a checklist row with the information in the object
 Sub update_row(ByVal json_item As Object, ByVal row As Integer, notverified As String)
     ' Variables and constants
-    Dim check_category, check_subcategory, check_text, check_severity, check_status, check_link, check_training, check_graph_success, check_graph_failure As String
+    Dim check_category, check_subcategory, check_text, check_severity, check_status, check_link, check_training, check_graph_success, check_graph_failure, check_guid As String
     ' Defaults to English "Not Verified"
     If Len(notverified) = 0 Then notverified = "Not verified"
     ' Code
@@ -427,12 +434,16 @@ Sub update_row(ByVal json_item As Object, ByVal row As Integer, notverified As S
     check_training = get_object_property(json_item, "training")
     check_graph_success = get_object_property(json_item, "graph_success")
     check_graph_failure = get_object_property(json_item, "graph_failure")
+    check_guid = get_object_property(json_item, "guid")
     Cells(row, category_column) = check_category
     Cells(row, subcategory_column) = check_subcategory
     Cells(row, text_column) = check_text
     Cells(row, severity_column) = check_severity
-    Cells(row, status_column) = notverified
+    Cells(row, guid_column) = check_guid
+    Cells(row, status_column) = notverified '"notverified" is a variable containing the translation of "not verified"
     Cells(row, comments_column) = ""
+    'Graph queries can optionally be imported or not, since it impacts readability
+    'Per default, they are only imported when using the English language
     If import_graph_queries Then
         Cells(row, graph_success_column) = check_graph_success
         Cells(row, graph_failure_column) = check_graph_failure
@@ -440,6 +451,7 @@ Sub update_row(ByVal json_item As Object, ByVal row As Integer, notverified As S
         Cells(row, graph_success_column) = ""
         Cells(row, graph_failure_column) = ""
     End If
+    'Training and MoreInfo link optional
     If Len(check_link) > 0 Then
         Cells(row, link_column).Hyperlinks.Add Address:=check_link, TextToDisplay:="More info", Anchor:=Cells(row, link_column), ScreenTip:=check_link
     Else
@@ -451,6 +463,74 @@ Sub update_row(ByVal json_item As Object, ByVal row As Integer, notverified As S
         Cells(row, training_column) = ""
     End If
 End Sub
+
+'Generates a random GUID
+'https://danwagner.co/how-to-generate-a-guid-in-excel-with-vba/
+Function generate_guid() As String
+On Error GoTo genguiderr
+    Dim k, h As Variant
+    generate_guid = Space(36)
+    For k = 1 To Len(generate_guid)
+        Randomize
+        Select Case k
+            Case 9, 14, 19, 24: h = "-"
+            Case 15:            h = "4"
+            Case 20:            h = Hex(Rnd * 3 + 8)
+            Case Else:          h = Hex(Rnd * 15)
+        End Select
+        Mid$(generate_guid, k, 1) = h
+    Next
+    generate_guid = LCase$(generate_guid)
+genguiderr:
+    If Err.Number <> 0 Then
+        MsgBox "Error while generating GUID: " & Err.Description, vbCritical
+    End If
+End Function
+
+'Import Azure Resource Graph query results from a JSON file generated with checklist_graph.sh
+Sub import_graph_results()
+    Dim json_file As Variant
+    Dim objStream
+    Dim json As String
+    Dim json_object, json_item As Object
+    Dim check_guid, check_success_result, check_failure_result As String
+    Dim row As Integer
+    'File pick dialog
+    ChDir ActiveWorkbook.Path
+    json_file = Application.GetOpenFilename(Title:="Please choose a file to open", FileFilter:="JSON Files *.json* (*.json),")
+    If json_file = False Then
+        MsgBox "No file selected.", vbExclamation, "Action canceled"
+        Exit Sub
+    Else
+        If MsgBox("This action will potentially overwrite existing contents in the Comments column. Do you want to continue?", vbQuestion + vbYesNo) = vbYes Then
+            'Open and read text file
+            Set objStream = CreateObject("ADODB.Stream")
+            objStream.Charset = "utf-8"
+            objStream.Open
+            objStream.LoadFromFile (json_file)
+            json = objStream.ReadText()
+            objStream.Close
+            Set objStream = Nothing
+            'Remove line breaks and parse
+            json = Replace(json, vbCrLf, "")
+            Set json_object = JsonConverter.ParseJson(json)  'This line might give Run-time error 10001 if there are JSON syntax errors
+            For Each json_item In json_object("checks")
+                check_guid = get_object_property(json_item, "guid")
+                check_success_result = get_object_property(json_item, "success")
+                check_failure_result = get_object_property(json_item, "failure")
+                'Now find the row with a matching GUID, and populate the comments field
+                row = row1
+                Do Until Cells(row, guid_column) = check_guid Or Cells(row, text_column) = ""
+                    row = row + 1
+                Loop
+                'And update the comments column
+                Cells(row, comments_column) = "Compliant resources: " + check_success_result + ". Non-compliant resources: " + check_failure_result
+            Next json_item
+        End If
+    
+    End If
+End Sub
+
 
 ' Functions to set global variables when option buttons are pushed
 Sub set_japanese()
