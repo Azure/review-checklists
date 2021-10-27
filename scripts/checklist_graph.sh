@@ -102,6 +102,13 @@ then
     exit
 fi
 
+# If outputing to JSON, we dont want output that breaks the JSON syntax
+if [[ "$output" == "json" ]]; then
+    check_text=no
+    no_empty=yes
+    if [[ "$debug" == "yes" ]]; then echo "DEBUG: Output is $output, setting --check-text=${check_text} and --no-empty=${no_empty}..."; fi    
+fi
+
 # Set URL and download checklist from base URL
 checklist_url="${base_url}${technology}_checklist.en.json"
 if [[ "$debug" == "yes" ]]; then echo "DEBUG: Getting checklist from $checklist_url..."; fi
