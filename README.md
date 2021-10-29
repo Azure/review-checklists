@@ -6,32 +6,32 @@ When doing Azure design reviews (or any review for that matter), Excel spreadshe
 
 This repo will showcase the idea of having a JSON version of the checklist that can be imported into an Excel spreadsheet by means of Visual Basic for Applications (VBA) macros. The JSON can be subject to version control, and modified as technology or standards evolve.
 
-The provided sample spreadsheet leverages code to interpret JSON from the VBA module in [https://github.com/VBA-tools/VBA-JSON/](https://github.com/VBA-tools/VBA-JSON/), from which I put a copy in this repo to be self-contained (make sure you use the latest version though).
+The provided [Checklist Review Spreadsheet](./spreadsheet/review_checklist.xlsm) leverages code to interpret JSON from the VBA module in [https://github.com/VBA-tools/VBA-JSON/](https://github.com/VBA-tools/VBA-JSON/), from which I put a copy in this repo to be self-contained (make sure you use the latest version though).
 
-Additionally, a Github action in this repository translates after every commit the English version of the checklist to additional languages (Japanese in the first release), using the cognitive service [Azure Translator](https://azure.microsoft.com/services/cognitive-services/translator/). See an example of a translated checklist in [aks_checklist.ja.json](./samples/aks_checklist.ja.json)
+Additionally, a Github action in this repository translates after every commit the English version of the checklist to additional languages (Japanese in the first release), using the cognitive service [Azure Translator](https://azure.microsoft.com/services/cognitive-services/translator/). See an example of a translated checklist in [aks_checklist.ja.json](./checklists/aks_checklist.ja.json)
 
-The sample spreadsheet in this repo includes some macros (find the source code both in the spreadsheet as well as [here](./code/Sheet1.cls)), which are accessible from buttons in the main sheet:
+The [Checklist Review Spreadsheet](./spreadsheet/review_checklist.xlsm) includes some macros (find the source code both in the spreadsheet as well as [here](./code/Sheet1.cls)), which are accessible from buttons in the main sheet:
 
 ![](./pictures/spreadsheet_screenshot.png)
 
 - **"Easy"** section (circled in red in the snapshot above): most frequently used, to import the latest set of checks from a git repo (whose URL is hard-coded in the spreadsheet). The user can select the checklist (today Landing Zone and AKS review checklists are supported) as well as the language
 - **"Advanced"** section (circlued in blue in the snapshot above): it allows exporting/importing to specific files, that the user needs to provide:
-    - `Import latest reference`:  `Export checklist to JSON`: it will export the checks as a JSON file (you can find two examples in [lz_checklist.en.json](./samples/lz_checklist.en.json) and [aks_checklist.en.json](./samples/aks_checklist.en.json))
+    - `Import latest reference`:  `Export checklist to JSON`: it will export the checks as a JSON file (you can find two examples in [lz_checklist.en.json](./checklists/lz_checklist.en.json) and [aks_checklist.en.json](./checklists/aks_checklist.en.json))
     - `Import checklist from JSON`: it will import a JSON checklist stored in the local file system
 
-Now you can source-control the JSON file with the checklist items. Changes to the JSON file with the check content can be tracked with issues and PRs, and the checklist set can be then imported in any tool, such as the provided sample spreadsheet.
+Now you can source-control the JSON file with the checklist items. Changes to the JSON file with the check content can be tracked with issues and PRs, and the checklist set can be then imported in any tool, such as the [Checklist Review Spreadsheet](./spreadsheet/review_checklist.xlsm).
 
-Another potential benefit of separating the delivery tool from the actual content is the same engine (in this example the same spreadsheet) can be used for different checklists. In this repo you find two checklists as example that can be loaded in the sample spreadsheet:
+Another potential benefit of separating the delivery tool from the actual content is the same engine (in this example the same spreadsheet) can be used for different checklists. In this repo you find two checklists as example that can be loaded in the [Checklist Review Spreadsheet](./spreadsheet/review_checklist.xlsm):
 
-- Generic Azure Landing Zones (LZ) reviews: [./samples/lz_checklist.en.json](./samples/lz_checklist.en.json)
-- Azure Kubernetes Service (AKS) Design Reviews: [aks_checklist.en.json](./samples/aks_checklist.en.json)
-- Azure Virtual Desktop (AVD) Design Reviews: [avd_checklist.en.json](./samples/avd_checklist.en.json)
+- Generic Azure Landing Zones (LZ) reviews: [./checklists/lz_checklist.en.json](./checklists/lz_checklist.en.json)
+- Azure Kubernetes Service (AKS) Design Reviews: [./checklists/aks_checklist.en.json](./checklists/aks_checklist.en.json)
+- Azure Virtual Desktop (AVD) Design Reviews: [./checklists/avd_checklist.en.json](./checklists/avd_checklist.en.json)
 
 ## Using Azure Resource Graph to verify Azure environments
 
-As you can see for example in [aks_checklist.en.json](./samples/aks_checklist.en.json), some of the checks have associated two [Azure Resource Graph](https://docs.microsoft.com/azure/governance/resource-graph/overview) queries: one for Azure resources satisfying the condition ("success"), and another one for Azure resources that do not satisfy the condition ("failure").
+As you can see for example in [aks_checklist.en.json](./checklists/aks_checklist.en.json), some of the checks have associated two [Azure Resource Graph](https://docs.microsoft.com/azure/governance/resource-graph/overview) queries: one for Azure resources satisfying the condition ("success"), and another one for Azure resources that do not satisfy the condition ("failure").
 
-Accompanying the spreadsheet this repo includes the script [checklist_graph.sh](./samples/checklist_graph.sh). This script will run the graph queries stored in the JSON checklists and produce an output that can easily be copied and pasted into the spreadsheet.
+Accompanying the spreadsheet this repo includes the script [checklist_graph.sh](./scripts/checklist_graph.sh). This script will run the graph queries stored in the JSON checklists and produce an output that can easily be copied and pasted into the spreadsheet.
 
 For example, to use the script in Azure Cloud Shell:
 
@@ -39,7 +39,7 @@ For example, to use the script in Azure Cloud Shell:
 1. Download the `checklist_graph.sh` script with:
 
 ```
-wget –quiet –output-document ./checklist_graph.sh https://raw.githubusercontent.com/Azure/review-checklists/main/samples/checklist_graph.sh
+wget –quiet –output-document ./checklist_graph.sh https://raw.githubusercontent.com/Azure/review-checklists/main/scripts/checklist_graph.sh
 ```
 
 2. Make sure that the script has execute permissions with:
