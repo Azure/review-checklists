@@ -14,6 +14,7 @@
 #    -s/--show-text: shows the check text (good for troubleshooting, not so good to copy/paste to Excel)
 #    -n/--no-empty: does not show checks without an associated query
 #    -o/--output: can be either console or json
+#    -f/--format: can be either short (syntax "<resourceGroup>/<name>") or long (syntax "<id>")
 #    -d/--debug: increase verbosity
 #
 # Example:
@@ -25,7 +26,7 @@
 
 
 # Defaults
-base_url="https://raw.githubusercontent.com/Azure/review-checklists/main/samples/"
+base_url="https://raw.githubusercontent.com/Azure/review-checklists/main/checklists/"
 technology="aks"
 category_id=""
 debug="no"
@@ -35,6 +36,7 @@ list_categories=no
 check_text=no
 no_empty=no
 output=console
+format=short
 
 # Color format variables
 normal="\e[0m"
@@ -63,6 +65,10 @@ do
                ;;
           -c=*|--category=*)
                category_id="${i#*=}"
+               shift # past argument=value
+               ;;
+          -f=*|--format=*)
+               format="${i#*=}"
                shift # past argument=value
                ;;
           -s*|--show-text*)
@@ -209,27 +215,42 @@ while IFS= read -r graph_success_query; do
         fi
         rm $error_file 2>/dev/null; touch $error_file
         if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running success query $graph_success_query..."; fi
-        success_result=$(az graph query -q "$graph_success_query" -o json 2>$error_file | jq -r '.data[] | "\(.resourceGroup)/\(.name)"' 2>>$error_file | tr '\n' ',')
-        if [[ -s $error_file ]]; then
-            success_result="Error ";
-            if [[ "$debug" == "yes" ]]; then cat $error_file; fi
+        # If format is short, the graph query command returns a single line, if format is long, it is one line per resource
+        if [[ "$format" == "short" ]]; then
+            success_result=$(az graph query -q "$graph_success_query" -o json 2>$error_file | jq -r '.data[] | "\(.resourceGroup)/\(.name)"' 2>>$error_file | tr '\n' ',')
+            if [[ -s $error_file ]]; then
+                success_result="Error";
+                if [[ "$debug" == "yes" ]]; then cat $error_file; fi
+            else
+                # Remove last comma
+                success_result=${success_result%?}
+            fi
+            # If no object was returned
+            if [[ -z "$success_result" ]]; then success_result='None'; fi
+        else
+            success_result=$(az graph query -q "$graph_success_query" -o tsv 2>$error_file --query 'data[].id' | sort -u)
         fi
         rm $error_file 2>/dev/null; touch $error_file
         graph_failure_query=$(echo $graph_failure_list | head -$i | tail -1)
         if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running failure query $graph_failure_query..."; fi
-        failure_result=$(az graph query -q "$graph_failure_query" -o json 2>$error_file | jq -r '.data[] | "\(.resourceGroup)/\(.name)"' 2>>$error_file | tr '\n' ',')
-        if [[ -s $error_file ]]; then
-            failure_result="Error "
-            if [[ "$debug" == "yes" ]]; then cat $error_file; fi
+        # If format is short, the graph query command returns a single line, if format is long, it is one line per resource
+        if [[ "$format" == "short" ]]; then
+            failure_result=$(az graph query -q "$graph_failure_query" -o json 2>$error_file | jq -r '.data[] | "\(.resourceGroup)/\(.name)"' 2>>$error_file | tr '\n' ',')
+            if [[ -s $error_file ]]; then
+                failure_result="Error"
+                if [[ "$debug" == "yes" ]]; then cat $error_file; fi
+            else
+                # Remove last comma
+                failure_result=${failure_result%?}
+            fi
+            # If no object was returned
+            if [[ -z "$failure_result" ]]; then failure_result='None'; fi
+        else
+            # If format is long, the result should be a list of IDs
+            failure_result=$(az graph query -q "$graph_failure_query" -o tsv 2>$error_file --query 'data[].id' | sort -u)
         fi
-        # Remove last comma
-        failure_result=${failure_result%?}
-        success_result=${success_result%?}
-        # Replace empty string with 'none'
-        if [[ -z "$success_result" ]]; then success_result='None'; fi
-        if [[ -z "$failure_result" ]]; then failure_result='None'; fi
         # Print output in color format
-        if [[ "$output" == console ]]; then
+        if [[ "$output" == "console" ]] && [[ "$format" == "short" ]]; then
             if [[ "$success_result" == "None" ]]; then
                 success_color=$yellow
             else
@@ -242,13 +263,32 @@ while IFS= read -r graph_success_query; do
             fi
             echo "Success: ${success_color}${success_result}${normal}. Fail: ${failure_color}${failure_result}${normal}"
         fi
-        # Append JSON info
-        # First, add a comma if this wasnt the first element
-        if [[ "$json_output" != "{ \"checks\": [" ]]; then
-            json_output+=", "
+        # Append JSON element, depending on the chosen format short/long
+        if [[ "$format" == "short" ]]; then
+            # First, add a comma if this wasnt the first element
+            if [[ "$json_output" != "{ \"checks\": [" ]]; then json_output+=", "; fi
+            json_output+="{\"guid\": \"$this_guid\", \"success\": \"$success_result\", \"failure\": \"$failure_result\"}"
+        else
+            # If long format, we append a line for each found compliant/non-compliant resource
+            while IFS= read -r resource_id
+            do
+                if [[ -n "$resource_id" ]]; then
+                    # First, add a comma if this wasnt the first element
+                    if [[ "$json_output" != "{ \"checks\": [" ]]; then json_output+=", "; fi
+                    # Add an item per compliant resource
+                    json_output+="{\"guid\": \"$this_guid\", \"result\": \"success\", \"id\": \"$resource_id\"}"
+                fi
+            done < <(printf '%s\n' "$success_result")
+            while IFS= read -r resource_id
+            do
+                if [[ -n "$resource_id" ]]; then
+                    # First, add a comma if this wasnt the first element
+                    if [[ "$json_output" != "{ \"checks\": [" ]]; then json_output+=", "; fi
+                    # Add an item per non-compliant resource
+                    json_output+="{\"guid\": \"$this_guid\", \"result\": \"fail\", \"id\": \"$resource_id\"}"
+                fi
+            done < <(printf '%s\n' "$failure_result")
         fi
-        # Now add the JSON element
-        json_output+="{\"guid\": \"$this_guid\", \"success\": \"$success_result\", \"failure\": \"$failure_result\"}"
     fi
 done <<< "$graph_success_list"
 
