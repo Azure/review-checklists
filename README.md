@@ -12,11 +12,11 @@ Additionally, a Github action in this repository translates after every commit t
 
 The [Checklist Review Spreadsheet](./spreadsheet/review_checklist.xlsm) includes some macros (find the source code both in the spreadsheet as well as [here](./code/Sheet1.cls)), which are accessible from buttons in the main sheet:
 
-![](./pictures/spreadsheet_screenshot.png)
+![](./pictures/spreadsheet_screenshot2.png)
 
-- **"Easy"** section (circled in red in the snapshot above): most frequently used, to import the latest set of checks from a git repo (whose URL is hard-coded in the spreadsheet). The user can select the checklist (today Landing Zone and AKS review checklists are supported) as well as the language
-- **"Advanced"** section (circlued in blue in the snapshot above): it allows exporting/importing to specific files, that the user needs to provide:
-    - `Import latest reference`:  `Export checklist to JSON`: it will export the checks as a JSON file (you can find two examples in [lz_checklist.en.json](./checklists/lz_checklist.en.json) and [aks_checklist.en.json](./checklists/aks_checklist.en.json))
+- **"Easy"** section (arrow in red in the snapshot above): most frequently used, to import the latest set of checks from a git repo (whose URL is hard-coded in the spreadsheet). The user can select the checklist (today Landing Zone, AKS and AVD review checklists are supported) as well as the language
+- **"Advanced"** section (arrow in blue in the snapshot above): it allows exporting/importing to specific files, that the user needs to provide:
+    - `Import latest reference`:  `Export checklist to JSON`: it will export the checks as a JSON file (you can find three examples in [lz_checklist.en.json](./checklists/lz_checklist.en.json), [aks_checklist.en.json](./checklists/aks_checklist.en.json) and [avd_checklist.en.json](./checklists/avd_checklist.en.json))
     - `Import checklist from JSON`: it will import a JSON checklist stored in the local file system
 
 Now you can source-control the JSON file with the checklist items. Changes to the JSON file with the check content can be tracked with issues and PRs, and the checklist set can be then imported in any tool, such as the [Checklist Review Spreadsheet](./spreadsheet/review_checklist.xlsm).
