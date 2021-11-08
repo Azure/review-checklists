@@ -15,6 +15,7 @@
 #    -n/--no-empty: does not show checks without an associated query
 #    -o/--output: can be either console or json
 #    -f/--format: can be either short (syntax "<resourceGroup>/<name>") or long (syntax "<id>")
+#    -mg/--management-group: per default the Azure Resource Graph queries are scoped to the current subscription, you can enlarge the scope to a given management group
 #    -d/--debug: increase verbosity
 #
 # Example:
@@ -37,6 +38,7 @@ check_text=no
 no_empty=no
 output=console
 format=short
+mg=""
 
 # Color format variables
 normal="\e[0m"
@@ -83,6 +85,10 @@ do
                output="${i#*=}"
                shift # past argument=value
                ;;
+          -mg=*|--management-group=*)
+               mg="${i#*=}"
+               shift # past argument=value
+               ;;
           -d*|--debug*)
                debug="yes"
                shift # past argument with no value
@@ -103,7 +109,7 @@ if [[ "$help" == "yes" ]]
 then
     script_name="$0"
      echo "Please run this script as:
-        $script_name [--category=<category_id>] [--technology=lz|aks|avd] [--base-url=<base_url>] [--show-text] [--no-empty] [--debug]
+        $script_name [--category=<category_id>] [--technology=lz|aks|avd] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--show-text] [--no-empty] [--debug]
         $script_name [--list-categories] [--base-url=<base_url>] [--technology=lz|aks|avd] [--debug]"
     exit
 fi
@@ -113,6 +119,14 @@ if [[ "$output" == "json" ]]; then
     check_text=no
     no_empty=yes
     if [[ "$debug" == "yes" ]]; then echo "DEBUG: Output is $output, setting --check-text=${check_text} and --no-empty=${no_empty}..."; fi    
+fi
+
+# If a Management Group was specified, use it in the az graph command
+if [[ -z "$mg" ]]; then
+    mg_option=""
+else
+    mg_option="-m $mg"
+    if [[ "$debug" == "yes" ]]; then echo "DEBUG: Setting management group $mg as scope for the az graph query commands..."; fi    
 fi
 
 # Set URL and download checklist from base URL
@@ -217,7 +231,7 @@ while IFS= read -r graph_success_query; do
         if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running success query $graph_success_query..."; fi
         # If format is short, the graph query command returns a single line, if format is long, it is one line per resource
         if [[ "$format" == "short" ]]; then
-            success_result=$(az graph query -q "$graph_success_query" -o json 2>$error_file | jq -r '.data[] | "\(.resourceGroup)/\(.name)"' 2>>$error_file | tr '\n' ',')
+            success_result=$(az graph query -q "$graph_success_query" ${(z)mg_option} -o json 2>$error_file | jq -r '.data[] | "\(.resourceGroup)/\(.name)"' 2>>$error_file | tr '\n' ',')
             if [[ -s $error_file ]]; then
                 success_result="Error";
                 if [[ "$debug" == "yes" ]]; then cat $error_file; fi
@@ -228,14 +242,14 @@ while IFS= read -r graph_success_query; do
             # If no object was returned
             if [[ -z "$success_result" ]]; then success_result='None'; fi
         else
-            success_result=$(az graph query -q "$graph_success_query" -o tsv 2>$error_file --query 'data[].id' | sort -u)
+            success_result=$(az graph query -q "$graph_success_query" ${(z)mg_option} -o tsv 2>$error_file --query 'data[].id' | sort -u)
         fi
         rm $error_file 2>/dev/null; touch $error_file
         graph_failure_query=$(echo $graph_failure_list | head -$i | tail -1)
         if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running failure query $graph_failure_query..."; fi
         # If format is short, the graph query command returns a single line, if format is long, it is one line per resource
         if [[ "$format" == "short" ]]; then
-            failure_result=$(az graph query -q "$graph_failure_query" -o json 2>$error_file | jq -r '.data[] | "\(.resourceGroup)/\(.name)"' 2>>$error_file | tr '\n' ',')
+            failure_result=$(az graph query -q "$graph_failure_query" ${(z)mg_option} -o json 2>$error_file | jq -r '.data[] | "\(.resourceGroup)/\(.name)"' 2>>$error_file | tr '\n' ',')
             if [[ -s $error_file ]]; then
                 failure_result="Error"
                 if [[ "$debug" == "yes" ]]; then cat $error_file; fi
@@ -247,7 +261,7 @@ while IFS= read -r graph_success_query; do
             if [[ -z "$failure_result" ]]; then failure_result='None'; fi
         else
             # If format is long, the result should be a list of IDs
-            failure_result=$(az graph query -q "$graph_failure_query" -o tsv 2>$error_file --query 'data[].id' | sort -u)
+            failure_result=$(az graph query -q "$graph_failure_query" ${(z)mg_option} -o tsv 2>$error_file --query 'data[].id' | sort -u)
         fi
         # Print output in color format
         if [[ "$output" == "console" ]] && [[ "$format" == "short" ]]; then
