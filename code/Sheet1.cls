@@ -15,14 +15,15 @@ Const line_break = vbCrLf
 Const category_column = 1
 Const subcategory_column = 2
 Const text_column = 3
-Const severity_column = 4
-Const status_column = 5
-Const comments_column = 6
-Const link_column = 7
-Const training_column = 8
-Const graph_success_column = 9
-Const graph_failure_column = 10
-Const guid_column = 11
+Const description_column = 4
+Const severity_column = 5
+Const status_column = 6
+Const comments_column = 7
+Const link_column = 8
+Const training_column = 9
+Const graph_success_column = 10
+Const graph_failure_column = 11
+Const guid_column = 12
 Const checklist_name_row = 2
 Const checklist_name_col = 1
 Const values_sheet = "values"
@@ -47,9 +48,21 @@ Function correct_format_for_JSON(ByVal input_text As String) As String
     input_text = Replace(input_text, Chr(34), Chr(39))
     'If it is a link, remove localization
     input_text = Replace(input_text, "en-us/", "")
+    'Escape control characters such as "?"
+    'input_text = escape_character(input_text, "?")
     'Avoid empty fields, the Azure translate API doesnt work well with then
     If input_text = "" Then input_text = "&nbsp"
     correct_format_for_JSON = input_text
+End Function
+
+'Escapes a character in a string, and gives out the resulting string
+Function escape_character(ByVal input_text As String, search_char As String) As String
+    'First we remove any possible escape signs for that character that might be already there
+    input_text = Replace(input_text, "\?", "?")
+    'Now we escape all occurrences of the character
+    input_text = Replace(input_text, "?", "\?")
+    'And return the output
+    escape_character = input_text
 End Function
 
 'Exports current checklist from excel to a json-formated text file
@@ -62,7 +75,7 @@ Sub export_json()
     ' Variables
     Dim row As Integer
     Dim json As String
-    Dim check_category, check_subcategory, check_text, check_severity, check_status, check_link, check_training, check_graph_success, check_graph_failure, check_guid As String
+    Dim check_category, check_subcategory, check_text, check_description, check_severity, check_status, check_link, check_training, check_graph_success, check_graph_failure, check_guid As String
     Dim category_name, severity_name, status_name As String
     Dim export_file_path As Variant
     Dim double_quote As String
@@ -82,6 +95,7 @@ Sub export_json()
         check_category = Cells(row, category_column)
         check_subcategory = Cells(row, subcategory_column)
         check_text = Cells(row, text_column)
+        check_description = Cells(row, description_column)
         check_severity = Cells(row, severity_column)
         check_graph_success = Cells(row, graph_success_column)
         check_graph_failure = Cells(row, graph_failure_column)
@@ -105,6 +119,7 @@ Sub export_json()
         json = json + "      " + double_quote + "category" + double_quote + ": " + double_quote + correct_format_for_JSON(check_category) + double_quote + ","
         json = json + line_break + "      " + double_quote + "subcategory" + double_quote + ": " + double_quote + correct_format_for_JSON(check_subcategory) + double_quote
         json = json + "," + line_break + "      " + double_quote + "text" + double_quote + ": " + double_quote + correct_format_for_JSON(check_text) + double_quote
+        If Len(check_description) > 0 Then json = json + "," + line_break + "      " + double_quote + "description" + double_quote + ": " + double_quote + correct_format_for_JSON(check_description) + double_quote
         If Len(check_guid) > 0 Then json = json + "," + line_break + "      " + double_quote + "guid" + double_quote + ": " + double_quote + check_guid + double_quote
         If Len(check_severity) > 0 Then json = json + "," + line_break + "      " + double_quote + "severity" + double_quote + ": " + double_quote + check_severity + double_quote
         If Len(check_graph_success) > 0 Then json = json + "," + line_break + "      " + double_quote + "graph_success" + double_quote + ": " + double_quote + check_graph_success + double_quote
@@ -202,7 +217,9 @@ Sub import_checklist_fromurl()
     'Get URL stored in the Values sheet
     checklist_base_url = Sheets(values_sheet).Cells(2, values_url_column)
     If Len(checklist_base_url) > 0 Then
-        'Append the technology and options variables
+        'Look at the option buttons to set global variables that control technology (LZ, AKS, AVD) and language
+        set_checklist_variables
+        'Append the technology and options variables (default to English and LZ)
         If Len(selected_technology) = 0 Then selected_technology = "lz"
         If Len(selected_language) = 0 Then selected_language = "en"
         checklist_url = checklist_base_url + selected_technology + "_checklist." + selected_language + ".json"
@@ -342,6 +359,7 @@ Sub import_checklist_fromfile(json_file As Variant)
         Cells(row, category_column) = ""
         Cells(row, subcategory_column) = ""
         Cells(row, text_column) = ""
+        Cells(row, description_column) = ""
         Cells(row, severity_column) = ""
         Cells(row, link_column) = ""
         Cells(row, status_column) = ""
@@ -422,13 +440,14 @@ End Function
 ' Updates a checklist row with the information in the object
 Sub update_row(ByVal json_item As Object, ByVal row As Integer, notverified As String)
     ' Variables and constants
-    Dim check_category, check_subcategory, check_text, check_severity, check_status, check_link, check_training, check_graph_success, check_graph_failure, check_guid As String
+    Dim check_category, check_subcategory, check_text, check_description, check_severity, check_status, check_link, check_training, check_graph_success, check_graph_failure, check_guid As String
     ' Defaults to English "Not Verified"
     If Len(notverified) = 0 Then notverified = "Not verified"
     ' Code
     check_category = get_object_property(json_item, "category")
     check_subcategory = get_object_property(json_item, "subcategory")
     check_text = get_object_property(json_item, "text")
+    check_description = get_object_property(json_item, "description")
     check_severity = get_object_property(json_item, "severity")
     check_link = get_object_property(json_item, "link")
     check_training = get_object_property(json_item, "training")
@@ -438,6 +457,7 @@ Sub update_row(ByVal json_item As Object, ByVal row As Integer, notverified As S
     Cells(row, category_column) = check_category
     Cells(row, subcategory_column) = check_subcategory
     Cells(row, text_column) = check_text
+    Cells(row, description_column) = check_description
     Cells(row, severity_column) = check_severity
     Cells(row, guid_column) = check_guid
     Cells(row, status_column) = notverified '"notverified" is a variable containing the translation of "not verified"
@@ -531,7 +551,6 @@ Sub import_graph_results()
     End If
 End Sub
 
-
 ' Functions to set global variables when option buttons are pushed
 Sub set_japanese()
     selected_language = "ja"
@@ -545,6 +564,14 @@ Sub set_korean()
     selected_language = "ko"
     import_graph_queries = False
 End Sub
+Sub set_spanish()
+    selected_language = "es"
+    import_graph_queries = False
+End Sub
+Sub set_portuguese()
+    selected_language = "pt"
+    import_graph_queries = False
+End Sub
 Sub set_aks()
     selected_technology = "aks"
 End Sub
@@ -553,4 +580,64 @@ Sub set_avd()
 End Sub
 Sub set_lz()
     selected_technology = "lz"
+End Sub
+
+'Delete all from controls, so that the spreadsheet can be saved as macro-free
+Sub delete_controls()
+    Dim item As Object
+    'Browse all shapes
+    For Each item In ActiveSheet.Shapes
+        'Only Form Controls
+        If item.Type = msoFormControl Then
+            item.Delete
+        End If
+    Next item
+End Sub
+
+'Inspect option buttons and set global variables accordingly
+Sub set_checklist_variables()
+    Dim item As Object
+    'Browse all shapes
+    For Each item In ActiveSheet.Shapes
+        'Only Form Controls
+        If item.Type = msoFormControl Then
+            'Only option buttons
+            If Left(item.OLEFormat.Object.Name, 13) = "Option Button" Then
+                If item.OLEFormat.Object.Value = 1 Then
+                    Select Case item.OLEFormat.Object.Text
+                        Case "AKS"
+                            selected_technology = "aks"
+                        Case "AVD"
+                            selected_technology = "avd"
+                        Case "LZ"
+                            selected_technology = "lz"
+                        Case "English"
+                            selected_language = "en"
+                            import_graph_queries = True
+                        Case "Portuguese"
+                            selected_language = "pt"
+                            import_graph_queries = True
+                        Case "Korean"
+                            selected_language = "ko"
+                            import_graph_queries = True
+                        Case "Japanese"
+                            selected_language = "ja"
+                            import_graph_queries = True
+                        Case "Spanish"
+                            selected_language = "es"
+                            import_graph_queries = True
+                    End Select
+                End If
+            End If
+        End If
+    Next item
+    Debug.Print "Selected technology " + selected_technology + ", selected language " + selected_language
+End Sub
+
+
+'Test sub
+Sub test()
+    'If ActiveSheet.Shapes("Option Button 8").Value = True Then
+    '    Debug.Print "Yay!"
+    'End If
 End Sub
