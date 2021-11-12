@@ -194,7 +194,8 @@ if [[ "$debug" == "yes" ]]; then echo "Azure CLI extension $extension_name runni
 # Run queries
 i=0
 this_category_name=""
-json_output="{ \"checks\": ["
+json_output="{ \"metadata\": {\"format\": \"${format}\", \"timestamp\": \"$(date)\"}, \"checks\": ["
+json_output_empty="yes"
 while IFS= read -r graph_success_query; do
     i=$(($i+1))
     this_guid=$(echo $guid_list | head -$i | tail -1)
@@ -280,7 +281,11 @@ while IFS= read -r graph_success_query; do
         # Append JSON element, depending on the chosen format short/long
         if [[ "$format" == "short" ]]; then
             # First, add a comma if this wasnt the first element
-            if [[ "$json_output" != "{ \"checks\": [" ]]; then json_output+=", "; fi
+            if [[ "$json_output_empty" == "yes" ]]; then
+                json_output_empty="no"
+            else
+                json_output+=", "
+            fi
             json_output+="{\"guid\": \"$this_guid\", \"success\": \"$success_result\", \"failure\": \"$failure_result\"}"
         else
             # If long format, we append a line for each found compliant/non-compliant resource
@@ -288,7 +293,11 @@ while IFS= read -r graph_success_query; do
             do
                 if [[ -n "$resource_id" ]]; then
                     # First, add a comma if this wasnt the first element
-                    if [[ "$json_output" != "{ \"checks\": [" ]]; then json_output+=", "; fi
+                    if [[ "$json_output_empty" == "yes" ]]; then
+                        json_output_empty="no"
+                    else
+                        json_output+=", "
+                    fi
                     # Add an item per compliant resource
                     json_output+="{\"guid\": \"$this_guid\", \"result\": \"success\", \"id\": \"$resource_id\"}"
                 fi
@@ -297,7 +306,11 @@ while IFS= read -r graph_success_query; do
             do
                 if [[ -n "$resource_id" ]]; then
                     # First, add a comma if this wasnt the first element
-                    if [[ "$json_output" != "{ \"checks\": [" ]]; then json_output+=", "; fi
+                    if [[ "$json_output_empty" == "yes" ]]; then
+                        json_output_empty="no"
+                    else
+                        json_output+=", "
+                    fi
                     # Add an item per non-compliant resource
                     json_output+="{\"guid\": \"$this_guid\", \"result\": \"fail\", \"id\": \"$resource_id\"}"
                 fi

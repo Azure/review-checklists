@@ -531,12 +531,14 @@ End Function
 
 'Import Azure Resource Graph query results from a JSON file generated with checklist_graph.sh
 Sub import_graph_results()
+On Error GoTo import_graph_results_err
     Dim json_file As Variant
     Dim objStream
     Dim json As String
     Dim json_object, json_item As Object
-    Dim check_guid, check_success_result, check_failure_result As String
+    Dim check_guid As String, check_success_result As String, check_failure_result As String, check_result As String, check_arm_id As String
     Dim row As Integer
+    Dim query_result_format As String, query_result_date As String
     'File pick dialog
     ChDir ActiveWorkbook.Path
     json_file = Application.GetOpenFilename(Title:="Please choose a file to open", FileFilter:="JSON Files *.json* (*.json),")
@@ -556,21 +558,77 @@ Sub import_graph_results()
             'Remove line breaks and parse
             json = Replace(json, vbCrLf, "")
             Set json_object = JsonConverter.ParseJson(json)  'This line might give Run-time error 10001 if there are JSON syntax errors
-            For Each json_item In json_object("checks")
-                check_guid = get_object_property(json_item, "guid")
-                check_success_result = get_object_property(json_item, "success")
-                check_failure_result = get_object_property(json_item, "failure")
-                'Now find the row with a matching GUID, and populate the comments field
-                row = row1
-                Do Until Cells(row, guid_column) = check_guid Or Cells(row, text_column) = ""
-                    row = row + 1
-                Loop
-                'And update the comments column
-                Cells(row, comments_column) = "Compliant resources: " + check_success_result + ". Non-compliant resources: " + check_failure_result
-            Next json_item
+            'Read metadata, which contains the format
+            If json_object.Exists("metadata") Then
+                query_result_format = get_object_property(json_object("metadata"), "format")
+                query_result_date = get_object_property(json_object("metadata"), "date")
+            Else
+                MsgBox "No metadata found in file " & json_file & ", defaulting to short format", vbInformation
+                query_result_format = "short"
+                query_result_date = ""
+            End If
+            'Browse the checks one per one
+            If json_object.Exists("checks") Then
+                For Each json_item In json_object("checks")
+                    If query_result_format = "short" Then
+                        'Get the check info
+                        check_guid = get_object_property(json_item, "guid")
+                        check_success_result = get_object_property(json_item, "success")
+                        check_failure_result = get_object_property(json_item, "failure")
+                        'Now find the row with a matching GUID, and populate the comments field
+                        row = row1
+                        Do Until Cells(row, guid_column) = check_guid Or Cells(row, text_column) = ""
+                            row = row + 1
+                        Loop
+                        'And update the comments column if it was found
+                        If Cells(row, text_column) = "" Then
+                           MsgBox "GUID " & check_guid & " not found in this checklist.", vbExclamation
+                        Else
+                            Cells(row, comments_column) = "Compliant resources: " + check_success_result + ". Non-compliant resources: " + check_failure_result
+                        End If
+                    ElseIf query_result_format = "long" Then
+                        'Get the check info
+                        check_guid = get_object_property(json_item, "guid")
+                        check_result = get_object_property(json_item, "result")
+                        check_arm_id = get_object_property(json_item, "id")
+                        'Now find the row with a matching GUID, and populate the comments field
+                        row = row1
+                        Do Until Cells(row, guid_column) = check_guid Or Cells(row, text_column) = ""
+                            row = row + 1
+                        Loop
+                        'And update the comments column if it was found
+                        If Cells(row, text_column) = "" Then
+                           MsgBox "GUID " & check_guid & " not found in this checklist.", vbExclamation
+                        Else
+                            'Enter a line break if the cell wasnt empty
+                            If Len(Cells(row, comments_column)) > 0 Then Cells(row, comments_column) = Cells(row, comments_column) & Chr(10)
+                            'Depending on the test result, add 'compliant' or 'non-compliant'
+                            If check_result = "success" Then
+                                Cells(row, comments_column) = Cells(row, comments_column) & "Compliant: " + check_arm_id
+                            ElseIf check_result = "fail" Then
+                                Cells(row, comments_column) = Cells(row, comments_column) & "Non-compliant: " + check_arm_id
+                            Else
+                                MsgBox "Check result " & check_result & " not understood", vbExclamation
+                            End If
+                        End If
+                    Else
+                        Debug.Print "Unknown query result format: " & query_result_format
+                    End If
+                Next json_item
+            Else
+                MsgBox "It looks like the JSON file " & json_file & " does not contain a 'checks' object?", vbCritical
+            End If
         End If
     
     End If
+    Exit Sub
+import_graph_results_err:
+    If Err.Number = 10001 Then
+        MsgBox "Error while importing graph results: please verify that the file " & json_file & " has a valid JSON format", vbCritical
+    ElseIf Err.Number <> 0 Then
+        MsgBox "Error while importing graph results: " & CStr(Err.Number) & ": " & Err.Description, vbCritical
+    End If
+    Exit Sub
 End Sub
 
 ' Functions to set global variables when option buttons are pushed
@@ -727,6 +785,8 @@ End Function
 Function get_user_input_from_guid(guid As String, ByRef comments As String, ByRef status As String) As Boolean
 On Error GoTo get_user_input_from_guid_err
     Dim i As Integer
+    comments = ""
+    status = ""
     For i = 1 To UBound(user_checks(), 2)
         If LCase(user_checks(user_info_guid_index, i)) = LCase(guid) Then
             comments = user_checks(user_info_comments_index, i)
@@ -738,8 +798,11 @@ On Error GoTo get_user_input_from_guid_err
     get_user_input_from_guid = False
     Exit Function
 get_user_input_from_guid_err:
-    If Err.Number <> 0 Then
-        MsgBox "Error while retrieving comments/status for GUID " + guid + ": " & Err.Description, vbCritical
+    If Err.Number = 9 Then      'Subscript out of range: silently exit
+        get_user_input_from_guid = False
+        Exit Function
+    ElseIf Err.Number <> 0 Then
+        Debug.Print "Error while retrieving comments/status for GUID " + guid + " - " & CStr(Err.Number) & ": " & Err.Description, vbCritical
     End If
     get_user_input_from_guid = False
     Exit Function
