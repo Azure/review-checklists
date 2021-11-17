@@ -15,14 +15,15 @@ Const line_break = vbCrLf
 Const category_column = 1
 Const subcategory_column = 2
 Const text_column = 3
-Const severity_column = 4
-Const status_column = 5
-Const comments_column = 6
-Const link_column = 7
-Const training_column = 8
-Const graph_success_column = 9
-Const graph_failure_column = 10
-Const guid_column = 11
+Const description_column = 4
+Const severity_column = 5
+Const status_column = 6
+Const comments_column = 7
+Const link_column = 8
+Const training_column = 9
+Const graph_success_column = 10
+Const graph_failure_column = 11
+Const guid_column = 12
 Const checklist_name_row = 2
 Const checklist_name_col = 1
 Const values_sheet = "values"
@@ -31,7 +32,11 @@ Const values_status_column = 2
 Const values_category_column = 3
 Const row1 = 5
 Const row_limit = 2000   'Safety net
+Const user_info_guid_index = 1
+Const user_info_comments_index = 2
+Const user_info_status_index = 3
 
+Dim user_checks() As String     'To hold the user's comments/status
 Dim selected_language As String
 Dim selected_technology As String
 Dim import_graph_queries As Boolean
@@ -47,9 +52,21 @@ Function correct_format_for_JSON(ByVal input_text As String) As String
     input_text = Replace(input_text, Chr(34), Chr(39))
     'If it is a link, remove localization
     input_text = Replace(input_text, "en-us/", "")
+    'Escape control characters such as "?"
+    'input_text = escape_character(input_text, "?")
     'Avoid empty fields, the Azure translate API doesnt work well with then
     If input_text = "" Then input_text = "&nbsp"
     correct_format_for_JSON = input_text
+End Function
+
+'Escapes a character in a string, and gives out the resulting string
+Function escape_character(ByVal input_text As String, search_char As String) As String
+    'First we remove any possible escape signs for that character that might be already there
+    input_text = Replace(input_text, "\?", "?")
+    'Now we escape all occurrences of the character
+    input_text = Replace(input_text, "?", "\?")
+    'And return the output
+    escape_character = input_text
 End Function
 
 'Exports current checklist from excel to a json-formated text file
@@ -62,7 +79,7 @@ Sub export_json()
     ' Variables
     Dim row As Integer
     Dim json As String
-    Dim check_category, check_subcategory, check_text, check_severity, check_status, check_link, check_training, check_graph_success, check_graph_failure, check_guid As String
+    Dim check_category, check_subcategory, check_text, check_description, check_severity, check_status, check_link, check_training, check_graph_success, check_graph_failure, check_guid As String
     Dim category_name, severity_name, status_name As String
     Dim export_file_path As Variant
     Dim double_quote As String
@@ -82,10 +99,11 @@ Sub export_json()
         check_category = Cells(row, category_column)
         check_subcategory = Cells(row, subcategory_column)
         check_text = Cells(row, text_column)
+        check_description = Cells(row, description_column)
         check_severity = Cells(row, severity_column)
         check_graph_success = Cells(row, graph_success_column)
         check_graph_failure = Cells(row, graph_failure_column)
-        check_guid = Cells(row, guid_column)
+        check_guid = LCase(Cells(row, guid_column))
         'If there was no GUID, generate one
         If Len(check_guid) = 0 Then check_guid = generate_guid()
         'Only read More Info hyperlink if the cell contains one
@@ -105,6 +123,7 @@ Sub export_json()
         json = json + "      " + double_quote + "category" + double_quote + ": " + double_quote + correct_format_for_JSON(check_category) + double_quote + ","
         json = json + line_break + "      " + double_quote + "subcategory" + double_quote + ": " + double_quote + correct_format_for_JSON(check_subcategory) + double_quote
         json = json + "," + line_break + "      " + double_quote + "text" + double_quote + ": " + double_quote + correct_format_for_JSON(check_text) + double_quote
+        If Len(check_description) > 0 Then json = json + "," + line_break + "      " + double_quote + "description" + double_quote + ": " + double_quote + correct_format_for_JSON(check_description) + double_quote
         If Len(check_guid) > 0 Then json = json + "," + line_break + "      " + double_quote + "guid" + double_quote + ": " + double_quote + check_guid + double_quote
         If Len(check_severity) > 0 Then json = json + "," + line_break + "      " + double_quote + "severity" + double_quote + ": " + double_quote + check_severity + double_quote
         If Len(check_graph_success) > 0 Then json = json + "," + line_break + "      " + double_quote + "graph_success" + double_quote + ": " + double_quote + check_graph_success + double_quote
@@ -202,7 +221,9 @@ Sub import_checklist_fromurl()
     'Get URL stored in the Values sheet
     checklist_base_url = Sheets(values_sheet).Cells(2, values_url_column)
     If Len(checklist_base_url) > 0 Then
-        'Append the technology and options variables
+        'Look at the option buttons to set global variables that control technology (LZ, AKS, AVD) and language
+        set_checklist_variables
+        'Append the technology and options variables (default to English and LZ)
         If Len(selected_technology) = 0 Then selected_technology = "lz"
         If Len(selected_language) = 0 Then selected_language = "en"
         checklist_url = checklist_base_url + selected_technology + "_checklist." + selected_language + ".json"
@@ -246,7 +267,7 @@ End Sub
 'Import from a local JSON file
 'Parse JSON code using the JsonConverter module
 Sub import_checklist_fromfile(json_file As Variant)
-    On Error GoTo errh
+    On Error GoTo import_checklist_fromfile_err
     ' Constants
     Const row1 = 5
     Const row_limit = 2000   'Safety net
@@ -260,6 +281,7 @@ Sub import_checklist_fromfile(json_file As Variant)
     Dim line_elements() As String
     Dim row, item_count, category_count, status_count, i As Integer
     Dim notverified As String
+    Dim get_user_info_successful As Boolean
     'Initialization
     row = row1
     double_quote = Chr(34) ' double quote as a variable
@@ -267,13 +289,9 @@ Sub import_checklist_fromfile(json_file As Variant)
     item_count = 0
     category_count = 0
     status_count = 0
+    'First of all, get the info entered by the user in a global variable
+    get_user_info_successful = get_user_input()
     'Go through the file line by line
-    
-    ' Read .json file with FSO.OpenTextFile
-    'Set json_ts = FSO.OpenTextFile(json_file, ForReading)
-    'json = json_ts.ReadAll
-    'json_ts.Close
-    'Read .json file as object stream
     Dim objStream
     Set objStream = CreateObject("ADODB.Stream")
     objStream.Charset = "utf-8"
@@ -324,7 +342,7 @@ Sub import_checklist_fromfile(json_file As Variant)
     If TypeName(json_object("items")) = "Dictionary" Then
         i = 0
         Do
-            update_row json_object("items")(CStr(i)), row, notverified
+            update_row json_object("items")(CStr(i)), row, notverified, get_user_info_successful
             row = row + 1
             item_count = item_count + 1
             i = i + 1
@@ -332,7 +350,7 @@ Sub import_checklist_fromfile(json_file As Variant)
     'Otherwise, it is just an array
     Else
         For Each json_item In json_object("items")
-            update_row json_item, row, notverified
+            update_row json_item, row, notverified, get_user_info_successful
             row = row + 1
             item_count = item_count + 1
         Next json_item
@@ -342,6 +360,7 @@ Sub import_checklist_fromfile(json_file As Variant)
         Cells(row, category_column) = ""
         Cells(row, subcategory_column) = ""
         Cells(row, text_column) = ""
+        Cells(row, description_column) = ""
         Cells(row, severity_column) = ""
         Cells(row, link_column) = ""
         Cells(row, status_column) = ""
@@ -349,6 +368,7 @@ Sub import_checklist_fromfile(json_file As Variant)
         Cells(row, training_column) = ""
         Cells(row, graph_success_column) = ""
         Cells(row, graph_failure_column) = ""
+        Cells(row, guid_column) = ""
         row = row + 1
     Loop
     'Import categories
@@ -399,36 +419,40 @@ Sub import_checklist_fromfile(json_file As Variant)
     End If
     MsgBox CStr(item_count) + " check items and " + CStr(category_count) + " categories imported from JSON file " + json_file, vbInformation
     Exit Sub
-errh:
+import_checklist_fromfile_err:
     If Err.Number <> 0 Then
-        MsgBox "Error while importing checklist from JSON " & Err.Description, vbCritical
+        MsgBox "Error while importing checklist from JSON file " & json_file & ": " & Err.Description, vbCritical
     End If
 End Sub
 
 'Function with error control in case a property does not exist for an object
 Function get_object_property(ByVal object_item As Object, property_name As String) As String
-    On Error GoTo fncerrh
+    On Error GoTo get_object_property_err
     Dim aux As String
     aux = object_item(property_name)
     'If it is "&nbsp" or something similar (some translation engines introduce blanks between "&" and "nbsp"), set to null
     If Right(aux, 4) = "nbsp" Then aux = ""
     get_object_property = aux
     Exit Function
-fncerrh:
+get_object_property_err:
     get_object_property = ""
     Exit Function
 End Function
 
 ' Updates a checklist row with the information in the object
-Sub update_row(ByVal json_item As Object, ByVal row As Integer, notverified As String)
+Sub update_row(ByVal json_item As Object, ByVal row As Integer, notverified As String, user_input_saved As Boolean)
+On Error GoTo update_row_err
     ' Variables and constants
-    Dim check_category, check_subcategory, check_text, check_severity, check_status, check_link, check_training, check_graph_success, check_graph_failure, check_guid As String
+    Dim check_category, check_subcategory, check_text, check_description, check_severity, check_status, check_link, check_training, check_graph_success, check_graph_failure, check_guid As String
+    Dim user_input_comments As String, user_input_status As String
+    Dim get_guid_user_input_successful As Boolean
     ' Defaults to English "Not Verified"
     If Len(notverified) = 0 Then notverified = "Not verified"
     ' Code
     check_category = get_object_property(json_item, "category")
     check_subcategory = get_object_property(json_item, "subcategory")
     check_text = get_object_property(json_item, "text")
+    check_description = get_object_property(json_item, "description")
     check_severity = get_object_property(json_item, "severity")
     check_link = get_object_property(json_item, "link")
     check_training = get_object_property(json_item, "training")
@@ -438,10 +462,23 @@ Sub update_row(ByVal json_item As Object, ByVal row As Integer, notverified As S
     Cells(row, category_column) = check_category
     Cells(row, subcategory_column) = check_subcategory
     Cells(row, text_column) = check_text
+    Cells(row, description_column) = check_description
     Cells(row, severity_column) = check_severity
     Cells(row, guid_column) = check_guid
-    Cells(row, status_column) = notverified '"notverified" is a variable containing the translation of "not verified"
-    Cells(row, comments_column) = ""
+    'If the previous user input was saved, and we can successfully retrieve an entry for this guid, put it in the comments/status fields
+    If user_input_saved Then
+        If get_user_input_from_guid(check_guid, user_input_comments, user_input_status) Then
+            Cells(row, status_column) = CStr(user_input_status)     'Some times around this line there is a dreadful 400 error :(
+            Cells(row, comments_column) = CStr(user_input_comments)
+        Else
+            Cells(row, status_column) = notverified '"notverified" is a variable containing the translation of "not verified"
+            Cells(row, comments_column) = ""
+        End If
+    'Otherwise, blank them
+    Else
+        Cells(row, status_column) = notverified '"notverified" is a variable containing the translation of "not verified"
+        Cells(row, comments_column) = ""
+    End If
     'Graph queries can optionally be imported or not, since it impacts readability
     'Per default, they are only imported when using the English language
     If import_graph_queries Then
@@ -461,6 +498,11 @@ Sub update_row(ByVal json_item As Object, ByVal row As Integer, notverified As S
         Cells(row, training_column).Hyperlinks.Add Address:=check_training, TextToDisplay:="Training", Anchor:=Cells(row, training_column), ScreenTip:=check_training
     Else
         Cells(row, training_column) = ""
+    End If
+    Exit Sub
+update_row_err:
+    If Err.Number <> 0 Then
+        MsgBox "Error while updating row: " & Err.Description, vbCritical
     End If
 End Sub
 
@@ -489,12 +531,14 @@ End Function
 
 'Import Azure Resource Graph query results from a JSON file generated with checklist_graph.sh
 Sub import_graph_results()
+On Error GoTo import_graph_results_err
     Dim json_file As Variant
     Dim objStream
     Dim json As String
     Dim json_object, json_item As Object
-    Dim check_guid, check_success_result, check_failure_result As String
+    Dim check_guid As String, check_success_result As String, check_failure_result As String, check_result As String, check_arm_id As String
     Dim row As Integer
+    Dim query_result_format As String, query_result_date As String
     'File pick dialog
     ChDir ActiveWorkbook.Path
     json_file = Application.GetOpenFilename(Title:="Please choose a file to open", FileFilter:="JSON Files *.json* (*.json),")
@@ -514,23 +558,78 @@ Sub import_graph_results()
             'Remove line breaks and parse
             json = Replace(json, vbCrLf, "")
             Set json_object = JsonConverter.ParseJson(json)  'This line might give Run-time error 10001 if there are JSON syntax errors
-            For Each json_item In json_object("checks")
-                check_guid = get_object_property(json_item, "guid")
-                check_success_result = get_object_property(json_item, "success")
-                check_failure_result = get_object_property(json_item, "failure")
-                'Now find the row with a matching GUID, and populate the comments field
-                row = row1
-                Do Until Cells(row, guid_column) = check_guid Or Cells(row, text_column) = ""
-                    row = row + 1
-                Loop
-                'And update the comments column
-                Cells(row, comments_column) = "Compliant resources: " + check_success_result + ". Non-compliant resources: " + check_failure_result
-            Next json_item
+            'Read metadata, which contains the format
+            If json_object.Exists("metadata") Then
+                query_result_format = get_object_property(json_object("metadata"), "format")
+                query_result_date = get_object_property(json_object("metadata"), "date")
+            Else
+                MsgBox "No metadata found in file " & json_file & ", defaulting to short format", vbInformation
+                query_result_format = "short"
+                query_result_date = ""
+            End If
+            'Browse the checks one per one
+            If json_object.Exists("checks") Then
+                For Each json_item In json_object("checks")
+                    If query_result_format = "short" Then
+                        'Get the check info
+                        check_guid = get_object_property(json_item, "guid")
+                        check_success_result = get_object_property(json_item, "success")
+                        check_failure_result = get_object_property(json_item, "failure")
+                        'Now find the row with a matching GUID, and populate the comments field
+                        row = row1
+                        Do Until Cells(row, guid_column) = check_guid Or Cells(row, text_column) = ""
+                            row = row + 1
+                        Loop
+                        'And update the comments column if it was found
+                        If Cells(row, text_column) = "" Then
+                           MsgBox "GUID " & check_guid & " not found in this checklist.", vbExclamation
+                        Else
+                            Cells(row, comments_column) = "Compliant resources: " + check_success_result + ". Non-compliant resources: " + check_failure_result
+                        End If
+                    ElseIf query_result_format = "long" Then
+                        'Get the check info
+                        check_guid = get_object_property(json_item, "guid")
+                        check_result = get_object_property(json_item, "result")
+                        check_arm_id = get_object_property(json_item, "id")
+                        'Now find the row with a matching GUID, and populate the comments field
+                        row = row1
+                        Do Until Cells(row, guid_column) = check_guid Or Cells(row, text_column) = ""
+                            row = row + 1
+                        Loop
+                        'And update the comments column if it was found
+                        If Cells(row, text_column) = "" Then
+                           MsgBox "GUID " & check_guid & " not found in this checklist.", vbExclamation
+                        Else
+                            'Enter a line break if the cell wasnt empty
+                            If Len(Cells(row, comments_column)) > 0 Then Cells(row, comments_column) = Cells(row, comments_column) & Chr(10)
+                            'Depending on the test result, add 'compliant' or 'non-compliant'
+                            If check_result = "success" Then
+                                Cells(row, comments_column) = Cells(row, comments_column) & "Compliant: " + check_arm_id
+                            ElseIf check_result = "fail" Then
+                                Cells(row, comments_column) = Cells(row, comments_column) & "Non-compliant: " + check_arm_id
+                            Else
+                                MsgBox "Check result " & check_result & " not understood", vbExclamation
+                            End If
+                        End If
+                    Else
+                        Debug.Print "Unknown query result format: " & query_result_format
+                    End If
+                Next json_item
+            Else
+                MsgBox "It looks like the JSON file " & json_file & " does not contain a 'checks' object?", vbCritical
+            End If
         End If
     
     End If
+    Exit Sub
+import_graph_results_err:
+    If Err.Number = 10001 Then
+        MsgBox "Error while importing graph results: please verify that the file " & json_file & " has a valid JSON format", vbCritical
+    ElseIf Err.Number <> 0 Then
+        MsgBox "Error while importing graph results: " & CStr(Err.Number) & ": " & Err.Description, vbCritical
+    End If
+    Exit Sub
 End Sub
-
 
 ' Functions to set global variables when option buttons are pushed
 Sub set_japanese()
@@ -545,6 +644,14 @@ Sub set_korean()
     selected_language = "ko"
     import_graph_queries = False
 End Sub
+Sub set_spanish()
+    selected_language = "es"
+    import_graph_queries = False
+End Sub
+Sub set_portuguese()
+    selected_language = "pt"
+    import_graph_queries = False
+End Sub
 Sub set_aks()
     selected_technology = "aks"
 End Sub
@@ -553,4 +660,162 @@ Sub set_avd()
 End Sub
 Sub set_lz()
     selected_technology = "lz"
+End Sub
+
+'Delete all from controls, so that the spreadsheet can be saved as macro-free
+Sub clear_rows()
+    Dim row As Integer
+    row = row1
+    Do While row < row_limit And (Len(Cells(row, category_column)) + Len(Cells(row, subcategory_column)) + Len(Cells(row, text_column)) + Len(Cells(row, status_column)) + Len(Cells(row, comments_column))) > 0
+        Cells(row, category_column) = ""
+        Cells(row, subcategory_column) = ""
+        Cells(row, text_column) = ""
+        Cells(row, description_column) = ""
+        Cells(row, severity_column) = ""
+        Cells(row, link_column) = ""
+        Cells(row, status_column) = ""
+        Cells(row, comments_column) = ""
+        Cells(row, training_column) = ""
+        Cells(row, graph_success_column) = ""
+        Cells(row, graph_failure_column) = ""
+        Cells(row, guid_column) = ""
+        row = row + 1
+    Loop
+    Cells(2, 1) = "Azure Review Checklist"
+End Sub
+
+'Clear all rows
+Sub delete_controls()
+    Dim item As Object
+    'Browse all shapes
+    For Each item In ActiveSheet.Shapes
+        'Only Form Controls
+        If item.Type = msoFormControl Then
+            item.Delete
+        End If
+    Next item
+End Sub
+
+'Inspect option buttons and set global variables accordingly
+Sub set_checklist_variables()
+On Error GoTo set_checklist_variables_err
+    Dim item As Object
+    Dim object_name As String
+    'Browse all shapes
+    For Each item In ActiveSheet.Shapes
+        'Only Form Controls
+        If item.Type = msoFormControl Then
+            'Only option buttons
+            object_name = item.OLEFormat.Object.Name
+            If Len(object_name) > 0 Then
+                If Left(object_name, 13) = "Option Button" Then
+                    If item.OLEFormat.Object.Value = 1 Then
+                        Select Case item.OLEFormat.Object.Text
+                            Case "AKS"
+                                selected_technology = "aks"
+                            Case "AVD"
+                                selected_technology = "avd"
+                            Case "LZ"
+                                selected_technology = "lz"
+                            Case "English"
+                                selected_language = "en"
+                                import_graph_queries = True
+                            Case "Portuguese"
+                                selected_language = "pt"
+                                import_graph_queries = False
+                            Case "Korean"
+                                selected_language = "ko"
+                                import_graph_queries = False
+                            Case "Japanese"
+                                selected_language = "ja"
+                                import_graph_queries = False
+                            Case "Spanish"
+                                selected_language = "es"
+                                import_graph_queries = False
+                            Case Else
+                                Debug.Print "Option " & item.OLEFormat.Object.Text & " unknown :-("
+                        End Select
+                    End If
+                End If
+            End If
+        End If
+    Next item
+    'Debug.Print "Selected technology " + selected_technology + ", selected language " + selected_language
+    Exit Sub
+set_checklist_variables_err:
+    If Err.Number = 1004 Then
+        object_name = ""
+    ElseIf Err.Number <> 0 Then
+        MsgBox "Error while reading settings defined in option buttons: " & CStr(Err.Number) & ": " & Err.Description, vbCritical
+    End If
+    Exit Sub
+End Sub
+
+'Load in an object variable the existing values
+Function get_user_input() As Boolean
+On Error GoTo get_user_input_err
+    Dim row, checks_counter As Integer
+    row = row1
+    ReDim user_checks(3, 1) As String
+    Erase user_checks
+    checks_counter = 0
+    'Browse through all rows
+    Do While row < row_limit And Len(Cells(row, category_column)) > 0
+        'Only store a check if there is a non-blank comment or status is different than "Not Verified"
+        If Len(Cells(row, comments_column)) > 0 Or Cells(row, status_column) <> Sheets(values_sheet).Cells(2, values_status_column) Then
+            checks_counter = checks_counter + 1
+            ReDim Preserve user_checks(3, checks_counter) As String
+            user_checks(user_info_guid_index, checks_counter) = Cells(row, guid_column)
+            user_checks(user_info_comments_index, checks_counter) = Cells(row, comments_column)
+            user_checks(user_info_status_index, checks_counter) = Cells(row, status_column)
+        End If
+        row = row + 1
+    Loop
+    get_user_input = True
+    Exit Function
+get_user_input_err:
+    If Err.Number <> 0 Then
+        MsgBox "Error while reading existing comments: " & Err.Description, vbCritical
+    End If
+    get_user_input = False
+    Exit Function
+End Function
+
+'Return the comments a status for a certain guid in an bidimensional array generated by get_user_input
+Function get_user_input_from_guid(guid As String, ByRef comments As String, ByRef status As String) As Boolean
+On Error GoTo get_user_input_from_guid_err
+    Dim i As Integer
+    comments = ""
+    status = ""
+    For i = 1 To UBound(user_checks(), 2)
+        If LCase(user_checks(user_info_guid_index, i)) = LCase(guid) Then
+            comments = user_checks(user_info_comments_index, i)
+            status = user_checks(user_info_status_index, i)
+            get_user_input_from_guid = True
+            Exit Function
+        End If
+    Next i
+    get_user_input_from_guid = False
+    Exit Function
+get_user_input_from_guid_err:
+    If Err.Number = 9 Then      'Subscript out of range: silently exit
+        get_user_input_from_guid = False
+        Exit Function
+    ElseIf Err.Number <> 0 Then
+        Debug.Print "Error while retrieving comments/status for GUID " + guid + " - " & CStr(Err.Number) & ": " & Err.Description, vbCritical
+    End If
+    get_user_input_from_guid = False
+    Exit Function
+End Function
+
+
+'Test sub
+Sub test()
+    Dim comments As String, status As String
+    If get_user_input() Then
+        'Debug.Print CStr(UBound(my_checks, 2) - LBound(my_checks, 2))
+        If get_user_input_from_guid("a0f61565-9de5-458f-a372-49c831112dbd", comments, status) Then
+            Debug.Print "Comments: " + comments + ". Status: " + status
+        End If
+    End If
 End Sub
