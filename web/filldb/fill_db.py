@@ -20,20 +20,22 @@ if mysql_server_fqdn == None:
     sys.exit(1)
 mysql_server_name = mysql_server_fqdn.split('.')[0]
 mysql_server_username = os.environ.get("MYSQL_USER")
-if mysql_server_fqdn == None:
+if mysql_server_username == None:
     print("Please define an environment variable 'MYSQL_USER' with the FQDN of the MySQL username")
     sys.exit(1)
+if not mysql_server_username.__contains__('@'):
+    mysql_server_username +=  '@' + mysql_server_name
 mysql_server_password = os.environ.get("MYSQL_PASSWORD")
-if mysql_server_fqdn == None:
+if mysql_server_password == None:
     print("Please define an environment variable 'MYSQL_PASSWORD' with the FQDN of the MySQL password")
     sys.exit(1)
 
 # Create connection to MySQL server and get version
-print ("Connecting to {0} with username {1}...".format(mysql_server_fqdn, mysql_server_username + '@' + mysql_server_name))
+print ("Connecting to {0} with username {1}...".format(mysql_server_fqdn, mysql_server_username))
 if use_ssl == 'yes':
-    db = pymysql.connect(host=mysql_server_fqdn, user = mysql_server_username + '@' + mysql_server_name, passwd = mysql_server_password, ssl = {'ssl':{'ca': 'BaltimoreCyberTrustRoot.crt.pem'}})
+    db = pymysql.connect(host=mysql_server_fqdn, user = mysql_server_username, passwd = mysql_server_password, ssl = {'ssl':{'ca': 'BaltimoreCyberTrustRoot.crt.pem'}})
 else:
-    db = pymysql.connect(host=mysql_server_fqdn, user = mysql_server_username + '@' + mysql_server_name, passwd = mysql_server_password)
+    db = pymysql.connect(host=mysql_server_fqdn, user = mysql_server_username, passwd = mysql_server_password)
 sql_query = "SELECT VERSION();"
 cursor = db.cursor()
 cursor.execute(sql_query)
@@ -50,17 +52,17 @@ print ("Connected to MySQL server {0} with version {1}".format(mysql_server_fqdn
 sql_query = "DROP DATABASE IF EXISTS {0};".format(mysql_db_name)
 # print ("Sending query: {0}".format(sql_query))
 cursor.execute(sql_query)
-rows = cursor.fetchall()
+db.commit()
 
 # Create database
 sql_query = "CREATE DATABASE IF NOT EXISTS {0};".format(mysql_db_name)
 # print ("Sending query: {0}".format(sql_query))
 cursor.execute(sql_query)
-rows = cursor.fetchall()
+db.commit()
 sql_query = "USE {0}".format(mysql_db_name)
 # print ("Sending query: {0}".format(sql_query))
 cursor.execute(sql_query)
-rows = cursor.fetchall()
+db.commit()
 
 # Create table
 sql_query = """CREATE TABLE {0} (
@@ -78,9 +80,9 @@ sql_query = """CREATE TABLE {0} (
     graph_query_failure varchar(1024),
     graph_query_result varchar(4096)
 );""".format(mysql_db_table)
-# print ("Sending query: {0}".format(sql_query))
+# print ("DEBUG: Sending query: {0}".format(sql_query))
 cursor.execute(sql_query)
-rows = cursor.fetchall()
+db.commit()
 
 # Download checklist
 checklist_url = "https://raw.githubusercontent.com/Azure/review-checklists/main/checklists/aks_checklist.en.json"
@@ -96,6 +98,7 @@ if response.status_code == 200:
         print("Error deserializing JSON content: {0}".format(str(e)))
         sys.exit(1)
     # For each checklist item, add a row to mysql DB
+    row_counter = 0
     for item in checklist_object.get("items"):
         guid = item.get("guid")
         category = item.get("category")
@@ -107,10 +110,16 @@ if response.status_code == 200:
         training = item.get("training")
         graph_query_success = escape_quotes(item.get("graph_success"))
         graph_query_failure = escape_quotes(item.get("graph_failure"))
-        # print("Adding to table {0}: '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', '{10}'".format(mysql_db_table, category, subcategory, text, description, severity, link, training, graph_query_success, graph_query_failure, guid))
+        # print("DEBUG: Adding to table {0}: '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', '{10}'".format(mysql_db_table, category, subcategory, text, description, severity, link, training, graph_query_success, graph_query_failure, guid))
         sql_query = """INSERT INTO {0} (category,subcategory,text,description,severity,link,training,graph_query_success,graph_query_failure,guid) 
             VALUES ('{1}','{2}','{3}','{4}','{5}', '{6}','{7}','{8}','{9}','{10}');""".format(mysql_db_table, category, subcategory, text, description, severity, link, training, graph_query_success, graph_query_failure, guid)
+        # print ("DEBUG: Sending query: {0}".format(sql_query))
         cursor.execute(sql_query)
-        rows = cursor.fetchall()
+        db.commit()
+        row_counter += 1
 else:
     print ("Error downloading {0}".format(checklist_url))
+
+# Bye
+print("DEBUG: {0} rows added to database.".format(str(row_counter)))
+db.close()

@@ -6,7 +6,7 @@ from app.export import PythonGridDbExport
 
 @app.route('/')
 def index():
-    grid = PythonGrid('SELECT * FROM items', 'guid', 'items')
+    grid = PythonGrid('SELECT * FROM items;', 'guid', 'items')
 
     grid.set_caption('Checklist')
     grid.set_col_title('category', 'Category')
@@ -25,10 +25,10 @@ def index():
 
 @app.route('/data', methods=['GET', 'POST'])
 def data():
-    data = PythonGridDbData('SELECT * FROM items')
+    data = PythonGridDbData('SELECT * FROM items;')
     return data.getData()
 
 @app.route('/export', methods=['GET', 'POST'])
 def export():
-    exp = PythonGridDbExport('SELECT * FROM items')
+    exp = PythonGridDbExport('SELECT * FROM items;')
     return exp.export()
