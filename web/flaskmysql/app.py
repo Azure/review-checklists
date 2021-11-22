@@ -17,9 +17,13 @@ mysql.init_app(app)
 @app.route('/')
 def home():
     try:
+        category  = request.args.get('category', None)
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
-        cursor.execute("SELECT * from items")
+        if category:
+            cursor.execute("SELECT * from items WHERE category = '{0}'".format(str(category)))
+        else:
+            cursor.execute("SELECT * from items")
         itemslist = cursor.fetchall()
         cursor.execute("SELECT DISTINCT category FROM items")
         categorylist = cursor.fetchall()
