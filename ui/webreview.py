@@ -99,6 +99,7 @@ if st.session_state.reviewconfigured == True:
     st.session_state.severity = st.sidebar.multiselect(
         'Included severities:', st.session_state.severitylist, default=st.session_state.severitylist['name'])
 
+# TODO: this needs
     st.session_state.sortselector = st.sidebar.multiselect(
         'Sort by:', st.session_state.checklist.columns)
     if st.session_state.sortselector:
@@ -118,6 +119,7 @@ st.sidebar.info(
 if 'metadata' in st.session_state:
     st.title(st.session_state.metadata['name'])
 # else:
+# TODO: add "validation" to expected json values?
 #     st.title('FastTrack for Azure - Review')
 
 # Setup the review
@@ -134,25 +136,52 @@ else:
     reviewcount = len(reviewitems.index)
     completedcount = len(st.session_state.completedreviewlist.index)
 
-    colpercent, colprogress, colcompleted = st.columns(3)
+    colpercent, colprogress, colcompleted = st.columns([1, 15, 2])
 
     with colpercent:
-        str(completedcount) + \
-            '/' + str(reviewcount)
+        # st.text(str(completedcount) +
+        #         '/' + str(reviewcount))
+        st.metric('Progress', str(completedcount) +
+                  '/' + str(reviewcount))
     with colprogress:
+        st.write('')
         if (completedcount == 0):
             reviewprogress = 0
         else:
+            st.write('')
             reviewprogress = st.progress(
                 (round(completedcount / reviewcount * 100)))
     with colcompleted:
+        st.write('')
+        st.write('')
         reviewcompleted = st.checkbox('Review completed')
 
-    increment = st.button('Increment', on_click=review_append)
+    # Review form
+    with st.form(key='review_form', clear_on_submit=True):
 
-    st.table(st.session_state.completedreviewlist)
-    st.table(
-        reviewitems[['category', 'subcategory', 'severity', 'text', 'link']])
+        col1, col2 = st.columns([9, 1])
+        with col1:
+            text_input = st.text_input(label='Comment')
+        with col2:
+            reviewstatus = st.selectbox('Status:', st.session_state.statuslist)
+
+        submit_button = st.form_submit_button(
+            label='Submit', on_click=review_append())
+
+    with st.expander('Completed review items'):
+        st.table(st.session_state.completedreviewlist)
+
+    with st.expander('Open review items'):
+        col1, col2, _, _, col3 = st.columns([2, 2, 2, 2, 2])
+        with col1:
+            st.button('<')
+        with col2:
+            st.button('>')
+        with col3:
+            st.selectbox('Items per page', [5, 10, 15, 20, 'All'])
+
+        st.table(
+            reviewitems[['category', 'subcategory', 'severity', 'text']])
     # st.dataframe(reviewitems)
 
     # with st.expander('Documentation'):
