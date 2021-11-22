@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+<head>
+<title>Azure Review</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />    
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+<script type='text/javascript'>
+$(document).ready(function(){
+  
+ // Show Input element
+ $('.edit').click(function(){
+  $('.txtedit').hide();
+  $(this).next('.txtedit').show().focus();
+  $(this).hide();
+ });
+ 
+ // Save data
+ $(".txtedit").focusout(function(){
+   
+  // Get edit id, field name and value
+  var id = this.id;
+  var split_id = id.split("_");  //fields are called comment_<guid>, text_<guid>, etc
+  var field_name = split_id[0];
+  var edit_id = split_id[1];     //edit_id will be the GUID
+  var value = $(this).val();
+   
+  // Hide Input element
+  $(this).hide();
+ 
+  // Hide and Change Text of the container with input element
+  $(this).prev('.edit').show();
+  $(this).prev('.edit').text(value);
+ 
+  // Update call to the Flask /route, with the field name, value and ID
+  $.ajax({
+   url: '/update',
+   type: 'post',
+   data: { field:field_name, value:value, id:edit_id },
+   success:function(response){
+      if (response == 1) { 
+         console.log('Save successfully'); 
+      } else { 
+         console.log("Not saved.");  
+      }
+   }
+  });
+  
+ });
+ 
+});
+</script>
+</head>
+
+<body >
+<div class="container" >
+    <div class="row" style="padding:0px;">
+        <p><h1>Azure Review</h1></p>
+        <div id="dropdownFilters" class="dropdown-content">
+            <table width='100%'>
+                  <th width=10%>&nbsp;</th>
+                  <th width=10%>
+                     <select name=categories method="GET" action="/">
+                        {% for row in categorylist %}
+                        <option value= "{{row.category}}">{{row.category}}</option>"
+                        {% endfor %}
+                     </select>
+                  </th>
+                  <th width=10%>&nbsp;</th>
+                  <th width=40%>&nbsp;</th>
+                  <th width=30%>&nbsp;</th>
+            </table>
+        </div>
+        <table width='100%'>
+         <tr>
+          <th width='10%'>GUID</th>
+          <th width='10%'>Category</th>
+          <th width='10%'>Subcategory</th>
+          <th width='40%'>Text</th>
+          <th width='30%'>Comment</th>
+         </tr>
+         {% for row in itemslist %}
+               {% if row.category != "blahblah" %}
+                  <tr>
+                  <td>{{row.guid}}</td>
+                  <td>{{row.category}}</td>
+                  <td>{{row.subcategory}}</td>
+                  <td>{{row.text}}</td>
+                  <td> 
+                     <div class='edit' >{{row.comments}} </div> 
+                     <input type='text' class='txtedit' value='{{row.comments}}' id='comment_{{row.guid}}' >
+                  </td>
+                  </tr>
+               {% endif %}
+         {% endfor %} 
+        </table>
+   </div>
+</div>
+<style>
+.edit{
+ width: 100%;
+ height: 20px;
+}
+.editMode{
+ border: 1px solid black;
+}
+table {
+ border:1px solid lavender;
+ border-radius:3px;
+}
+table tr:nth-child(1){
+ background-color:#4285f4;
+}
+table tr:nth-child(1) th{
+ color:white;
+ padding:10px 0px;
+ letter-spacing: 1px;
+}
+table td{
+ padding:10px;
+}
+table tr:nth-child(even){
+ background-color:lavender;
+ color:black;
+}
+.txtedit{
+ display: none;
+ width: 99%;
+ height: 30px;
+}
+</style>
+</body>
+</html>
+
