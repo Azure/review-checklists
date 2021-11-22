@@ -151,8 +151,8 @@ else:
     increment = st.button('Increment', on_click=review_append)
 
     st.table(st.session_state.completedreviewlist)
-    # st.table(
-    #     reviewitems[['category', 'subcategory', 'severity', 'text', 'link']])
+    st.table(
+        reviewitems[['category', 'subcategory', 'severity', 'text', 'link']])
     # st.dataframe(reviewitems)
 
     # with st.expander('Documentation'):
