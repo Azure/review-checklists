@@ -17,17 +17,48 @@ mysql.init_app(app)
 @app.route('/')
 def home():
     try:
-        category  = request.args.get('category', None)
+        category_filter  = request.args.get('category', None)
+        status_filter  = request.args.get('status', None)
+        severity_filter  = request.args.get('severity', None)
         conn = mysql.connect()
         cursor = conn.cursor(pymysql.cursors.DictCursor)
-        if category:
-            cursor.execute("SELECT * from items WHERE category = '{0}'".format(str(category)))
-        else:
-            cursor.execute("SELECT * from items")
+        sqlquery = "SELECT * from items"
+        filter1_added = False
+        # category filter
+        if category_filter:
+            if filter1_added:
+                sqlquery += " AND "
+            else:
+                sqlquery += " WHERE "
+                filter1_added = True
+            sqlquery += "category = '{0}'".format(category_filter)
+        # status filter
+        if status_filter:
+            if filter1_added:
+                sqlquery += " AND "
+            else:
+                sqlquery += " WHERE "
+                filter1_added = True
+            sqlquery += "status = '{0}'".format(status_filter)
+        # severity filter
+        if severity_filter:
+            if filter1_added:
+                sqlquery += " AND "
+            else:
+                sqlquery += " WHERE "
+                filter1_added = True
+            sqlquery += "severity = '{0}'".format(severity_filter)
+        # send queries
+        app.logger.info ("Retrieving checklist items with query '{0}'".format(sqlquery))
+        cursor.execute(sqlquery)
         itemslist = cursor.fetchall()
         cursor.execute("SELECT DISTINCT category FROM items")
         categorylist = cursor.fetchall()
-        return render_template('index.html', itemslist=itemslist, categorylist=categorylist)
+        cursor.execute("SELECT DISTINCT severity FROM items")
+        severitylist = cursor.fetchall()
+        cursor.execute("SELECT DISTINCT status FROM items")
+        statuslist = cursor.fetchall()
+        return render_template('index.html', itemslist=itemslist, categorylist=categorylist, severitylist=severitylist, statuslist=statuslist)
     except Exception as e:
         print(e)
     finally:
@@ -44,10 +75,18 @@ def update():
             field = request.form['field'] 
             value = request.form['value']
             editid = request.form['id']
-            app.logger.info("Processing POST for field {0}, editid {1} and value {2}".format(field, value, editid)) 
+            app.logger.info("Processing POST for field '{0}', editid '{1}' and value '{2}'".format(field, value, editid)) 
              
             if field == 'comment' and value != '':
                 sql = "UPDATE items SET comments=%s WHERE guid=%s"
+                data = (value, editid)
+                conn = mysql.connect()
+                cursor = conn.cursor()
+                app.logger.info ("Sending SQL query '{0}' with data '{1}'".format(sql, str(data)))
+                cursor.execute(sql, data)
+                conn.commit()
+            elif field == 'status' and value != '':
+                sql = "UPDATE items SET status=%s WHERE guid=%s"
                 data = (value, editid)
                 conn = mysql.connect()
                 cursor = conn.cursor()

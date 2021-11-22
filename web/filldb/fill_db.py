@@ -16,22 +16,22 @@ def escape_quotes(this_value):
 # Get database credentials from environment variables
 mysql_server_fqdn = os.environ.get("MYSQL_FQDN")
 if mysql_server_fqdn == None:
-    print("Please define an environment variable 'MYSQL_FQDN' with the FQDN of the MySQL server")
+    print("ERROR: Please define an environment variable 'MYSQL_FQDN' with the FQDN of the MySQL server")
     sys.exit(1)
 mysql_server_name = mysql_server_fqdn.split('.')[0]
 mysql_server_username = os.environ.get("MYSQL_USER")
 if mysql_server_username == None:
-    print("Please define an environment variable 'MYSQL_USER' with the FQDN of the MySQL username")
+    print("ERROR: Please define an environment variable 'MYSQL_USER' with the FQDN of the MySQL username")
     sys.exit(1)
 if not mysql_server_username.__contains__('@'):
     mysql_server_username +=  '@' + mysql_server_name
 mysql_server_password = os.environ.get("MYSQL_PASSWORD")
 if mysql_server_password == None:
-    print("Please define an environment variable 'MYSQL_PASSWORD' with the FQDN of the MySQL password")
+    print("ERROR: Please define an environment variable 'MYSQL_PASSWORD' with the FQDN of the MySQL password")
     sys.exit(1)
 
 # Create connection to MySQL server and get version
-print ("Connecting to {0} with username {1}...".format(mysql_server_fqdn, mysql_server_username))
+print ("INFO: Connecting to {0} with username {1}...".format(mysql_server_fqdn, mysql_server_username))
 if use_ssl == 'yes':
     db = pymysql.connect(host=mysql_server_fqdn, user = mysql_server_username, passwd = mysql_server_password, ssl = {'ssl':{'ca': 'BaltimoreCyberTrustRoot.crt.pem'}})
 else:
@@ -46,7 +46,7 @@ if len(rows) > 0:
         if len(data) > 0:
             data += ', '
         data += str(''.join(row))
-print ("Connected to MySQL server {0} with version {1}".format(mysql_server_fqdn, data))
+print ("INFO: Connected to MySQL server {0} with version {1}".format(mysql_server_fqdn, data))
 
 # Delete db if existed
 sql_query = "DROP DATABASE IF EXISTS {0};".format(mysql_db_name)
@@ -90,13 +90,20 @@ response = requests.get(checklist_url)
 
 # If download was successful
 if response.status_code == 200:
-    print ("File {0} downloaded successfully".format(checklist_url))
+    print ("INFO: File {0} downloaded successfully".format(checklist_url))
     try:
         # Deserialize JSON to object variable
         checklist_object = json.loads(response.text)
     except Exception as e:
         print("Error deserializing JSON content: {0}".format(str(e)))
         sys.exit(1)
+    # Get default status from the JSON, default to "Not verified"
+    try:
+        status_list = checklist_object.get("status")
+        default_status = status_list[0].get("name")
+    except:
+        default_status = "Not verified"
+        pass
     # For each checklist item, add a row to mysql DB
     row_counter = 0
     for item in checklist_object.get("items"):
@@ -108,11 +115,12 @@ if response.status_code == 200:
         severity = item.get("severity")
         link = item.get("link")
         training = item.get("training")
+        status = default_status
         graph_query_success = escape_quotes(item.get("graph_success"))
         graph_query_failure = escape_quotes(item.get("graph_failure"))
         # print("DEBUG: Adding to table {0}: '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', '{10}'".format(mysql_db_table, category, subcategory, text, description, severity, link, training, graph_query_success, graph_query_failure, guid))
-        sql_query = """INSERT INTO {0} (category,subcategory,text,description,severity,link,training,graph_query_success,graph_query_failure,guid) 
-            VALUES ('{1}','{2}','{3}','{4}','{5}', '{6}','{7}','{8}','{9}','{10}');""".format(mysql_db_table, category, subcategory, text, description, severity, link, training, graph_query_success, graph_query_failure, guid)
+        sql_query = """INSERT INTO {0} (category,subcategory,text,description,severity,link,training,graph_query_success,graph_query_failure,guid,status) 
+            VALUES ('{1}','{2}','{3}','{4}','{5}', '{6}','{7}','{8}','{9}','{10}', '{11}');""".format(mysql_db_table, category, subcategory, text, description, severity, link, training, graph_query_success, graph_query_failure, guid, status)
         # print ("DEBUG: Sending query: {0}".format(sql_query))
         cursor.execute(sql_query)
         db.commit()
@@ -121,5 +129,5 @@ else:
     print ("Error downloading {0}".format(checklist_url))
 
 # Bye
-print("DEBUG: {0} rows added to database.".format(str(row_counter)))
+print("INFO: {0} rows added to database.".format(str(row_counter)))
 db.close()
