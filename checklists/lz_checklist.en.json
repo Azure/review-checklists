@@ -132,6 +132,8 @@
       "text": "Enforce reasonably flat management group hierarchy with no more than three to four levels, ideally",
       "guid": "2df27ee4-12e7-4f98-9f63-04722dd69c5b",
       "severity": "Medium",
+      "graph_success": "resourcecontainers | where type == 'microsoft.resources/subscriptions' | extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain | where array_length(mgmtChain) <=4 | mvexpand mgmt=mgmtChain | project subscriptionId, name, ['id'], management_group_name=mgmt.displayName",
+      "graph_failure": "resourcecontainers | where type == 'microsoft.resources/subscriptions' | extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain | where array_length(mgmtChain) >4 | mvexpand mgmt=mgmtChain | project subscriptionId, name, ['id'], management_group_name=mgmt.displayName",
       "training": "https://docs.microsoft.com/learn/modules/azure-architecture-fundamentals/",
       "link": "https://docs.microsoft.com/azure/governance/management-groups/overview"
     },
@@ -280,6 +282,8 @@
       "text": "Ensure to use IP addresses from the address allocation for private internets (RFC 1918).",
       "guid": "3f630472-2dd6-49c5-a5c2-622f54b69bad",
       "severity": "Medium",
+      "graph_success": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, location, resourceGroup, subscriptionId, cidr = addressPrefix | where cidr matches regex @'^(?:10|127|172\.(?:1[6-9]|2[0-9]|3[01])|192\.168)\..*')",
+      "graph_failure": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, location, resourceGroup, subscriptionId, cidr = addressPrefix | where not (cidr matches regex @'^(?:10|127|172\.(?:1[6-9]|2[0-9]|3[01])|192\.168)\..*')",
       "training": "https://docs.microsoft.com/en-gb/learn/paths/architect-network-infrastructure/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing"
     },
@@ -289,6 +293,8 @@
       "text": "Ensure that IP address space isn't wasted, don't create unnecessarily large virtual networks (for example /16) ",
       "guid": "33aad5e8-c68e-41d7-9667-313b4f5664b5",
       "severity": "Medium",
+      "graph_success": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | where addressMask > 16 | project name, subscriptionId, resourceGroup, addressPrefix",
+      "graph_failure": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | where addressMask <= 16 | project name, subscriptionId, resourceGroup, addressPrefix",
       "training": "https://docs.microsoft.com/en-gb/learn/paths/architect-network-infrastructure/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing"
     },
@@ -432,7 +438,7 @@
     {
       "category": "Networking",
       "subcategory": "Virtual WAN",
-      "text": "Ensure that the network architecture is within the Azure Virtual WAN limits.",
+      "text": "Ensure that the network architecture is within the?Azure Virtual WAN limits.",
       "guid": "6667313b-4f56-464b-9e98-4a859c773e7d",
       "severity": "Medium",
       "link": "https://docs.microsoft.com/azure/virtual-wan/virtual-wan-about"
@@ -1021,7 +1027,7 @@
     {
       "category": "Management",
       "subcategory": "Monitoring",
-      "text": "Use Update Management in Azure Automation as a long-term patching mechanism for both Windows and Linux VMs. ",
+      "text": "Use Update Management in Azure Automation?as a long-term patching mechanism for both Windows and Linux VMs. ",
       "guid": "f9887952-5d62-4688-9d70-ba6c97be9951",
       "severity": "Medium",
       "training": "https://docs.microsoft.com/learn/paths/azure-administrator-manage-compute-resources/",
@@ -1207,8 +1213,16 @@
     {
       "category": "Security",
       "subcategory": "Secrets",
-      "text": "Use a vault per application per environment per region.",
+      "text": "Don't share Key Vault instances between applications to avoid secret sharing across environments.",
       "guid": "91163418-2ba5-4275-8694-4008be7d7e48",
+      "severity": "Medium",
+      "link": "https://docs.microsoft.com/azure/key-vault/general/best-practices"
+    },
+    {
+      "category": "Security",
+      "subcategory": "Secrets",
+      "text": "Don't use centralized instances of Key Vault for application keys or secrets.",
+      "guid": "43276d8b-dc05-45bc-b619-e8a13f988795",
       "severity": "Medium",
       "link": "https://docs.microsoft.com/azure/key-vault/general/best-practices"
     },
@@ -1426,3 +1440,4 @@
     "name": "Azure Landing Zone Review"
   }
 }
+
