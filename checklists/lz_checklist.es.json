@@ -132,6 +132,8 @@
 			"text": "Aplique una jerarquía de grupos de administración razonablemente plana con no más de tres a cuatro niveles, idealmente",
 			"guid": "2df27ee4-12e7-4f98-9f63-04722dd69c5b",
 			"severity": "Medio",
+			"graph_success": "| de recursoscontenedores donde tipo == 'microsoft.resources/subscriptions' | extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain | donde array_length(mgmtChain) <=4 | mvexpand mgmt=mgmtChain | project subscriptionId, name, ['id'], management_group_name=mgmt.displayName, resourceGroup=mgmt.displayName",
+			"graph_failure": "| de recursoscontenedores donde tipo == 'microsoft.resources/subscriptions' | extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain | donde array_length(mgmtChain) >4 | mvexpand mgmt=mgmtChain | project subscriptionId, name, ['id'], management_group_name=mgmt.displayName, resourceGroup=mgmt.displayName",
 			"training": "https://docs.microsoft.com/learn/modules/azure-architecture-fundamentals/",
 			"link": "https://docs.microsoft.com/azure/governance/management-groups/overview"
 		},
@@ -280,6 +282,8 @@
 			"text": "Asegúrese de utilizar las direcciones IP de la asignación de direcciones para Internet privado (RFC 1918).",
 			"guid": "3f630472-2dd6-49c5-a5c2-622f54b69bad",
 			"severity": "Medio",
+			"graph_success": "| de recursos donde tipo == 'microsoft.network/virtualnetworks' | extender addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | dirección mvexpandPrefijar | nombre del proyecto, id, ubicación, resourceGroup, subscriptionId, cidr = addressPrefix | donde cidr coincide con regex @'^(?:10|127|172\\.(? :1[6-9]|2[0-9]|3[01])|192\\.168)\\.. *'",
+			"graph_failure": "| de recursos donde tipo == 'microsoft.network/virtualnetworks' | extender addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | dirección mvexpandPrefijar | nombre del proyecto, id, ubicación, resourceGroup, subscriptionId, cidr = addressPrefix | donde no (cidr coincide con regex @'^(?:10|127|172\\.(? :1[6-9]|2[0-9]|3[01])|192\\.168)\\.. *')",
 			"training": "https://docs.microsoft.com/en-gb/learn/paths/architect-network-infrastructure/",
 			"link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing"
 		},
@@ -289,6 +293,8 @@
 			"text": "Asegúrese de que el espacio de direcciones IP no se desperdicte, no cree redes virtuales innecesariamente grandes (por ejemplo, /16) ",
 			"guid": "33aad5e8-c68e-41d7-9667-313b4f5664b5",
 			"severity": "Medio",
+			"graph_success": "| de recursos donde tipo == 'microsoft.network/virtualnetworks' | extender addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | dirección mvexpandPrefijar | extender addressMask = split(addressPrefix,'/')[1] | donde direcciónMáscara > 16 | nombre del proyecto, id, subscriptionId, resourceGroup, addressPrefix",
+			"graph_failure": "| de recursos donde tipo == 'microsoft.network/virtualnetworks' | extender addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | dirección mvexpandPrefijar | extender addressMask = split(addressPrefix,'/')[1] | donde addressMask <= 16 | nombre del proyecto, id, subscriptionId, resourceGroup, addressPrefix",
 			"training": "https://docs.microsoft.com/en-gb/learn/paths/architect-network-infrastructure/",
 			"link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing"
 		},
