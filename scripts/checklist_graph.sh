@@ -15,6 +15,7 @@
 #    -n/--no-empty: does not show checks without an associated query
 #    -o/--output: can be either console or json
 #    -f/--format: can be either short (syntax "<resourceGroup>/<name>") or long (syntax "<id>")
+#    --file: custom JSON file (otherwise the latest checklist is downloaded from Github)
 #    -mg/--management-group: per default the Azure Resource Graph queries are scoped to the current subscription, you can enlarge the scope to a given management group
 #    -d/--debug: increase verbosity
 #
@@ -39,6 +40,7 @@ no_empty=no
 output=console
 format=short
 mg=""
+filename=""
 
 # Color format variables
 normal="\e[0m"
@@ -89,6 +91,10 @@ do
                mg="${i#*=}"
                shift # past argument=value
                ;;
+          --file=*)
+               filename="${i#*=}"
+               shift # past argument=value
+               ;;
           -d*|--debug*)
                debug="yes"
                shift # past argument with no value
@@ -109,7 +115,8 @@ if [[ "$help" == "yes" ]]
 then
     script_name="$0"
      echo "Please run this script as:
-        $script_name [--category=<category_id>] [--technology=lz|aks|avd] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--show-text] [--no-empty] [--debug]
+        $script_name [--technology=lz|aks|avd] [--category=<category_id>] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--show-text] [--no-empty] [--debug]
+        $script_name [--file=<path_to_json_file>] [--category=<category_id>] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--show-text] [--no-empty] [--debug]
         $script_name [--list-categories] [--base-url=<base_url>] [--technology=lz|aks|avd] [--debug]"
     exit
 fi
@@ -118,7 +125,7 @@ fi
 if [[ "$output" == "json" ]]; then
     check_text=no
     no_empty=yes
-    if [[ "$debug" == "yes" ]]; then echo "DEBUG: Output is $output, setting --check-text=${check_text} and --no-empty=${no_empty}..."; fi    
+    if [[ "$debug" == "yes" ]]; then echo "DEBUG: Output is $output, setting --check-text=${check_text} and --no-empty=${no_empty}..."; fi
 fi
 
 # If a Management Group was specified, use it in the az graph command
@@ -126,13 +133,26 @@ if [[ -z "$mg" ]]; then
     mg_option=""
 else
     mg_option="-m $mg"
-    if [[ "$debug" == "yes" ]]; then echo "DEBUG: Setting management group $mg as scope for the az graph query commands..."; fi    
+    if [[ "$debug" == "yes" ]]; then echo "DEBUG: Setting management group $mg as scope for the az graph query commands..."; fi
 fi
 
-# Set URL and download checklist from base URL
-checklist_url="${base_url}${technology}_checklist.en.json"
-if [[ "$debug" == "yes" ]]; then echo "DEBUG: Getting checklist from $checklist_url..."; fi
-checklist_json=$(curl -s "$checklist_url")
+# Download checklist from Github or upload from file
+if [[ -n "$filename" ]]
+then
+    if [[ -e "$filename" ]]
+    then
+        if [[ "$debug" == "yes" ]]; then echo "DEBUG: Getting JSON content from filename $filename..."; fi
+        checklist_json=$(cat "$filename")
+    else
+        echo "ERROR: File $filename could not be found"
+        exit
+    fi
+else
+    # Set URL and download checklist from base URL
+    checklist_url="${base_url}${technology}_checklist.en.json"
+    if [[ "$debug" == "yes" ]]; then echo "DEBUG: Getting checklist from $checklist_url..."; fi
+    checklist_json=$(curl -s "$checklist_url")
+fi
 
 # If in list_categories mode, just get the categories part:
 if [[ "$list_categories" == "yes" ]]
@@ -155,27 +175,46 @@ else
     if [[ "$debug" == "yes" ]]; then echo "DEBUG: Performing tests for all categories..."; fi
 fi
 
-# Get a list of graph queries
+# Get a list of the items
+if [[ "$debug" == "yes" ]]; then echo "DEBUG: Extracting information from JSON..."; fi
 if [[ -n "$category_name" ]]
 then
-    graph_success_list=$(echo $checklist_json | jq -r '.items[] | select(.category=="'$category_name'") | .graph_success')
-    graph_failure_list=$(echo $checklist_json | jq -r '.items[] | select(.category=="'$category_name'") | .graph_failure')
-    category_list=$(echo $checklist_json | jq -r '.items[] | select(.category=="'$category_name'") | .category')
-    text_list=$(echo $checklist_json | jq -r '.items[] | select(.category=="'$category_name'") | .text')
-    guid_list=$(echo $checklist_json | jq -r '.items[] | select(.category=="'$category_name'") | .guid')
-    if [[ "$debug" == "yes" ]]; then echo "DEBUG: $(echo $category_list | wc -l) tests found in the checklist for category ${category_name}."; fi
+    graph_success_list=$(print -r "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .graph_success')
+    graph_failure_list=$(print -r "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .graph_failure')
+    category_list=$(print -r "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .category')
+    text_list=$(print -r "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .text')
+    guid_list=$(print -r "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .guid')
+    if [[ -z "$text_list" ]]; then
+        echo "ERROR: error processing JSON file, please verify the syntax"
+        exit
+    fi
+    if [[ "$debug" == "yes" ]]; then echo "DEBUG: $(echo $text_list | wc -l) tests found in the checklist for category ${category_name}."; fi
 else
-    graph_success_list=$(echo $checklist_json | jq -r '.items[] | .graph_success')
-    graph_failure_list=$(echo $checklist_json | jq -r '.items[] | .graph_failure')
-    category_list=$(echo $checklist_json | jq -r '.items[] | .category')
-    text_list=$(echo $checklist_json | jq -r '.items[] | .text')
-    guid_list=$(echo $checklist_json | jq -r '.items[] | .guid')
-    if [[ "$debug" == "yes" ]]; then echo "DEBUG: $(echo $category_list | wc -l) tests found in the checklist."; fi
+    graph_success_list=$(print -r "$checklist_json" | jq -r '.items[] | .graph_success')
+    graph_failure_list=$(print -r "$checklist_json" | jq -r '.items[] | .graph_failure')
+    category_list=$(print -r "$checklist_json" | jq -r '.items[] | .category')
+    text_list=$(print -r "$checklist_json" | jq -r '.items[] | .text')
+    guid_list=$(print -r "$checklist_json" | jq -r '.items[] | .guid')
+    if [[ -z "$text_list" ]]; then
+        echo "ERROR: error processing JSON file, please verify the syntax"
+        exit
+    fi
+    if [[ "$debug" == "yes" ]]; then echo "DEBUG: $(echo $text_list | wc -l) tests found in the checklist."; fi
 fi
 
 # Debug
-if [[ "$debug" == "yes" ]]; then echo "DEBUG: $(echo $graph_success_list | wc -l) graph queries for success tests found in the checklist."; fi
-if [[ "$debug" == "yes" ]]; then echo "DEBUG: $(echo $graph_failure_list | wc -l) graph queries for failure tests found in the checklist."; fi
+if [[ "$debug" == "yes" ]]; then 
+    echo "DEBUG: $(echo $graph_success_list | wc -l) graph queries for success tests found in the checklist."
+    # echo "$graph_success_list"
+fi
+if [[ "$debug" == "yes" ]]; then 
+    echo "DEBUG: $(echo $graph_failure_list | wc -l) graph queries for failure tests found in the checklist."
+    # echo "$graph_failure_list"
+fi
+if [[ "$debug" == "yes" ]]; then 
+    echo "DEBUG: $(echo $guid_list | wc -l) GUIDs with a defined Graph query found in the checklist"
+    # echo "$guid_list"
+fi
 
 # Make sure the Azure CLI extension for Azure Resource Graph is installed and updated
 extension_name=resource-graph
@@ -199,7 +238,7 @@ json_output_empty="yes"
 while IFS= read -r graph_success_query; do
     i=$(($i+1))
     this_guid=$(echo $guid_list | head -$i | tail -1)
-    if [[ "$debug" == "yes" ]]; then echo "Processing check item $i, GUID $this_guid..."; fi
+    if [[ "$debug" == "yes" ]]; then echo "Processing check item $i, GUID '$this_guid'..."; fi
     if [[ "$this_guid" == "null" ]] && [[ "$output" == "json" ]]; then
         if [[ "$debug" == "yes" ]]; then echo "ERROR: GUID not defined for check number $i"; fi
     fi
@@ -229,7 +268,7 @@ while IFS= read -r graph_success_query; do
             echo "CHECKLIST ITEM: ${this_text}:"
         fi
         rm $error_file 2>/dev/null; touch $error_file
-        if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running success query $graph_success_query..."; fi
+        if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running success query '$graph_success_query'..."; fi
         # If format is short, the graph query command returns a single line, if format is long, it is one line per resource
         if [[ "$format" == "short" ]]; then
             success_result=$(az graph query -q "$graph_success_query" ${(z)mg_option} -o json 2>$error_file | jq -r '.data[] | "\(.resourceGroup)/\(.name)"' 2>>$error_file | tr '\n' ',')
@@ -246,8 +285,8 @@ while IFS= read -r graph_success_query; do
             success_result=$(az graph query -q "$graph_success_query" ${(z)mg_option} -o tsv 2>$error_file --query 'data[].id' | sort -u)
         fi
         rm $error_file 2>/dev/null; touch $error_file
-        graph_failure_query=$(echo $graph_failure_list | head -$i | tail -1)
-        if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running failure query $graph_failure_query..."; fi
+        graph_failure_query=$(print -r "$graph_failure_list" | head -$i | tail -1)
+        if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running failure query '$graph_failure_query'..."; fi
         # If format is short, the graph query command returns a single line, if format is long, it is one line per resource
         if [[ "$format" == "short" ]]; then
             failure_result=$(az graph query -q "$graph_failure_query" ${(z)mg_option} -o json 2>$error_file | jq -r '.data[] | "\(.resourceGroup)/\(.name)"' 2>>$error_file | tr '\n' ',')
