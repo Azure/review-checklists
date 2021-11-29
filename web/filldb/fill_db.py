@@ -85,7 +85,11 @@ cursor.execute(sql_query)
 db.commit()
 
 # Download checklist
-checklist_url = "https://raw.githubusercontent.com/Azure/review-checklists/main/checklists/aks_checklist.en.json"
+technology = os.environ.get("CHECKLIST_TECHNOLOGY")
+if technology:
+    checklist_url = "https://raw.githubusercontent.com/Azure/review-checklists/main/checklists/" + technology + "_checklist.en.json"
+else:
+    checklist_url = "https://raw.githubusercontent.com/Azure/review-checklists/main/checklists/lz_checklist.en.json"
 response = requests.get(checklist_url)
 
 # If download was successful

@@ -2,9 +2,11 @@ import os
 import sys
 import pymysql
 import json
+import time
 import azure.mgmt.resourcegraph as arg
 from azure.mgmt.resource import SubscriptionClient
 from azure.identity import AzureCliCredential
+from azure.identity import DefaultAzureCredential
 
 # Database and table name
 mysql_db_name = "checklist"
@@ -15,44 +17,54 @@ use_ssl = "yes"
 def escape_quotes (this_value):
     return str(this_value).replace("'", "\\'")
 
-# Send an Azure Resource Graph query
-def getResources (strQuery):
-    # Get your credentials from Azure CLI (development only!) and get your subscription list
-    credential = AzureCliCredential()
-    subsClient = SubscriptionClient(credential)
-    subsRaw = []
-    for sub in subsClient.subscriptions.list():
-        subsRaw.append(sub.as_dict())
-    subsList = []
-    for sub in subsRaw:
-        subsList.append(sub.get('subscription_id'))
-    # Create Azure Resource Graph client and set options
-    argClient = arg.ResourceGraphClient(credential)
-    argQueryOptions = arg.models.QueryRequestOptions(result_format="objectArray")
-    # Create query
-    argQuery = arg.models.QueryRequest(subscriptions=subsList, query=strQuery, options=argQueryOptions)
-    # Run query
-    argResults = argClient.resources(argQuery)
-    # Show Python object
-    # print(argResults)
-    return argResults
+# Function to send an Azure Resource Graph query
+def get_resources (strQuery):
+    try:
+        # credential = AzureCliCredential()          # Get your credentials from Azure CLI (development only!) and get your subscription list
+        credential = DefaultAzureCredential()        # Managed identity
+        subsClient = SubscriptionClient(credential)
+        subsRaw = []
+        for sub in subsClient.subscriptions.list():
+            subsRaw.append(sub.as_dict())
+        subsList = []
+        for sub in subsRaw:
+            subsList.append(sub.get('subscription_id'))
+        # Create Azure Resource Graph client and set options
+        argClient = arg.ResourceGraphClient(credential)
+        argQueryOptions = arg.models.QueryRequestOptions(result_format="objectArray")
+        # Create query
+        argQuery = arg.models.QueryRequest(subscriptions=subsList, query=strQuery, options=argQueryOptions)
+        # Run query
+        argResults = argClient.resources(argQuery)
+        # Show Python object
+        # print(argResults)
+        return argResults
+    except Exception as e:
+        print("Error sending Graph query to Azure: {0}".format(str(e)))
+        sys.exit(0)   # Debugging.... Probably this should be exit(1)
 
 # Get database credentials from environment variables
 mysql_server_fqdn = os.environ.get("MYSQL_FQDN")
 if mysql_server_fqdn == None:
-    print("Please define an environment variable 'MYSQL_FQDN' with the FQDN of the MySQL server")
+    print("ERROR: Please define an environment variable 'MYSQL_FQDN' with the FQDN of the MySQL server")
     sys.exit(1)
+else:
+    print("DEBUG: mysql FQDN retrieved: {0}".format(mysql_server_fqdn))
 mysql_server_name = mysql_server_fqdn.split('.')[0]
 mysql_server_username = os.environ.get("MYSQL_USER")
 if mysql_server_username == None:
-    print("Please define an environment variable 'MYSQL_USER' with the FQDN of the MySQL username")
+    print("ERROR: Please define an environment variable 'MYSQL_USER' with the FQDN of the MySQL username")
     sys.exit(1)
 if not mysql_server_username.__contains__('@'):
     mysql_server_username +=  '@' + mysql_server_name
 mysql_server_password = os.environ.get("MYSQL_PASSWORD")
 if mysql_server_password == None:
-    print("Please define an environment variable 'MYSQL_PASSWORD' with the FQDN of the MySQL password")
+    print("ERROR: Please define an environment variable 'MYSQL_PASSWORD' with the FQDN of the MySQL password")
     sys.exit(1)
+
+# Mgd identity not working :(
+print ('Waiting 30 seconds for IMDS to be available...')
+time.sleep (30.0)
 
 # Create connection to MySQL server and number of records
 print ("DEBUG: Connecting to {0} with username {1}...".format(mysql_server_fqdn, mysql_server_username))
@@ -73,11 +85,11 @@ if len(rows) > 0:
         item_success_query=row[10]
         item_failure_query=row[11]
         # print ("DEBUG {0}: '{1}', '{2}'".format(item_guid, item_success_query, item_failure_query))
-        success_resources = str(getResources(item_success_query)).replace("'", '"')
+        success_resources = str(get_resources(item_success_query)).replace("'", '"')
         success_resources = success_resources.replace(': None', ': "None"')
         # print ("DEBUG: SUCCESS QUERY: {0}".format(success_resources))
         success_resources_object = json.loads(success_resources)
-        failure_resources = str(getResources(item_failure_query)).replace("'", '"')
+        failure_resources = str(get_resources(item_failure_query)).replace("'", '"')
         failure_resources = failure_resources.replace(': None', ': "None"')
         # print ("DEBUG: FAILURE QUERY: {0}".format(failure_resources))
         failure_resources_object = json.loads(failure_resources)

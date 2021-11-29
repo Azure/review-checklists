@@ -1,0 +1,40 @@
+# Retrieve user identity, or create one
+id_name=checklistid
+id_location=westeurope
+id_rg=checklistid
+id_id=$(az identity show -n $id_name -g $id_rg --query id -o tsv)
+if [[ -z "$id_id" ]]; then
+    echo "Creating user identity in resource group ${id_rg}..."
+    az group create -n $id_rg -l $id_location -o none
+    az identity create -n $id_name -g $id_rg -o none
+    id_id=$(az identity show -n $id_name -g $id_rg --query id -o tsv)
+    id_client_id=$(az identity show -n $id_name -g $id_rg --query clientId -o tsv)
+    subscription_id=$(az account show --query id -o tsv)
+    scope="/subscriptions/${subscription_id}"
+    az role assignment create --scope $scope --assignee $id_client_id --role 'Reader' -o none
+    echo "User-managed identity has been created: $id_id"
+else
+    echo "User-managed identity has been located: $id_id"
+fi
+
+# Create RG and deploy checklist infrastructure
+suffix=$RANDOM
+rg="checklist${suffix}"
+location=westeurope
+aci_name="checklistaci${suffix}"
+mysql_server_name="mysql${suffix}"
+mysql_server_user=$(whoami)
+mysql_server_password=$(echo $(tr -dc a-zA-Z0-9 </dev/urandom 2>/dev/null| head -c 12))
+echo "Creating resource group ${rg} in ${location}..."
+az group create -n $rg -l $location -o none
+echo "Deploying template to resource group ${rg}..."
+az deployment group create -n checklist$RANDOM -g $rg --template-file ./template.json --parameters \
+    "checklistTech=aks" \
+    "identityId=${id_id}" \
+    "aciName=${aci_name}" \
+    "serverName=${mysql_server_name}" \
+    "administratorLogin=${mysql_server_user}" \
+    "administratorLoginPassword=${mysql_server_password}"
+
+# Cleanup
+# az group delete $rg -y --no-wait
