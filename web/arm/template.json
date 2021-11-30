@@ -12,8 +12,30 @@
         },
         "identityId": {
             "type": "string",
+            "defaultValue": "",
             "metadata": {
-                "description": "ID for user-assigned identity that will be assigned to the ACI"
+                "description": "ID for user-assigned identity that will be assigned to the ACI (not required if specifying tenantId, clientId and clientSecret)"
+            }
+        },
+        "tenantId": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Tenant ID for SP-based authentication (not required if specifying identityId)"
+            }
+        },
+        "clientId": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Client ID for SP-based authentication (not required if specifying identityId)"
+            }
+        },
+        "clientSecret": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Client secret for SP-based authentication (not required if specifying identityId)"
             }
         },
         "aciName": {
@@ -64,6 +86,7 @@
         "mySqlVersion": "5.7",
         "backupRetentionDays": 7,
         "geoRedundantBackup": "Disabled",
+        "sslEnforcement": "Disabled",
         "firewallrules": [
             {
                 "Name": "permitAll",
@@ -74,7 +97,8 @@
         "webImage": "erjosito/checklist-flask:1.0",
         "filldbImage": "erjosito/checklist-filldb:1.0",
         "fillgraphdbImage": "erjosito/checklist-fillgraphdb:1.0",
-        "aciPort": 5000
+        "aciPort": 5000,
+        "idJson": "[concat('{\"type\": \"UserAssigned\", \"userAssignedIdentities\": {\"', parameters('identityId'), '\": {} } }')]"
     },
     "resources": [
         {
@@ -94,6 +118,7 @@
                 "version": "[variables('mysqlVersion')]",
                 "administratorLogin": "[parameters('administratorLogin')]",
                 "administratorLoginPassword": "[parameters('administratorLoginPassword')]",
+                "sslEnforcement": "[variables('sslEnforcement')]",
                 "storageProfile": {
                     "storageMB": "[variables('skuSizeMB')]",
                     "backupRetentionDays": "[variables('backupRetentionDays')]",
@@ -127,12 +152,7 @@
             "dependsOn": [
                 "[resourceId('Microsoft.DBforMySQL/servers', parameters('serverName'))]"
             ],
-            "identity": {
-                "type": "UserAssigned",
-                "userAssignedIdentities": {
-                    "[parameters('identityId')]": {}
-                }
-            },
+            "identity": "[if(equals(parameters('identityId'), ''), json('null'), json(variables('idJson')))]",
             "properties": {
                 "initContainers": [
                     {
@@ -175,6 +195,18 @@
                                 {
                                     "name": "MYSQL_FQDN",
                                     "value": "[reference(resourceId('Microsoft.DBforMySQL/servers', parameters('serverName'))).fullyQualifiedDomainName]"
+                                },
+                                {
+                                    "name": "AZURE_TENANT_ID",
+                                    "secureValue": "[parameters('tenantId')]"
+                                },
+                                {
+                                    "name": "AZURE_CLIENT_ID",
+                                    "secureValue": "[parameters('clientId')]"
+                                },
+                                {
+                                    "name": "AZURE_CLIENT_SECRET",
+                                    "secureValue": "[parameters('clientSecret')]"
                                 }
                             ]
                         }
@@ -182,7 +214,7 @@
                 ],
                 "containers": [
                     {
-                        "name": "[parameters('aciName')]",
+                        "name": "flask",
                         "properties": {
                             "image": "[variables('webImage')]",
                             "environmentVariables": [
