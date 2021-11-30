@@ -3,6 +3,7 @@ import json
 import streamlit as st
 import streamlit.components.v1 as components
 import uuid
+import time
 
 from streamlit.state.session_state import SessionState
 
@@ -37,9 +38,20 @@ def review_reset():
             del st.session_state['checklist']
 
 
-def review_append():
-    st.session_state.completedreviewlist = st.session_state.completedreviewlist.append(
-        {'guid': '{}'.format(uuid.uuid4()), 'Status': 'Fulfilled', 'Comments': 'This is a review comment'}, ignore_index=True)
+def review_append(id, status, comments):
+    if comments:
+        payload = {
+            'guid': id,
+            'Status': status,
+            'Comments': comments
+        }
+        # .format(id, status, comments)
+        st.session_state.completedreviewlist = st.session_state.completedreviewlist.append(
+            payload, ignore_index=True)
+
+
+def review_complete():
+    time.sleep(0)
 
 
 st.set_page_config(
@@ -89,107 +101,105 @@ if ('checklist' not in st.session_state) and (st.session_state.reviewconfigured 
     if 'completedreviewlist' not in st.session_state:
         st.session_state.completedreviewlist = pd.DataFrame(
             columns=['guid', 'Status', 'Comments'])
-
-st.sidebar.header('Filters')
+        st.session_state.currentitem = 0
 
 if st.session_state.reviewconfigured == True:
+    st.sidebar.header('Filters')
     st.session_state.category = st.sidebar.multiselect(
         'Included categories:', st.session_state.categorylist, default=st.session_state.categorylist['name'])
 
     st.session_state.severity = st.sidebar.multiselect(
         'Included severities:', st.session_state.severitylist, default=st.session_state.severitylist['name'])
 
-# TODO: this needs
+
+# TODO: this needs rework
     st.session_state.sortselector = st.sidebar.multiselect(
         'Sort by:', st.session_state.checklist.columns)
     if st.session_state.sortselector:
         st.session_state.checklist.sort_values(
             by=st.session_state.sortselector, inplace=True)
 
+    st.sidebar.button('Finish Review', on_click=review_complete())
+
 st.sidebar.title("Contribute")
 st.sidebar.info(
     "This an open source project and you are very welcome to **contribute** with "
-    "comments, questions and resources as "
+    "comments, questions and review content as "
     "[issues](https://github.com/Azure/review-checklists/issues) or "
     "[pull requests](https://github.com/Azure/review-checklists/pulls) "
     "to the [source code](https://github.com/Azure/review-checklists). "
 )
 
-# Setup the main pagest
+# Setup the main pages
 if 'metadata' in st.session_state:
     st.title(st.session_state.metadata['name'])
-# else:
-# TODO: add "validation" to expected json values?
-#     st.title('FastTrack for Azure - Review')
+else:
+    st.error('Failed to load json.')
+    st.stop()
 
 # Setup the review
-
 if st.session_state.reviewconfigured == False:
     st.warning(
         'Please select the required review and language from the sidebar, then check "Review Configured" to begin your review.')
 else:
-    # update target review based on filters
-    reviewitems = st.session_state.checklist.loc[(st.session_state.checklist['category'].isin(
-        st.session_state.category)) & (st.session_state.checklist['severity'].isin(st.session_state.severity))]
+    if len(st.session_state.category) == 0 or len(st.session_state.severity) == 0:
+        st.warning(
+            'Please select at least one Category and Severity.')
+    else:
+        # update target review based on filters
+        reviewitems = st.session_state.checklist.loc[(st.session_state.checklist['category'].isin(
+            st.session_state.category)) & (st.session_state.checklist['severity'].isin(st.session_state.severity))]
+        # set the cursor
+        currentitem = reviewitems.iloc[st.session_state.currentitem]
 
-    # review progress
-    reviewcount = len(reviewitems.index)
-    completedcount = len(st.session_state.completedreviewlist.index)
+        progresscontainer = st.container()
+        with progresscontainer:
+            reviewprogress = st.progress(0)
 
-    colpercent, colprogress, colcompleted = st.columns([1, 15, 2])
+        currentitemcontainer = st.container()
+        with currentitemcontainer:
+            ccol1, ccol2, ccol3 = st.columns([1, 12, 1])
+            with ccol1:
+                st.button('< Previous')
+            with ccol2:
+                st.table(
+                    currentitem[['guid', 'category', 'subcategory', 'severity', 'text']])
+            with ccol3:
+                st.button('Next >')
 
-    with colpercent:
-        # st.text(str(completedcount) +
-        #         '/' + str(reviewcount))
-        st.metric('Progress', str(completedcount) +
-                  '/' + str(reviewcount))
-    with colprogress:
-        st.write('')
-        if (completedcount == 0):
-            reviewprogress = 0
-        else:
-            st.write('')
-            reviewprogress = st.progress(
-                (round(completedcount / reviewcount * 100)))
-    with colcompleted:
-        st.write('')
-        st.write('')
-        reviewcompleted = st.checkbox('Review completed')
+        formcontainer = st.container()
+        with st.form(key='review_form', clear_on_submit=True):
+            fcol1, fcol2 = st.columns([9, 1])
+            with fcol1:
+                reviewcomments = st.text_input(label='Comments')
+            with fcol2:
+                reviewstatus = st.selectbox(
+                    'Status:', st.session_state.statuslist)
+            submit_button = st.form_submit_button(
+                label='Submit')
+            if submit_button:
+                review_append(str(currentitem['guid']),
+                              reviewstatus, reviewcomments)
 
-    # Review form
-    with st.form(key='review_form', clear_on_submit=True):
+        reviewitemscontainer = st.container()
+        with reviewitemscontainer:
+            with st.expander('Completed review items', True):
+                st.table(st.session_state.completedreviewlist)
 
-        col1, col2 = st.columns([9, 1])
-        with col1:
-            text_input = st.text_input(label='Comment')
-        with col2:
-            reviewstatus = st.selectbox('Status:', st.session_state.statuslist)
+            with st.expander('Current review items:'):
+                st.table(
+                    reviewitems[['category', 'subcategory', 'severity', 'text']])
 
-        submit_button = st.form_submit_button(
-            label='Submit', on_click=review_append())
+        with st.expander('Debug session state'):
+            st.session_state
 
-    with st.expander('Completed review items'):
-        st.table(st.session_state.completedreviewlist)
+        if (len(st.session_state.completedreviewlist.index) != 0):
+            with progresscontainer:
+                reviewprogress.progress(
+                    (round(len(st.session_state.completedreviewlist.index) / len(reviewitems.index) * 100)))
 
-    with st.expander('Open review items'):
-        col1, col2, _, _, col3 = st.columns([2, 2, 2, 2, 2])
-        with col1:
-            st.button('<')
-        with col2:
-            st.button('>')
-        with col3:
-            st.selectbox('Items per page', [5, 10, 15, 20, 'All'])
-
-        st.table(
-            reviewitems[['category', 'subcategory', 'severity', 'text']])
-    # st.dataframe(reviewitems)
-
-    # with st.expander('Documentation'):
-    #     components.iframe(
-    #         'https://docs.microsoft.com/en-us/azure/role-based-access-control/built-in-roles', height=600, scrolling=True)
-
-    # if reviewcompleted:
-    #     st.balloons()
-
-    with st.expander('Debug session state'):
-        st.session_state
+# https://gist.github.com/IanCal/6435c2d7b314e491c62568998b31eb40
+# https://gist.github.com/treuille/2ce0acb6697f205e44e3e0f576e810b7
+# https://towardsdatascience.com/pagination-in-streamlit-82b62de9f62b
+# https://discuss.streamlit.io/t/styling-a-row-in-a-dataframe/2245/2
+# https://discuss.streamlit.io/t/change-background-color-based-on-value/2614
