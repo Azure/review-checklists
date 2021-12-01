@@ -6,6 +6,12 @@
         "checklistTech": {
             "type": "string",
             "defaultValue": "lz",
+            "allowedValues": [
+                "lz",
+                "aks",
+                "avd",
+                "security"
+            ],
             "metadata": {
                 "description": "Options available for the checklist"
             }
@@ -14,28 +20,28 @@
             "type": "string",
             "defaultValue": "",
             "metadata": {
-                "description": "ID for user-assigned identity that will be assigned to the ACI (not required if specifying tenantId, clientId and clientSecret)"
+                "description": "ID for user-assigned identity that will be assigned to the ACI (not required if specifying Tenant ID, Client ID and Client secret)"
             }
         },
         "tenantId": {
             "type": "string",
             "defaultValue": "",
             "metadata": {
-                "description": "Tenant ID for SP-based authentication (not required if specifying identityId)"
+                "description": "Tenant ID for SP-based authentication (not required if specifying Identity Id)"
             }
         },
         "clientId": {
             "type": "string",
             "defaultValue": "",
             "metadata": {
-                "description": "Client ID for SP-based authentication (not required if specifying identityId)"
+                "description": "Client ID for SP-based authentication (not required if specifying Identity Id)"
             }
         },
         "clientSecret": {
-            "type": "string",
+            "type": "securestring",
             "defaultValue": "",
             "metadata": {
-                "description": "Client secret for SP-based authentication (not required if specifying identityId)"
+                "description": "Client secret for SP-based authentication (not required if specifying Identity Id)"
             }
         },
         "aciName": {
@@ -54,14 +60,21 @@
             "type": "string",
             "minLength": 1,
             "metadata": {
-                "description": "Database administrator login name"
+                "description": "MySQL server administrator login name"
             }
         },
         "administratorLoginPassword": {
             "type": "securestring",
             "minLength": 8,
             "metadata": {
-                "description": "Database administrator password"
+                "description": "MySQL server administrator password"
+            }
+        },
+        "waitIntervals": {
+            "type": "int",
+            "defaultValue": "[if(equals(parameters('identityId'),''), 0, 3)]",
+            "metadata": {
+                "description": "MySQL server administrator password"
             }
         },
         "location": {
@@ -207,6 +220,10 @@
                                 {
                                     "name": "AZURE_CLIENT_SECRET",
                                     "secureValue": "[parameters('clientSecret')]"
+                                },
+                                {
+                                    "name": "WAIT_INTERVALS",
+                                    "secureValue": "[parameters('waitIntervals')]"
                                 }
                             ]
                         }
@@ -264,6 +281,10 @@
         "containerIPv4Address": {
             "type": "string",
             "value": "[reference(resourceId('Microsoft.ContainerInstance/containerGroups', parameters('aciName'))).ipAddress.ip]"
+        },
+        "waitIntervals": {
+            "type": "int",
+            "value": "[parameters('waitIntervals')]"
         }
     }
 }
