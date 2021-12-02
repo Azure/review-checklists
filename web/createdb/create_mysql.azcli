@@ -1,0 +1,38 @@
+# Variables
+rg=checklistweb
+location=westeurope
+suffix=$RANDOM
+mysql_server_name="checklist${suffix}"
+mysql_server_username=checklist
+mysql_server_password=$(echo $(tr -dc a-zA-Z0-9 </dev/urandom 2>/dev/null| head -c 12))
+akv_name="checklist${suffix}"
+akv_secret_usr="mysqluser"
+akv_secret_pwd="mysqlpassword"
+
+# Create RG and mysql server
+echo "Creating resource group $rg in $location..."
+az group create -n $rg -l $location -o none
+echo "Creating MySQL server $sql_server_name..."
+az mysql server create -l $location -g $rg -n $mysql_server_name \
+    -u $mysql_server_username -p $mysql_server_password \
+    --sku-name B_Gen5_1 --ssl-enforcement Enabled --minimal-tls-version TLS1_1 \
+    --public-network-access Enabled -o none
+
+# Add this IP address to MySQL server firewall
+myip=$(curl -s4 ifconfig.co)
+echo "Adding IP address $myip to MySQL server firewall..."
+az mysql server firewall-rule create -g $rg -s $mysql_server_name -n allow$RANDOM --start-ip-address $myip --end-ip-address $myip -o none
+
+# Create key vault and store username and password
+echo "Creating Azure Key Vault $akv_name..."
+az keyvault create -n $akv_name -g $rg -l $location -o none
+echo "Storing MySQL username and password in AKV $akv_name..."
+az keyvault secret set -n $akv_secret_usr --vault-name $akv_name --value "$mysql_server_username" -o none
+az keyvault secret set -n $akv_secret_pwd --vault-name $akv_name --value "$mysql_server_password" -o none
+
+# Test retrieval and export as environment variables
+mysql_server_name=$(az mysql server list -g $rg --query '[0].name' -o tsv)
+akv_name=$(az keyvault list -g $rg --query '[0].name' -o tsv)
+export MYSQL_FQDN=$(az mysql server show -n $mysql_server_name -g $rg --query 'fullyQualifiedDomainName' -o tsv)
+export MYSQL_USER="$(az keyvault secret show -n $akv_secret_usr --vault-name $akv_name --query value -o tsv)"
+export MYSQL_PASSWORD="$(az keyvault secret show -n $akv_secret_pwd --vault-name $akv_name --query value -o tsv)"
