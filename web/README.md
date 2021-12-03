@@ -35,6 +35,6 @@ Since this is only a prototype, there are some aspects not being addressed for t
 - SSL Enforcement is disabled in the MySQL Server due to `flask-mysql` not using encryption
 - Decouple the containers, so that they can be launched independently:
     - It should be possible to launch the `fillgraphdb` container at any time, to refresh the Graph results
-    - It should be possible to restart the `flask` container (web) without having t
+    - It should be possible to restart the `flask` container (web) without having the `filldb` container run as an init container wiping out the database
 
 Contributions highly appreciated!
