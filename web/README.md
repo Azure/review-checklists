@@ -19,7 +19,7 @@ The `fillgraphdb` container needs to authenticate to Azure to send the Azure Res
 
 The [Azure CLI deployment script for Service Principals](./arm/deploy_sp.azcli) shows how to create the Service Principal, assign the reader role for the whole subscription, and launch the ARM template to create the MySQL server and the Azure Container Instance (it doesn't store the Service Principal secret in an Azure Key Vault, that would be highly advisable). If you already have the Service Principal, you can deploy the ARM template graphically as well using the button below:
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Freview-checklists%2Fweb_jose%2Fweb%2Farm%2Ftemplate.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Freview-checklists%2Fmain%2Fweb%2Farm%2Ftemplate.json)
 
 The web interface will be available in the public IP address of the ACI container group, on TCP port 5000.
 
