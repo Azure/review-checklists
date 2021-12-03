@@ -1,8 +1,8 @@
 import pandas as pd
 import json
 import streamlit as st
-import streamlit.components.v1 as components
-import uuid
+# import streamlit.components.v1 as components
+# import uuid
 import time
 
 from streamlit.state.session_state import SessionState
@@ -45,9 +45,15 @@ def review_append(id, status, comments):
             'Status': status,
             'Comments': comments
         }
-        # .format(id, status, comments)
-        st.session_state.completedreviewlist = st.session_state.completedreviewlist.append(
-            payload, ignore_index=True)
+
+        if currentitem[['guid']].isin(st.session_state.completedreviewlist['guid'])[0]:
+            st.session_state.completedreviewlist.loc[st.session_state.completedreviewlist['guid'] == currentitem['guid'], [
+                'Comments']] = comments
+            st.session_state.completedreviewlist.loc[st.session_state.completedreviewlist['guid'] == currentitem['guid'], [
+                'Status']] = status
+        else:
+            st.session_state.completedreviewlist = st.session_state.completedreviewlist.append(
+                payload, ignore_index=True, verify_integrity=False)
 
 
 def review_complete():
@@ -133,9 +139,9 @@ st.sidebar.info(
 # Setup the main pages
 if 'metadata' in st.session_state:
     st.title(st.session_state.metadata['name'])
-else:
-    st.error('Failed to load json.')
-    st.stop()
+# else:
+#     st.error('Failed to load json.')
+#     st.stop()
 
 # Setup the review
 if st.session_state.reviewconfigured == False:
@@ -149,54 +155,80 @@ else:
         # update target review based on filters
         reviewitems = st.session_state.checklist.loc[(st.session_state.checklist['category'].isin(
             st.session_state.category)) & (st.session_state.checklist['severity'].isin(st.session_state.severity))]
+
         # set the cursor
         currentitem = reviewitems.iloc[st.session_state.currentitem]
 
         progresscontainer = st.container()
         with progresscontainer:
-            reviewprogress = st.progress(0)
+            completereviewprogress = st.progress(0)
+            filterreviewprogress = st.progress(0)
 
+        # TODO: https://github.com/ikatyang/emoji-cheat-sheet/blob/master/README.md
+        # TODO: Implement cursor updates
         currentitemcontainer = st.container()
         with currentitemcontainer:
-            ccol1, ccol2, ccol3 = st.columns([1, 12, 1])
+            ccol1, ccol2, ccol3 = st.columns([12, 1, 1])
             with ccol1:
-                st.button('< Previous')
+                st.header('Category: ' + currentitem['category'] +
+                          ' - ' + currentitem['subcategory'])
+                st.subheader('Severity: ' + currentitem['severity'])
+                st.write(currentitem['text'])
+                st.write('Learn more: ' + currentitem['link'])
+                st.caption(currentitem['guid'])
             with ccol2:
-                st.table(
-                    currentitem[['guid', 'category', 'subcategory', 'severity', 'text']])
+                st.button('< Previous',
+                          help='Move to the previous item in the review.')
             with ccol3:
-                st.button('Next >')
+                st.button(
+                    'Next>', help='Move to the Next item in the review.')
 
-        formcontainer = st.container()
-        with st.form(key='review_form', clear_on_submit=True):
+        # TODO: load existing info and set on screen
+        # https://stackoverflow.com/questions/20692122/edit-pandas-dataframe-row-by-row
+        with st.form(key='review_form', clear_on_submit=False):
             fcol1, fcol2 = st.columns([9, 1])
             with fcol1:
                 reviewcomments = st.text_input(label='Comments')
             with fcol2:
                 reviewstatus = st.selectbox(
                     'Status:', st.session_state.statuslist)
+
             submit_button = st.form_submit_button(
                 label='Submit')
             if submit_button:
                 review_append(str(currentitem['guid']),
                               reviewstatus, reviewcomments)
 
+        # TODO: style row for current cursor
         reviewitemscontainer = st.container()
         with reviewitemscontainer:
+            # filter completed list based on filters, existing review comments are not lost
             with st.expander('Completed review items', True):
-                st.table(st.session_state.completedreviewlist)
+                filteredcompletedreviewitems = st.session_state.completedreviewlist.loc[
+                    st.session_state.completedreviewlist['guid'].isin(reviewitems['guid'])]
+                st.table(filteredcompletedreviewitems)
 
             with st.expander('Current review items:'):
                 st.table(
-                    reviewitems[['category', 'subcategory', 'severity', 'text']])
+                    reviewitems[['guid', 'category', 'subcategory', 'severity', 'text']])
 
         with st.expander('Debug session state'):
             st.session_state
 
-        if (len(st.session_state.completedreviewlist.index) != 0):
+        if len(filteredcompletedreviewitems.index) != 0 and len(st.session_state.completedreviewlist.index) != 0:
             with progresscontainer:
-                reviewprogress.progress(
-                    (round(len(st.session_state.completedreviewlist.index) / len(reviewitems.index) * 100)))
+                completereviewprogress.progress(
+                    (round(len(st.session_state.completedreviewlist.index) / len(st.session_state.checklist.index) * 100)))
+                filterreviewprogress.progress(
+                    (round(len(filteredcompletedreviewitems.index) / len(reviewitems.index) * 100)))
+        elif len(filteredcompletedreviewitems.index) == 0 and len(st.session_state.completedreviewlist.index) != 0:
+            completereviewprogress.progress(
+                (round(len(st.session_state.completedreviewlist.index) / len(st.session_state.checklist.index) * 100)))
+            filterreviewprogress.progress(0)
+        else:
+            with progresscontainer:
+                completereviewprogress.progress(0)
+                filterreviewprogress.progress(0)
 
 # https://gist.github.com/IanCal/6435c2d7b314e491c62568998b31eb40
 # https://gist.github.com/treuille/2ce0acb6697f205e44e3e0f576e810b7
