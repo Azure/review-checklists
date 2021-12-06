@@ -2,6 +2,10 @@
 
 This is a Minimum Viable Product (MVP) for an architecture for web-based checklist reviews. It consists of the following elements:
 
+**High Level Overview**  
+
+![High Level Overview](../pictures/high_level_web_based_view.png)
+
 - A MySQL database
 - An Azure Container Instance that will launch 3 containers:
     - `filldb` (init container): creates the required database and tables in the MySQL server, and fills in the data imported from the latest checklist
