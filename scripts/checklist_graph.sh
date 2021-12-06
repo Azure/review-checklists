@@ -289,6 +289,7 @@ while IFS= read -r graph_success_query; do
         if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running failure query '$graph_failure_query'..."; fi
         # If format is short, the graph query command returns a single line, if format is long, it is one line per resource
         if [[ "$format" == "short" ]]; then
+            # NOTE: this line will give some unexpected results when running Graph queries that return subscription IDs, since those do not have a RG
             failure_result=$(az graph query -q "$graph_failure_query" ${(z)mg_option} -o json 2>$error_file | jq -r '.data[] | "\(.resourceGroup)/\(.name)"' 2>>$error_file | tr '\n' ',')
             if [[ -s $error_file ]]; then
                 failure_result="Error"

@@ -1,0 +1,346 @@
+<!doctype html>
+<html>
+<head>
+<title>Azure Review</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" />    
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+<script type='text/javascript'>
+$(document).ready(function(){
+  
+ // Show Input element in table when clicked
+ $('.edit').click(function(){
+  $('.txtedit').hide();
+  $(this).next('.txtedit').show().focus();
+  $(this).hide();
+ });
+ 
+ // Save data
+ $(".txtedit").focusout(function(){
+   
+  // Get edit id, field name and value
+  var id = this.id;
+  var split_id = id.split("_");  //fields are called comment_<guid>, text_<guid>, etc
+  var field_name = split_id[0];
+  var edit_id = split_id[1];     //edit_id will be the GUID
+  var value = $(this).val();
+   
+  // Hide Input element
+  $(this).hide();
+ 
+  // Hide and Change Text of the container with input element
+  $(this).prev('.edit').show();
+  $(this).prev('.edit').text(value);
+ 
+  // Update call to the Flask /route, with the field name, value and ID
+  $.ajax({
+   url: '/update',
+   type: 'post',
+   data: { field:field_name, value:value, id:edit_id },
+   success:function(response){
+      if (response == 1) { 
+         console.log('Save successfully'); 
+      } else { 
+         console.log("Not saved.");  
+      }
+   }
+  });
+  
+ });
+ 
+});
+</script>
+</head>
+
+<body >
+<div class="container" >
+    <div class="row" style="padding:0px;">
+        <p><h1>Azure Review</h1></p>
+        <div id="dropdownFilters" class="dropdown">
+            <table>
+               <tr>
+                  <td>
+                     <div class="dropdown">
+                        <button onclick="catClick()" class="dropbtn">Filter by category</button>
+                        <div id="catDropdown" class="dropdown-content">
+                           <input type="text" placeholder="Category" id="catInput" onkeyup="catFunction()">
+                              {% for row in categorylist %}
+                                 <a href="/?category={{row.category}}">{{row.category}}</a>
+                              {% endfor %}
+                        </div>
+                     </div>
+                  </td>
+                  <td>
+                     <div class="dropdown">
+                        <button onclick="sevClick()" class="dropbtn">Filter by severity</button>
+                        <div id="sevDropdown" class="dropdown-content">
+                           <input type="text" placeholder="Severity" id="catInput" onkeyup="sevFunction()">
+                              {% for row in severitylist %}
+                                 <a href="/?severity={{row.severity}}">{{row.severity}}</a>
+                              {% endfor %}
+                        </div>
+                     </div>
+                  </td>
+                  <td>
+                     <div class="dropdown">
+                        <button onclick="statusClick()" class="dropbtn">Filter by status</button>
+                        <div id="statusDropdown" class="dropdown-content">
+                           <input type="text" placeholder="Status" id="catInput" onkeyup="statusFunction()">
+                              {% for row in statuslist %}
+                                 <a href="/?status={{row.status}}">{{row.status}}</a>
+                              {% endfor %}
+                        </div>
+                     </div>
+                  </td>
+                  <td>
+                     <a href='/'><button>Remove Filters</button></a>
+                  </td>
+               </tr>
+            </table>
+        </div>
+        <table width='100%'>
+         <col style="width:10%">
+         <col style="width:10%">
+         <col style="width:5%">
+         <col style="width:5%">
+         <col style="width:30%">
+         <col style="width:10%">
+         <col style="width:30%">
+      <tr>
+          <th>GUID</th>
+          <th>Category</th>
+          <th>Subcategory</th>
+          <th>Severity</th>
+          <th>Text</th>
+          <th>Status</th>
+          <th>Comment</th>
+         </tr>
+         {% for row in itemslist %}
+            <tr>
+            <td>{{row.guid}}</td>
+            <td>{{row.category}}</td>
+            <td>{{row.subcategory}}</td>
+            <td>{{row.severity}}</td>
+
+            <td>
+               {{row.text}}
+               {% if row.link != 'None' %}
+                  <a href='{{row.link}}' target='_blank'> (More info)</a>
+               {% endif %}
+               {% if row.training != 'None' %}
+                  <a href='{{row.training}}' target='_blank'> (Training)</a>
+               {% endif %}
+               {% if row.graph_query_result %}
+                  <input id="graphBtn_{{row.guid}}" type="button" value="Show Graph Results" class='showhidebtn' onclick="ShowHideDiv(this)" />
+                  <div id="graphResults_{{row.guid}}" style="display: none" class='graphresultsdiv'>
+                     <b>Graph results</b>:
+                     {{row.graph_query_result}}
+                  </div>
+               {% endif %}
+            </td>
+
+            <td> 
+               <div class='edit' >{{row.status}} </div> 
+               <input type='text' onclick="clearControl(this)" class='txtedit' value='{{row.status}}' id='status_{{row.guid}}' list="statusList">
+                  <datalist id="statusList">
+                     <option data-value="Open">Open</option>
+                     <option data-value="Fulfilled">Fulfilled</option>
+                     <option data-value="N/A">N/A</option>
+                     <option data-value="Not verified">Not verified</option>
+                  </datalist>
+            </td>
+            <td> 
+               <div class='edit' >{{row.comments}} </div> 
+               <input type='text' class='txtedit' value='{{row.comments}}' id='comment_{{row.guid}}' >
+            </td>
+            </tr>
+         {% endfor %} 
+        </table>
+   </div>
+</div>
+<style>
+.edit{
+ width: 100%;
+ height: 20px;
+}
+.editMode{
+ border: 1px solid black;
+}
+table {
+ border:1px solid lavender;
+ border-radius:3px;
+}
+table tr:nth-child(1){
+ background-color:#4285f4;
+}
+table tr:nth-child(1) th{
+ color:white;
+ padding:10px 0px;
+ letter-spacing: 1px;
+}
+table td{
+ padding:10px;
+}
+table tr:nth-child(even){
+ background-color:lavender;
+ color:black;
+}
+.txtedit{
+ display: none;
+ width: 99%;
+ height: 30px;
+}
+
+/* show/hide graph results button */
+.showhidebtn{
+   font-size: 10px;
+   padding: 1px 5px;
+}
+/* graph result section */
+.graphresultsdiv {
+   font-size: 10px;
+   font-family: 'Courier New', 'Courier', 'monospace';
+   background-color:gray;
+   color:whitesmoke;
+   border: 1px solid black;
+}
+
+/* Dropdown Button */
+.dropbtn {
+  background-color: #4285f4;
+  color: white;
+  padding: 15px;
+  font-size: 15px;
+  border: none;
+  cursor: pointer;
+}
+/* Dropdown button on hover & focus */
+.dropbtn:hover, .dropbtn:focus {
+  background-color:#4285f4;
+}
+/* The search field */
+#catInput {
+  box-sizing: border-box;
+  background-image: url('searchicon.png');
+  background-position: 14px 12px;
+  background-repeat: no-repeat;
+  font-size: 14px;
+  padding: 14px 10px 12px 45px;
+  border: none;
+  border-bottom: 1px solid #ddd;
+}
+/* The search field when it gets focus/clicked on */
+#catInput:focus {outline: 3px solid #ddd;}
+/* The container <div> - needed to position the dropdown content */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f6f6f6;
+  min-width: 230px;
+  border: 1px solid #ddd;
+  z-index: 1;
+}
+
+/* Links inside the dropdown */
+.dropdown-content a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+/* Change color of dropdown links on hover */
+.dropdown-content a:hover {background-color: #f1f1f1}
+
+/* Show the dropdown menu (use JS to add this class to the .dropdown-content container when the user clicks on the dropdown button) */
+.show {display:block;}
+
+</style>
+
+<script>
+   /* When the user clicks on the button,
+   toggle between hiding and showing the dropdown content */
+   function catClick() {
+     document.getElementById("catDropdown").classList.toggle("show");
+   }
+   function sevClick() {
+     document.getElementById("sevDropdown").classList.toggle("show");
+   }
+   function statusClick() {
+     document.getElementById("statusDropdown").classList.toggle("show");
+   }
+   function catFunction() {
+     var input, filter, ul, li, a, i;
+     input = document.getElementById("catInput");
+     filter = input.value.toUpperCase();
+     div = document.getElementById("catDropdown");
+     a = div.getElementsByTagName("a");
+     for (i = 0; i < a.length; i++) {
+       txtValue = a[i].textContent || a[i].innerText;
+       if (txtValue.toUpperCase().indexOf(filter) > -1) {
+         a[i].style.display = "";
+       } else {
+         a[i].style.display = "none";
+       }
+     }
+   }
+   function sevFunction() {
+     var input, filter, ul, li, a, i;
+     input = document.getElementById("sevInput");
+     filter = input.value.toUpperCase();
+     div = document.getElementById("sevDropdown");
+     a = div.getElementsByTagName("a");
+     for (i = 0; i < a.length; i++) {
+       txtValue = a[i].textContent || a[i].innerText;
+       if (txtValue.toUpperCase().indexOf(filter) > -1) {
+         a[i].style.display = "";
+       } else {
+         a[i].style.display = "none";
+       }
+     }
+   }
+   function statusFunction() {
+     var input, filter, ul, li, a, i;
+     input = document.getElementById("statusInput");
+     filter = input.value.toUpperCase();
+     div = document.getElementById("statusDropdown");
+     a = div.getElementsByTagName("a");
+     for (i = 0; i < a.length; i++) {
+       txtValue = a[i].textContent || a[i].innerText;
+       if (txtValue.toUpperCase().indexOf(filter) > -1) {
+         a[i].style.display = "";
+       } else {
+         a[i].style.display = "none";
+       }
+     }
+   }
+   function clearControl(control) {
+      control.value = "";
+   }
+
+   /* to show/hide graph results div */
+   function ShowHideDiv(btn) {
+        let idSplit = btn.id.split("_");
+        let guid = idSplit[1];
+        let divid = "graphResults_" + guid
+        var divGraph = document.getElementById(divid);
+        if (btn.value == "Show Graph Results") {
+            divGraph.style.display = "block";
+            btn.value = "Hide Graph Results";
+            //btn.value = divid;
+        } else {
+            divGraph.style.display = "none";
+            btn.value = "Show Graph Results";
+        }
+    }
+</script>
+</script>
+
+</body>
+</html>
+
