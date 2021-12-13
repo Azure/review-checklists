@@ -11,6 +11,7 @@ Option Explicit
 Option Base 0
 Private Declare PtrSafe Function URLDownloadToFile Lib "urlmon" Alias "URLDownloadToFileA" (ByVal pCaller As Long, ByVal szURL As String, ByVal szFileName As String, ByVal dwReserved As Long, ByVal lpfnCB As Long) As Long
 
+'Constants
 Const line_break = vbCrLf
 Const category_column = 1
 Const subcategory_column = 2
@@ -30,12 +31,19 @@ Const values_sheet = "values"
 Const values_sev_column = 1
 Const values_status_column = 2
 Const values_category_column = 3
+Const values_technology_selection_column = 6
+Const values_language_selection_column = 7
 Const row1 = 5
 Const row_limit = 2000   'Safety net
 Const user_info_guid_index = 1
 Const user_info_comments_index = 2
 Const user_info_status_index = 3
+Const technology_selection_row = 1
+Const technology_selection_col = 5
+Const language_selection_row = 1
+Const language_selection_col = 6
 
+'Global variables
 Dim user_checks() As String     'To hold the user's comments/status
 Dim selected_language As String
 Dim selected_technology As String
@@ -54,6 +62,7 @@ Function correct_format_for_JSON(ByVal input_text As String) As String
     input_text = Replace(input_text, "en-us/", "")
     'Escape control characters such as "?"
     'input_text = escape_character(input_text, "?")
+    input_text = escape_character(input_text, "\")
     'Avoid empty fields, the Azure translate API doesnt work well with then
     If input_text = "" Then input_text = "&nbsp"
     correct_format_for_JSON = input_text
@@ -62,9 +71,9 @@ End Function
 'Escapes a character in a string, and gives out the resulting string
 Function escape_character(ByVal input_text As String, search_char As String) As String
     'First we remove any possible escape signs for that character that might be already there
-    input_text = Replace(input_text, "\?", "?")
+    input_text = Replace(input_text, "\" + search_char, search_char)
     'Now we escape all occurrences of the character
-    input_text = Replace(input_text, "?", "\?")
+    input_text = Replace(input_text, search_char, "\" + search_char)
     'And return the output
     escape_character = input_text
 End Function
@@ -126,8 +135,8 @@ Sub export_json()
         If Len(check_description) > 0 Then json = json + "," + line_break + "      " + double_quote + "description" + double_quote + ": " + double_quote + correct_format_for_JSON(check_description) + double_quote
         If Len(check_guid) > 0 Then json = json + "," + line_break + "      " + double_quote + "guid" + double_quote + ": " + double_quote + check_guid + double_quote
         If Len(check_severity) > 0 Then json = json + "," + line_break + "      " + double_quote + "severity" + double_quote + ": " + double_quote + check_severity + double_quote
-        If Len(check_graph_success) > 0 Then json = json + "," + line_break + "      " + double_quote + "graph_success" + double_quote + ": " + double_quote + check_graph_success + double_quote
-        If Len(check_graph_failure) > 0 Then json = json + "," + line_break + "      " + double_quote + "graph_failure" + double_quote + ": " + double_quote + check_graph_failure + double_quote
+        If Len(check_graph_success) > 0 Then json = json + "," + line_break + "      " + double_quote + "graph_success" + double_quote + ": " + double_quote + correct_format_for_JSON(check_graph_success) + double_quote
+        If Len(check_graph_failure) > 0 Then json = json + "," + line_break + "      " + double_quote + "graph_failure" + double_quote + ": " + double_quote + correct_format_for_JSON(check_graph_failure) + double_quote
         If Len(check_training) > 0 Then json = json + "," + line_break + "      " + double_quote + "training" + double_quote + ": " + double_quote + correct_format_for_JSON(check_training) + double_quote
         If Len(check_link) > 0 Then json = json + "," + line_break + "      " + double_quote + "link" + double_quote + ": " + double_quote + correct_format_for_JSON(check_link) + double_quote
         json = json + line_break + "    }"
@@ -658,6 +667,9 @@ End Sub
 Sub set_avd()
     selected_technology = "avd"
 End Sub
+Sub set_security()
+    selected_technology = "security"
+End Sub
 Sub set_lz()
     selected_technology = "lz"
 End Sub
@@ -699,56 +711,52 @@ End Sub
 'Inspect option buttons and set global variables accordingly
 Sub set_checklist_variables()
 On Error GoTo set_checklist_variables_err
-    Dim item As Object
-    Dim object_name As String
-    'Browse all shapes
-    For Each item In ActiveSheet.Shapes
-        'Only Form Controls
-        If item.Type = msoFormControl Then
-            'Only option buttons
-            object_name = item.OLEFormat.Object.Name
-            If Len(object_name) > 0 Then
-                If Left(object_name, 13) = "Option Button" Then
-                    If item.OLEFormat.Object.Value = 1 Then
-                        Select Case item.OLEFormat.Object.Text
-                            Case "AKS"
-                                selected_technology = "aks"
-                            Case "AVD"
-                                selected_technology = "avd"
-                            Case "LZ"
-                                selected_technology = "lz"
-                            Case "English"
-                                selected_language = "en"
-                                import_graph_queries = True
-                            Case "Portuguese"
-                                selected_language = "pt"
-                                import_graph_queries = False
-                            Case "Korean"
-                                selected_language = "ko"
-                                import_graph_queries = False
-                            Case "Japanese"
-                                selected_language = "ja"
-                                import_graph_queries = False
-                            Case "Spanish"
-                                selected_language = "es"
-                                import_graph_queries = False
-                            Case Else
-                                Debug.Print "Option " & item.OLEFormat.Object.Text & " unknown :-("
-                        End Select
-                    End If
-                End If
-            End If
-        End If
-    Next item
+    
+    'Look at the technology cell
+    Select Case Cells(technology_selection_row, technology_selection_col)
+        Case Sheets(values_sheet).Cells(2, values_technology_selection_column)
+            selected_technology = "lz"
+        Case Sheets(values_sheet).Cells(3, values_technology_selection_column)
+            selected_technology = "aks"
+        Case Sheets(values_sheet).Cells(4, values_technology_selection_column)
+            selected_technology = "avd"
+        Case Sheets(values_sheet).Cells(5, values_technology_selection_column)
+            selected_technology = "security"
+        Case Else
+            MsgBox "Technology option " & Cells(technology_selection_row, technology_selection_col) & " unknown, defaulting to Landing Zone review", vbCritical
+            selected_technology = "lz"
+    End Select
+    
+    'Look at the language cell
+    Select Case Cells(language_selection_row, language_selection_col)
+        Case Sheets(values_sheet).Cells(2, values_language_selection_column)
+            selected_language = "en"
+            import_graph_queries = True
+        Case Sheets(values_sheet).Cells(3, values_language_selection_column)
+            selected_language = "ja"
+            import_graph_queries = False
+        Case Sheets(values_sheet).Cells(4, values_language_selection_column)
+            selected_language = "ko"
+            import_graph_queries = False
+        Case Sheets(values_sheet).Cells(5, values_language_selection_column)
+            selected_language = "pt"
+            import_graph_queries = False
+        Case Sheets(values_sheet).Cells(6, values_language_selection_column)
+            selected_language = "es"
+            import_graph_queries = False
+        Case Else
+            MsgBox "Language option " & Cells(language_selection_row, language_selection_col) & " unknown, defaulting to English", vbCritical
+            selected_language = "en"
+            import_graph_queries = True
+    End Select
+        
     'Debug.Print "Selected technology " + selected_technology + ", selected language " + selected_language
     Exit Sub
 set_checklist_variables_err:
-    If Err.Number = 1004 Then
-        object_name = ""
-    ElseIf Err.Number <> 0 Then
-        MsgBox "Error while reading settings defined in option buttons: " & CStr(Err.Number) & ": " & Err.Description, vbCritical
-    End If
-    Exit Sub
+    MsgBox "Error while reading checklist selection options, defaulting to Landing Zone and English: " & CStr(Err.Number) & ": " & Err.Description, vbCritical
+    selected_technology = "lz"
+    selected_language = "en"
+    import_graph_queries = True
 End Sub
 
 'Load in an object variable the existing values
