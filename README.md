@@ -2,7 +2,13 @@
 
 # Azure Review Checklists
 
-When doing Azure design reviews (or any review for that matter), Excel spreadsheets are often the medium of choice. A problem with spreadsheets is that they are not easily made subject to revision control. Additionally, team collaboration with branching, issues, pull requests, reviews and others is difficult at best, impossible in most cases.
+## What is an Azure Review?
+
+A common request of many organizations starting with public cloud is having their design double-checked to make sure that best practices are being followed. One of the teams in Microsoft providing this kind of design reviews and guidance is [FastTrack for Azure (FTA)](https://azure.microsoft.com/programs/azure-fasttrack/), part of Azure Engineering at Microsoft.
+
+When doing Azure design reviews (or any review for that matter), Microsoft employees (such as FastTrack for Azure engineers) and Microsoft partners often leverage Excel spreadsheets as the medium of choice to document findings and track design improvements and recommendations. A problem with Excel spreadsheets is that they are not easily made subject to revision control. Additionally, team collaboration with branching, issues, pull requests, reviews and others is difficult at best, impossible in most cases.
+
+## Why this repository?
 
 This repo separates the actual review checklist content from the presentation layer, so that the JSON-formated checklist that can be subect to version control, and it can then be imported into an Excel spreadsheet by means of Visual Basic for Applications (VBA) macros for easier handling (not all of us like working natively with JSON). The provided [Checklist Review Spreadsheet](./spreadsheet/review_checklist.xlsm) leverages code to interpret JSON from the VBA module in [https://github.com/VBA-tools/VBA-JSON/](https://github.com/VBA-tools/VBA-JSON/), from which there is a copy in this repo to be self-contained (make sure you use the latest version though). The [Checklist Review Spreadsheet](./spreadsheet/review_checklist.xlsm) includes some macros (find the source code both in the spreadsheet as well as [here](./code/Sheet1.cls)), which are accessible from control buttons in the main sheet.
 
@@ -29,7 +35,7 @@ Additionally, a Github action in this repository translates after every commit t
 
 ![](./pictures/spreadsheet_screenshot_dashboard.png)
 
-## Using the spreadsheet to generate JSON checklist files
+## Using the spreadsheet to generate JSON checklist files (advanced)
 
 If you wish to do contributions to the checklists, one option is the following:
 
@@ -39,7 +45,7 @@ If you wish to do contributions to the checklists, one option is the following:
 4. This will create a PR, and will be reviewed by the corresponding aprovers.
 
 
-## Using Azure Resource Graph to verify Azure environments
+## Using Azure Resource Graph to verify Azure environments (advanced)
 
 As you can see for example in [aks_checklist.en.json](./checklists/aks_checklist.en.json), some of the checks have associated two [Azure Resource Graph](https://docs.microsoft.com/azure/governance/resource-graph/overview) queries: one for Azure resources satisfying the condition ("success"), and another one for Azure resources that do not satisfy the condition ("failure").
 
@@ -50,3 +56,12 @@ See the [checklist_graph.sh README file](./scripts/README.md) for more informati
 ## Reporting errors and contributing
 
 Please feel free to open an issue or create a PR if you find any error or missing information in the checklists, following the [Contributing guidelines](./CONTRIBUTING.md)
+
+## Disclaimer
+
+This is not official Microsoft documentation or software.
+This code-sample is provided "AS IT IS" without warranty of any kind, either expressed or implied, including but not limited to the implied warranties of merchantability and/or fitness for a particular purpose.
+This sample is not supported under any Microsoft standard support program or service. 
+Microsoft further disclaims all implied warranties, including, without limitation, any implied warranties of merchantability or fitness for a particular purpose. 
+The entire risk arising out of the use or performance of the sample and documentation remains with you. 
+In no event shall Microsoft, its authors, or anyone else involved in the creation, production, or delivery of the script be liable for any damages whatsoever (including, without limitation, damages for loss of business profits, business interruption, loss of business information, or other pecuniary loss) arising out of  the use of or inability to use the sample or documentation, even if Microsoft has been advised of the possibility of such damages
