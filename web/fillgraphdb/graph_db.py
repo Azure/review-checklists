@@ -49,7 +49,7 @@ imds_headers = {
 }
 imds_tries = 0
 break_loop = False
-print ('DEBUG: Going into while loop...')
+print ('DEBUG: Going into waiting loop to make sure the metadata endpoint is active...')
 while not break_loop:
     imds_tries += 1
     print ("DEBUG: We are in the loop, pass {0}/{1} ({2}). Trying the IMDS endpoint...".format(str(imds_tries), str(wait_max_intervals), str(datetime.now())))
@@ -91,8 +91,12 @@ try:
         print("DEBUG: Service principal credentials (client ID {0}, tenant ID {1}) retrieved from environment variables, trying SP-based authentication now...".format(str(client_id), str(tenant_id)))
         credential = ClientSecretCredential(tenant_id=tenant_id, client_id=client_id, client_secret=client_secret)
     else:
-        print('DEBUG: Service principal credentials could not be retrieved from environment variables, trying default authentication methods...')
+        print('DEBUG: Service principal credentials could not be retrieved from environment variables, trying default authentication method with Managed Identity...')
         credential = DefaultAzureCredential()        # Managed identity
+except Exception as e:
+    print("ERROR: Error during Azure Authentication: {0}".format(str(e)))
+    sys.exit(1)
+try:
     print('DEBUG: Getting subscriptions...')
     subsClient = SubscriptionClient(credential)
     subsRaw = []
@@ -107,7 +111,7 @@ try:
     argClient = arg.ResourceGraphClient(credential)
     argQueryOptions = arg.models.QueryRequestOptions(result_format="objectArray")
 except Exception as e:
-    print("ERROR: Error during Azure Authentication: {0}".format(str(e)))
+    print("ERROR: Error creating resource graph client object: {0}".format(str(e)))
     sys.exit(1)
 
 # Get database credentials from environment variables
@@ -134,7 +138,7 @@ else:
     print("DEBUG: mysql authentication password retrieved from environment variables: {0}".format("********"))
 
 # Create connection to MySQL server and number of records
-print ("DEBUG: Connecting to '{0}' with username \{1}'...".format(mysql_server_fqdn, mysql_server_username))
+print ("DEBUG: Connecting to '{0}' with username '{1}'...".format(mysql_server_fqdn, mysql_server_username))
 if use_ssl == 'yes':
     db = pymysql.connect(host=mysql_server_fqdn, user = mysql_server_username, database = mysql_db_name, passwd = mysql_server_password, ssl = {'ssl':{'ca': 'BaltimoreCyberTrustRoot.crt.pem'}})
 else:
@@ -178,8 +182,12 @@ if len(rows) > 0:
         if result_text:
             update_query = "UPDATE items SET graph_query_result = '{0}' WHERE guid = '{1}';".format(result_text, item_guid)
             print ("DEBUG: sending SQL query '{0}'".format(update_query))
-            cursor.execute(update_query)
-            db.commit()
+            try:
+                cursor.execute(update_query)
+                db.commit()
+            except Exception as e:
+                print("ERROR: Error sending SQL query to MySql server: {0}".format(str(e)))
+                pass
         else:
             print("DEBUG: No results could be retrieved for the success and failure queries of checklist item {0}".format(item_guid))
 else:

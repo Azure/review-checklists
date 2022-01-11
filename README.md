@@ -4,113 +4,49 @@
 
 When doing Azure design reviews (or any review for that matter), Excel spreadsheets are often the medium of choice. A problem with spreadsheets is that they are not easily made subject to revision control. Additionally, team collaboration with branching, issues, pull requests, reviews and others is difficult at best, impossible in most cases.
 
-This repo will showcase the idea of having a JSON version of the checklist that can be imported into an Excel spreadsheet by means of Visual Basic for Applications (VBA) macros. The JSON can be subject to version control, and modified as technology or standards evolve.
+This repo separates the actual review checklist content from the presentation layer, so that the JSON-formated checklist that can be subect to version control, and it can then be imported into an Excel spreadsheet by means of Visual Basic for Applications (VBA) macros for easier handling (not all of us like working natively with JSON). The provided [Checklist Review Spreadsheet](./spreadsheet/review_checklist.xlsm) leverages code to interpret JSON from the VBA module in [https://github.com/VBA-tools/VBA-JSON/](https://github.com/VBA-tools/VBA-JSON/), from which there is a copy in this repo to be self-contained (make sure you use the latest version though). The [Checklist Review Spreadsheet](./spreadsheet/review_checklist.xlsm) includes some macros (find the source code both in the spreadsheet as well as [here](./code/Sheet1.cls)), which are accessible from control buttons in the main sheet.
 
-The provided [Checklist Review Spreadsheet](./spreadsheet/review_checklist.xlsm) leverages code to interpret JSON from the VBA module in [https://github.com/VBA-tools/VBA-JSON/](https://github.com/VBA-tools/VBA-JSON/), from which I put a copy in this repo to be self-contained (make sure you use the latest version though).
+Note: the VBA code in the spreadsheet does not work on Excel for Mac, due to some critical missing libraries.
 
-Additionally, a Github action in this repository translates after every commit the English version of the checklist to additional languages (Japanese in the first release), using the cognitive service [Azure Translator](https://azure.microsoft.com/services/cognitive-services/translator/). See an example of a translated checklist in [aks_checklist.ja.json](./checklists/aks_checklist.ja.json)
+Additionally, a Github action in this repository translates after every commit the English version of the checklist to additional languages (Japanese, Korean, Spanish and Brazilian Portuguese), using the cognitive service [Azure Translator](https://azure.microsoft.com/services/cognitive-services/translator/). See an example of a translated checklist in [aks_checklist.ja.json](./checklists/aks_checklist.ja.json)
 
-The [Checklist Review Spreadsheet](./spreadsheet/review_checklist.xlsm) includes some macros (find the source code both in the spreadsheet as well as [here](./code/Sheet1.cls)), which are accessible from buttons in the main sheet:
+## Using the spreadsheet for Azure reviews
 
-![](./pictures/spreadsheet_screenshot2.png)
+1. Download the Excel spreadsheet from the [latest release](https://github.com/Azure/review-checklists/releases/latest/download/review_checklist.xlsm) to your PC
+2. Use the dropdown lists to select the technology and language you would like to do your review
 
-- **"Easy"** section (arrow in red in the snapshot above): most frequently used, to import the latest set of checks from a git repo (whose URL is hard-coded in the spreadsheet). The user can select the checklist (today Landing Zone, AKS and AVD review checklists are supported) as well as the language
-- **"Advanced"** section (arrow in blue in the snapshot above): it allows exporting/importing to specific files, that the user needs to provide:
-    - `Import latest reference`:  `Export checklist to JSON`: it will export the checks as a JSON file (you can find three examples in [lz_checklist.en.json](./checklists/lz_checklist.en.json), [aks_checklist.en.json](./checklists/aks_checklist.en.json) and [avd_checklist.en.json](./checklists/avd_checklist.en.json))
-    - `Import checklist from JSON`: it will import a JSON checklist stored in the local file system
+![](./pictures/spreadsheet_screenshot.png)
 
-Now you can source-control the JSON file with the checklist items. Changes to the JSON file with the check content can be tracked with issues and PRs, and the checklist set can be then imported in any tool, such as the [Checklist Review Spreadsheet](./spreadsheet/review_checklist.xlsm).
+3. Click the control button "Import latest checklist". After you accept the verification message, the spreadsheet will load the latest version of the selected technology and language
 
-Another potential benefit of separating the delivery tool from the actual content is the same engine (in this example the same spreadsheet) can be used for different checklists. In this repo you find two checklists as example that can be loaded in the [Checklist Review Spreadsheet](./spreadsheet/review_checklist.xlsm):
+4. Go row by row, and set the "Status" field to one of the available options, and write any remarks in the "Comments" field (such as why a recommendation is not relevant, or who will fix the open item)
 
-- Generic Azure Landing Zones (LZ) reviews: [./checklists/lz_checklist.en.json](./checklists/lz_checklist.en.json)
-- Azure Kubernetes Service (AKS) Design Reviews: [./checklists/aks_checklist.en.json](./checklists/aks_checklist.en.json)
-- Azure Virtual Desktop (AVD) Design Reviews: [./checklists/avd_checklist.en.json](./checklists/avd_checklist.en.json)
+   1. Since there are many rows in a review, it is recommended procededing in chunks: either going area after area (first "Networking", then "Security", etc) or starting with the "High" priority elements and afterwards moving down to "Medium" and "Low"
+   1. If any recommendation is not clear, there is a "More Info" link with more context information.
+   1. **IMPORTANT**: design decisions are not a checkbox exercise, but a series of compromises. It is OK deviating from certain recommendations, if the implications are clear (for example, sacrificing security with operational simplicity or lower cost for non-critical applications)
+
+5. Check the "Dashboard" worksheet for a graphical representation of the review progress
+
+![](./pictures/spreadsheet_screenshot_dashboard.png)
+
+## Using the spreadsheet to generate JSON checklist files
+
+If you wish to do contributions to the checklists, one option is the following:
+
+1. Load up the latest version of the checklist you want to modify
+2. Do the required modifications to the checklist items
+3. Push the button "Export checklist to JSON" in the **"Advanced"** section of controls in the checklist. Store your file in your local file system, and upload it to the [checklists foleder](./checklists) of this Github repo (use the format `<technology>_checklist.en.json`, for example, `lz_checklist.en.json`)
+4. This will create a PR, and will be reviewed by the corresponding aprovers.
+
 
 ## Using Azure Resource Graph to verify Azure environments
 
 As you can see for example in [aks_checklist.en.json](./checklists/aks_checklist.en.json), some of the checks have associated two [Azure Resource Graph](https://docs.microsoft.com/azure/governance/resource-graph/overview) queries: one for Azure resources satisfying the condition ("success"), and another one for Azure resources that do not satisfy the condition ("failure").
 
-Accompanying the spreadsheet this repo includes the script [checklist_graph.sh](./scripts/checklist_graph.sh). This script will run the graph queries stored in the JSON checklists and produce an output that can easily be copied and pasted into the spreadsheet.
+Accompanying the spreadsheet this repo includes the script [checklist_graph.sh](./scripts/checklist_graph.sh). This script will run the graph queries stored in the JSON checklists and produce an output that can easily be copied and pasted into the spreadsheet, or alternatively generate a JSON file that can then be imported to the spreadsheet.
 
-For example, to use the script in Azure Cloud Shell:
+See the [checklist_graph.sh README file](./scripts/README.md) for more information about how to use [checklist_graph.sh](./scripts/checklist_graph.sh).
 
-1. Open an Azure cloud **Bash** shell, for example at [https://shell.azure.com](http://shell.azure.com)
-1. Download the `checklist_graph.sh` script with:
+## Reporting errors and contributing
 
-```
-wget –quiet –output-document ./checklist_graph.sh https://raw.githubusercontent.com/Azure/review-checklists/main/scripts/checklist_graph.sh
-```
-
-2. Make sure that the script has execute permissions with:
-
-```
-chmod +x ./checklist_graph.sh
-```
-
-3. Run the script first to only show the categories of a checklist. For example, for AKS with:
-
-```
-./checklist_graph.sh --list-categories --technology=aks
-```
-
-4. You should get an output similar to this:
-
-```
-0: - Identity and Access Management
-1: - Network Topology and Connectivity
-2: - BC and DR
-3: - Governance and Security
-4: - Cost Governance
-5: - Operations
-6: - Application Deployment
-```
-
-5. As you can see in the previous output, the network category was listed as option 1. Now let the script run the Azure Resource Graph queries. For example, to run the graph queries of the network category of the AKS checklist:
-
-```
-./checklist_graph.sh --technology=aks --category=1
-```
-
-6. You should get an output similar to the following. This example has been run with two AKS clusters in the subscriptions configured in different ways, so that the test results are different:
-
-```
-Azure CLI extension resource-graph found with version 2.1.0, trying to upgrade...
-Azure CLI extension resource-graph installed with version 2.1.0
-INFO: Checking graph queries for category Network Topology and Connectivity...
-Success: akstest/aks. Fail: akstest2/aks2
-N/A
-N/A
-N/A
-Success: None. Fail: akstest2/aks2,akstest/aks
-Success: akstest/aks. Fail: akstest2/aks2
-N/A
-N/A
-N/A
-Success: None. Fail: akstest2/aks2,akstest/aks
-Success: akstest/aks. Fail: akstest2/aks2
-N/A
-N/A
-N/A
-Success: akstest/aks. Fail: akstest2/aks2
-N/A
-N/A
-```
-
-The script will try to install or update the Azure CLI extension `resource-graph`. You can see in the previous output that for certain checks there are no graph queries documented (`N/A`). For the ones with queries, the AKS clusters that pass the check are shown under `Success`. The AKS clusters that do not pass the check are shown under `Failure`. The clusters are displayed with the syntax `resourceGroup/name`.
-
-7. You can now copy the previous output, and past the contents in the comments field of the spreadsheet, so that you don't have to fill in every cell manually. The following image shows the spreadsheet (filtered for the Network category) after pasting the results of the Azure Resource Graph checks in the Comment column:
-
-![Azure Resource Graph paste](./pictures/spreadsheet_paste_query_result.png)
-
-8. It is also possible running all the Azure Resource Graph queries at once instead on for each category, just by omitting the category selection option:
-
-```
-./checklist_graph.sh --technology=aks --category=1
-```
-
-9. Alternatively, if you are running the script but not planning to copy and paste the output anywhere, you might want to show the check texts and omit the ones for which there are no Graph queries stored:
-
-```
-./checklist_graph.sh --technology=aks --show-text --no-empty
-```
+Please feel free to open an issue or create a PR if you find any error or missing information in the checklists, following the [Contributing guidelines](./CONTRIBUTING.md)

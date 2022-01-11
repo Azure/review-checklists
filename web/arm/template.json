@@ -110,8 +110,12 @@
         "webImage": "erjosito/checklist-flask:1.0",
         "filldbImage": "erjosito/checklist-filldb:1.0",
         "fillgraphdbImage": "erjosito/checklist-fillgraphdb:1.0",
+        "webName": "[concat(parameters('aciName'), '-web')]",
+        "filldbName": "[concat(parameters('aciName'), '-db')]",
+        "fillgraphdbName": "[concat(parameters('aciName'), '-graph')]",
         "aciPort": 5000,
-        "idJson": "[concat('{\"type\": \"UserAssigned\", \"userAssignedIdentities\": {\"', parameters('identityId'), '\": {} } }')]"
+        "idJson": "[concat('{\"type\": \"UserAssigned\", \"userAssignedIdentities\": {\"', parameters('identityId'), '\": {} } }')]",
+        "spVariablesJson":"[concat('{\"name\": \"AZURE_TENANT_ID\", \"secureValue\": \"', parameters('tenantId'), '\"}, {\"name\": \"AZURE_CLIENT_ID\", \"secureValue\": \"', parameters('clientId'), '}, {\"name\": \"AZURE_CLIENT_SECRET\", \"secureValue\": \"', parameters('clientSecret'), '\"}')]"
     },
     "resources": [
         {
@@ -160,14 +164,14 @@
         {
             "type": "Microsoft.ContainerInstance/containerGroups",
             "apiVersion": "[variables('aci_api_version')]",
-            "name": "[parameters('aciName')]",
+            "name": "[variables('filldbName')]",
             "location": "[parameters('location')]",
             "dependsOn": [
                 "[resourceId('Microsoft.DBforMySQL/servers', parameters('serverName'))]"
             ],
-            "identity": "[if(equals(parameters('identityId'), ''), json('null'), json(variables('idJson')))]",
             "properties": {
-                "initContainers": [
+                "initContainers": [],
+                "containers": [
                     {
                         "name": "filldb",
                         "properties": {
@@ -189,9 +193,34 @@
                                     "name": "MYSQL_FQDN",
                                     "value": "[reference(resourceId('Microsoft.DBforMySQL/servers', parameters('serverName'))).fullyQualifiedDomainName]"
                                 }
-                            ]
+                            ],
+                            "ports": [],
+                            "resources": {
+                                "requests": {
+                                    "cpu": 1,
+                                    "memoryInGB": 1
+                                }
+                            }
                         }
-                    },
+                    }
+                ],
+                "osType": "Linux",
+                "restartPolicy": "Always"
+            }
+        },
+        {
+            "type": "Microsoft.ContainerInstance/containerGroups",
+            "apiVersion": "[variables('aci_api_version')]",
+            "name": "[concat(variables('fillgraphdbName'),'-sp')]",
+            "location": "[parameters('location')]",
+            "condition": "[equals(parameters('identityId'), '')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ContainerInstance/containerGroups', variables('filldbName'))]"
+            ],
+            "identity": "[if(equals(parameters('identityId'), ''), json('null'), json(variables('idJson')))]",
+            "properties": {
+                "initContainers": [],
+                "containers": [
                     {
                         "name": "fillgraphdb",
                         "properties": {
@@ -225,10 +254,109 @@
                                     "name": "WAIT_INTERVALS",
                                     "secureValue": "[parameters('waitIntervals')]"
                                 }
-                            ]
+                            ],
+                            "ports": [
+                                {
+                                    "port": "[variables('aciPort')]",
+                                    "protocol": "TCP"
+                                }
+                            ],
+                            "resources": {
+                                "requests": {
+                                    "cpu": 1,
+                                    "memoryInGB": 1
+                                }
+                            }
                         }
                     }
                 ],
+                "osType": "Linux",
+                "restartPolicy": "Always",
+                "ipAddress": {
+                    "type": "Public",
+                    "ports": [
+                        {
+                            "port": "[variables('aciPort')]",
+                            "protocol": "TCP"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.ContainerInstance/containerGroups",
+            "apiVersion": "[variables('aci_api_version')]",
+            "name": "[concat(variables('fillgraphdbName'),'-mi')]",
+            "location": "[parameters('location')]",
+            "condition": "[not(equals(parameters('identityId'), ''))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ContainerInstance/containerGroups', variables('filldbName'))]"
+            ],
+            "identity": "[if(equals(parameters('identityId'), ''), json('null'), json(variables('idJson')))]",
+            "properties": {
+                "initContainers": [],
+                "containers": [
+                    {
+                        "name": "fillgraphdb",
+                        "properties": {
+                            "image": "[variables('fillgraphdbImage')]",
+                            "environmentVariables": [
+                                {
+                                    "name": "MYSQL_USER",
+                                    "secureValue": "[parameters('administratorLogin')]"
+                                },
+                                {
+                                    "name": "MYSQL_PASSWORD",
+                                    "secureValue": "[parameters('administratorLoginPassword')]"
+                                },
+                                {
+                                    "name": "MYSQL_FQDN",
+                                    "value": "[reference(resourceId('Microsoft.DBforMySQL/servers', parameters('serverName'))).fullyQualifiedDomainName]"
+                                },
+                                {
+                                    "name": "WAIT_INTERVALS",
+                                    "secureValue": "[parameters('waitIntervals')]"
+                                }
+                            ],
+                            "ports": [
+                                {
+                                    "port": "[variables('aciPort')]",
+                                    "protocol": "TCP"
+                                }
+                            ],
+                            "resources": {
+                                "requests": {
+                                    "cpu": 1,
+                                    "memoryInGB": 1
+                                }
+                            }
+                        }
+                    }
+                ],
+                "osType": "Linux",
+                "restartPolicy": "Always",
+                "ipAddress": {
+                    "type": "Public",
+                    "ports": [
+                        {
+                            "port": "[variables('aciPort')]",
+                            "protocol": "TCP"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.ContainerInstance/containerGroups",
+            "apiVersion": "[variables('aci_api_version')]",
+            "name": "[variables('webName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ContainerInstance/containerGroups', concat(variables('fillgraphdbName'),'-sp'))]",
+                "[resourceId('Microsoft.ContainerInstance/containerGroups', concat(variables('fillgraphdbName'),'-mi'))]"
+            ],
+            "properties": {
+                "initContainers": [],
                 "containers": [
                     {
                         "name": "flask",
@@ -280,7 +408,7 @@
     "outputs": {
         "containerIPv4Address": {
             "type": "string",
-            "value": "[reference(resourceId('Microsoft.ContainerInstance/containerGroups', parameters('aciName'))).ipAddress.ip]"
+            "value": "[reference(resourceId('Microsoft.ContainerInstance/containerGroups', variables('webName'))).ipAddress.ip]"
         },
         "waitIntervals": {
             "type": "int",
