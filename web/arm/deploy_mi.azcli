@@ -1,5 +1,5 @@
 ##############################################
-# 1. Retrieve Manged Identity, or create one #
+# 1. Retrieve Managed Identity, or create one #
 ##############################################
 
 id_name=checklistid
@@ -47,6 +47,9 @@ az deployment group create -n checklist$RANDOM -g $rg --template-file ./template
     "administratorLogin=${mysql_server_user}" \
     "administratorLoginPassword=${mysql_server_password}"
 
+# Optional: see containers created in the RG
+az container list -g $rg -o table
+
 # Optional: re-run fillgraphdb container to refresh the Graph query results
 graph_aci_name="graph${suffix}"
 graph_image="erjosito/checklist-fillgraphdb:1.0"
@@ -58,5 +61,9 @@ az container create -n $graph_aci_name -g $rg --assign-identity "$id_id" --image
     "MYSQL_FQDN=${mysql_server_fqdn}" \
     "WAIT_INTERVALS=6"
 
-# Cleanup
+###########
+# Cleanup #
+###########
+
+# Note the cleanup process doesnt delete the identity created, so that it can be leveraged for other checklist-based reviews
 # az group delete $rg -y --no-wait
