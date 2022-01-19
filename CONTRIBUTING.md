@@ -20,7 +20,7 @@ Optionally, you can use the provided Excel spreadsheet to do changes to the exis
 1. Do any change you want. Some remarks:
     - If adding or changing hyperlinks, it is OK putting the raw URL in the corresponding cell. The export mechanism will take care of removing the localization
     - If adding new rules, you can leave the GUID field empty, the export mechanism will generate a new random GUID
-1. Export the checklist to a JSON file, which you can check into the Github repository (refer to [Option 1: Modifying the JSON file directly](#option-1-modifying-the-jSON-file-directly))
+1. Export the checklist to a JSON file (using the button "Export checklist to JSON"), which you can check into the Github repository (refer to [Option 1: Modifying the JSON file directly](#option-1-modifying-the-jSON-file-directly))
 
 ## Adding Resource Graph queries
 
