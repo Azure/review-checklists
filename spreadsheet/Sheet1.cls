@@ -230,7 +230,7 @@ Sub import_checklist_fromurl()
     'Get URL stored in the Values sheet
     checklist_base_url = Sheets(values_sheet).Cells(2, values_url_column)
     If Len(checklist_base_url) > 0 Then
-        'Look at the option buttons to set global variables that control technology (LZ, AKS, AVD) and language
+        'Look at the option buttons to set global variables that control technology (LZ, AKS, AVD, AVS, Security) and language
         set_checklist_variables
         'Append the technology and options variables (default to English and LZ)
         If Len(selected_technology) = 0 Then selected_technology = "lz"
@@ -667,6 +667,9 @@ End Sub
 Sub set_avd()
     selected_technology = "avd"
 End Sub
+Sub set_avs()
+    selected_technology = "avs"
+End Sub
 Sub set_security()
     selected_technology = "security"
 End Sub
@@ -693,7 +696,7 @@ Sub clear_rows()
         Cells(row, guid_column) = ""
         row = row + 1
     Loop
-    Cells(2, 1) = "Azure Review Checklist"
+    Cells(2, 1) = Sheets(values_sheet).Cells(2, 5)
 End Sub
 
 'Clear all rows
@@ -721,6 +724,8 @@ On Error GoTo set_checklist_variables_err
         Case Sheets(values_sheet).Cells(4, values_technology_selection_column)
             selected_technology = "avd"
         Case Sheets(values_sheet).Cells(5, values_technology_selection_column)
+            selected_technology = "avs"
+        Case Sheets(values_sheet).Cells(6, values_technology_selection_column)
             selected_technology = "security"
         Case Else
             MsgBox "Technology option " & Cells(technology_selection_row, technology_selection_col) & " unknown, defaulting to Landing Zone review", vbCritical
