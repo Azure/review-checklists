@@ -33,7 +33,7 @@ The "Comments" column of the spreadsheet will fill in with the results of the Az
 
 This example shows the result of importing the results of the Azure Resource Graph checks on a subscription with a single AKS cluster:
 
-![Advanced ](../pictures/graph_import_results.png)
+![Advanced ](../pictures/graph_import_result.png)
 
 As you can see, for those checklist items with Graph queries stored, the results of the Azure Resource Graph queries are stored. This shows that the AKS cluster used in this example is not compliant with most of the checks, which can make the review easier.
 
