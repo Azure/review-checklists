@@ -2,6 +2,8 @@
 
 # Azure Review Checklists
 
+![image](https://user-images.githubusercontent.com/51988290/153612825-dc9b6d83-9bba-40fc-a5bc-406827164742.png)
+
 ## What is an Azure Review?
 
 A common request of many organizations starting with public cloud is having their design double-checked to make sure that best practices are being followed. One of the teams in Microsoft providing this kind of design reviews and guidance is [FastTrack for Azure (FTA)](https://azure.microsoft.com/programs/azure-fasttrack/), part of Azure Engineering at Microsoft.
