@@ -60,7 +60,7 @@ See the [checklist_graph.sh README file](./scripts/README.md) for more informati
 
 ## Disclaimer
 
-This is not official Microsoft documentation or software.
+This is not official Microsoft documentation or software.This is not an endorsement or sign-off of an architecture or a design.
 This code-sample is provided "AS IT IS" without warranty of any kind, either expressed or implied, including but not limited to the implied warranties of merchantability and/or fitness for a particular purpose.
 This sample is not supported under any Microsoft standard support program or service. 
 Microsoft further disclaims all implied warranties, including, without limitation, any implied warranties of merchantability or fitness for a particular purpose. 
