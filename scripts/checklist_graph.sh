@@ -228,7 +228,7 @@ else
     az extension update -n $extension_name -o none 2>/dev/null
 fi
 extension_version=$(az extension show -n $extension_name --query version -o tsv 2>/dev/null)
-if [[ "$debug" == "yes" ]]; then echo "Azure CLI extension $extension_name running with version $extension_version"; fi
+if [[ "$debug" == "yes" ]]; then echo "DEBUG: Azure CLI extension $extension_name running with version $extension_version"; fi
 
 # Run queries
 i=0
