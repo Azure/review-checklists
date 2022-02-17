@@ -238,7 +238,7 @@ json_output_empty="yes"
 while IFS= read -r graph_success_query; do
     i=$(($i+1))
     this_guid=$(echo $guid_list | head -$i | tail -1)
-    if [[ "$debug" == "yes" ]]; then echo "Processing check item $i, GUID '$this_guid'..."; fi
+    if [[ "$debug" == "yes" ]]; then echo "DEBUG: Processing check item $i, GUID '$this_guid'..."; fi
     if [[ "$this_guid" == "null" ]] && [[ "$output" == "json" ]]; then
         if [[ "$debug" == "yes" ]]; then echo "ERROR: GUID not defined for check number $i"; fi
     fi
