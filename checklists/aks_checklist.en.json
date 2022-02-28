@@ -30,6 +30,8 @@
       "text": "Use Availability Zones if supported in your region",
       "guid": "578a219a-46be-4b54-9350-24922634292b",
       "severity": "Medium",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where isnotnull(zones) | distinct id,name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where isnull(zones) | distinct id,name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/availability-zones"
     },
     {
@@ -38,6 +40,8 @@
       "text": "Use the SLA-backed AKS offering",
       "guid": "71d41e36-10cc-457b-9a4b-1410d4395898",
       "severity": "High",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where sku.tier=='Paid' | distinct id,name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where sku.tier=='Free' | distinct id,name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/uptime-sla"
     },
     {
@@ -62,6 +66,8 @@
       "text": "Use managed identities instead of Service Principals",
       "guid": "ed127dd1-42b0-46b2-8c69-99a646f3389a",
       "severity": "High",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where properties.servicePrincipalProfile.clientId=='msi' | distinct id,name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where properties.servicePrincipalProfile.clientId!='msi' | distinct id,name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/use-managed-identity"
     },
     {
@@ -70,6 +76,8 @@
       "text": "Integrate authentication with AAD (using the managed integration)",
       "guid": "7e42c78e-78c0-46a6-8a21-94956e698dc4",
       "severity": "Medium",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where isnotnull(properties.aadProfile) | distinct id,name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where isnull(properties.aadProfile) | distinct id,name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/managed-aad"
     },
     {
@@ -110,6 +118,8 @@
       "text": "Choose the best CNI plugin for your requirements (Azure CNI recommended)",
       "guid": "a0f61565-9de5-458f-a372-49c831112dbd",
       "severity": "High",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where properties.networkProfile.networkPlugin=='azure' | distinct id,name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where properties.networkProfile.networkPlugin=='kubenet' | distinct id,name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/operator-best-practices-network"
     },
     {
@@ -150,6 +160,8 @@
       "text": "Filter egress traffic with AzFW/NVA if your security requirements mandate it",
       "guid": "3b365a91-7ecb-4e48-bbe5-4cd7df2e8bba",
       "severity": "High",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where properties.networkProfile.outboundType=='userDefinedRouting' | distinct id,name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where properties.networkProfile.outboundType!='userDefinedRouting' | distinct id,name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/limit-egress-traffic"
     },
     {
@@ -158,6 +170,8 @@
       "text": "If using a public API endpoint, restrict the IP addresses that can access it",
       "guid": "c4581559-bb91-463e-a908-aed8c44ce3b2",
       "severity": "Medium",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where (isnull(properties.apiServerAccessProfile.enablePrivateCluster) or properties.apiServerAccessProfile.enablePrivateCluster==false) and isnotnull(properties.apiServerAccessProfile.authorizedIPRanges) | distinct id,name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where (isnull(properties.apiServerAccessProfile.enablePrivateCluster) or properties.apiServerAccessProfile.enablePrivateCluster==false) and isnull(properties.apiServerAccessProfile.authorizedIPRanges) | distinct id,name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/api-server-authorized-ip-ranges"
     },
     {
@@ -190,6 +204,8 @@
       "text": "Use private clusters if your requirements mandate it",
       "guid": "ecccd979-3b6b-4cda-9b50-eb2eb03dda6d",
       "severity": "High",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where isnotnull(properties.apiServerAccessProfile.enablePrivateCluster) and properties.apiServerAccessProfile.enablePrivateCluster==true | distinct id, name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where isnull(properties.apiServerAccessProfile.enablePrivateCluster) or properties.apiServerAccessProfile.enablePrivateCluster==false | distinct id, name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/private-clusters"
     },
     {
@@ -198,6 +214,8 @@
       "text": "Enable a Kubernetes Network Policy option (Calico/Azure)",
       "guid": "58d7c892-ddb1-407d-9769-ae669ca48e4a",
       "severity": "High",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where isnotnull(properties.networkProfile.networkPolicy) | distinct id,name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where isnull(properties.networkProfile.networkPolicy) | distinct id,name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/use-network-policies"
     },
     {
@@ -222,6 +240,8 @@
       "text": "Use DDoS Standard in the AKS VNet",
       "guid": "9bda4776-8f24-4c11-9775-c2ea55b46a94",
       "severity": "Medium",
+      "graph_success": "Resources | where type=~'microsoft.containerservice/managedclusters' | project resourceGroup,name,pools=properties.agentPoolProfiles | mv-expand pools | project subnetId=tostring(pools.vnetSubnetID) | where isnotempty(subnetId) | join (Resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,enableDdosProtection=tostring(properties.enableDdosProtection),subnets=properties.subnets | mv-expand subnets | project id,resourceGroup,name,enableDdosProtection,subnetId=tostring(subnets.id)) on subnetId | distinct id,resourceGroup,name,enableDdosProtection | where enableDdosProtection == 'true'",
+      "graph_failure": "Resources | where type=~'microsoft.containerservice/managedclusters' | project resourceGroup,name,pools=properties.agentPoolProfiles | mv-expand pools | project subnetId=tostring(pools.vnetSubnetID) | where isnotempty(subnetId) | join (Resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,enableDdosProtection=tostring(properties.enableDdosProtection),subnets=properties.subnets | mv-expand subnets | project id,resourceGroup,name,enableDdosProtection,subnetId=tostring(subnets.id)) on subnetId | distinct id,resourceGroup,name,enableDdosProtection | where enableDdosProtection == 'false'",
       "link": "https://docs.microsoft.com/azure/virtual-network/ddos-protection-overview"
     },
     {
@@ -230,6 +250,8 @@
       "text": "Do not use AKS Application Routing Add-On",
       "guid": "8008ae7d-7e4b-4475-a6c8-bdbf59bce65d",
       "severity": "High",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where isnull(properties.addonProfiles.httpApplicationRouting) or properties.addonProfiles.httpApplicationRouting.enabled==false | distinct id,name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where isnotnull(properties.addonProfiles.httpApplicationRouting) and properties.addonProfiles.httpApplicationRouting.enabled==true | distinct id,name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/http-application-routing"
     },
     {
@@ -238,6 +260,8 @@
       "text": "Use the standard ALB (as opposed to the basic one)",
       "guid": "ba7da7be-9952-4914-a384-5d997cb39132",
       "severity": "High",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where tolower(properties.networkProfile.loadBalancerSku)=='standard' | distinct id,name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where tolower(properties.networkProfile.loadBalancerSku)=='basic' | distinct id,name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/load-balancer-standard"
     },
     {
@@ -278,6 +302,8 @@
       "text": "Use Azure Policy for Kubernetes to ensure cluster compliance",
       "guid": "9ca48e4a-85e2-4223-bce8-bb12307ca5f1",
       "severity": "Medium",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where isnotnull(properties.addonProfiles.azurepolicy) and properties.addonProfiles.azurepolicy.enabled==true | distinct id,name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where isnull(properties.addonProfiles.azurepolicy) or properties.addonProfiles.azurepolicy.enabled==false | distinct id,name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/governance/policy/concepts/policy-for-kubernetes"
     },
     {
@@ -286,6 +312,8 @@
       "text": "Separate applications from the control plane with user/system nodepools",
       "guid": "6f158e3e-a3a9-42c2-be7e-2165c3a87af4",
       "severity": "Medium",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | project id,resourceGroup,name,pools=properties.agentPoolProfiles | project id,name,resourceGroup,poolcount=array_length(pools) | where poolcount > 1",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | project id,resourceGroup,name,pools=properties.agentPoolProfiles | project id,name,resourceGroup,poolcount=array_length(pools) | where poolcount == 1",
       "link": "https://docs.microsoft.com/azure/aks/use-system-pools"
     },
     {
@@ -342,6 +370,8 @@
       "text": "Use ephemeral OS disks",
       "guid": "24367b33-6971-45b1-952b-eee0b9b588de",
       "severity": "High",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | project id,resourceGroup,name,pools=properties.agentPoolProfiles | mvexpand pools | where pools.osDiskType=='Ephemeral' | project id,name=strcat(name,'-',pools.name), resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | project id,resourceGroup,name,pools=properties.agentPoolProfiles | mvexpand pools | where pools.osDiskType=='Managed' | project id,name=strcat(name,'-',pools.name), resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/cluster-configuration"
     },
     {
@@ -374,7 +404,7 @@
       "text": "If using Azure Disks and AZs, consider having nodepools within a zone for LRS disk with VolumeBindingMode:WaitForFirstConsumer for provisioning storage in right zone or use ZRS disk for nodepools spanning multiple zones",
       "guid": "83958a8c-2689-4b32-ab57-cfc64546135a",
       "severity": "Medium",
-      "link": "https://docs.microsoft.com/azure/aks/availability-zones"
+      "link": "https://docs.microsoft.com/azure/aks/availability-zones#azure-disk-availability-zone-support"
     },
     {
       "category": "Operations",
@@ -406,6 +436,8 @@
       "text": "Store and analyze your cluster logs with Container Insights (or other tools like Telegraf/ElasticSearch)",
       "guid": "eaa8dc4a-2436-47b3-9697-15b1752beee0",
       "severity": "High",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where isnotnull(properties.addonProfiles.omsagent) and properties.addonProfiles.omsagent.enabled==true | distinct id,name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where isnull(properties.addonProfiles.omsagent) or properties.addonProfiles.omsagent.enabled==false | distinct id,name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/azure-monitor/insights/container-insights-overview"
     },
     {
@@ -470,6 +502,8 @@
       "text": "Consider AKS virtual node for quick bursting",
       "guid": "c755562f-2b4e-4456-9b4d-874a748b662e",
       "severity": "Low",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where isnotnull(properties.addonProfiles.aciConnectorLinux) and properties.addonProfiles.aciConnectorLinux.enabled==true | distinct id,name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where isnull(properties.addonProfiles.aciConnectorLinux) or properties.addonProfiles.aciConnectorLinux.enabled==false | distinct id,name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/concepts-scale"
     },
     {
@@ -486,6 +520,8 @@
       "text": "Use custom Node RG (aka 'Infra RG') name",
       "guid": "73b32a5a-67f7-4a9e-b5b3-1f38c3f39812",
       "severity": "Low",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where properties.nodeResourceGroup !startswith 'MC_' | distinct id,name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where properties.nodeResourceGroup startswith 'MC_' | distinct id,name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/cluster-configuration"
     },
     {
@@ -566,6 +602,8 @@
       "text": "Use the Cluster Autoscaler",
       "guid": "90ce65de-8e13-4f9c-abd4-69266abca264",
       "severity": "Medium",
+      "graph_success": "where type=='microsoft.containerservice/managedclusters' | where isnotnull(properties.austoscalerProfile) | distinct id,name,resourceGroup",
+      "graph_failure": "where type=='microsoft.containerservice/managedclusters' | where isnull(properties.austoscalerProfile) | distinct id,name,resourceGroup",
       "link": "https://docs.microsoft.com/azure/aks/concepts-scale"
     },
     {
@@ -666,20 +704,16 @@
   ],
   "status": [
     {
-      "name": "Not verified",
-      "description": "This check has not been looked at yet"
+      "name": "Not verified"
     },
     {
-      "name": "Open",
-      "description": "There is an action item associated to this check"
+      "name": "Open"
     },
     {
-      "name": "Fulfilled",
-      "description": "This check has been verified, and there are no further action items associated to it"
+      "name": "Fulfilled"
     },
     {
-      "name": "N/A",
-      "description": "Not applicable for current design"
+      "name": "N/A"
     }
   ],
   "severities": [
