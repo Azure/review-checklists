@@ -12,6 +12,13 @@ Option Base 0
 Private Declare PtrSafe Function URLDownloadToFile Lib "urlmon" Alias "URLDownloadToFileA" (ByVal pCaller As Long, ByVal szURL As String, ByVal szFileName As String, ByVal dwReserved As Long, ByVal lpfnCB As Long) As Long
 
 'Constants
+Const row1 = 10
+Const technology_selection_row = 2
+Const technology_selection_col = 5
+Const language_selection_row = 2
+Const language_selection_col = 6
+Const checklist_name_row = 6
+Const checklist_name_col = 1
 Const line_break = vbCrLf
 Const category_column = 1
 Const subcategory_column = 2
@@ -25,23 +32,19 @@ Const training_column = 9
 Const graph_success_column = 10
 Const graph_failure_column = 11
 Const guid_column = 12
-Const checklist_name_row = 2
-Const checklist_name_col = 1
 Const values_sheet = "values"
 Const values_sev_column = 1
 Const values_status_column = 2
+Const values_status_description_column = 8
 Const values_category_column = 3
 Const values_technology_selection_column = 6
 Const values_language_selection_column = 7
-Const row1 = 5
+Const values_technology_prefix_column = 10
+Const values_language_prefix_column = 11
 Const row_limit = 2000   'Safety net
 Const user_info_guid_index = 1
 Const user_info_comments_index = 2
 Const user_info_status_index = 3
-Const technology_selection_row = 1
-Const technology_selection_col = 5
-Const language_selection_row = 1
-Const language_selection_col = 6
 
 'Global variables
 Dim user_checks() As String     'To hold the user's comments/status
@@ -88,7 +91,7 @@ Sub export_json()
     ' Variables
     Dim row As Integer
     Dim json As String
-    Dim check_category, check_subcategory, check_text, check_description, check_severity, check_status, check_link, check_training, check_graph_success, check_graph_failure, check_guid As String
+    Dim check_category As String, check_subcategory As String, check_text As String, check_description As String, check_severity As String, check_status As String, status_description As String, check_link As String, check_training As String, check_graph_success As String, check_graph_failure As String, check_guid As String
     Dim category_name, severity_name, status_name As String
     Dim export_file_path As Variant
     Dim double_quote As String
@@ -166,8 +169,10 @@ Sub export_json()
         If row > 2 Then json = json + ","
         json = json + line_break
         status_name = Sheets(values_sheet).Cells(row, values_status_column)
+        status_description = Sheets(values_sheet).Cells(row, values_status_description_column)
         json = json + "    {" + line_break
-        json = json + "      " + double_quote + "name" + double_quote + ": " + double_quote + correct_format_for_JSON(status_name) + double_quote + line_break
+        json = json + "      " + double_quote + "name" + double_quote + ": " + double_quote + correct_format_for_JSON(status_name) + double_quote + "," + line_break
+        json = json + "      " + double_quote + "description" + double_quote + ": " + double_quote + correct_format_for_JSON(status_description) + double_quote + line_break
         json = json + "    }"
         row = row + 1
         status_count = status_count + 1
@@ -260,6 +265,7 @@ End Sub
 
 'Import from custom JSON file
 Sub import_checklist()
+    On Error GoTo import_checklist_err
     Dim json_file As Variant
     ChDir ActiveWorkbook.Path
     json_file = Application.GetOpenFilename(Title:="Please choose a file to open", FileFilter:="JSON Files *.json* (*.json),")
@@ -270,6 +276,13 @@ Sub import_checklist()
         import_graph_queries = True 'Always import graph queries in advanced mode.
         import_checklist_fromfile json_file
     End If
+import_checklist_err:
+    If Err.Number = 76 Then   'path not found, this happens usually if the spreadsheet is in onedrive
+        Resume Next
+    ElseIf Err.Number <> 0 Then
+        MsgBox "Error while importing checklist from custom file: " & CStr(Err.Number) & ": " & Err.Description, vbCritical
+    End If
+    Exit Sub
 End Sub
 
 
@@ -278,7 +291,6 @@ End Sub
 Sub import_checklist_fromfile(json_file As Variant)
     On Error GoTo import_checklist_fromfile_err
     ' Constants
-    Const row1 = 5
     Const row_limit = 2000   'Safety net
     'Variables
     Dim json_ts As TextStream
@@ -327,6 +339,9 @@ Sub import_checklist_fromfile(json_file As Variant)
             i = 0
             Do
                 Sheets(values_sheet).Cells(row, values_status_column) = json_object("status")(CStr(i))("name")
+                If json_object("status")(CStr(i)).Exists("description") Then
+                    Sheets(values_sheet).Cells(row, values_status_description_column) = json_object("status")(CStr(i))("description")
+                End If
                 row = row + 1
                 status_count = status_count + 1
                 i = i + 1
@@ -335,6 +350,9 @@ Sub import_checklist_fromfile(json_file As Variant)
             notverified = json_object("status")(1)("name") ' The "Not Verified" status is the first one
             For Each json_item In json_object("status")
                 Sheets(values_sheet).Cells(row, values_status_column) = json_item("name")
+                If json_item.Exists("description") Then
+                    Sheets(values_sheet).Cells(row, values_status_description_column) = json_item("description")
+                End If
                 row = row + 1
                 status_count = status_count + 1
             Next json_item
@@ -634,47 +652,12 @@ On Error GoTo import_graph_results_err
 import_graph_results_err:
     If Err.Number = 10001 Then
         MsgBox "Error while importing graph results: please verify that the file " & json_file & " has a valid JSON format", vbCritical
+    ElseIf Err.Number = 76 Then   'path not found, this happens usually if the spreadsheet is in onedrive
+        Resume Next
     ElseIf Err.Number <> 0 Then
         MsgBox "Error while importing graph results: " & CStr(Err.Number) & ": " & Err.Description, vbCritical
     End If
     Exit Sub
-End Sub
-
-' Functions to set global variables when option buttons are pushed
-Sub set_japanese()
-    selected_language = "ja"
-    import_graph_queries = False
-End Sub
-Sub set_english()
-    selected_language = "en"
-    import_graph_queries = True
-End Sub
-Sub set_korean()
-    selected_language = "ko"
-    import_graph_queries = False
-End Sub
-Sub set_spanish()
-    selected_language = "es"
-    import_graph_queries = False
-End Sub
-Sub set_portuguese()
-    selected_language = "pt"
-    import_graph_queries = False
-End Sub
-Sub set_aks()
-    selected_technology = "aks"
-End Sub
-Sub set_avd()
-    selected_technology = "avd"
-End Sub
-Sub set_avs()
-    selected_technology = "avs"
-End Sub
-Sub set_security()
-    selected_technology = "security"
-End Sub
-Sub set_lz()
-    selected_technology = "lz"
 End Sub
 
 'Delete all from controls, so that the spreadsheet can be saved as macro-free
@@ -696,7 +679,11 @@ Sub clear_rows()
         Cells(row, guid_column) = ""
         row = row + 1
     Loop
-    Cells(2, 1) = Sheets(values_sheet).Cells(2, 5)
+    'Reset checklist title
+    Cells(checklist_name_row, checklist_name_col) = Sheets(values_sheet).Cells(2, 5)
+    'Defaults to LZ and English
+    Cells(technology_selection_row, technology_selection_col) = Sheets(values_sheet).Cells(2, values_technology_selection_column)
+    Cells(language_selection_row, language_selection_col) = Sheets(values_sheet).Cells(2, values_language_selection_column)
 End Sub
 
 'Clear all rows
@@ -714,46 +701,83 @@ End Sub
 'Inspect option buttons and set global variables accordingly
 Sub set_checklist_variables()
 On Error GoTo set_checklist_variables_err
+Dim tech_found As Boolean, lang_found As Boolean
+Dim row As Integer
+
+    'Initialization
+    tech_found = False
+    lang_found = False
     
-    'Look at the technology cell
-    Select Case Cells(technology_selection_row, technology_selection_col)
-        Case Sheets(values_sheet).Cells(2, values_technology_selection_column)
-            selected_technology = "lz"
-        Case Sheets(values_sheet).Cells(3, values_technology_selection_column)
-            selected_technology = "aks"
-        Case Sheets(values_sheet).Cells(4, values_technology_selection_column)
-            selected_technology = "avd"
-        Case Sheets(values_sheet).Cells(5, values_technology_selection_column)
-            selected_technology = "avs"
-        Case Sheets(values_sheet).Cells(6, values_technology_selection_column)
-            selected_technology = "security"
-        Case Else
-            MsgBox "Technology option " & Cells(technology_selection_row, technology_selection_col) & " unknown, defaulting to Landing Zone review", vbCritical
-            selected_technology = "lz"
-    End Select
+    'Find the prefix for the given technology
+    row = 2
+    Do While row < row_limit And Len(Sheets(values_sheet).Cells(row, values_technology_selection_column)) > 0
+        If Sheets(values_sheet).Cells(row, values_technology_selection_column) = Cells(technology_selection_row, technology_selection_col) Then
+            tech_found = True
+            selected_technology = Sheets(values_sheet).Cells(row, values_technology_prefix_column)
+            Exit Do
+        End If
+        row = row + 1
+    Loop
+            
+    'Find the prefix for the given language
+    row = 2
+    Do While row < row_limit And Len(Sheets(values_sheet).Cells(row, values_language_selection_column)) > 0
+        If Sheets(values_sheet).Cells(row, values_language_selection_column) = Cells(language_selection_row, language_selection_col) Then
+            lang_found = True
+            selected_language = Sheets(values_sheet).Cells(row, values_language_prefix_column)
+            Exit Do
+        End If
+        row = row + 1
+    Loop
+            
     
-    'Look at the language cell
-    Select Case Cells(language_selection_row, language_selection_col)
-        Case Sheets(values_sheet).Cells(2, values_language_selection_column)
-            selected_language = "en"
-            import_graph_queries = True
-        Case Sheets(values_sheet).Cells(3, values_language_selection_column)
-            selected_language = "ja"
-            import_graph_queries = False
-        Case Sheets(values_sheet).Cells(4, values_language_selection_column)
-            selected_language = "ko"
-            import_graph_queries = False
-        Case Sheets(values_sheet).Cells(5, values_language_selection_column)
-            selected_language = "pt"
-            import_graph_queries = False
-        Case Sheets(values_sheet).Cells(6, values_language_selection_column)
-            selected_language = "es"
-            import_graph_queries = False
-        Case Else
-            MsgBox "Language option " & Cells(language_selection_row, language_selection_col) & " unknown, defaulting to English", vbCritical
-            selected_language = "en"
-            import_graph_queries = True
-    End Select
+'    'Look at the technology cell
+'    Select Case Cells(technology_selection_row, technology_selection_col)
+'        Case Sheets(values_sheet).Cells(2, values_technology_selection_column)
+'            selected_technology = "lz"
+'        Case Sheets(values_sheet).Cells(3, values_technology_selection_column)
+'            selected_technology = "aks"
+'        Case Sheets(values_sheet).Cells(4, values_technology_selection_column)
+'            selected_technology = "avd"
+'        Case Sheets(values_sheet).Cells(5, values_technology_selection_column)
+'            selected_technology = "avs"
+'        Case Sheets(values_sheet).Cells(6, values_technology_selection_column)
+'            selected_technology = "security"
+'        Case Else
+'            MsgBox "Technology option " & Cells(technology_selection_row, technology_selection_col) & " unknown, defaulting to Landing Zone review", vbCritical
+'            selected_technology = "lz"
+'    End Select
+    
+'    'Look at the language cell
+'    Select Case Cells(language_selection_row, language_selection_col)
+'        Case Sheets(values_sheet).Cells(2, values_language_selection_column)
+'            selected_language = "en"
+'            import_graph_queries = True
+'        Case Sheets(values_sheet).Cells(3, values_language_selection_column)
+'            selected_language = "ja"
+'            import_graph_queries = False
+'        Case Sheets(values_sheet).Cells(4, values_language_selection_column)
+'            selected_language = "ko"
+'            import_graph_queries = False
+'        Case Sheets(values_sheet).Cells(5, values_language_selection_column)
+'            selected_language = "pt"
+'            import_graph_queries = False
+'        Case Sheets(values_sheet).Cells(6, values_language_selection_column)
+'            selected_language = "es"
+'            import_graph_queries = False
+'        Case Else
+'            MsgBox "Language option " & Cells(language_selection_row, language_selection_col) & " unknown, defaulting to English", vbCritical
+'            selected_language = "en"
+'            import_graph_queries = True
+'    End Select
+
+    'Error message if tech or lang could not be found
+    If Not tech_found Then
+        MsgBox "Not able to resolve technology '" + Cells(technology_selection_row, technology_selection_col) + "' to a file prefix", vbCritical
+    End If
+    If Not lang_found Then
+        MsgBox "Not able to resolve language '" + Cells(language_selection_row, language_selection_col) + "' to a file prefix", vbCritical
+    End If
         
     'Debug.Print "Selected technology " + selected_technology + ", selected language " + selected_language
     Exit Sub
