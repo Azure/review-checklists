@@ -66,15 +66,18 @@ Function correct_format_for_JSON(ByVal input_text As String) As String
     'Escape control characters such as "?"
     'input_text = escape_character(input_text, "?")
     input_text = escape_character(input_text, "\")
+    input_text = escape_character(input_text, "\", False)   'Second escaping to turn '\' into '\\\\'
     'Avoid empty fields, the Azure translate API doesnt work well with then
     If input_text = "" Then input_text = "&nbsp"
     correct_format_for_JSON = input_text
 End Function
 
 'Escapes a character in a string, and gives out the resulting string
-Function escape_character(ByVal input_text As String, search_char As String) As String
+Function escape_character(ByVal input_text As String, search_char As String, Optional unescape_first As Boolean = True) As String
     'First we remove any possible escape signs for that character that might be already there
-    input_text = Replace(input_text, "\" + search_char, search_char)
+    If unescape_first Then
+        input_text = Replace(input_text, "\" + search_char, search_char)
+    End If
     'Now we escape all occurrences of the character
     input_text = Replace(input_text, search_char, "\" + search_char)
     'And return the output
@@ -120,7 +123,12 @@ Sub export_json()
         If Len(check_guid) = 0 Then check_guid = generate_guid()
         'Only read More Info hyperlink if the cell contains one
         If Cells(row, link_column).Hyperlinks.Count > 0 Then
-            check_link = Cells(row, link_column).Hyperlinks(1).Address
+            'Anchors are not contained by the Address property, we need to concat the Subaddress too
+            If Len(Cells(row, link_column).Hyperlinks(1).SubAddress) > 0 Then
+                check_link = Cells(row, link_column).Hyperlinks(1).Address + "#" + Cells(row, link_column).Hyperlinks(1).SubAddress
+            Else
+                check_link = Cells(row, link_column).Hyperlinks(1).Address
+            End If
         Else
             check_link = Cells(row, link_column)
         End If
@@ -771,6 +779,13 @@ Dim row As Integer
 '            import_graph_queries = True
 '    End Select
 
+    'Import Azure Resource Graph queries only if the language is English (otherwise the translated queries are imported)
+    If Cells(language_selection_row, language_selection_col) = "English" Then
+        import_graph_queries = True
+    Else
+        MsgBox "Azure Resource Graph queries not imported, since the selected language is not English"
+    End If
+    
     'Error message if tech or lang could not be found
     If Not tech_found Then
         MsgBox "Not able to resolve technology '" + Cells(technology_selection_row, technology_selection_col) + "' to a file prefix", vbCritical
