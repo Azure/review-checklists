@@ -228,7 +228,7 @@ else
     az extension update -n $extension_name -o none 2>/dev/null
 fi
 extension_version=$(az extension show -n $extension_name --query version -o tsv 2>/dev/null)
-if [[ "$debug" == "yes" ]]; then echo "Azure CLI extension $extension_name running with version $extension_version"; fi
+if [[ "$debug" == "yes" ]]; then echo "DEBUG: Azure CLI extension $extension_name running with version $extension_version"; fi
 
 # Run queries
 i=0
@@ -238,7 +238,7 @@ json_output_empty="yes"
 while IFS= read -r graph_success_query; do
     i=$(($i+1))
     this_guid=$(echo $guid_list | head -$i | tail -1)
-    if [[ "$debug" == "yes" ]]; then echo "Processing check item $i, GUID '$this_guid'..."; fi
+    if [[ "$debug" == "yes" ]]; then echo "DEBUG: Processing check item $i, GUID '$this_guid'..."; fi
     if [[ "$this_guid" == "null" ]] && [[ "$output" == "json" ]]; then
         if [[ "$debug" == "yes" ]]; then echo "ERROR: GUID not defined for check number $i"; fi
     fi
@@ -289,6 +289,7 @@ while IFS= read -r graph_success_query; do
         if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running failure query '$graph_failure_query'..."; fi
         # If format is short, the graph query command returns a single line, if format is long, it is one line per resource
         if [[ "$format" == "short" ]]; then
+            # NOTE: this line will give some unexpected results when running Graph queries that return subscription IDs, since those do not have a RG
             failure_result=$(az graph query -q "$graph_failure_query" ${(z)mg_option} -o json 2>$error_file | jq -r '.data[] | "\(.resourceGroup)/\(.name)"' 2>>$error_file | tr '\n' ',')
             if [[ -s $error_file ]]; then
                 failure_result="Error"
