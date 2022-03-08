@@ -133,7 +133,7 @@
       "guid": "2df27ee4-12e7-4f98-9f63-04722dd69c5b",
       "severity": "Medium",
       "graph_success": "resourcecontainers | where type == 'microsoft.resources/subscriptions' | extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain | where array_length(mgmtChain) <=4 | mvexpand mgmt=mgmtChain | project subscriptionId, name, ['id'], management_group_name=mgmt.displayName, resourceGroup=mgmt.displayName",
-      "graph_failure": "resourcecontainers | where type == 'microsoft.resources/subscriptions' | extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain | where array_length(mgmtChain) >4 | mvexpand mgmt=mgmtChain | project subscriptionId, name, ['id'], management_group_name=mgmt.displayName, resourceGroup=mgmt.displayName",
+      "graph_failure": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| where array_length(mgmtChain) < 4 and array_length(mgmtChain) > 1|mvexpand mgmt=mgmtChain | project subscriptionId, name, ['id'], management_group_name=mgmt.displayName, resourceGroup=mgmt.displayName",
       "training": "https://docs.microsoft.com/learn/modules/azure-architecture-fundamentals/",
       "link": "https://docs.microsoft.com/azure/governance/management-groups/overview"
     },
@@ -179,6 +179,7 @@
       "text": "Enforce no subscriptions are placed under the root management group",
       "guid": "33b6b780-8b9f-4e5c-9104-9d403a923c34",
       "severity": "Medium",
+      "graph_failure": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain|where array_length(mgmtChain) ==1|mvexpand mgmt=mgmtChain|project id, subName = name, subscriptionId, managedBy, managementGroupName = mgmt.displayName",
       "link": "https://docs.microsoft.com/azure/governance/management-groups/overview"
     },
     {
@@ -1155,6 +1156,8 @@
       "text": "Use different Azure Key Vaults for different applications and regions to avoid transaction scale limits and restrict access to secrets.",
       "guid": "a0477a20-9945-4bda-9333-4f2491163418",
       "severity": "Medium",
+      "graph_success": "ResourceContainers | where type=='microsoft.resources/subscriptions'| parse id with '/subscriptions/' SubscriptionID| project subscriptionId, SubscriptionName = name| join kind=leftouter (Resources| where type == 'microsoft.keyvault/vaults'| project id, name, subscriptionId) on subscriptionId| join kind= leftouter (Resources| where type == 'microsoft.keyvault/vaults'| summarize ResourceCount = count() by subscriptionId) on subscriptionId| extend RCount = iff(isnull(ResourceCount), 0, ResourceCount)| project-away ResourceCount| where RCount <> 1",
+      "graph_failure": "ResourceContainers | where type=='microsoft.resources/subscriptions'| parse id with '/subscriptions/' SubscriptionID| project subscriptionId, SubscriptionName = name| join kind=leftouter (Resources| where type == 'microsoft.keyvault/vaults'| project id, name, subscriptionId) on subscriptionId| join kind= leftouter (Resources| where type == 'microsoft.keyvault/vaults'| summarize ResourceCount = count() by subscriptionId) on subscriptionId| extend RCount = iff(isnull(ResourceCount), 0, ResourceCount)| project-away ResourceCount| where RCount == 1",
       "link": "https://docs.microsoft.com/azure/key-vault/general/overview-throttling"
     },
     {
