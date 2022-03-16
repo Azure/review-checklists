@@ -1,6 +1,6 @@
 
 # take in list of files that need to be transformed
-$files = $args[0].split(" ")
+$files = $args[0].trim().split(" ")
 
 Foreach ($file in $files) {
     write-host "processing: $file"
