@@ -5,7 +5,7 @@ $files = $args[0].trim().split(" ")
 Foreach ($file in $files) {
     
     # in some cases the script is executing when it should not, catch this by testing the file exists before proceeding
-    if (!Test-Path $file) {
+    if (-not(Test-Path $file)) {
         Write-Host "File $file does not exist"
         break
     }
