@@ -9,11 +9,11 @@ if ($args -ne $null) {
     $files = $null
 }
 
-# If no argument is passed, get a list of all JSON files
-if ($files -eq $null) {
+# If no argument is passed or the first file is a blank, get a list of all JSON files
+if (($files -eq $null) -or ($files[0] -eq "")) {
     Write-Host "Trying to find out JSON files..."
     Write-Host "Working directory is $((Get-Location | Select-Object -ExpandProperty Path))..."
-    $files = Get-ChildItem -Path '../../checklists/' -Filter '*.json' -Recurse | Select-Object -ExpandProperty FullName
+    $files = Get-ChildItem -Path './checklists/' -Filter '*.json' -Recurse | Select-Object -ExpandProperty FullName
     #Write-Host "No arguments provided, working with $($files.ToString())"
 }
 
