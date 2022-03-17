@@ -1,6 +1,6 @@
+Write-Host "Running transform.ps1 v1.1.1"
 
 # take in list of files that need to be transformed
-
 if ($args -ne $null) {
     Write-Host "Parameter passed: $($args.ToString())"
     $files = $args[0].trim().split(" ")
