@@ -11,7 +11,7 @@
 		"1": {
 			"category": "BC y DR",
 			"subcategory": "Recuperación ante desastres",
-			"text": "Realizar pruebas de DR",
+			"text": "Programe y realice pruebas de DR regularmente",
 			"guid": "36cb45e5-7960-4332-9bdf-8cc23318da61",
 			"severity": "Alto",
 			"link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/enterprise-scale/business-continuity-and-disaster-recovery"
@@ -41,7 +41,7 @@
 			"guid": "71d41e36-10cc-457b-9a4b-1410d4395898",
 			"severity": "Alto",
 			"graph_success": "donde tipo=='microsoft.containerservice/managedclusters' | donde sku.tier=='Pagado' | id distinto,nombre,resourceGroup",
-			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | donde sku.tier=='Gratis' | id distinto,nombre,resourceGroup",
+			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | donde sku.tier=='Free' | id distinto,nombre,resourceGroup",
 			"link": "https://docs.microsoft.com/azure/aks/uptime-sla"
 		},
 		"5": {
@@ -142,6 +142,7 @@
 			"category": "Topología y conectividad de red",
 			"subcategory": "IPAM",
 			"text": "Si utiliza servicios LoadBalancer de IP privada, utilice una subred dedicada (no la subred AKS)",
+			"description": "Para las aplicaciones internas, las organizaciones suelen abrir toda la subred de AKS en sus firewalls. Esto también abre el acceso de red a los nodos y, potencialmente, también a los pods (si usa Azure CNI). Si las direcciones IP de LoadBalancer están en una subred diferente, solo esta debe estar disponible para los clientes de la aplicación. Otra razón es que si las direcciones IP de la subred AKS son un recurso escaso, consumir sus direcciones IP para servicios reducirá la escalabilidad máxima del clúster.",
 			"guid": "13c00567-4b1e-4945-a459-c373e7ed6162",
 			"severity": "Bajo",
 			"link": "https://docs.microsoft.com/azure/aks/internal-lb"
@@ -170,7 +171,7 @@
 			"text": "Si usa un extremo de API público, restrinja las direcciones IP que pueden acceder a él",
 			"guid": "c4581559-bb91-463e-a908-aed8c44ce3b2",
 			"severity": "Medio",
-			"graph_success": "donde tipo=='microsoft.containerservice/managedclusters' | donde (isnull(properties.apiServerAccessProfile.enablePrivateCluster) o properties.apiServerAccessProfile.enablePrivateCluster==) e isnotnull(properties.apiServerAccessProfile.authorizedIPRanges) | id distinto,nombre,resourceGroup",
+			"graph_success": "donde tipo=='microsoft.containerservice/managedclusters' | donde (isnull(properties.apiServerAccessProfile.enablePrivateCluster) o properties.apiServerAccessProfile.enablePrivateCluster==false) e isnotnull(properties.apiServerAccessProfile.authorizedIPRanges) | id distinto,nombre,resourceGroup",
 			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | donde (isnull(properties.apiServerAccessProfile.enablePrivateCluster) o properties.apiServerAccessProfile.enablePrivateCluster==false) y isnull(properties.apiServerAccessProfile.authorizedIPRanges) | id distinto,nombre,resourceGroup",
 			"link": "https://docs.microsoft.com/azure/aks/api-server-authorized-ip-ranges"
 		},
@@ -312,8 +313,8 @@
 			"text": "Separe las aplicaciones del plano de control con grupos de nodos de usuario/sistema",
 			"guid": "6f158e3e-a3a9-42c2-be7e-2165c3a87af4",
 			"severity": "Medio",
-			"graph_success": "donde tipo=='microsoft.containerservice/managedclusters' | id de proyecto,resourceGroup,name,pools=properties.agentPoolProfiles | id. de proyecto,nombre,resourceGroup,poolcount=array_length(pools) | donde poolcount > 1",
-			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | id de proyecto,resourceGroup,name,pools=properties.agentPoolProfiles | id. de proyecto,nombre,resourceGroup,poolcount=array_length(pools) | donde poolcount == 1",
+			"graph_success": "donde tipo=='microsoft.containerservice/managedclusters' | identificador de proyecto,resourceGroup,name,pools=properties.agentPoolProfiles | id de proyecto,nombre,resourceGroup,poolcount=array_length(pools) | donde poolcount > 1",
+			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | identificador de proyecto,resourceGroup,name,pools=properties.agentPoolProfiles | id de proyecto,nombre,resourceGroup,poolcount=array_length(pools) | donde poolcount == 1",
 			"link": "https://docs.microsoft.com/azure/aks/use-system-pools"
 		},
 		"36": {
@@ -370,8 +371,8 @@
 			"text": "Usar discos efímeros del sistema operativo",
 			"guid": "24367b33-6971-45b1-952b-eee0b9b588de",
 			"severity": "Alto",
-			"graph_success": "donde tipo=='microsoft.containerservice/managedclusters' | id de proyecto,resourceGroup,name,pools=properties.agentPoolProfiles | mvexpand pools | donde pools.osDiskType=='Efímero' | id de proyecto,nombre=strcat(nombre,'-',pools.name), resourceGroup",
-			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | id de proyecto,resourceGroup,name,pools=properties.agentPoolProfiles | mvexpand pools | donde pools.osDiskType=='Managed' | id de proyecto,nombre=strcat(nombre,'-',pools.name), resourceGroup",
+			"graph_success": "donde tipo=='microsoft.containerservice/managedclusters' | identificador de proyecto,resourceGroup,name,pools=properties.agentPoolProfiles | mvexpand pools | donde pools.osDiskType=='Efímero' | id de proyecto,nombre=strcat(nombre,'-',pools.name), resourceGroup",
+			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | identificador de proyecto,resourceGroup,name,pools=properties.agentPoolProfiles | mvexpand pools | donde pools.osDiskType=='Managed' | id de proyecto,nombre=strcat(nombre,'-',pools.name), resourceGroup",
 			"link": "https://docs.microsoft.com/azure/aks/cluster-configuration"
 		},
 		"43": {
@@ -442,21 +443,13 @@
 		},
 		"51": {
 			"category": "Operaciones",
-			"subcategory": "Monitorización",
-			"text": "Configuración de settinas de diagnóstico en los clústeres para enviar registros de API a Azure Monitor",
-			"guid": "b9b588de-fc49-472c-a3cd-25bfb7076e9e",
-			"severity": "Medio",
-			"link": "https://docs.microsoft.com/azure/aks/monitor-aks"
-		},
-		"52": {
-			"category": "Operaciones",
 			"subcategory": "Alertas",
 			"text": "Configurar alertas en las métricas más críticas (consulte Container Insights para obtener recomendaciones)",
 			"guid": "67f7a9ed-5b31-4f38-a3f3-9812b2463cff",
 			"severity": "Alto",
 			"link": "https://docs.microsoft.com/azure/azure-monitor/insights/container-insights-metric-alerts"
 		},
-		"53": {
+		"52": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
 			"text": "Tenga un proceso regular para actualizar su versión de kubernetes periódicamente (trimestralmente, por ejemplo), o use la función de actualización automática de AKS",
@@ -464,7 +457,7 @@
 			"severity": "Alto",
 			"link": "https://docs.microsoft.com/azure/aks/supported-kubernetes-versions"
 		},
-		"54": {
+		"53": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
 			"text": "Use kured para actualizaciones de nodos Linux en caso de que no esté utilizando la actualización de imagen de nodo",
@@ -472,7 +465,7 @@
 			"severity": "Alto",
 			"link": "https://docs.microsoft.com/azure/aks/node-updates-kured"
 		},
-		"55": {
+		"54": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
 			"text": "Tener un proceso regular para actualizar las imágenes del nodo del clúster periódicamente (semanalmente, por ejemplo)",
@@ -480,7 +473,7 @@
 			"severity": "Alto",
 			"link": "https://docs.microsoft.com/azure/aks/node-image-upgrade"
 		},
-		"56": {
+		"55": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
 			"text": "Considere gitops para implementar aplicaciones o configuración de clúster en varios clústeres",
@@ -488,7 +481,7 @@
 			"severity": "Bajo",
 			"link": "https://docs.microsoft.com/azure/architecture/example-scenario/bedrock/bedrock-automated-deployments"
 		},
-		"57": {
+		"56": {
 			"category": "Operaciones",
 			"subcategory": "Costar",
 			"text": "Considere los grupos de nodos puntuales para cargas de trabajo no sensibles al tiempo",
@@ -496,7 +489,7 @@
 			"severity": "Bajo",
 			"link": "https://docs.microsoft.com/azure/aks/spot-node-pool"
 		},
-		"58": {
+		"57": {
 			"category": "Operaciones",
 			"subcategory": "Costar",
 			"text": "Considere el nodo virtual AKS para ráfagas rápidas",
@@ -506,7 +499,7 @@
 			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | donde isnull(properties.addonProfiles.aciConnectorLinux) o properties.addonProfiles.aciConnectorLinux.enabled==false | id distinto,nombre,resourceGroup",
 			"link": "https://docs.microsoft.com/azure/aks/concepts-scale"
 		},
-		"59": {
+		"58": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
 			"text": "Desarrollar prácticas de gobierno propias para asegurarse de que los operadores en el nodo RG no realicen cambios (también conocido como 'infra RG')",
@@ -514,7 +507,7 @@
 			"severity": "Alto",
 			"link": "https://docs.microsoft.com/azure/aks/faq"
 		},
-		"60": {
+		"59": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
 			"text": "Usar el nombre personalizado de Node RG (también conocido como 'Infra RG')",
@@ -524,7 +517,7 @@
 			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | donde properties.nodeResourceGroup comienza con el | 'MC_' id distinto,nombre,resourceGroup",
 			"link": "https://docs.microsoft.com/azure/aks/cluster-configuration"
 		},
-		"61": {
+		"60": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
 			"text": "No utilice API de Kubernetes obsoletas en los manifiestos de YAML",
@@ -532,7 +525,7 @@
 			"severity": "Medio",
 			"link": "https://kubernetes.io/docs/setup/release/notes/"
 		},
-		"62": {
+		"61": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
 			"text": "Nodos de Windows contaminados",
@@ -540,7 +533,7 @@
 			"severity": "Bajo",
 			"link": "https://docs.microsoft.com/azure-stack/aks-hci/adapt-apps-mixed-os-clusters"
 		},
-		"63": {
+		"62": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
 			"text": "Mantenga sincronizado el nivel de revisión de contenedores de Windows con el nivel de revisión de host",
@@ -548,7 +541,7 @@
 			"severity": "Bajo",
 			"link": "https://docs.microsoft.com/virtualization/windowscontainers/deploy-containers/version-compatibility?tabs=windows-server-20H2%2Cwindows-10-20H2"
 		},
-		"64": {
+		"63": {
 			"category": "Operaciones",
 			"subcategory": "Monitorización",
 			"text": "Supervisar la utilización de la CPU y la memoria de los nodos",
@@ -556,7 +549,7 @@
 			"severity": "Medio",
 			"link": "https://docs.microsoft.com/azure/azure-monitor/containers/container-insights-analyze"
 		},
-		"65": {
+		"64": {
 			"category": "Operaciones",
 			"subcategory": "Monitorización",
 			"text": "Si usa Azure CNI, supervise % de ip de pod consumidas por nodo",
@@ -564,15 +557,16 @@
 			"severity": "Medio",
 			"link": "https://docs.microsoft.com/azure/aks/configure-azure-cni"
 		},
-		"66": {
+		"65": {
 			"category": "Operaciones",
 			"subcategory": "Monitorización",
 			"text": "Supervisar la profundidad de la cola de disco del sistema operativo en los nodos",
+			"description": "La E/S en el disco del sistema operativo es un recurso crítico. Si el sistema operativo de los nodos se limita en E/S, esto podría conducir a un comportamiento impredecible, que normalmente termina en el nodo declarado NotReady",
 			"guid": "415833ea-3ad3-4c2d-b733-165c3acbe04b",
 			"severity": "Medio",
 			"link": "https://docs.microsoft.com/azure/virtual-machines/premium-storage-performance"
 		},
-		"67": {
+		"66": {
 			"category": "Operaciones",
 			"subcategory": "Monitorización",
 			"text": "Si no utiliza el filtrado de salida con AzFW/NVA, supervise los puertos SNAT alB estándar asignados",
@@ -580,7 +574,7 @@
 			"severity": "Medio",
 			"link": "https://docs.microsoft.com/azure/aks/load-balancer-standard"
 		},
-		"68": {
+		"67": {
 			"category": "Operaciones",
 			"subcategory": "Monitorización",
 			"text": "Suscribirse a las notificaciones de estado de los recursos para su clúster de AKS",
@@ -588,15 +582,16 @@
 			"severity": "Medio",
 			"link": "https://docs.microsoft.com/azure/aks/aks-resource-health"
 		},
-		"69": {
+		"68": {
 			"category": "Operaciones",
 			"subcategory": "Conformidad",
-			"text": "Enviar registros maestros (también conocidos como registros de API) a Log Analytics",
+			"text": "Enviar registros maestros (también conocidos como registros de API) a Azure Monitor o a su solución de administración de registros preferida",
+			"description": "A través de la configuración de diagnóstico a nivel de clúster",
 			"guid": "5b56ad48-408f-4e72-934c-476ba280dcf5",
 			"severity": "Bajo",
 			"link": "https://docs.microsoft.com/azure/aks/monitor-aks"
 		},
-		"70": {
+		"69": {
 			"category": "Operaciones",
 			"subcategory": "Escalabilidad",
 			"text": "Usar el escalador automático de clústeres",
@@ -606,7 +601,7 @@
 			"graph_failure": "donde tipo=='microsoft.containerservice/managedclusters' | donde isnull(properties.austoscalerProfile) | id distinto,nombre,resourceGroup",
 			"link": "https://docs.microsoft.com/azure/aks/concepts-scale"
 		},
-		"71": {
+		"70": {
 			"category": "Operaciones",
 			"subcategory": "Escalabilidad",
 			"text": "Utilice el escalador automático de pod horizontal cuando sea necesario",
@@ -614,15 +609,16 @@
 			"severity": "Medio",
 			"link": "https://docs.microsoft.com/azure/aks/concepts-scale"
 		},
-		"72": {
+		"71": {
 			"category": "Operaciones",
 			"subcategory": "Escalabilidad",
 			"text": "Considere un tamaño de nodo apropiado, no demasiado grande o demasiado pequeño",
+			"description": "Los nodos más grandes traerán un mayor rendimiento y características como discos efímeros y redes aceleradas, pero aumentarán el radio de explosión y disminuirán la granularidad de escalado.",
 			"guid": "5ae124ba-34df-4585-bcdc-e9bd3bb0cdb3",
 			"severity": "Alto",
 			"link": "https://blog.cloudtrooper.net/2020/10/23/which-vm-size-should-i-choose-as-aks-node/"
 		},
-		"73": {
+		"72": {
 			"category": "Operaciones",
 			"subcategory": "Recursos",
 			"text": "Configurar solicitudes y límites en las especificaciones del pod",
@@ -630,7 +626,7 @@
 			"severity": "Alto",
 			"link": "https://docs.microsoft.com/azure/aks/operator-best-practices-scheduler"
 		},
-		"74": {
+		"73": {
 			"category": "Operaciones",
 			"subcategory": "Recursos",
 			"text": "Aplicar cuotas de recursos para espacios de nombres",
@@ -638,7 +634,7 @@
 			"severity": "Medio",
 			"link": "https://docs.microsoft.com/azure/aks/operator-best-practices-scheduler"
 		},
-		"75": {
+		"74": {
 			"category": "Operaciones",
 			"subcategory": "Recursos",
 			"text": "Asegúrese de que su suscripción tenga suficiente cuota para escalar horizontalmente sus grupos de nodos",
@@ -646,7 +642,7 @@
 			"severity": "Alto",
 			"link": "https://docs.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits"
 		},
-		"76": {
+		"75": {
 			"category": "Implementación de aplicaciones",
 			"subcategory": "Infraestructura como código",
 			"text": "Uso de la automatización a través de ARM/TF para crear los recursos de Azure",
@@ -654,7 +650,7 @@
 			"severity": "Medio",
 			"link": "https://docs.microsoft.com/azure/developer/terraform/create-k8s-cluster-with-tf-and-aks"
 		},
-		"77": {
+		"76": {
 			"category": "Implementación de aplicaciones",
 			"subcategory": "Desarrollo",
 			"text": "Usar implementaciones canarias o azules/verdes",
@@ -662,7 +658,7 @@
 			"severity": "Medio",
 			"link": "https://docs.microsoft.com/azure/architecture/reference-architectures/containers/aks/secure-baseline-aks"
 		},
-		"78": {
+		"77": {
 			"category": "Implementación de aplicaciones",
 			"subcategory": "Desarrollo",
 			"text": "Usar KEDA si se ejecutan cargas de trabajo controladas por eventos",
@@ -670,7 +666,7 @@
 			"severity": "Bajo",
 			"link": "https://docs.microsoft.com/azure/azure-functions/functions-kubernetes-keda"
 		},
-		"79": {
+		"78": {
 			"category": "Implementación de aplicaciones",
 			"subcategory": "Desarrollo",
 			"text": "Utilice Dapr para facilitar el desarrollo de microservicios",
@@ -704,16 +700,24 @@
 	},
 	"status": {
 		"0": {
-			"name": "No verificado"
+			"name": "No verificado",
+			"description": "Esta comprobación aún no se ha analizado"
 		},
 		"1": {
-			"name": "Abrir"
+			"name": "Abrir",
+			"description": "Hay un elemento de acción asociado a esta comprobación"
 		},
 		"2": {
-			"name": "Cumplido"
+			"name": "Cumplido",
+			"description": "Esta comprobación se ha verificado y no hay más elementos de acción asociados a ella"
 		},
 		"3": {
-			"name": "N/A"
+			"name": "N/A",
+			"description": "No aplicable para el diseño actual"
+		},
+		"4": {
+			"name": "No es necesario",
+			"description": "No es necesario"
 		}
 	},
 	"severities": {
