@@ -26,6 +26,8 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+        with:
+          ref: update-resource-translator      
       - name: Machine Translator
         id: translator
         uses: IEvangelist/resource-translator@v2.1.6
@@ -35,6 +37,21 @@ jobs:
           endpoint: ${{ secrets.AZURE_TRANSLATOR_ENDPOINT }}
           region: ${{ secrets.AZURE_TRANSLATOR_REGION }}
           toLocales: es,ja,ko,pt
+
+      - name: Get changed files
+        id: changes
+        run: |
+          echo "::set-output name=all::$(git diff --name-only --diff-filter=ACMRT ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | xargs)"
+          echo "::set-output name=json::$(git diff --name-only --diff-filter=ACMRT ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep .json$ | xargs)"        
+      
+      - name: Transform JSON files
+        id: Transform
+        if: ${{ steps.translator.outputs.has-new-translations }} == 'true'
+        run: |
+          $inputFiles = "${{ steps.changes.outputs.json }}"
+          ./.github/workflows/transform.ps1 $inputFiles
+        shell: pwsh
+
       - name: Create pull request
         uses: peter-evans/create-pull-request@v3.10.1
         if: ${{ steps.translator.outputs.has-new-translations }} == 'true'
