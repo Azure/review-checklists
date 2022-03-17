@@ -1,16 +1,43 @@
 
 # take in list of files that need to be transformed
-$files = $args[0].trim().split(" ")
+
+if ($args -ne $null) {
+    Write-Host "Parameter passed: $($args.ToString())"
+    $files = $args[0].trim().split(" ")
+} else {
+    Write-Host "No parameters passed!"
+    $files = $null
+}
+
+# If no argument is passed, get a list of all JSON files
+if ($files -eq $null) {
+    Write-Host "Trying to find out JSON files..."
+    Write-Host "Working directory is $((Get-Location | Select-Object -ExpandProperty Path))..."
+    $files = Get-ChildItem -Path '../../checklists/' -Filter '*.json' -Recurse | Select-Object -ExpandProperty FullName
+    #Write-Host "No arguments provided, working with $($files.ToString())"
+}
+
+Write-Host "Starting processing $($files.length) files now..."
 
 Foreach ($file in $files) {
     
+    # Debug
+    Write-Host "Looking at $file now..."
+
     # in some cases the script is executing when it should not, catch this by testing the file exists before proceeding
     if (-not(Test-Path $file)) {
         Write-Host "File $file does not exist"
-        break
+        continue
     }
 
-    write-host "processing: $file"
+    # do not run in an .en.json file
+    $file_extensions = $file.substring($file.length - 8, 8)
+    if ($file_extensions -eq ".en.json") {
+        Write-Host "Skipping $file since it is an English-based checklist"
+        continue
+    }
+
+    write-host "Processing file $file"
     $json = Get-Content -Raw $file | ConvertFrom-Json
     
     # initialize the output file structure
