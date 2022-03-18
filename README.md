@@ -6,6 +6,8 @@
 
 [latest release](https://github.com/Azure/review-checklists/releases/latest/download/review_checklist.xlsm)
 
+**New**: Check out as well our sister repo [https://github.com/Azure/fta-aas](https://github.com/Azure/fta-aas), and the prototype web UI for checklist reviews in [https://ftaaasdev.z6.web.core.windows.net/](https://ftaaasdev.z6.web.core.windows.net/).
+
 ## What is an Azure Review?
 
 A common request of many organizations starting with public cloud is having their design double-checked to make sure that best practices are being followed. One of the teams in Microsoft providing this kind of design reviews and guidance is [FastTrack for Azure (FTA)](https://azure.microsoft.com/programs/azure-fasttrack/), part of Azure Engineering at Microsoft.
