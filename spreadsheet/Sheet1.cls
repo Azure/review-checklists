@@ -29,9 +29,14 @@ Const status_column = 6
 Const comments_column = 7
 Const link_column = 8
 Const training_column = 9
-Const graph_success_column = 10
-Const graph_failure_column = 11
-Const guid_column = 12
+Const graph_column = 10
+Const guid_column = 11
+Const sec_mod_column = 12
+Const cost_mod_column = 13
+Const scale_mod_column = 14
+Const simple_mod_column = 15
+Const ha_mod_column = 16
+Const num_columns = ha_mod_column
 Const values_sheet = "values"
 Const values_sev_column = 1
 Const values_status_column = 2
@@ -94,11 +99,12 @@ Sub export_json()
     ' Variables
     Dim row As Integer
     Dim json As String
-    Dim check_category As String, check_subcategory As String, check_text As String, check_description As String, check_severity As String, check_status As String, status_description As String, check_link As String, check_training As String, check_graph_success As String, check_graph_failure As String, check_guid As String
-    Dim category_name, severity_name, status_name As String
+    Dim check_category As String, check_subcategory As String, check_text As String, check_description As String, check_severity As String, check_status As String, status_description As String, check_link As String, check_training As String, check_graph_query As String, check_guid As String
+    Dim check_sec_mod, check_cost_mod, check_scale_mod, check_simple_mod, check_ha_mod
+    Dim category_name As String, severity_name As String, status_name As String
     Dim export_file_path As Variant
     Dim double_quote As String
-    Dim item_count, category_count, status_count As Integer
+    Dim item_count As Integer, category_count As Integer, status_count As Integer
     ' Initialization
     double_quote = Chr(34) ' double quote as a variable
     row = row1
@@ -116,9 +122,13 @@ Sub export_json()
         check_text = Cells(row, text_column)
         check_description = Cells(row, description_column)
         check_severity = Cells(row, severity_column)
-        check_graph_success = Cells(row, graph_success_column)
-        check_graph_failure = Cells(row, graph_failure_column)
+        check_graph_query = Cells(row, graph_column)
         check_guid = LCase(Cells(row, guid_column))
+        check_sec_mod = Cells(row, sec_mod_column)
+        check_cost_mod = Cells(row, cost_mod_column)
+        check_scale_mod = Cells(row, scale_mod_column)
+        check_simple_mod = Cells(row, simple_mod_column)
+        check_ha_mod = Cells(row, ha_mod_column)
         'If there was no GUID, generate one
         If Len(check_guid) = 0 Then check_guid = generate_guid()
         'Only read More Info hyperlink if the cell contains one
@@ -145,9 +155,13 @@ Sub export_json()
         json = json + "," + line_break + "      " + double_quote + "text" + double_quote + ": " + double_quote + correct_format_for_JSON(check_text) + double_quote
         If Len(check_description) > 0 Then json = json + "," + line_break + "      " + double_quote + "description" + double_quote + ": " + double_quote + correct_format_for_JSON(check_description) + double_quote
         If Len(check_guid) > 0 Then json = json + "," + line_break + "      " + double_quote + "guid" + double_quote + ": " + double_quote + check_guid + double_quote
+        If Len(check_sec_mod) > 0 And IsNumeric(check_sec_mod) Then json = json + "," + line_break + "      " + double_quote + "security" + double_quote + ": " + CStr(check_sec_mod)
+        If Len(check_cost_mod) > 0 And IsNumeric(check_cost_mod) Then json = json + "," + line_break + "      " + double_quote + "cost" + double_quote + ": " + CStr(check_cost_mod)
+        If Len(check_scale_mod) > 0 And IsNumeric(check_scale_mod) Then json = json + "," + line_break + "      " + double_quote + "scale" + double_quote + ": " + CStr(check_scale_mod)
+        If Len(check_simple_mod) > 0 And IsNumeric(check_simple_mod) Then json = json + "," + line_break + "      " + double_quote + "simple" + double_quote + ": " + CStr(check_simple_mod)
+        If Len(check_ha_mod) > 0 And IsNumeric(check_ha_mod) Then json = json + "," + line_break + "      " + double_quote + "ha" + double_quote + ": " + CStr(check_ha_mod)
         If Len(check_severity) > 0 Then json = json + "," + line_break + "      " + double_quote + "severity" + double_quote + ": " + double_quote + check_severity + double_quote
-        If Len(check_graph_success) > 0 Then json = json + "," + line_break + "      " + double_quote + "graph_success" + double_quote + ": " + double_quote + correct_format_for_JSON(check_graph_success) + double_quote
-        If Len(check_graph_failure) > 0 Then json = json + "," + line_break + "      " + double_quote + "graph_failure" + double_quote + ": " + double_quote + correct_format_for_JSON(check_graph_failure) + double_quote
+        If Len(check_graph_query) > 0 Then json = json + "," + line_break + "      " + double_quote + "graph" + double_quote + ": " + double_quote + correct_format_for_JSON(check_graph_query) + double_quote
         If Len(check_training) > 0 Then json = json + "," + line_break + "      " + double_quote + "training" + double_quote + ": " + double_quote + correct_format_for_JSON(check_training) + double_quote
         If Len(check_link) > 0 Then json = json + "," + line_break + "      " + double_quote + "link" + double_quote + ": " + double_quote + correct_format_for_JSON(check_link) + double_quote
         json = json + line_break + "    }"
@@ -311,7 +325,12 @@ Sub import_checklist_fromfile(json_file As Variant)
     Dim row, item_count, category_count, status_count, i As Integer
     Dim notverified As String
     Dim get_user_info_successful As Boolean
-    'Initialization
+    Dim start_time As Double
+    'Remember time when macro starts
+    start_time = Timer
+    'Disable some stuff to speed up
+    Call DisableStuff
+    'Variable value initialization
     row = row1
     double_quote = Chr(34) ' double quote as a variable
     json = ""
@@ -401,8 +420,7 @@ Sub import_checklist_fromfile(json_file As Variant)
         Cells(row, status_column) = ""
         Cells(row, comments_column) = ""
         Cells(row, training_column) = ""
-        Cells(row, graph_success_column) = ""
-        Cells(row, graph_failure_column) = ""
+        Cells(row, graph_column) = ""
         Cells(row, guid_column) = ""
         row = row + 1
     Loop
@@ -452,11 +470,13 @@ Sub import_checklist_fromfile(json_file As Variant)
             row = row + 1
         Loop
     End If
-    MsgBox CStr(item_count) + " check items and " + CStr(category_count) + " categories imported from JSON file " + json_file, vbInformation
+    MsgBox CStr(item_count) + " check items and " + CStr(category_count) + " categories imported from JSON file " + json_file + " in " + CStr(Round(Timer - start_time, 2)) + " seconds", vbInformation
+    Call EnableStuff
     Exit Sub
 import_checklist_fromfile_err:
     If Err.Number <> 0 Then
         MsgBox "Error while importing checklist from JSON file " & json_file & ": " & Err.Description, vbCritical
+        Call EnableStuff
     End If
 End Sub
 
@@ -478,9 +498,11 @@ End Function
 Sub update_row(ByVal json_item As Object, ByVal row As Integer, notverified As String, user_input_saved As Boolean)
 On Error GoTo update_row_err
     ' Variables and constants
-    Dim check_category, check_subcategory, check_text, check_description, check_severity, check_status, check_link, check_training, check_graph_success, check_graph_failure, check_guid As String
+    Dim check_category As String, check_subcategory As String, check_text As String, check_description As String, check_severity As String, check_status As String, check_link As String, check_training As String, check_graph_query As String, check_guid As String
     Dim user_input_comments As String, user_input_status As String
+    Dim check_sec_mod, check_cost_mod, check_scale_mod, check_simple_mod, check_ha_mod
     Dim get_guid_user_input_successful As Boolean
+    Dim newrow(1 To num_columns) As Variant
     ' Defaults to English "Not Verified"
     If Len(notverified) = 0 Then notverified = "Not verified"
     ' Code
@@ -491,38 +513,80 @@ On Error GoTo update_row_err
     check_severity = get_object_property(json_item, "severity")
     check_link = get_object_property(json_item, "link")
     check_training = get_object_property(json_item, "training")
-    check_graph_success = get_object_property(json_item, "graph_success")
-    check_graph_failure = get_object_property(json_item, "graph_failure")
+    check_graph_query = get_object_property(json_item, "graph")
+    If Len(check_graph_query) = 0 Then check_graph_query = get_object_property(json_item, "graph_success")  'Backwards compatibility
     check_guid = get_object_property(json_item, "guid")
-    Cells(row, category_column) = check_category
-    Cells(row, subcategory_column) = check_subcategory
-    Cells(row, text_column) = check_text
-    Cells(row, description_column) = check_description
-    Cells(row, severity_column) = check_severity
-    Cells(row, guid_column) = check_guid
+    check_sec_mod = get_object_property(json_item, "security")
+    check_cost_mod = get_object_property(json_item, "cost")
+    check_scale_mod = get_object_property(json_item, "scale")
+    check_simple_mod = get_object_property(json_item, "simple")
+    check_ha_mod = get_object_property(json_item, "ha")
+    'Cells(row, category_column) = check_category
+    'Cells(row, subcategory_column) = check_subcategory
+    'Cells(row, text_column) = check_text
+    'Cells(row, description_column) = check_description
+    'Cells(row, severity_column) = check_severity
+    'Cells(row, guid_column) = check_guid
+    newrow(category_column) = check_category
+    newrow(subcategory_column) = check_subcategory
+    newrow(text_column) = check_text
+    newrow(description_column) = check_description
+    newrow(severity_column) = check_severity
+    newrow(guid_column) = check_guid
     'If the previous user input was saved, and we can successfully retrieve an entry for this guid, put it in the comments/status fields
     If user_input_saved Then
         If get_user_input_from_guid(check_guid, user_input_comments, user_input_status) Then
-            Cells(row, status_column) = CStr(user_input_status)     'Some times around this line there is a dreadful 400 error :(
-            Cells(row, comments_column) = CStr(user_input_comments)
+            'Cells(row, status_column) = CStr(user_input_status)     'Some times around this line there is a dreadful 400 error :(
+            'Cells(row, comments_column) = CStr(user_input_comments)
+            newrow(status_column) = CStr(user_input_status)     'Some times around this line there is a dreadful 400 error :(
+            newrow(comments_column) = CStr(user_input_comments)
         Else
-            Cells(row, status_column) = notverified '"notverified" is a variable containing the translation of "not verified"
-            Cells(row, comments_column) = ""
+            'Cells(row, status_column) = notverified '"notverified" is a variable containing the translation of "not verified"
+            'Cells(row, comments_column) = ""
+            newrow(status_column) = notverified '"notverified" is a variable containing the translation of "not verified"
+            newrow(comments_column) = ""
         End If
     'Otherwise, blank them
     Else
-        Cells(row, status_column) = notverified '"notverified" is a variable containing the translation of "not verified"
-        Cells(row, comments_column) = ""
+        'Cells(row, status_column) = notverified '"notverified" is a variable containing the translation of "not verified"
+        'Cells(row, comments_column) = ""
+        newrow(status_column) = notverified '"notverified" is a variable containing the translation of "not verified"
+        newrow(comments_column) = ""
     End If
     'Graph queries can optionally be imported or not, since it impacts readability
     'Per default, they are only imported when using the English language
     If import_graph_queries Then
-        Cells(row, graph_success_column) = check_graph_success
-        Cells(row, graph_failure_column) = check_graph_failure
+        'Cells(row, graph_success_column) = check_graph_success
+        'Cells(row, graph_failure_column) = check_graph_failure
+        newrow(graph_column) = check_graph_query
     Else
-        Cells(row, graph_success_column) = ""
-        Cells(row, graph_failure_column) = ""
+        'Cells(row, graph_success_column) = ""
+        'Cells(row, graph_failure_column) = ""
+        newrow(graph_column) = ""
     End If
+    'Design modifiers are optional too
+    If IsNumeric(check_sec_mod) Then
+        'Cells(row, sec_mod_column) = check_sec_mod
+        newrow(sec_mod_column) = check_sec_mod
+    End If
+    If IsNumeric(check_cost_mod) Then
+        'Cells(row, cost_mod_column) = check_cost_mod
+        newrow(cost_mod_column) = check_cost_mod
+    End If
+    If IsNumeric(check_scale_mod) Then
+        'Cells(row, scale_mod_column) = check_scale_mod
+        newrow(scale_mod_column) = check_scale_mod
+    End If
+    If IsNumeric(check_simple_mod) Then
+        'Cells(row, simple_mod_column) = check_simple_mod
+        newrow(simple_mod_column) = check_simple_mod
+    End If
+    If IsNumeric(check_ha_mod) Then
+        'Cells(row, ha_mod_column) = check_ha_mod
+        newrow(ha_mod_column) = check_ha_mod
+    End If
+    'Update Excel row
+    Range(Cells(row, 1), Cells(row, num_columns)).Value = newrow
     'Training and MoreInfo link optional
     If Len(check_link) > 0 Then
         Cells(row, link_column).Hyperlinks.Add Address:=check_link, TextToDisplay:="More info", Anchor:=Cells(row, link_column), ScreenTip:=check_link
@@ -671,20 +735,28 @@ End Sub
 'Delete all from controls, so that the spreadsheet can be saved as macro-free
 Sub clear_rows()
     Dim row As Integer
+    Dim emptyrow() As Variant
     row = row1
+    emptyrow = Array("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
     Do While row < row_limit And (Len(Cells(row, category_column)) + Len(Cells(row, subcategory_column)) + Len(Cells(row, text_column)) + Len(Cells(row, status_column)) + Len(Cells(row, comments_column))) > 0
-        Cells(row, category_column) = ""
-        Cells(row, subcategory_column) = ""
-        Cells(row, text_column) = ""
-        Cells(row, description_column) = ""
-        Cells(row, severity_column) = ""
-        Cells(row, link_column) = ""
-        Cells(row, status_column) = ""
-        Cells(row, comments_column) = ""
-        Cells(row, training_column) = ""
-        Cells(row, graph_success_column) = ""
-        Cells(row, graph_failure_column) = ""
-        Cells(row, guid_column) = ""
+        'Cells(row, category_column) = ""
+        'Cells(row, subcategory_column) = ""
+        'Cells(row, text_column) = ""
+        'Cells(row, description_column) = ""
+        'Cells(row, severity_column) = ""
+        'Cells(row, link_column) = ""
+        'Cells(row, status_column) = ""
+        'Cells(row, comments_column) = ""
+        'Cells(row, training_column) = ""
+        'Cells(row, graph_success_column) = ""
+        'Cells(row, graph_failure_column) = ""
+        'Cells(row, guid_column) = ""
+        'Cells(row, sec_mod_column) = ""
+        'Cells(row, cost_mod_column) = ""
+        'Cells(row, scale_mod_column) = ""
+        'Cells(row, simple_mod_column) = ""
+        'Cells(row, ha_mod_column) = ""
+        Range(Cells(row, 1), Cells(row, num_columns)).Value = emptyrow
         row = row + 1
     Loop
     'Reset checklist title
@@ -783,7 +855,7 @@ Dim row As Integer
     If Cells(language_selection_row, language_selection_col) = "English" Then
         import_graph_queries = True
     Else
-        MsgBox "Azure Resource Graph queries not imported, since the selected language is not English"
+        MsgBox "Azure Resource Graph queries will not be imported, since the selected language is not English", vbInformation + vbOKOnly
     End If
     
     'Error message if tech or lang could not be found
@@ -860,6 +932,17 @@ get_user_input_from_guid_err:
     Exit Function
 End Function
 
+'Disable some settings to speed up code
+Sub DisableStuff()
+    Application.Calculation = xlCalculationManual
+    Application.ScreenUpdating = False
+End Sub
+
+'Enable settings back to normal
+Sub EnableStuff()
+    Application.Calculation = xlCalculationAutomatic
+    Application.ScreenUpdating = True
+End Sub
 
 'Test sub
 Sub test()
