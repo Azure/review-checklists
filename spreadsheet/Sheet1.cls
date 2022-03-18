@@ -657,61 +657,32 @@ On Error GoTo import_graph_results_err
             'Remove line breaks and parse
             json = Replace(json, vbCrLf, "")
             Set json_object = JsonConverter.ParseJson(json)  'This line might give Run-time error 10001 if there are JSON syntax errors
-            'Read metadata, which contains the format
-            If json_object.Exists("metadata") Then
-                query_result_format = get_object_property(json_object("metadata"), "format")
-                query_result_date = get_object_property(json_object("metadata"), "date")
-            Else
-                MsgBox "No metadata found in file " & json_file & ", defaulting to short format", vbInformation
-                query_result_format = "short"
-                query_result_date = ""
-            End If
             'Browse the checks one per one
             If json_object.Exists("checks") Then
                 For Each json_item In json_object("checks")
-                    If query_result_format = "short" Then
-                        'Get the check info
-                        check_guid = get_object_property(json_item, "guid")
-                        check_success_result = get_object_property(json_item, "success")
-                        check_failure_result = get_object_property(json_item, "failure")
-                        'Now find the row with a matching GUID, and populate the comments field
-                        row = row1
-                        Do Until Cells(row, guid_column) = check_guid Or Cells(row, text_column) = ""
-                            row = row + 1
-                        Loop
-                        'And update the comments column if it was found
-                        If Cells(row, text_column) = "" Then
-                           MsgBox "GUID " & check_guid & " not found in this checklist.", vbExclamation
-                        Else
-                            Cells(row, comments_column) = "Compliant resources: " + check_success_result + ". Non-compliant resources: " + check_failure_result
-                        End If
-                    ElseIf query_result_format = "long" Then
-                        'Get the check info
-                        check_guid = get_object_property(json_item, "guid")
-                        check_result = get_object_property(json_item, "result")
-                        check_arm_id = get_object_property(json_item, "id")
-                        'Now find the row with a matching GUID, and populate the comments field
-                        row = row1
-                        Do Until Cells(row, guid_column) = check_guid Or Cells(row, text_column) = ""
-                            row = row + 1
-                        Loop
-                        'And update the comments column if it was found
-                        If Cells(row, text_column) = "" Then
-                           MsgBox "GUID " & check_guid & " not found in this checklist.", vbExclamation
-                        Else
-                            'Enter a line break if the cell wasnt empty
-                            If Len(Cells(row, comments_column)) > 0 Then Cells(row, comments_column) = Cells(row, comments_column) & Chr(10)
-                            'Depending on the test result, add 'compliant' or 'non-compliant'
-                            If check_result = "success" Then
-                                Cells(row, comments_column) = Cells(row, comments_column) & "Compliant: " + check_arm_id
-                            ElseIf check_result = "fail" Then
-                                Cells(row, comments_column) = Cells(row, comments_column) & "Non-compliant: " + check_arm_id
-                            Else
-                                MsgBox "Check result " & check_result & " not understood", vbExclamation
-                            End If
-                        End If
+                    'Get the check info
+                    check_guid = get_object_property(json_item, "guid")
+                    check_result = get_object_property(json_item, "compliant")
+                    check_arm_id = get_object_property(json_item, "id")
+                    'Now find the row with a matching GUID, and populate the comments field
+                    row = row1
+                    Do Until Cells(row, guid_column) = check_guid Or Cells(row, text_column) = ""
+                        row = row + 1
+                    Loop
+                    'And update the comments column if it was found
+                    If Cells(row, text_column) = "" Then
+                       MsgBox "GUID " & check_guid & " not found in this checklist.", vbExclamation
                     Else
-                        Debug.Print "Unknown query result format: " & query_result_format
+                        'Enter a line break if the cell wasnt empty
+                        If Len(Cells(row, comments_column)) > 0 Then Cells(row, comments_column) = Cells(row, comments_column) & Chr(10)
+                        'Depending on the test result, add 'compliant' or 'non-compliant'
+                        If check_result = "true" Then
+                            Cells(row, comments_column) = Cells(row, comments_column) & "Compliant: " + check_arm_id
+                        ElseIf check_result = "false" Then
+                            Cells(row, comments_column) = Cells(row, comments_column) & "Non-compliant: " + check_arm_id
+                        Else
+                            MsgBox "Check result " & check_result & " not understood", vbExclamation
+                        End If
                     End If
                 Next json_item
             Else

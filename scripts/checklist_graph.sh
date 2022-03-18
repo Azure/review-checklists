@@ -11,17 +11,15 @@
 #    -t/--technology: technology to verify. Accepted values lz, aks and avd. Defaults to aks
 #    -c/--category: category to filter the tests. Accepted values: 0 to (number_of_categories-1)
 #    -l/--list-categories: instead of running Azure Graph queries, it only displays the categories in the file and its corresponding indexes
-#    -s/--show-text: shows the check text (good for troubleshooting, not so good to copy/paste to Excel)
-#    -n/--no-empty: does not show checks without an associated query
-#    -o/--output: can be either console or json
-#    -f/--format: can be either short (syntax "<resourceGroup>/<name>") or long (syntax "<id>")
+#    -f/--format: can be either text or json (defaults to json)
 #    --file: custom JSON file (otherwise the latest checklist is downloaded from Github)
 #    -mg/--management-group: per default the Azure Resource Graph queries are scoped to the current subscription, you can enlarge the scope to a given management group
 #    -d/--debug: increase verbosity
 #
 # Example:
 #       ./checklist_graph.sh -l -t=aks
-#       ./checklist_graph.sh -c=0 -t=aks
+#       ./checklist_graph.sh -c=0 -t=aks -f=text
+#       ./checklist_graph.sh -t=aks -f=json >graph_results.json
 #
 # Jose Moreno, October 2021
 ###################################################################################################
@@ -36,11 +34,10 @@ help="no"
 error_file=/tmp/error.json
 list_categories=no
 check_text=no
-no_empty=no
-output=console
-format=short
+format=json
 mg=""
 filename=""
+no_empty=yes
 
 # Color format variables
 normal="\e[0m"
@@ -75,18 +72,6 @@ do
                format="${i#*=}"
                shift # past argument=value
                ;;
-          -s*|--show-text*)
-               check_text="yes"
-               shift # past argument with no value
-               ;;
-          -n*|--no-empty*)
-               no_empty="yes"
-               shift # past argument with no value
-               ;;
-          -o=*|--output=*)
-               output="${i#*=}"
-               shift # past argument=value
-               ;;
           -mg=*|--management-group=*)
                mg="${i#*=}"
                shift # past argument=value
@@ -115,14 +100,14 @@ if [[ "$help" == "yes" ]]
 then
     script_name="$0"
      echo "Please run this script as:
-        $script_name [--technology=lz|aks|avd] [--category=<category_id>] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--show-text] [--no-empty] [--debug]
-        $script_name [--file=<path_to_json_file>] [--category=<category_id>] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--show-text] [--no-empty] [--debug]
+        $script_name [--technology=lz|aks|avd] [--category=<category_id>] [--format=json|text] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--debug]
+        $script_name [--file=<json_file_path>] [--category=<category_id>] [--format=json|text] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--debug]
         $script_name [--list-categories] [--base-url=<base_url>] [--technology=lz|aks|avd] [--debug]"
     exit
 fi
 
 # If outputing to JSON, we dont want output that breaks the JSON syntax
-if [[ "$output" == "json" ]]; then
+if [[ "$format" == "json" ]]; then
     check_text=no
     no_empty=yes
     if [[ "$debug" == "yes" ]]; then echo "DEBUG: Output is $output, setting --check-text=${check_text} and --no-empty=${no_empty}..."; fi
@@ -179,8 +164,7 @@ fi
 if [[ "$debug" == "yes" ]]; then echo "DEBUG: Extracting information from JSON..."; fi
 if [[ -n "$category_name" ]]
 then
-    graph_success_list=$(print -r "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .graph_success')
-    graph_failure_list=$(print -r "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .graph_failure')
+    graph_query_list=$(print -r "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .graph')
     category_list=$(print -r "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .category')
     text_list=$(print -r "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .text')
     guid_list=$(print -r "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .guid')
@@ -190,8 +174,7 @@ then
     fi
     if [[ "$debug" == "yes" ]]; then echo "DEBUG: $(echo $text_list | wc -l) tests found in the checklist for category ${category_name}."; fi
 else
-    graph_success_list=$(print -r "$checklist_json" | jq -r '.items[] | .graph_success')
-    graph_failure_list=$(print -r "$checklist_json" | jq -r '.items[] | .graph_failure')
+    graph_query_list=$(print -r "$checklist_json" | jq -r '.items[] | .graph')
     category_list=$(print -r "$checklist_json" | jq -r '.items[] | .category')
     text_list=$(print -r "$checklist_json" | jq -r '.items[] | .text')
     guid_list=$(print -r "$checklist_json" | jq -r '.items[] | .guid')
@@ -204,7 +187,7 @@ fi
 
 # Debug
 if [[ "$debug" == "yes" ]]; then 
-    echo "DEBUG: $(echo $graph_success_list | wc -l) graph queries for success tests found in the checklist."
+    echo "DEBUG: $(echo $graph_query_list | wc -l) graph queries found in the checklist."
     # echo "$graph_success_list"
 fi
 if [[ "$debug" == "yes" ]]; then 
@@ -235,7 +218,7 @@ i=0
 this_category_name=""
 json_output="{ \"metadata\": {\"format\": \"${format}\", \"timestamp\": \"$(date)\"}, \"checks\": ["
 json_output_empty="yes"
-while IFS= read -r graph_success_query; do
+while IFS= read -r graph_query; do
     i=$(($i+1))
     this_guid=$(echo $guid_list | head -$i | tail -1)
     if [[ "$debug" == "yes" ]]; then echo "DEBUG: Processing check item $i, GUID '$this_guid'..."; fi
@@ -243,126 +226,89 @@ while IFS= read -r graph_success_query; do
         if [[ "$debug" == "yes" ]]; then echo "ERROR: GUID not defined for check number $i"; fi
     fi
     # Print header category if required
-    if [[ "$this_category_name" != "$(echo $category_list | head -$i | tail -1)" ]]
-    then
-        this_category_name=$(echo $category_list | head -$i | tail -1)
-        if [[ "$output" == "console" ]]; then
-            echo "${bold}${blue}CHECKLIST CATEGORY: ${this_category_name}${normal}"
-        fi
-    fi
+    # if [[ "$this_category_name" != "$(echo $category_list | head -$i | tail -1)" ]]
+    # then
+    #     this_category_name=$(echo $category_list | head -$i | tail -1)
+    #     if [[ "$format" == "text" ]]; then
+    #         echo "${bold}${blue}CHECKLIST CATEGORY: ${this_category_name}${normal}"
+    #     fi
+    # fi
     # Check if there is any query
-    if [[ "$graph_success_query" == "null" ]]; then
+    if [[ "$graph_query" == "null" ]]; then
         if [[ "$no_empty" != "yes" ]]; then
             # Print title if required
             if [[ "$check_text" == "yes" ]]; then
                 this_text=$(echo $text_list | head -$i | tail -1)
-                echo "CHECKLIST ITEM: ${this_text}:"
+                echo "${blue}CHECKLIST ITEM: ${this_text}:${normal}"
             fi
             # Print output
             echo "N/A"
         fi
     else
-        # Print title if required
-        if [[ "$check_text" == "yes" ]] && [[ "$output" == "console" ]]; then
+        # Print title if text format
+        if [[ "$format" == "text" ]]; then
             this_text=$(echo $text_list | head -$i | tail -1)
-            echo "CHECKLIST ITEM: ${this_text}:"
+            echo "${blue}CHECKLIST ITEM: ${this_text}:${normal}"
         fi
         rm $error_file 2>/dev/null; touch $error_file
-        if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running success query '$graph_success_query'..."; fi
-        # If format is short, the graph query command returns a single line, if format is long, it is one line per resource
-        if [[ "$format" == "short" ]]; then
-            success_result=$(az graph query -q "$graph_success_query" ${(z)mg_option} -o json 2>$error_file | jq -r '.data[] | "\(.resourceGroup)/\(.name)"' 2>>$error_file | tr '\n' ',')
-            if [[ -s $error_file ]]; then
-                success_result="Error";
-                if [[ "$debug" == "yes" ]]; then cat $error_file; fi
-            else
-                # Remove last comma
-                success_result=${success_result%?}
-            fi
-            # If no object was returned
-            if [[ -z "$success_result" ]]; then success_result='None'; fi
-        else
-            success_result=$(az graph query -q "$graph_success_query" ${(z)mg_option} -o tsv 2>$error_file --query 'data[].id' | sort -u)
-        fi
+        if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running query \"$graph_query\"..."; fi
+        # The query should return one line per result. Fields ID and Compliant and mandatory
+        query_result=$(az graph query -q "$graph_query" ${(z)mg_option} -o tsv 2>$error_file --query 'data[].[id,compliant]' | sort -u)
         rm $error_file 2>/dev/null; touch $error_file
-        graph_failure_query=$(print -r "$graph_failure_list" | head -$i | tail -1)
-        if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running failure query '$graph_failure_query'..."; fi
-        # If format is short, the graph query command returns a single line, if format is long, it is one line per resource
-        if [[ "$format" == "short" ]]; then
-            # NOTE: this line will give some unexpected results when running Graph queries that return subscription IDs, since those do not have a RG
-            failure_result=$(az graph query -q "$graph_failure_query" ${(z)mg_option} -o json 2>$error_file | jq -r '.data[] | "\(.resourceGroup)/\(.name)"' 2>>$error_file | tr '\n' ',')
-            if [[ -s $error_file ]]; then
-                failure_result="Error"
-                if [[ "$debug" == "yes" ]]; then cat $error_file; fi
-            else
-                # Remove last comma
-                failure_result=${failure_result%?}
-            fi
-            # If no object was returned
-            if [[ -z "$failure_result" ]]; then failure_result='None'; fi
-        else
-            # If format is long, the result should be a list of IDs
-            failure_result=$(az graph query -q "$graph_failure_query" ${(z)mg_option} -o tsv 2>$error_file --query 'data[].id' | sort -u)
-        fi
-        # Print output in color format
-        if [[ "$output" == "console" ]] && [[ "$format" == "short" ]]; then
-            if [[ "$success_result" == "None" ]]; then
-                success_color=$yellow
-            else
-                success_color=$green;
-            fi
-            if [[ "$failure_result" == "None" ]]; then
-                failure_color=$green
-            else
-                failure_color=$red;
-            fi
-            echo "Success: ${success_color}${success_result}${normal}. Fail: ${failure_color}${failure_result}${normal}"
-        fi
-        # Append JSON element, depending on the chosen format short/long
-        if [[ "$format" == "short" ]]; then
-            # First, add a comma if this wasnt the first element
-            if [[ "$json_output_empty" == "yes" ]]; then
-                json_output_empty="no"
-            else
-                json_output+=", "
-            fi
-            json_output+="{\"guid\": \"$this_guid\", \"success\": \"$success_result\", \"failure\": \"$failure_result\"}"
-        else
-            # If long format, we append a line for each found compliant/non-compliant resource
-            while IFS= read -r resource_id
-            do
-                if [[ -n "$resource_id" ]]; then
-                    # First, add a comma if this wasnt the first element
-                    if [[ "$json_output_empty" == "yes" ]]; then
-                        json_output_empty="no"
+        while IFS= read -r result
+        do
+            if [[ -n "$result" ]]; then
+                # Extract the tab-separated fields (ID and compliant)
+                resource_id=$(echo $result | cut -f 1)
+                result_id=$(echo $result | cut -f 2)
+                # Print output in color if format is text
+                if [[ "$format" == "text" ]]; then
+                    if [[ "$result_id" == "1" ]]; then
+                        result_text="compliant"
+                        color=$green
+                    elif [[ "$result_id" == "0" ]]; then
+                        result_text="non-compliant"
+                        color=$red;
                     else
-                        json_output+=", "
+                        if [[ "$debug" == "yes" ]]; then echo "WARNING: unknown result code returned: $result_id..."; fi
+                        result_text="undefined"
+                        color=$blue;
                     fi
-                    # Add an item per compliant resource
-                    json_output+="{\"guid\": \"$this_guid\", \"result\": \"success\", \"id\": \"$resource_id\"}"
-                fi
-            done < <(printf '%s\n' "$success_result")
-            while IFS= read -r resource_id
-            do
-                if [[ -n "$resource_id" ]]; then
-                    # First, add a comma if this wasnt the first element
-                    if [[ "$json_output_empty" == "yes" ]]; then
-                        json_output_empty="no"
+                    echo "${resource_id}: ${color}${result_text}${normal} "
+                # With JSON format, we append a line for each found compliant/non-compliant resource
+                elif [[ "$format" == "json" ]]; then
+                    if [[ "$result_id" == "1" ]]; then
+                        result_bool=true
+                    elif [[ "$result_id" == "0" ]]; then
+                        result_bool=false
                     else
-                        json_output+=", "
+                        if [[ "$debug" == "yes" ]]; then echo "WARNING: unknown result code returned \"$result_id\""; fi
+                        result_bool=undefined
                     fi
-                    # Add an item per non-compliant resource
-                    json_output+="{\"guid\": \"$this_guid\", \"result\": \"fail\", \"id\": \"$resource_id\"}"
+                    if [[ -n "$resource_id" ]]; then
+                        # First, add a comma if this wasnt the first element
+                        if [[ "$json_output_empty" == "yes" ]]; then
+                            json_output_empty="no"
+                        else
+                            json_output+=", "
+                        fi
+                        # Add an item per compliant resource
+                        json_output+="{\"guid\": \"$this_guid\", \"compliant\": \"$result_bool\", \"id\": \"$resource_id\"}"
+                    fi
+                else
+                    echo "ERROR: format $format not recognized, only 'json' or 'text' are accepted formats"
                 fi
-            done < <(printf '%s\n' "$failure_result")
-        fi
+            else
+                if [[ "$debug" == "yes" ]]; then echo "WARNING: Graph query returned an empty result"; fi
+            fi
+        done < <(printf '%s\n' "$query_result")
     fi
-done <<< "$graph_success_list"
+done <<< "$graph_query_list"
 
 # Close JSON format
-json_output+="]}"
+json_output+=" ] }"
 
 # If output is JSON, print check_results variable
-if [[ "$output" == "json" ]]; then
+if [[ "$format" == "json" ]]; then
     echo "$json_output"
 fi
