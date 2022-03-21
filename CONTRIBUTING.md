@@ -24,16 +24,16 @@ Optionally, you can use the provided Excel spreadsheet to do changes to the exis
 
 ## Adding Resource Graph queries
 
-When adding Azure Resource Graph queries, two different queries are expected:
+When adding Azure Resource Graph queries, the query is expected to return two fields:
 
-* **Success** query, returning a list of resources that are **compliant** with the checklist recommendation
-* **Failure** query, returning a list of resources that are **non-compliant** with the checklist recommendation
+* `id`: ARM ID of the resource being evaluated
+* `compliant`: boolean value that indicates whether the resource is compliant or non-compliant with the recommendation
 
-Both queries should return at least the following fields for each resource:
+For example, take the recommendation in the AKS checklist "Use Availability Zones if supported in your Azure region". The following query creates the `compliant` column based on a boolean check, and returns both the `id` and the new `compliant` columns:
 
-- id
-- name
-- resourceGroup (if applicable, subscriptions do not have a resource group)
+```
+where type=='microsoft.containerservice/managedclusters' | extend compliant= isnotnull(zones) | distinct id,compliant
+```
 
 ## Changes to the spreadsheet
 
