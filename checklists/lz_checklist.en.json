@@ -132,7 +132,7 @@
       "text": "Enforce reasonably flat management group hierarchy with no more than three to four levels, ideally",
       "guid": "2df27ee4-12e7-4f98-9f63-04722dd69c5b",
       "severity": "Medium",
-      "graph": "resourcecontainers | where type == 'microsoft.resources/subscriptions' | extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain | where array_length(mgmtChain) <=4 | mvexpand mgmt=mgmtChain | project subscriptionId, name, ['id'], management_group_name=mgmt.displayName, resourceGroup=mgmt.displayName",
+      "graph": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend Compliant =( array_length(mgmtChain) < 4 and array_length(mgmtChain) > 1)",
       "training": "https://docs.microsoft.com/learn/modules/azure-architecture-fundamentals/",
       "link": "https://docs.microsoft.com/azure/governance/management-groups/overview"
     },
@@ -281,7 +281,7 @@
       "text": "Ensure to use IP addresses from the address allocation for private internets (RFC 1918).",
       "guid": "3f630472-2dd6-49c5-a5c2-622f54b69bad",
       "severity": "Medium",
-      "graph": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | where (cidr matches regex @'^10\\\\..*') or (cidr matches regex @'^172\\\\.1[6-9]|2[0-9]|3[01]\\\\..*') or (cidr matches regex @'^192\\\\.168\\\\..*') | distinct name, id, subscriptionId, resourceGroup",
+      "graph": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend Compliant = (cidr matches regex @'^(10(\\\\.(25[0-5]|2[0-4][0-9]|1[0-9]{1,2}|[0-9]{1,2})){3}|((172\\\\.(1[6-9]|2[0-9]|3[01]))|192\\\\.168)(\\\\.(25[0-5]|2[0-4][0-9]|1[0-9]{1,2}|[0-9]{1,2})){2})')  | project name, id, subscriptionId, resourceGroup,Compliant,cidr",
       "training": "https://docs.microsoft.com/en-gb/learn/paths/architect-network-infrastructure/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing"
     },
@@ -291,7 +291,7 @@
       "text": "Ensure that IP address space isn't wasted, don't create unnecessarily large virtual networks (for example /16) ",
       "guid": "33aad5e8-c68e-41d7-9667-313b4f5664b5",
       "severity": "Medium",
-      "graph": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | where addressMask > 16 | project name, id, subscriptionId, resourceGroup, addressPrefix",
+      "graph": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend Compliant = addressMask >= 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, Compliant",
       "training": "https://docs.microsoft.com/en-gb/learn/paths/architect-network-infrastructure/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing"
     },
@@ -1152,7 +1152,7 @@
       "text": "Use different Azure Key Vaults for different applications and regions to avoid transaction scale limits and restrict access to secrets.",
       "guid": "a0477a20-9945-4bda-9333-4f2491163418",
       "severity": "Medium",
-      "graph": "ResourceContainers | where type=='microsoft.resources/subscriptions'| parse id with '/subscriptions/' SubscriptionID| project subscriptionId, SubscriptionName = name| join kind=leftouter (Resources| where type == 'microsoft.keyvault/vaults'| project id, name, subscriptionId) on subscriptionId| join kind= leftouter (Resources| where type == 'microsoft.keyvault/vaults'| summarize ResourceCount = count() by subscriptionId) on subscriptionId| extend RCount = iff(isnull(ResourceCount), 0, ResourceCount)| project-away ResourceCount| where RCount <> 1",
+      "graph": "ResourceContainers | where type=='microsoft.resources/subscriptions'| parse id with '/subscriptions/' SubscriptionID| project subscriptionId, SubscriptionName = name| join kind=leftouter (Resources| where type == 'microsoft.keyvault/vaults'| project id, name, subscriptionId) on subscriptionId| join kind= leftouter (Resources| where type == 'microsoft.keyvault/vaults'| summarize ResourceCount = count() by subscriptionId) on subscriptionId| extend RCount = iff(isnull(ResourceCount), 0, ResourceCount)| project-away ResourceCount| extend Compliant = (RCount <> 1)",
       "link": "https://docs.microsoft.com/azure/key-vault/general/overview-throttling"
     },
     {
@@ -1431,6 +1431,10 @@
     {
       "name": "Fulfilled",
       "description": "This check has been verified, and there are no further action items associated to it"
+    },
+    {
+      "name": "N/A",
+      "description": "Not applicable for current design"
     },
     {
       "name": "N/A",
