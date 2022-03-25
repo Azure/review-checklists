@@ -1,4 +1,18 @@
 {
+  "severities": [
+    {
+      "name": "Alto"
+    },
+    {
+      "name": "Medio"
+    },
+    {
+      "name": "Bajo"
+    }
+  ],
+  "metadata": {
+    "name": "Revisión de la zona de aterrizaje de Azure"
+  },
   "items": [
     {
       "category": "Identidad y acceso",
@@ -67,7 +81,7 @@
       "category": "Identidad y acceso",
       "subcategory": "Identidad",
       "text": "Utilice solo grupos para asignar permisos. Agregue grupos locales al grupo solo de Azure-AD si ya existe un sistema de administración de grupos.",
-      "guid": "4b69bad3-3aad-45e8-a68e-1d76667313b4",
+      "guid": "4b69bad3-3rd-45e8-a68e-1d76667313b4",
       "severity": "Medio",
       "training": "https://docs.microsoft.com/en-gb/learn/paths/manage-identity-and-access/",
       "link": "https://docs.microsoft.com/azure/active-directory/fundamentals/active-directory-groups-create-azure-portal"
@@ -132,8 +146,7 @@
       "text": "Aplique una jerarquía de grupos de administración razonablemente plana con no más de tres a cuatro niveles, idealmente",
       "guid": "2df27ee4-12e7-4f98-9f63-04722dd69c5b",
       "severity": "Medio",
-      "graph_success": "| de contenedores de recursos donde tipo == 'microsoft.resources/subscriptions' | extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain | donde array_length(mgmtChain) <=4 | mvexpand mgmt=mgmtChain | project subscriptionId, name, ['id'], management_group_name=mgmt.displayName, resourceGroup=mgmt.displayName",
-      "graph_failure": "| de contenedores de recursos donde tipo == 'microsoft.resources/subscriptions' | extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain | donde array_length(mgmtChain) >4 | mvexpand mgmt=mgmtChain | project subscriptionId, name, ['id'], management_group_name=mgmt.displayName, resourceGroup=mgmt.displayName",
+      "graph": "contenedores de recursos| donde tipo == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend Compliant =( array_length(mgmtChain) < 4 y array_length(mgmtChain) > 1)",
       "training": "https://docs.microsoft.com/learn/modules/azure-architecture-fundamentals/",
       "link": "https://docs.microsoft.com/azure/governance/management-groups/overview"
     },
@@ -282,8 +295,7 @@
       "text": "Asegúrese de utilizar las direcciones IP de la asignación de direcciones para Internet privado (RFC 1918).",
       "guid": "3f630472-2dd6-49c5-a5c2-622f54b69bad",
       "severity": "Medio",
-      "graph_success": "recursos | donde tipo == 'microsoft.network/virtualnetworks' | extender addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | nombre del proyecto, id, ubicación, resourceGroup, subscriptionId, cidr = addressPrefix | donde (cidr coincide con regex @'^10\\\\.. *') o (cidr coincide con regex @'^172\\\\.1[6-9]|2[0-9]|3[01]\\\\.. *') o (cidr coincide con regex @'^192\\\\.168\\\\.. *') | nombre distinto, id, subscriptionId, resourceGroup",
-      "graph_failure": "recursos | donde tipo == 'microsoft.network/virtualnetworks' | extender addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | nombre del proyecto, id, ubicación, resourceGroup, subscriptionId, cidr = addressPrefix | donde no ((cidr coincide con regex @'^10\\\\.. *') o (cidr coincide con regex @'^172\\\\.1[6-9]|2[0-9]|3[01]\\\\.. *') o (cidr coincide con regex @'^192\\\\.168\\\\.. *')) | nombre distinto, id, subscriptionId, resourceGroup",
+      "graph": "recursos | donde tipo == 'microsoft.network/virtualnetworks' | extender addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | nombre del proyecto, id, ubicación, resourceGroup, subscriptionId, cidr = addressPrefix | extend Compliant = (cidr coincide con regex @'^(10(\\\\.( 25[0-5]|2[0-4][0-9]|1[0-9]{1,2}| [0-9] {1,2})) {3}| ((172\\\\. (1[6-9]|2[0-9]|3[01]))| 192\\\\.168)(\\\\.( 25[0-5]|2[0-4][0-9]|1[0-9]{1,2}| [0-9] {1,2})) {2})')  | nombre del proyecto, id, subscriptionId, resourceGroup,Compliant,cidr",
       "training": "https://docs.microsoft.com/en-gb/learn/paths/architect-network-infrastructure/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing"
     },
@@ -293,8 +305,7 @@
       "text": "Asegúrese de que el espacio de direcciones IP no se desperdicie, no cree redes virtuales innecesariamente grandes (por ejemplo, /16) ",
       "guid": "33aad5e8-c68e-41d7-9667-313b4f5664b5",
       "severity": "Medio",
-      "graph_success": "recursos | donde tipo == 'microsoft.network/virtualnetworks' | extender addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extender addressMask = split(addressPrefix,'/')[1] | donde direcciónMáscara > 16 | nombre del proyecto, id, subscriptionId, resourceGroup, addressPrefix",
-      "graph_failure": "recursos | donde tipo == 'microsoft.network/virtualnetworks' | extender addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extender addressMask = split(addressPrefix,'/')[1] | donde addressMask < = 16 | nombre del proyecto, id, subscriptionId, resourceGroup, addressPrefix",
+      "graph": "recursos | donde tipo == 'microsoft.network/virtualnetworks' | extender addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extender addressMask = split(addressPrefix,'/')[1] | extender Compatible = direcciónMáscara > = 16 | nombre del proyecto, id, subscriptionId, resourceGroup, addressPrefix, Compliant",
       "training": "https://docs.microsoft.com/en-gb/learn/paths/architect-network-infrastructure/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing"
     },
@@ -634,7 +645,7 @@
       "guid": "e0d5973c-d4cd-421b-8881-37f5e6c4cfd3",
       "severity": "Medio",
       "training": "https://docs.microsoft.com/learn/modules/design-implement-azure-expressroute/",
-      "link": "https://docs.microsoft.com/azure/networking/"
+      "link": "https://docs.microsoft.com/azure/expressroute/designing-for-disaster-recovery-with-expressroute-privatepeering#challenges-of-using-multiple-expressroute-circuits"
     },
     {
       "category": "Topología y conectividad de red",
@@ -787,7 +798,7 @@
       "guid": "088137f5-e6c4-4cfd-9e50-4547c2447ec6",
       "severity": "Medio",
       "training": "https://docs.microsoft.com/learn/paths/secure-networking-infrastructure/",
-      "link": "https://azure.microsoft.com/solutions/network-appliances/"
+      "link": "https://docs.microsoft.com/azure/ddos-protection/ddos-protection-reference-architectures"
     },
     {
       "category": "Topología y conectividad de red",
@@ -868,7 +879,7 @@
       "guid": "c2447ec6-6138-4a72-80f1-ce16ed301d6e",
       "severity": "Medio",
       "training": "https://docs.microsoft.com/learn/paths/implement-resource-mgmt-security/",
-      "link": "https://docs.microsoft.com/azure/web-application-firewall/ag/ag-overview"
+      "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-landing-zone-network-segmentation"
     },
     {
       "category": "Topología y conectividad de red",
@@ -1155,6 +1166,7 @@
       "text": "Use diferentes Almacenes de claves de Azure para diferentes aplicaciones y regiones a fin de evitar los límites de escala de transacciones y restringir el acceso a los secretos.",
       "guid": "a0477a20-9945-4bda-9333-4f2491163418",
       "severity": "Medio",
+      "graph": "| ResourceContainers donde tipo=='microsoft.resources/subscriptions'| parse id con '/subscriptions/' SubscriptionID| project subscriptionId, SubscriptionName = nombre| join kind=leftouter (Resources| where type == 'microsoft.keyvault/vaults'| project id, name, subscriptionId) on subscriptionId| join kind= leftouter (Resources| donde type == 'microsoft.keyvault/vaults'| resumir ResourceCount = count() by subscriptionId) en subscriptionId| extend RCount = iff(isnull(ResourceCount), 0, ResourceCount)| ResourceCount| extender Compatible = (RCount <> 1)",
       "link": "https://docs.microsoft.com/azure/key-vault/general/overview-throttling"
     },
     {
@@ -1398,38 +1410,6 @@
       "link": "https://docs.microsoft.com/security/benchmark/azure/security-control-incident-response"
     }
   ],
-  "severities": [
-    {
-      "name": "Alto"
-    },
-    {
-      "name": "Medio"
-    },
-    {
-      "name": "Bajo"
-    }
-  ],
-  "metadata": {
-    "name": "Revisión de la zona de aterrizaje de Azure"
-  },
-  "status": [
-    {
-      "name": "No verificado",
-      "description": "Esta comprobación aún no se ha analizado"
-    },
-    {
-      "name": "Abrir",
-      "description": "Hay un elemento de acción asociado a esta comprobación"
-    },
-    {
-      "name": "Cumplido",
-      "description": "Esta comprobación se ha verificado y no hay más elementos de acción asociados a ella"
-    },
-    {
-      "name": "N/A",
-      "description": "No aplicable para el diseño actual"
-    }
-  ],
   "categories": [
     {
       "name": "Identidad y acceso"
@@ -1451,6 +1431,24 @@
     },
     {
       "name": "Implementación de aplicaciones"
+    }
+  ],
+  "status": [
+    {
+      "name": "No verificado",
+      "description": "Esta comprobación aún no se ha analizado"
+    },
+    {
+      "name": "Abrir",
+      "description": "Hay un elemento de acción asociado a esta comprobación"
+    },
+    {
+      "name": "Cumplido",
+      "description": "Esta comprobación se ha verificado y no hay más elementos de acción asociados a ella"
+    },
+    {
+      "name": "N/A",
+      "description": "No aplicable para el diseño actual"
     }
   ]
 }
