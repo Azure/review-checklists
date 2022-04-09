@@ -45,17 +45,21 @@ Please feel free to open an issue or create a PR if you find any error or missin
 
 ![](./pictures/spreadsheet_screenshot.png)
 
-3. Click the control button "Import latest checklist". After you accept the verification message, the spreadsheet will load the latest version of the selected technology and language
+3. You might need to unblock the file from the file properties in the Windows File Explorer, so that you can use the macros required to import the checklist content from github.com:
 
-4. (Optional) If you are going to distribute the spreadsheet to users that cannot work with macros (for example, either because of security reasons or because they use Office for Mac), save a version of the spreadsheet in xlsx format (instead of xlsm). Note that disabling macros will result in the spreadsheet losing its ability to import updated versions of the checklist or JSON-based Azure Resource Graph query results
+![](./pictures/unblock.png)
 
-5. Go row by row, and set the "Status" field to one of the available options, and write any remarks in the "Comments" field (such as why a recommendation is not relevant, or who will fix the open item)
+4. Click the control button "Import latest checklist". After you accept the verification message, the spreadsheet will load the latest version of the selected technology and language
+
+5. (Optional) If you are going to distribute the spreadsheet to users that cannot work with macros (for example, either because of security reasons or because they use Office for Mac), save a version of the spreadsheet in xlsx format (instead of xlsm). Note that disabling macros will result in the spreadsheet losing its ability to import updated versions of the checklist or JSON-based Azure Resource Graph query results
+
+6. Go row by row, and set the "Status" field to one of the available options, and write any remarks in the "Comments" field (such as why a recommendation is not relevant, or who will fix the open item)
 
    1. Since there are many rows in a review, it is recommended procededing in chunks: either going area after area (first "Networking", then "Security", etc) or starting with the "High" priority elements and afterwards moving down to "Medium" and "Low"
    1. If any recommendation is not clear, there is a "More Info" link with more context information.
    1. **IMPORTANT**: design decisions are not a checkbox exercise, but a series of compromises. It is OK deviating from certain recommendations, if the implications are clear (for example, sacrificing security with operational simplicity or lower cost for non-critical applications)
 
-6. Check the "Dashboard" worksheet for a graphical representation of the review progress
+7. Check the "Dashboard" worksheet for a graphical representation of the review progress
 
 ![](./pictures/spreadsheet_screenshot_dashboard.png)
 
