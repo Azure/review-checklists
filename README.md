@@ -9,16 +9,16 @@ Quick links for using the checklists in this repo:
 - [Latest release of the Excel spreadsheet](https://github.com/Azure/review-checklists/releases/latest/download/review_checklist.xlsm)
 - [https://aka.ms/ftaaas](https://aka.ms/ftaaas) for a web frontend (check out our sister repo [https://github.com/Azure/fta-aas](https://github.com/Azure/fta-aas)).
 
-Summary of checklists supported:
+Summary of checklists supported and the respective responsible owners:
 
-| Checklist | Status | Description |
+| Checklist | Status | CodeOwners |
 | --- | --- | --- |
-|  LZ | GA | Landing Zone design review |
-| AKS | GA | Azure Kubernetes Service design review |
-| AVD | GA | Azure Virtual Desktop design review |
-| Multitenancy | GA | Multitenancy design review |
-| Security | Preview | Security review |
-| AVS | Preview | Azure VMware Solution design review |
+| LZ  | GA | @alejandra8481 @anbengts @JasonBeck2 @akasnik @Kiwibayer |
+| AKS | GA | @erjosito @seenu433 |
+| AVD | GA | @igorpag @mikewarr @bagwyth |
+| Multitenancy | GA | @arsenvlad @johndowns @cherchyk |
+| Security | GA | @mgodfrey50 @rudneir2 |
+| AVS | Preview | @fskelly @mgodfrey50 @Kiwibayer @robinher |
 
 ## What is an Azure Design Review?
 
