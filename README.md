@@ -13,12 +13,12 @@ Summary of checklists supported and the respective responsible owners:
 
 | Checklist | Status | CodeOwners |
 | --- | --- | --- |
-| LZ  | GA | @alejandra8481 @anbengts @JasonBeck2 @akasnik @Kiwibayer |
-| AKS | GA | @erjosito @seenu433 |
-| AVD | GA | @igorpag @mikewarr @bagwyth |
-| Multitenancy | GA | @arsenvlad @johndowns @cherchyk |
-| Security | GA | @mgodfrey50 @rudneir2 |
-| AVS | Preview | @fskelly @mgodfrey50 @Kiwibayer @robinher |
+| LZ  | GA | [@alejandra8481](https://github.com/alejandra8481) [@anbengts](https://github.com/anbengts) [@JasonBeck2]((https://github.com/)JasonBeck2) [@akasnik](https://github.com/akasnik) [@Kiwibayer](https://github.com/Kiwibayer) |
+| AKS | GA | [@erjosito](https://github.com/erjosito) [@seenu433](https://github.com/seenu433) |
+| AVD | GA | [@igorpag](https://github.com/igorpag) [@mikewarr](https://github.com/mikewarr) [@bagwyth](https://github.com/bagwyth) |
+| Multitenancy | GA | [@arsenvlad](https://github.com/arsenvlad) [@johndowns](https://github.com/johndowns) [@cherchyk](https://github.com/cherchyk) |
+| Security | GA | [@mgodfrey50](https://github.com/mgodfrey50) [@rudneir2](https://github.com/rudneir2) |
+| AVS | Preview | [@fskelly](https://github.com/fskelly) [@mgodfrey50](https://github.com/mgodfrey50) [@Kiwibayer](https://github.com/Kiwibayer) [@robinher](https://github.com/robinher) |
 
 ## What is an Azure Design Review?
 
