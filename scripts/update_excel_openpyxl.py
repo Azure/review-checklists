@@ -14,6 +14,7 @@ import sys
 import os
 import requests
 from openpyxl import load_workbook
+from openpyxl.worksheet.datavalidation import DataValidation
 
 # Get input arguments
 parser = argparse.ArgumentParser(description='Update a checklist spreadsheet with JSON-formated Azure Resource Graph results')
@@ -23,6 +24,8 @@ parser.add_argument('--technology', dest='technology', action='store',
                     help='If you do not supply a JSON file with the checklist, you need to specify the technology from which the latest checklist will be downloaded from Github')
 parser.add_argument('--excel-file', dest='excel_file', action='store',
                     help='You need to supply an Excel file where the checklist will be written')
+parser.add_argument('--output-excel-file', dest='output_excel_file', action='store',
+                    help='You can optionally supply an Excel file where the checklist will be saved, otherwise it will be updated in-place')
 parser.add_argument('--verbose', dest='verbose', action='store_true',
                     default=False,
                     help='run in verbose mode (default: False)')
@@ -179,58 +182,71 @@ for item in checklist_data.get("items"):
 
 # Display summary
 if args.verbose:
-    print("DEBUG:", str(row_counter - row1), "checks addedd to Excel spreadsheet")
+    number_of_checks = row_counter - row1
+    print("DEBUG:", str(number_of_checks), "checks addedd to Excel spreadsheet")
 
-# # Get worksheet
-# try:
-#     wsv = wb[worksheet_values_name]
-#     if args.verbose:
-#         print("DEBUG: worksheet", worksheet_values_name, "selected successfully")
-# except Exception as e:
-#     print("ERROR: Error when selecting worksheet", worksheet_values_name, "-", str(e))
-#     sys.exit(1)
+# Get worksheet
+try:
+    wsv = wb[worksheet_values_name]
+    if args.verbose:
+        print("DEBUG: worksheet", worksheet_values_name, "selected successfully")
+except Exception as e:
+    print("ERROR: Error when selecting worksheet", worksheet_values_name, "-", str(e))
+    sys.exit(1)
 
+# Update categories
+row_counter = values_row1
+for item in checklist_data.get("categories"):
+    area = item.get("name")
+    wsv[col_values_area + str(row_counter)].value = area
+    row_counter += 1
 
-# # Update categories
-# row_counter = values_row1
-# for item in checklist_data.get("categories"):
-#     area = item.get("name")
-#     wsv[col_values_area + str(row_counter)].value = area
-#     row_counter += 1
+# Display summary
+if args.verbose:
+    print("DEBUG:", str(row_counter - values_row1), "categories addedd to Excel spreadsheet")
 
-# # Display summary
-# if args.verbose:
-#     print("DEBUG:", str(row_counter - values_row1), "categories addedd to Excel spreadsheet")
+# Update status
+row_counter = values_row1
+for item in checklist_data.get("status"):
+    status = item.get("name")
+    description = item.get("description")
+    wsv[col_values_status + str(row_counter)].value = status
+    wsv[col_values_description + str(row_counter)].value = description
+    row_counter += 1
 
-# # Update status
-# row_counter = values_row1
-# for item in checklist_data.get("status"):
-#     status = item.get("name")
-#     description = item.get("description")
-#     wsv[col_values_status + str(row_counter)].value = status
-#     wsv[col_values_description + str(row_counter)].value = description
-#     row_counter += 1
+# Display summary
+if args.verbose:
+    print("DEBUG:", str(row_counter - values_row1), "statuses addedd to Excel spreadsheet")
 
-# # Display summary
-# if args.verbose:
-#     print("DEBUG:", str(row_counter - values_row1), "statuses addedd to Excel spreadsheet")
+# Update severities
+row_counter = values_row1
+for item in checklist_data.get("severities"):
+    severity = item.get("name")
+    wsv[col_values_severity + str(row_counter)].value = severity
+    row_counter += 1
 
-# # Update severities
-# row_counter = values_row1
-# for item in checklist_data.get("severities"):
-#     severity = item.get("name")
-#     wsv[col_values_severity + str(row_counter)].value = severity
-#     row_counter += 1
+# Display summary
+if args.verbose:
+    print("DEBUG:", str(row_counter - values_row1), "severities addedd to Excel spreadsheet")
 
-# # Display summary
-# if args.verbose:
-#     print("DEBUG:", str(row_counter - values_row1), "severities addedd to Excel spreadsheet")
+# Data validation
+# dv = DataValidation(type="list", formula1='=Values!$B$2:$B$6', allow_blank=True, showDropDown=True)
+dv = DataValidation(type="list", formula1='=Values!$B$2:$B$6', allow_blank=True)
+rangevar = col_status + str(row1) +':' + col_status + str(row1 + number_of_checks)
+if args.verbose:
+    print("DEBUG: adding data validation to range", rangevar)
+dv.add(rangevar)
+ws.add_data_validation(dv)
 
 # Close book
+if args.output_excel_file:
+    save_file = args.output_excel_file
+else:
+    save_file = excel_file
 if args.verbose:
-    print("DEBUG: saving workbook", excel_file)
+    print("DEBUG: saving workbook", save_file)
 try:
-    wb.save(excel_file)
+    wb.save(save_file)
 except Exception as e:
-    print("ERROR: Error when saving Excel file", excel_file, "-", str(e))
+    print("ERROR: Error when saving Excel file to", save_file, "-", str(e))
     sys.exit(1)
