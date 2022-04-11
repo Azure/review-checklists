@@ -244,11 +244,11 @@ if checklist_file:
         input_excel_file = excel_file
         if args.output_excel_file:
             output_excel_file = args.output_excel_file
-        elif output_name_is_input_name:
-            if output_path:
+        elif args.output_name_is_input_name:
+            if args.output_path:
                 # Get filename without path and extension
                 output_excel_file = os.path.splitext(os.path.basename(input_excel_file))[0] + '.xlsx'
-                output_excel_file = os.path.join(output_path, output_excel_file)
+                output_excel_file = os.path.join(args.output_path, output_excel_file)
             else:
                 # Just change the extension
                 output_excel_file = os.path.splitext(input_excel_file)[0] + '.xlsx'
