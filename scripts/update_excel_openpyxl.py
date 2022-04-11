@@ -230,7 +230,7 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
 # Download checklist
 if checklist_file:
     checklist_file_list = checklist_file.split(" ")
-    for (checklist_file in checklist_file_list):
+    for checklist_file in checklist_file_list:
         if args.verbose:
             print("DEBUG: Opening checklist file", checklist_file)
         # Get JSON
