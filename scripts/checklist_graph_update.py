@@ -26,18 +26,20 @@ parser.add_argument('--graph-file', dest='graph_file', action='store',
                     help='You need to supply a JSON file containing the results of Azure Resource Graph Queries')
 parser.add_argument('--excel-file', dest='excel_file', action='store',
                     help='You need to supply an Excel file where the query results will be stored')
+parser.add_argument('--mode', dest='mode', action='store', default="openpyxl",
+                    help='It can be either xlwings or openpyxl (default is openpyxl)')
 parser.add_argument('--verbose', dest='verbose', action='store_true',
                     default=False,
                     help='run in verbose mode (default: False)')
 args = parser.parse_args()
 graph_file = args.graph_file
-excel_file=args.excel_file
+excel_file = args.excel_file
+mode = args.mode
 
 # Constants
-guid_column_index = "L"
+guid_column_index = "K"
 comment_column_index = "G"
-mode = "xlwings"  # Can be openpyxl or xlwings
-sample_cell_index = 'A2'
+sample_cell_index = 'A4'
 
 # Get JSON
 try:
@@ -50,9 +52,13 @@ except Exception as e:
 # Load workbook
 try:
     if mode == 'openpyxl':
+        if args.verbose:
+            print("DEBUG: working with openpyxl library")
         wb = load_workbook(filename = excel_file)
         ws = wb['Checklist']
     elif mode == 'xlwings':
+        if args.verbose:
+            print("DEBUG: working with xlwings library")
         wb = xw.Book(excel_file)
         ws = wb.sheets['Checklist']
     else:
@@ -77,22 +83,30 @@ elif mode == 'xlwings':
         print("DEBUG: GUID column retrieved with", str(len(guid_col_values)), "values")
 else:
     print("ERROR: mode {0} not recognized".format(mode))
+    sys.exit(1)
 
 # Go over all checks in the JSON file
 for check in graph_data['checks']:
     guid = check['guid']
-    success = check['success']
-    failure = check['failure']
-    comment = "Success: {0}\nFailure: {1}".format(success, failure)
-    row = guid_col_values.index(guid)
-    cell_index = comment_column_index + str(row)
-    print("DEBUG: updating cell", cell_index)
-    if mode == 'openpyxl':
-        ws[cell_index] = comment
-    elif mode == 'xlwings':
-        ws.range(cell_index).value = comment
+    arm_id = check['id']
+    compliant = check['compliant']
+    if (compliant == "false"):
+        comment = "Non-compliant: {0}\n".format(arm_id)
+    elif (compliant == "true"):
+        comment = "Compliant: {0}\n".format(arm_id)
     else:
-        print("ERROR: mode {0} not recognized".format(mode))
+        print("ERROR: compliant status {0} not recognized".format(compliant))
+    # Find the guid in the list
+    if guid in guid_col_values:
+        row = guid_col_values.index(guid)
+        cell_index = comment_column_index + str(row)
+        print("DEBUG: updating cell", cell_index)
+        if mode == 'openpyxl':
+            ws[cell_index] = comment
+        elif mode == 'xlwings':
+            ws.range(cell_index).value = comment
+    else:
+        print("ERROR: could not find GUID {0} in the Excel list".format(guid))
 
 # Saving file
 if mode == 'openpyxl':
