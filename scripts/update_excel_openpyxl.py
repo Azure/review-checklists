@@ -20,6 +20,8 @@ from openpyxl.worksheet.datavalidation import DataValidation
 parser = argparse.ArgumentParser(description='Update a checklist spreadsheet with JSON-formated Azure Resource Graph results')
 parser.add_argument('--checklist-file', dest='checklist_file', action='store',
                     help='You can optionally supply a JSON file containing the checklist you want to dump to the Excel spreadsheet. Otherwise it will take the latest file from Github')
+parser.add_argument('--only-english', dest='only_english', action='store_true', default=False,
+                    help='if checklist files are specified, ignore the non-English ones and only generate a spreadsheet for the English version (default: False)')
 parser.add_argument('--technology', dest='technology', action='store',
                     help='If you do not supply a JSON file with the checklist, you need to specify the technology from which the latest checklist will be downloaded from Github')
 parser.add_argument('--excel-file', dest='excel_file', action='store',
@@ -230,6 +232,10 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
 # Download checklist
 if checklist_file:
     checklist_file_list = checklist_file.split(" ")
+    # If only-english parameter was supplied, take only the English version and remove duplicates
+    if args.only_english:
+        checklist_file_list = [file[:-8] + '.en.json' for file in checklist_file_list]
+        checklist_file_list = list(set(checklist_file_list))
     for checklist_file in checklist_file_list:
         if args.verbose:
             print("DEBUG: Opening checklist file", checklist_file)
