@@ -41,6 +41,7 @@ Please feel free to open an issue or create a PR if you find any error or missin
 ## Using the spreadsheet for Azure reviews
 
 1. Download the Excel spreadsheet from the [latest release](https://github.com/Azure/review-checklists/releases/latest/download/review_checklist.xlsm) to your PC
+
 2. Use the dropdown lists to select the technology and language you would like to do your review
 
 ![](./pictures/spreadsheet_screenshot.png)
@@ -61,7 +62,15 @@ Please feel free to open an issue or create a PR if you find any error or missin
 
 ## Security settings running macros
 
-There are some settings that you might need to change in your system to run macro-enabled Excel spreadsheets:
+There are some settings that you might need to change in your system to run macro-enabled Excel spreadsheets. When initially opening the file you may see the following error, which prevents Excel from loading:
+
+> Excel cannot open the file 'review_checklist.xlsm' because the file format or file extension is not valid. Verify that the file has not been corrupted and that the file extension matches the format of the file.
+
+In other cases the file opens with the following message, which prevents you from being able to load the checklist items:
+
+![macro warning in excel](./pictures/macro_warning.png)
+
+### Unblock file or add an exception to Windows Security
 
 1. You might need to unblock the file from the file properties in the Windows File Explorer, so that you can use the macros required to import the checklist content from github.com:
 
