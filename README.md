@@ -13,7 +13,7 @@ Summary of checklists supported and the respective responsible owners:
 
 | Checklist | Status | CodeOwners |
 | --- | --- | --- |
-| LZ  | GA | [@alejandra8481](https://github.com/alejandra8481) [@anbengts](https://github.com/anbengts) [@JasonBeck2](https://github.com/JasonBeck2) [@akasnik](https://github.com/akasnik) [@Kiwibayer](https://github.com/Kiwibayer) |
+| LZ  | GA | [@alejandra8481](https://github.com/alejandra8481) [@anbengts](https://github.com/anbengts) [@sdolgin](https://github.com/sdolgin) [@akasnik](https://github.com/akasnik) [@Kiwibayer](https://github.com/Kiwibayer) |
 | AKS | GA | [@msftnadavbh](https://github.com/msftnadavbh) [@seenu433](https://github.com/seenu433) [@erjosito](https://github.com/erjosito) |
 | AVD | GA | [@igorpag](https://github.com/igorpag) [@mikewarr](https://github.com/mikewarr) [@bagwyth](https://github.com/bagwyth) |
 | Multitenancy | GA | [@arsenvlad](https://github.com/arsenvlad) [@johndowns](https://github.com/johndowns) [@cherchyk](https://github.com/cherchyk) |
