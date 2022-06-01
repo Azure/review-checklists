@@ -19,6 +19,7 @@ Summary of checklists supported and the respective responsible owners:
 | Multitenancy | GA | [@arsenvlad](https://github.com/arsenvlad) [@johndowns](https://github.com/johndowns) [@cherchyk](https://github.com/cherchyk) |
 | Security | GA | [@mgodfrey50](https://github.com/mgodfrey50) [@rudneir2](https://github.com/rudneir2) |
 | AVS | Preview | [@fskelly](https://github.com/fskelly) [@mgodfrey50](https://github.com/mgodfrey50) [@Kiwibayer](https://github.com/Kiwibayer) [@robinher](https://github.com/robinher) |
+| SAP | Preview | [@AlastairMorrison](https://github.com/AlastairMorrison) [@videshmukh](https://github.com/videshmukh) |
 
 ## What is an Azure Design Review?
 
