@@ -1,4 +1,18 @@
 {
+  "severities": [
+    {
+      "name": "Alto"
+    },
+    {
+      "name": "Medio"
+    },
+    {
+      "name": "Bajo"
+    }
+  ],
+  "metadata": {
+    "name": "Revisión de la zona de aterrizaje de Azure"
+  },
   "status": [
     {
       "name": "No verificado",
@@ -21,20 +35,6 @@
       "description": "No aplicable para el diseño actual"
     }
   ],
-  "severities": [
-    {
-      "name": "Alto"
-    },
-    {
-      "name": "Medio"
-    },
-    {
-      "name": "Bajo"
-    }
-  ],
-  "metadata": {
-    "name": "Revisión de la zona de aterrizaje de Azure"
-  },
   "items": [
     {
       "category": "Identidad y acceso",
@@ -170,7 +170,7 @@
       "severity": "Medio",
       "graph": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend Compliant =( array_length(mgmtChain) < 4 and array_length(mgmtChain) > 1)",
       "training": "https://docs.microsoft.com/learn/modules/azure-architecture-fundamentals/",
-      "link": "https://docs.microsoft.com/azure/governance/management-groups/overview"
+      "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/resource-org-management-groups"
     },
     {
       "category": "Grupo de administración y suscripciones",
@@ -189,7 +189,7 @@
       "guid": "667313b4-f566-44b5-b984-a859c773e7d2",
       "severity": "Medio",
       "training": "https://docs.microsoft.com/learn/paths/enterprise-scale-architecture/",
-      "link": "https://docs.microsoft.com/azure/governance/management-groups/overview"
+      "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/resource-org-management-groups#management-group-recommendations"
     },
     {
       "category": "Grupo de administración y suscripciones",
@@ -198,7 +198,7 @@
       "guid": "61623a76-5a91-47e1-b348-ef254c27d42e",
       "severity": "Medio",
       "training": "https://docs.microsoft.com/learn/paths/enterprise-scale-architecture/",
-      "link": "https://docs.microsoft.com/azure/governance/management-groups/overview"
+      "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/resource-org-management-groups#management-group-recommendations"
     },
     {
       "category": "Grupo de administración y suscripciones",
@@ -207,7 +207,7 @@
       "guid": "8bbac757-1559-4ab9-853e-8908ae28c84c",
       "severity": "Medio",
       "training": "https://docs.microsoft.com/learn/paths/enterprise-scale-architecture/",
-      "link": "https://docs.microsoft.com/azure/governance/management-groups/overview"
+      "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/resource-org-management-groups#management-group-recommendations"
     },
     {
       "category": "Grupo de administración y suscripciones",
@@ -216,7 +216,7 @@
       "guid": "33b6b780-8b9f-4e5c-9104-9d403a923c34",
       "severity": "Medio",
       "graph": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend Compliant = (array_length(mgmtChain) > 1)",
-      "link": "https://docs.microsoft.com/azure/governance/management-groups/overview"
+      "link": "https://docs.microsoft.com/azure/governance/management-groups/how-to/protect-resource-hierarchy#setting---default-management-group"
     },
     {
       "category": "Grupo de administración y suscripciones",
@@ -224,7 +224,7 @@
       "text": "Exigir que solo los usuarios con privilegios puedan operar grupos de administración en el inquilino habilitando la autorización de RBAC de Azure en la configuración de jerarquía de grupos de administración",
       "guid": "74d00018-ac6a-49e0-8e6a-83de5de32c19",
       "severity": "Medio",
-      "link": "https://docs.microsoft.com/azure/governance/management-groups/overview"
+      "link": "https://docs.microsoft.com/azure/governance/management-groups/how-to/protect-resource-hierarchy#setting---require-authorization"
     },
     {
       "category": "Grupo de administración y suscripciones",
@@ -330,7 +330,6 @@
       "text": "Asegúrese de que el espacio de direcciones IP no se desperdicie, no cree redes virtuales innecesariamente grandes (por ejemplo, /16) ",
       "guid": "33aad5e8-c68e-41d7-9667-313b4f5664b5",
       "severity": "Medio",
-      "graph": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend Compliant = addressMask >= 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, Compliant",
       "training": "https://docs.microsoft.com/en-gb/learn/paths/architect-network-infrastructure/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing"
     },
@@ -1211,7 +1210,7 @@
       "text": "Use diferentes Almacenes de claves de Azure para diferentes aplicaciones y regiones a fin de evitar los límites de escala de transacciones y restringir el acceso a los secretos.",
       "guid": "a0477a20-9945-4bda-9333-4f2491163418",
       "severity": "Medio",
-      "graph": "| ResourceContainers donde tipo=='microsoft.resources/subscriptions'| parse id con '/subscriptions/' SubscriptionID| project subscriptionId, SubscriptionName = nombre| join kind=leftouter (Resources| where type == 'microsoft.keyvault/vaults'| project id, name, subscriptionId) on subscriptionId| join kind= leftouter (Resources| donde type == 'microsoft.keyvault/vaults'| resumir ResourceCount = count() by subscriptionId) en subscriptionId| extend RCount = iff(isnull(ResourceCount), 0, ResourceCount)| ResourceCount| extender Compatible = (RCount <> 1)",
+      "graph": "ResourceContainers | where type=='microsoft.resources/subscriptions'| parse id with '/subscriptions/' SubscriptionID| project subscriptionId, SubscriptionName = name| join kind=leftouter (Resources| where type == 'microsoft.keyvault/vaults'| project id, name, subscriptionId) on subscriptionId| join kind= leftouter (Resources| where type == 'microsoft.keyvault/vaults'| summarize ResourceCount = count() by subscriptionId) on subscriptionId| extend RCount = iff(isnull(ResourceCount), 0, ResourceCount)| project-away ResourceCount| extend Compliant = (RCount <> 1)",
       "link": "https://docs.microsoft.com/azure/key-vault/general/overview-throttling"
     },
     {
