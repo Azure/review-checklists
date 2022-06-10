@@ -168,7 +168,7 @@
       "text": "Aplique una jerarquía de grupos de administración razonablemente plana con no más de tres a cuatro niveles, idealmente",
       "guid": "2df27ee4-12e7-4f98-9f63-04722dd69c5b",
       "severity": "Medio",
-      "graph": "contenedores de recursos| donde tipo == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend Compliant =( array_length(mgmtChain) < 4 y array_length(mgmtChain) > 1)",
+      "graph": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend Compliant =( array_length(mgmtChain) < 4 and array_length(mgmtChain) > 1)",
       "training": "https://docs.microsoft.com/learn/modules/azure-architecture-fundamentals/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/resource-org-management-groups"
     },
@@ -178,7 +178,7 @@
       "text": "Aplicar o anexar etiquetas de recursos a través de Azure Policy",
       "guid": "5c2622f5-4b69-4bad-93aa-d5e8c68e1d76",
       "severity": "Medio",
-      "graph": "recursos | extend Compliant = isnotnull(['tags']) | nombre del proyecto, id, subscriptionId, resourceGroup, tags ,Compliant",
+      "graph": "resources | extend Compliant = isnotnull(['tags']) | project name, id, subscriptionId, resourceGroup, tags ,Compliant",
       "training": "https://docs.microsoft.com/learn/paths/implement-resource-mgmt-security/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/decision-guides/resource-tagging/?toc=/azure/azure-resource-manager/management/toc.json"
     },
@@ -215,7 +215,7 @@
       "text": "Exigir que no se coloquen suscripciones en el grupo de administración raíz",
       "guid": "33b6b780-8b9f-4e5c-9104-9d403a923c34",
       "severity": "Medio",
-      "graph": "contenedores de recursos| donde tipo == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extender Compatible = (array_length(mgmtChain) > 1)",
+      "graph": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend Compliant = (array_length(mgmtChain) > 1)",
       "link": "https://docs.microsoft.com/azure/governance/management-groups/how-to/protect-resource-hierarchy#setting---default-management-group"
     },
     {
@@ -301,7 +301,7 @@
       "text": "Asegúrese de que las etiquetas se utilizan para la facturación y la gestión de costos",
       "guid": "5de32c19-9248-4160-9d5d-1e4e614658d3",
       "severity": "Medio",
-      "graph": "recursos | extend Compliant = isnotnull(['tags']) | nombre del proyecto, id, subscriptionId, resourceGroup, tags ,Compliant",
+      "graph": "resources | extend Compliant = isnotnull(['tags']) | project name, id, subscriptionId, resourceGroup, tags ,Compliant",
       "training": "https://docs.microsoft.com/learn/paths/implement-resource-mgmt-security/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/track-costs"
     },
@@ -320,7 +320,7 @@
       "text": "Asegúrese de utilizar las direcciones IP de la asignación de direcciones para Internet privado (RFC 1918).",
       "guid": "3f630472-2dd6-49c5-a5c2-622f54b69bad",
       "severity": "Medio",
-      "graph": "recursos | donde tipo == 'microsoft.network/virtualnetworks' | extender addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | nombre del proyecto, id, ubicación, resourceGroup, subscriptionId, cidr = addressPrefix | extend Compliant = (cidr coincide con regex @'^(10(\\\\.( 25[0-5]|2[0-4][0-9]|1[0-9]{1,2}| [0-9] {1,2})) {3}| ((172\\\\. (1[6-9]|2[0-9]|3[01]))| 192\\\\.168)(\\\\.( 25[0-5]|2[0-4][0-9]|1[0-9]{1,2}| [0-9] {1,2})) {2})')  | nombre del proyecto, id, subscriptionId, resourceGroup,Compliant,cidr",
+      "graph": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend Compliant = (cidr matches regex @'^(10(\\\\.(25[0-5]|2[0-4][0-9]|1[0-9]{1,2}|[0-9]{1,2})){3}|((172\\\\.(1[6-9]|2[0-9]|3[01]))|192\\\\.168)(\\\\.(25[0-5]|2[0-4][0-9]|1[0-9]{1,2}|[0-9]{1,2})){2})')  | project name, id, subscriptionId, resourceGroup,Compliant,cidr",
       "training": "https://docs.microsoft.com/en-gb/learn/paths/architect-network-infrastructure/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing"
     },
@@ -330,7 +330,6 @@
       "text": "Asegúrese de que el espacio de direcciones IP no se desperdicie, no cree redes virtuales innecesariamente grandes (por ejemplo, /16) ",
       "guid": "33aad5e8-c68e-41d7-9667-313b4f5664b5",
       "severity": "Medio",
-      "graph": "recursos | donde tipo == 'microsoft.network/virtualnetworks' | extender addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extender addressMask = split(addressPrefix,'/')[1] | extender Compatible = direcciónMáscara > = 16 | nombre del proyecto, id, subscriptionId, resourceGroup, addressPrefix, Compliant",
       "training": "https://docs.microsoft.com/en-gb/learn/paths/architect-network-infrastructure/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing"
     },
@@ -588,7 +587,7 @@
       "text": "Asegúrese de que está utilizando la SKU correcta para las puertas de enlace ExpressRoute/VPN en función de los requisitos de ancho de banda y rendimiento.",
       "guid": "d4cd21b0-8813-47f5-b6c4-cfd3e504547c",
       "severity": "Medio",
-      "graph": "recursos| donde tipo == 'microsoft.network/virtualnetworkgateways'| donde properties.gatewayType =~ 'vpn' o properties.gatewayType == 'ExpressRoute'| extender SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend Compliant = SKUTier !in ('Básico', 'Estándar')| nombre del proyecto, id, subscriptionId, resourceGroup, Compliant",
+      "graph": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend Compliant = SKUTier !in ('Basic', 'Standard')| project name, id, subscriptionId, resourceGroup, Compliant",
       "training": "https://docs.microsoft.com/learn/modules/design-implement-azure-expressroute/",
       "link": "https://docs.microsoft.com/azure/expressroute/expressroute-routing"
     },
@@ -598,7 +597,7 @@
       "text": "Implemente una puerta de enlace ExpressRoute con redundancia de zona en las regiones de Azure admitidas.",
       "guid": "2447ec66-138a-4720-8f1c-e16ed301d6e8",
       "severity": "Medio",
-      "graph": "recursos| donde tipo == 'microsoft.network/virtualnetworkgateways'| donde properties.gatewayType =~ 'vpn' o properties.gatewayType == 'ExpressRoute'| extender SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend Compliant = SKUTier contiene 'AZ'| nombre del proyecto, id, subscriptionId, resourceGroup, Type, Compliant",
+      "graph": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend Compliant = SKUTier contains 'AZ'| project name, id, subscriptionId, resourceGroup, Type, Compliant",
       "training": "https://docs.microsoft.com/learn/modules/design-implement-azure-expressroute/",
       "link": "https://docs.microsoft.com/azure/expressroute/expressroute-about-virtual-network-gateways"
     },
@@ -1211,7 +1210,7 @@
       "text": "Use diferentes Almacenes de claves de Azure para diferentes aplicaciones y regiones a fin de evitar los límites de escala de transacciones y restringir el acceso a los secretos.",
       "guid": "a0477a20-9945-4bda-9333-4f2491163418",
       "severity": "Medio",
-      "graph": "| ResourceContainers donde tipo=='microsoft.resources/subscriptions'| parse id con '/subscriptions/' SubscriptionID| project subscriptionId, SubscriptionName = nombre| join kind=leftouter (Resources| where type == 'microsoft.keyvault/vaults'| project id, name, subscriptionId) on subscriptionId| join kind= leftouter (Resources| donde type == 'microsoft.keyvault/vaults'| resumir ResourceCount = count() by subscriptionId) en subscriptionId| extend RCount = iff(isnull(ResourceCount), 0, ResourceCount)| ResourceCount| extender Compatible = (RCount <> 1)",
+      "graph": "ResourceContainers | where type=='microsoft.resources/subscriptions'| parse id with '/subscriptions/' SubscriptionID| project subscriptionId, SubscriptionName = name| join kind=leftouter (Resources| where type == 'microsoft.keyvault/vaults'| project id, name, subscriptionId) on subscriptionId| join kind= leftouter (Resources| where type == 'microsoft.keyvault/vaults'| summarize ResourceCount = count() by subscriptionId) on subscriptionId| extend RCount = iff(isnull(ResourceCount), 0, ResourceCount)| project-away ResourceCount| extend Compliant = (RCount <> 1)",
       "link": "https://docs.microsoft.com/azure/key-vault/general/overview-throttling"
     },
     {
