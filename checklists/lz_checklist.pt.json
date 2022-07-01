@@ -143,7 +143,7 @@
       "text": "Impor hierarquia de grupo de gestão razoavelmente plana com não mais do que três a quatro níveis, idealmente",
       "guid": "2df27ee4-12e7-4f98-9f63-04722dd69c5b",
       "severity": "Média",
-      "graph": "contêineres de recursos| quando tipo == 'microsoft.resources/subscriptions'| estender ManagementGroup = tostring (tags),mgmtChain = propriedades.managementGroupAncestorsChain| estender compatível =(array_length(mgmtChain) < 4 e array_length(mgmtChain) > 1)",
+      "graph": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend compliant =( array_length(mgmtChain) < 4 and array_length(mgmtChain) > 1)",
       "training": "https://docs.microsoft.com/learn/modules/azure-architecture-fundamentals/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/resource-org-management-groups"
     },
@@ -153,7 +153,7 @@
       "text": "Aplicar ou anexar tags de recursos através da Política Azure",
       "guid": "5c2622f5-4b69-4bad-93aa-d5e8c68e1d76",
       "severity": "Média",
-      "graph": "| recursos estender compatível = isnotnull (['tags']) | nome do projeto, id, subscriptionId, resourceGroup, tags, compatível",
+      "graph": "resources | extend compliant = isnotnull(['tags']) | project name, id, subscriptionId, resourceGroup, tags, compliant",
       "training": "https://docs.microsoft.com/learn/paths/implement-resource-mgmt-security/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/decision-guides/resource-tagging/?toc=/azure/azure-resource-manager/management/toc.json"
     },
@@ -190,7 +190,7 @@
       "text": "Não impor assinaturas são colocadas sob o grupo de gerenciamento raiz",
       "guid": "33b6b780-8b9f-4e5c-9104-9d403a923c34",
       "severity": "Média",
-      "graph": "contêineres de recursos| quando tipo == 'microsoft.resources/subscriptions'| estender ManagementGroup = tostring (tags),mgmtChain = propriedades.managementGroupAncestorsChain| estender compatível = (array_length(mgmtChain) > 1)",
+      "graph": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend compliant = (array_length(mgmtChain) > 1)",
       "link": "https://docs.microsoft.com/azure/governance/management-groups/how-to/protect-resource-hierarchy#setting---default-management-group"
     },
     {
@@ -276,7 +276,7 @@
       "text": "Garantir que as etiquetas sejam usadas para faturamento e gerenciamento de custos",
       "guid": "5de32c19-9248-4160-9d5d-1e4e614658d3",
       "severity": "Média",
-      "graph": "| recursos estender compatível = isnotnull (['tags']) | nome do projeto, id, subscriptionId, resourceGroup, tags, compatível",
+      "graph": "resources | extend compliant = isnotnull(['tags']) | project name, id, subscriptionId, resourceGroup, tags, compliant",
       "training": "https://docs.microsoft.com/learn/paths/implement-resource-mgmt-security/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/track-costs"
     },
@@ -295,7 +295,7 @@
       "text": "Certifique-se de usar endereços IP da alocação de endereços para internets privadas (RFC 1918).",
       "guid": "3f630472-2dd6-49c5-a5c2-622f54b69bad",
       "severity": "Média",
-      "graph": "| recursos onde tipo == 'microsoft.network/virtualnetworks' | estender o addressSpace = todynamic (properties.addressSpace) | estender endereçoPrefix = todynamic (propriedades.addressSpace.addressPrefixes) | endereço mvexpandO espaço | endereço mvexpandPrefix | nome do projeto, id, localização, resourceGroup, subscriptionId, cidr = endereçoPrefix | estender compatível = (partidas cidr regex @'^(10(\\\\.( 25[0-5]|2[0-4][0-9]|1[0-9]{1,2}| [0-9] {1,2})) {3}| ((172\\\\. (1[6-9]|2[0-9]|3[01]))| 192\\\\.168)(\\\\.( 25[0-5]|2[0-4][0-9]|1[0-9]{1,2}| [0-9] {1,2})) {2})')  | nome do projeto, id, assinaturaId, resourceGroup, compatível, cidr",
+      "graph": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10(\\\\.(25[0-5]|2[0-4][0-9]|1[0-9]{1,2}|[0-9]{1,2})){3}|((172\\\\.(1[6-9]|2[0-9]|3[01]))|192\\\\.168)(\\\\.(25[0-5]|2[0-4][0-9]|1[0-9]{1,2}|[0-9]{1,2})){2})')  | project name, id, subscriptionId, resourceGroup, compliant, cidr",
       "training": "https://docs.microsoft.com/en-gb/learn/paths/architect-network-infrastructure/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing"
     },
@@ -305,7 +305,7 @@
       "text": "Certifique-se de que o espaço de endereço IP não seja desperdiçado, não crie redes virtuais desnecessariamente grandes (por exemplo /16) ",
       "guid": "33aad5e8-c68e-41d7-9667-313b4f5664b5",
       "severity": "Média",
-      "graph": "| recursos onde tipo == 'microsoft.network/virtualnetworks' | estender o addressSpace = todynamic (properties.addressSpace) | estender endereçoPrefix = todynamic (propriedades.addressSpace.addressPrefixes) | endereço mvexpandO espaço | endereço mvexpandPrefix | estender endereçoMask = split(endereçoPrefix,'/')[1] | estender compatível = endereçoMask >= 16 | nome do projeto, id, assinaturaId, resourceGroup, addressPrefix, compatível",
+      "graph": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend compliant = addressMask >= 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, compliant",
       "training": "https://docs.microsoft.com/en-gb/learn/paths/architect-network-infrastructure/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing"
     },
@@ -563,7 +563,7 @@
       "text": "Certifique-se de que você está usando o SKU certo para os gateways ExpressRoute/VPN com base nos requisitos de largura de banda e desempenho.",
       "guid": "d4cd21b0-8813-47f5-b6c4-cfd3e504547c",
       "severity": "Média",
-      "graph": "recursos| onde tipo == 'microsoft.network/virtualnetworkgateways'| onde propriedades.gatewayType =~ 'vpn' ou propriedades.gatewayType == 'ExpressRoute'| estender SKUName = properties.sku.name, SKUTier = propriedades.sku.tier, Type = properties.gatewayType| estender compatível = SKUTier !in ('Básico', 'Padrão')| nome do projeto, id, subscriptionId, resourceGroup, compatível",
+      "graph": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier !in ('Basic', 'Standard')| project name, id, subscriptionId, resourceGroup, compliant",
       "training": "https://docs.microsoft.com/learn/modules/design-implement-azure-expressroute/",
       "link": "https://docs.microsoft.com/azure/expressroute/expressroute-routing"
     },
@@ -573,7 +573,7 @@
       "text": "Implante um gateway ExpressRoute redundante de zona nas regiões do Azure suportadas.",
       "guid": "2447ec66-138a-4720-8f1c-e16ed301d6e8",
       "severity": "Média",
-      "graph": "recursos| onde tipo == 'microsoft.network/virtualnetworkgateways'| onde propriedades.gatewayType =~ 'vpn' ou propriedades.gatewayType == 'ExpressRoute'| estender SKUName = properties.sku.name, SKUTier = propriedades.sku.tier, Type = properties.gatewayType| estender compatível = SKUTier contém 'AZ'| nome do projeto, id, assinaturaId, resourceGroup, Type, compatível",
+      "graph": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier contains 'AZ'| project name, id, subscriptionId, resourceGroup, Type, compliant",
       "training": "https://docs.microsoft.com/learn/modules/design-implement-azure-expressroute/",
       "link": "https://docs.microsoft.com/azure/expressroute/expressroute-about-virtual-network-gateways"
     },
@@ -1186,7 +1186,7 @@
       "text": "Use diferentes cofres de chaves do Azure para diferentes aplicativos e regiões para evitar limites de escala de transações e restringir o acesso a segredos.",
       "guid": "a0477a20-9945-4bda-9333-4f2491163418",
       "severity": "Média",
-      "graph": "| de | de Recursos onde digite=='microsoft.resources/subscriptions'| parse id com '/assinaturas/' SubscriptionID| assinatura do projetoId, SubscriptionName = nome| junte-se kind=leftouter (Recursos| onde tipo == 'microsoft.keyvault/vaults'| project id, nome, subscriptionId) na assinaturaId| join kind= leftouter (Resources| onde tipo == 'microsoft.keyvault/vaults'| resumir ResourceCount = contagem () por assinaturaId) na assinaturaId| estender RCount = iff(isnull(ResourceCount), 0, ResourceCount)| Project-away ResourceCount| estender compatível = (RCount <> 1)",
+      "graph": "ResourceContainers | where type=='microsoft.resources/subscriptions'| parse id with '/subscriptions/' SubscriptionID| project subscriptionId, SubscriptionName = name| join kind=leftouter (Resources| where type == 'microsoft.keyvault/vaults'| project id, name, subscriptionId) on subscriptionId| join kind= leftouter (Resources| where type == 'microsoft.keyvault/vaults'| summarize ResourceCount = count() by subscriptionId) on subscriptionId| extend RCount = iff(isnull(ResourceCount), 0, ResourceCount)| project-away ResourceCount| extend compliant = (RCount <> 1)",
       "link": "https://docs.microsoft.com/azure/key-vault/general/overview-throttling"
     },
     {
