@@ -8,17 +8,20 @@ The script [checklist_graph.sh](./checklist_graph.sh) can do the automated graph
 
 ### Installation
 
-You can download the script in any environment that supports Azure CLI, such as the [Azure Cloud Shell](https://shell.azure.com). In order to download the script you can run this command:
+> :warning: ***The `checklist_graph.sh` script must be run from a Bash environment shell. If you are using Azure Cloud Shell be sure to select the correct environment.***
 
-```
+You can download the script in any environment that supports Azure CLI, such as the [Azure Cloud Shell](https://shell.azure.com). In order to download the script and prepare it for execution you can run this command:
+
+```Shell
 wget –quiet –output-document ./checklist_graph.sh https://raw.githubusercontent.com/Azure/review-checklists/main/scripts/checklist_graph.sh
+chmod +x ./checklist_graph.sh
 ```
 
 ### Basic usage
 
 You can run the script to produce a JSON-formatted output of all the checklist items with documented Azure Resource Graph queries. For example, to run the Azure Resource Graph queries for the AKS checklist:
 
-```
+```Shell
 ./checklist_graph.sh --technology=aks --format=json > ./graph_results.json
 ```
 
