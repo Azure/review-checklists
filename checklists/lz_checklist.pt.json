@@ -10,6 +10,51 @@
       "name": "Baixo"
     }
   ],
+  "status": [
+    {
+      "name": "Não verificado",
+      "description": "Este cheque ainda não foi examinado."
+    },
+    {
+      "name": "Abrir",
+      "description": "Há um item de ação associado a este cheque"
+    },
+    {
+      "name": "Cumprido",
+      "description": "Esta verificação foi verificada, e não há mais itens de ação associados a ele"
+    },
+    {
+      "name": "Não é necessário",
+      "description": "Recomendação compreendida, mas não necessária pelos requisitos atuais"
+    },
+    {
+      "name": "N/A",
+      "description": "Não é aplicável para o design atual"
+    }
+  ],
+  "categories": [
+    {
+      "name": "Identidade e Acesso"
+    },
+    {
+      "name": "Topologia e Conectividade de Rede"
+    },
+    {
+      "name": "Segurança, Governança e Compliance"
+    },
+    {
+      "name": "Gestão e Monitoramento"
+    },
+    {
+      "name": "Grupo de Gestão e Assinaturas"
+    },
+    {
+      "name": "Operações"
+    },
+    {
+      "name": "Implantação de aplicativos"
+    }
+  ],
   "items": [
     {
       "category": "Identidade e Acesso",
@@ -152,7 +197,7 @@
       "text": "Impor hierarquia de grupo de gestão razoavelmente plana com não mais do que três a quatro níveis, idealmente",
       "guid": "2df27ee4-12e7-4f98-9f63-04722dd69c5b",
       "severity": "Média",
-      "graph": "contêineres de recursos| quando tipo == 'microsoft.resources/subscriptions'| estender ManagementGroup = tostring (tags),mgmtChain = propriedades.managementGroupAncestorsChain| estender compatível =(array_length(mgmtChain) < 4 e array_length(mgmtChain) > 1)",
+      "graph": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend compliant =( array_length(mgmtChain) < 4 and array_length(mgmtChain) > 1)",
       "training": "https://docs.microsoft.com/learn/modules/azure-architecture-fundamentals/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/resource-org-management-groups"
     },
@@ -162,7 +207,7 @@
       "text": "Aplicar ou anexar tags de recursos através da Política Azure",
       "guid": "5c2622f5-4b69-4bad-93aa-d5e8c68e1d76",
       "severity": "Média",
-      "graph": "| recursos estender compatível = isnotnull (['tags']) | nome do projeto, id, subscriptionId, resourceGroup, tags, compatível",
+      "graph": "resources | extend compliant = isnotnull(['tags']) | project name, id, subscriptionId, resourceGroup, tags, compliant",
       "training": "https://docs.microsoft.com/learn/paths/implement-resource-mgmt-security/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/decision-guides/resource-tagging/?toc=/azure/azure-resource-manager/management/toc.json"
     },
@@ -199,7 +244,7 @@
       "text": "Não impor assinaturas são colocadas sob o grupo de gerenciamento raiz",
       "guid": "33b6b780-8b9f-4e5c-9104-9d403a923c34",
       "severity": "Média",
-      "graph": "contêineres de recursos| quando tipo == 'microsoft.resources/subscriptions'| estender ManagementGroup = tostring (tags),mgmtChain = propriedades.managementGroupAncestorsChain| estender compatível = (array_length(mgmtChain) > 1)",
+      "graph": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend compliant = (array_length(mgmtChain) > 1)",
       "link": "https://docs.microsoft.com/azure/governance/management-groups/how-to/protect-resource-hierarchy#setting---default-management-group"
     },
     {
@@ -285,7 +330,7 @@
       "text": "Garantir que as etiquetas sejam usadas para faturamento e gerenciamento de custos",
       "guid": "5de32c19-9248-4160-9d5d-1e4e614658d3",
       "severity": "Média",
-      "graph": "| recursos estender compatível = isnotnull (['tags']) | nome do projeto, id, subscriptionId, resourceGroup, tags, compatível",
+      "graph": "resources | extend compliant = isnotnull(['tags']) | project name, id, subscriptionId, resourceGroup, tags, compliant",
       "training": "https://docs.microsoft.com/learn/paths/implement-resource-mgmt-security/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/track-costs"
     },
@@ -304,7 +349,7 @@
       "text": "Certifique-se de usar endereços IP da alocação de endereços para internets privadas (RFC 1918).",
       "guid": "3f630472-2dd6-49c5-a5c2-622f54b69bad",
       "severity": "Média",
-      "graph": "| recursos onde tipo == 'microsoft.network/virtualnetworks' | estender o addressSpace = todynamic (properties.addressSpace) | estender endereçoPrefix = todynamic (propriedades.addressSpace.addressPrefixes) | endereço mvexpandO espaço | endereço mvexpandPrefix | nome do projeto, id, localização, resourceGroup, subscriptionId, cidr = endereçoPrefix | estender compatível = (partidas cidr regex @'^(10(\\\\.( 25[0-5]|2[0-4][0-9]|1[0-9]{1,2}| [0-9] {1,2})) {3}| ((172\\\\. (1[6-9]|2[0-9]|3[01]))| 192\\\\.168)(\\\\.( 25[0-5]|2[0-4][0-9]|1[0-9]{1,2}| [0-9] {1,2})) {2})')  | nome do projeto, id, assinaturaId, resourceGroup, compatível, cidr",
+      "graph": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10(\\\\.(25[0-5]|2[0-4][0-9]|1[0-9]{1,2}|[0-9]{1,2})){3}|((172\\\\.(1[6-9]|2[0-9]|3[01]))|192\\\\.168)(\\\\.(25[0-5]|2[0-4][0-9]|1[0-9]{1,2}|[0-9]{1,2})){2})')  | project name, id, subscriptionId, resourceGroup, compliant, cidr",
       "training": "https://docs.microsoft.com/learn/paths/architect-network-infrastructure/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing"
     },
@@ -314,7 +359,7 @@
       "text": "Certifique-se de que o espaço de endereço IP não seja desperdiçado, não crie redes virtuais desnecessariamente grandes (por exemplo /16) ",
       "guid": "33aad5e8-c68e-41d7-9667-313b4f5664b5",
       "severity": "Média",
-      "graph": "| recursos onde tipo == 'microsoft.network/virtualnetworks' | estender o addressSpace = todynamic (properties.addressSpace) | estender endereçoPrefix = todynamic (propriedades.addressSpace.addressPrefixes) | endereço mvexpandO espaço | endereço mvexpandPrefix | estender endereçoMask = split(endereçoPrefix,'/')[1] | estender compatível = endereçoMask >= 16 | nome do projeto, id, assinaturaId, resourceGroup, addressPrefix, compatível",
+      "graph": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend compliant = addressMask >= 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, compliant",
       "training": "https://docs.microsoft.com/learn/paths/architect-network-infrastructure/",
       "link": "https://docs.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing"
     },
@@ -572,7 +617,7 @@
       "text": "Certifique-se de que você está usando o SKU certo para os gateways ExpressRoute/VPN com base nos requisitos de largura de banda e desempenho.",
       "guid": "d4cd21b0-8813-47f5-b6c4-cfd3e504547c",
       "severity": "Média",
-      "graph": "recursos| onde tipo == 'microsoft.network/virtualnetworkgateways'| onde propriedades.gatewayType =~ 'vpn' ou propriedades.gatewayType == 'ExpressRoute'| estender SKUName = properties.sku.name, SKUTier = propriedades.sku.tier, Type = properties.gatewayType| estender compatível = SKUTier !in ('Básico', 'Padrão')| nome do projeto, id, subscriptionId, resourceGroup, compatível",
+      "graph": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier !in ('Basic', 'Standard')| project name, id, subscriptionId, resourceGroup, compliant",
       "training": "https://docs.microsoft.com/learn/modules/design-implement-azure-expressroute/",
       "link": "https://docs.microsoft.com/azure/expressroute/expressroute-routing"
     },
@@ -582,7 +627,7 @@
       "text": "Implante um gateway ExpressRoute redundante de zona nas regiões do Azure suportadas.",
       "guid": "2447ec66-138a-4720-8f1c-e16ed301d6e8",
       "severity": "Média",
-      "graph": "recursos| onde tipo == 'microsoft.network/virtualnetworkgateways'| onde propriedades.gatewayType =~ 'vpn' ou propriedades.gatewayType == 'ExpressRoute'| estender SKUName = properties.sku.name, SKUTier = propriedades.sku.tier, Type = properties.gatewayType| estender compatível = SKUTier contém 'AZ'| nome do projeto, id, assinaturaId, resourceGroup, Type, compatível",
+      "graph": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier contains 'AZ'| project name, id, subscriptionId, resourceGroup, Type, compliant",
       "training": "https://docs.microsoft.com/learn/modules/design-implement-azure-expressroute/",
       "link": "https://docs.microsoft.com/azure/expressroute/expressroute-about-virtual-network-gateways"
     },
@@ -1203,7 +1248,7 @@
       "text": "Use diferentes cofres de chaves do Azure para diferentes aplicativos e regiões para evitar limites de escala de transações e restringir o acesso a segredos.",
       "guid": "a0477a20-9945-4bda-9333-4f2491163418",
       "severity": "Média",
-      "graph": "| de | de Recursos onde digite=='microsoft.resources/subscriptions'| parse id com '/assinaturas/' SubscriptionID| assinatura do projetoId, SubscriptionName = nome| junte-se kind=leftouter (Recursos| onde tipo == 'microsoft.keyvault/vaults'| project id, nome, subscriptionId) na assinaturaId| join kind= leftouter (Resources| onde tipo == 'microsoft.keyvault/vaults'| resumir ResourceCount = contagem () por assinaturaId) na assinaturaId| estender RCount = iff(isnull(ResourceCount), 0, ResourceCount)| Project-away ResourceCount| estender compatível = (RCount <> 1)",
+      "graph": "ResourceContainers | where type=='microsoft.resources/subscriptions'| parse id with '/subscriptions/' SubscriptionID| project subscriptionId, SubscriptionName = name| join kind=leftouter (Resources| where type == 'microsoft.keyvault/vaults'| project id, name, subscriptionId) on subscriptionId| join kind= leftouter (Resources| where type == 'microsoft.keyvault/vaults'| summarize ResourceCount = count() by subscriptionId) on subscriptionId| extend RCount = iff(isnull(ResourceCount), 0, ResourceCount)| project-away ResourceCount| extend compliant = (RCount <> 1)",
       "link": "https://docs.microsoft.com/azure/key-vault/general/overview-throttling"
     },
     {
@@ -1445,51 +1490,182 @@
       "guid": "ae514b93-3d45-485e-8112-9bd7ba012f7b",
       "severity": "Média",
       "link": "https://docs.microsoft.com/security/benchmark/azure/security-control-incident-response"
-    }
-  ],
-  "categories": [
-    {
-      "name": "Identidade e Acesso"
     },
     {
-      "name": "Topologia e Conectividade de Rede"
+      "category": "Topologia e Conectividade de Rede",
+      "subcategory": "Porta da Frente",
+      "text": "Evite combinar o Azure Traffic Manager e o Azure Front Door.",
+      "guid": "062d5839-4d36-402f-bfa4-02811eb936e9",
+      "severity": "Alto",
+      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#avoid-combining-traffic-manager-and-front-door"
     },
     {
-      "name": "Segurança, Governança e Compliance"
+      "category": "Segurança, Governança e Compliance",
+      "subcategory": "Porta da Frente",
+      "text": "Use TLS de ponta a ponta com a porta frontal do Azure. Use o TLS para conexões de seus clientes até a Porta da Frente e da Porta da Frente até a sua origem.",
+      "guid": "2e30abab-5478-417c-81bf-bf1ad4ed1ed4",
+      "severity": "Alto",
+      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-end-to-end-tls"
     },
     {
-      "name": "Gestão e Monitoramento"
+      "category": "Segurança, Governança e Compliance",
+      "subcategory": "Porta da Frente",
+      "text": "Use http para redirecionamento HTTPS com a Porta da Frente do Azure. Apoie clientes mais velhos redirecionando-os para uma solicitação HTTPS automaticamente.",
+      "guid": "10aa45af-166f-44c4-9f36-b6d592dac2ca",
+      "severity": "Média",
+      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-http-to-https-redirection"
     },
     {
-      "name": "Grupo de Gestão e Assinaturas"
+      "category": "Operações",
+      "subcategory": "Porta da Frente",
+      "text": "Use certificados TLS gerenciados com a Porta da Frente Azure. Reduzir o custo operacional e o risco de paralisações devido às renovações de certificados.",
+      "guid": "af95c92d-d723-4f4a-98d7-8722324efd4d",
+      "severity": "Alto",
+      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-managed-tls-certificates"
     },
     {
-      "name": "Operações"
+      "category": "Operações",
+      "subcategory": "Porta da Frente",
+      "text": "Se você usar certificados TLS gerenciados pelo cliente com o Azure Front Door, use a versão do certificado 'Mais recente'. Reduza o risco de paralisações causadas pela renovação manual do certificado.",
+      "guid": "f00a69de-7076-4734-a734-6e4552cad9e1",
+      "severity": "Média",
+      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-latest-version-for-customer-managed-certificates"
     },
     {
-      "name": "Implantação de aplicativos"
-    }
-  ],
-  "status": [
-    {
-      "name": "Não verificado",
-      "description": "Este cheque ainda não foi examinado."
+      "category": "Topologia e Conectividade de Rede",
+      "subcategory": "Porta da Frente",
+      "text": "Use o mesmo nome de domínio no Azure Front Door e sua origem. Nomes de host incompatíveis podem causar bugs sutis.",
+      "guid": "5efeb96a-003f-4b18-8fcd-b4d84459c2b2",
+      "severity": "Média",
+      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-the-same-domain-name-on-front-door-and-your-origin"
     },
     {
-      "name": "Abrir",
-      "description": "Há um item de ação associado a este cheque"
+      "category": "Segurança, Governança e Compliance",
+      "subcategory": "Porta da Frente",
+      "text": "Habilite o WAF da porta frontal do Azure. Proteja sua aplicação contra uma série de ataques.",
+      "guid": "28b9ee82-b2c7-45aa-bc98-6de6f59a095d",
+      "severity": "Alto",
+      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#enable-the-waf"
     },
     {
-      "name": "Cumprido",
-      "description": "Esta verificação foi verificada, e não há mais itens de ação associados a ele"
+      "category": "Topologia e Conectividade de Rede",
+      "subcategory": "Porta da Frente",
+      "text": "Desabilite as sondas de saúde quando há apenas uma origem em um grupo de origem do Azure Front Door.",
+      "guid": "0b5a380c-4bfb-47bc-b1d7-dcfef363a61b",
+      "severity": "Baixo",
+      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group"
     },
     {
-      "name": "Não é necessário",
-      "description": "Recomendação compreendida, mas não necessária pelos requisitos atuais"
+      "category": "Topologia e Conectividade de Rede",
+      "subcategory": "Porta da Frente",
+      "text": "Selecione bons pontos finais da sonda de saúde para a Porta da Frente do Azure. Considere construir pontos finais de saúde que verifiquem todas as dependências do seu aplicativo.",
+      "guid": "5567048e-e5d7-4206-9c55-b5ed45d2cc0c",
+      "severity": "Média",
+      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#select-good-health-probe-endpoints"
     },
     {
-      "name": "N/A",
-      "description": "Não é aplicável para o design atual"
+      "category": "Topologia e Conectividade de Rede",
+      "subcategory": "Porta da Frente",
+      "text": "Use sondas de saúde HEAD com Azure Front Door. Reduza o tráfego que o Front Door envia para o seu aplicativo.",
+      "guid": "a13f72f3-8f5c-4864-95e5-75bf37fbbeb1",
+      "severity": "Baixo",
+      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-head-health-probes"
+    },
+    {
+      "category": "Segurança, Governança e Compliance",
+      "subcategory": "Porta da Frente",
+      "text": "Sintonize o WAF da Porta da Frente do Azure para sua carga de trabalho. Reduza as detecções falsas positivas.",
+      "guid": "2902d8cc-1b0c-4495-afad-624ab70f7bd6",
+      "severity": "Alto",
+      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#tune-your-waf"
+    },
+    {
+      "category": "Segurança, Governança e Compliance",
+      "subcategory": "Porta da Frente",
+      "text": "Use o modo de prevenção com o WAF da Porta frontal do Azure. O modo de prevenção garante que o WAF bloqueie solicitações maliciosas.",
+      "guid": "17ba124b-127d-42b6-9322-388d5b2bbcfc",
+      "severity": "Alto",
+      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#use-prevention-mode"
+    },
+    {
+      "category": "Operações",
+      "subcategory": "Porta da Frente",
+      "text": "Defina a configuração WAF da porta frontal do Azure como código. Usando código, você pode adotar mais facilmente novas versões de regras e obter proteção adicional.",
+      "guid": "189ea962-3969-4863-8f5a-5ad808c2cf4b",
+      "severity": "Média",
+      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#define-your-waf-configuration-as-code"
+    },
+    {
+      "category": "Segurança, Governança e Compliance",
+      "subcategory": "Porta da Frente",
+      "text": "Habilitar os conjuntos de regras padrão WAF da porta da frente do Azure. A regra padrão define detectar e bloquear ataques comuns.",
+      "guid": "49a98f2b-ec22-4a87-9415-6a10b00d6555",
+      "severity": "Alto",
+      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#enable-default-rule-sets"
+    },
+    {
+      "category": "Segurança, Governança e Compliance",
+      "subcategory": "Porta da Frente",
+      "text": "Habilite as regras de gerenciamento de bots WAF da Porta frontal do Azure. As regras do bot detectam bots bons e ruins.",
+      "guid": "147a13d4-2a2f-4824-a524-f5855b52b946",
+      "severity": "Alto",
+      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#enable-bot-management-rules"
+    },
+    {
+      "category": "Segurança, Governança e Compliance",
+      "subcategory": "Porta da Frente",
+      "text": "Use as versões mais recentes do Azure Front Door WAF. As atualizações do ruleset são atualizadas regularmente para levar em conta o cenário atual de ameaças.",
+      "guid": "d7dcdcb9-0d99-44b9-baab-ac7570ede79a",
+      "severity": "Média",
+      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#use-the-latest-ruleset-versions"
+    },
+    {
+      "category": "Segurança, Governança e Compliance",
+      "subcategory": "Porta da Frente",
+      "text": "Adicionar limitação de taxa ao WAF da Porta da Frente do Azure. A limitação da taxa bloqueia os clientes acidentalmente ou intencionalmente enviando grandes quantidades de tráfego em um curto período de tempo.",
+      "guid": "b9620385-1cde-418f-914b-a84a06982ffc",
+      "severity": "Média",
+      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#add-rate-limiting"
+    },
+    {
+      "category": "Segurança, Governança e Compliance",
+      "subcategory": "Porta da Frente",
+      "text": "Use um limite alto para limites de taxa WAF da porta frontal do Azure. Limites de limite de alta taxa evitam bloquear o tráfego legítimo, ao mesmo tempo em que fornecem proteção contra um número extremamente alto de solicitações que podem sobrecarregar sua infraestrutura. ",
+      "guid": "6dc36c52-0124-4ffe-9eaf-23ec1282dedb",
+      "severity": "Média",
+      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#use-a-high-threshold-for-rate-limits"
+    },
+    {
+      "category": "Segurança, Governança e Compliance",
+      "subcategory": "Porta da Frente",
+      "text": "Tráfego de geofiltramento usando o WAF da Porta frontal do Azure. Permitir o tráfego apenas de regiões esperadas e bloquear o tráfego de outras regiões.",
+      "guid": "388a3d0e-0a43-4367-90b2-3dd2aeece5ee",
+      "severity": "Baixo",
+      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#geo-filter-traffic"
+    },
+    {
+      "category": "Segurança, Governança e Compliance",
+      "subcategory": "Porta da Frente",
+      "text": "Especifique a localização desconhecida (ZZ) ao filtrar geofiltrar o tráfego com o WAF da Porta frontal do Azure. Evite bloquear acidentalmente solicitações legítimas quando os endereços IP não podem ser geo-matched.",
+      "guid": "00acd8a9-6975-414f-8491-2be6309893b8",
+      "severity": "Média",
+      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#specify-the-unknown-zz-location"
+    },
+    {
+      "category": "Gestão e Monitoramento",
+      "subcategory": "Porta da Frente",
+      "text": "Adicione configurações de diagnóstico para salvar os registros waf da porta da frente do Azure. Revise regularmente os registros para verificar ataques e para detecções falsas positivas.",
+      "guid": "89cc5e11-aa4d-4c3b-893d-feb99215266a",
+      "severity": "Alto",
+      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#add-diagnostic-settings-to-save-your-wafs-logs"
+    },
+    {
+      "category": "Gestão e Monitoramento",
+      "subcategory": "Porta da Frente",
+      "text": "Envie os registros do Azure Front Door para o Microsoft Sentinel. Detecte ataques e integre a telemetria da Porta Frontal em seu ambiente geral do Azure.",
+      "guid": "7f408960-c626-44cb-a018-347c8d790cdf",
+      "severity": "Média",
+      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#send-logs-to-microsoft-sentinel"
     }
   ],
   "metadata": {
