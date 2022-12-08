@@ -10,6 +10,9 @@ There are two ways in which you can send changes to the existing checklists:
 
 Modify the relevant `.en.json` file in the `checklists` directory, either in the Github portal or in your own clone with your favorite text editor, and send a Pull Request to the main branch. Each checklist (LZ, AKS, AVD) has a predefined set of owners that will review the individual PRs (see [CODEOWNERS](./CODEOWNERS)).
 
+> **Warning**
+> Do not modify the non-English versions of the checklists, since they are dynamically generated
+
 If you are adding new rules, make sure to include unique GUIDs for each. You can use your favorite GUID generation tool to generate new random GUIDs, such as [https://guidgenerator.com/](https://guidgenerator.com/)
 
 ### Option 2: Using the spreadsheet to create new JSON files
