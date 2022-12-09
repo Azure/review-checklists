@@ -31,11 +31,18 @@ jobs:
       # Process the changed files
       - name: Work with the list of modified files
         id: translate
+        env:
+          AZURE_TRANSLATOR_SUBSCRIPTION_KEY: ${{ secrets.AZURE_TRANSLATOR_SUBSCRIPTION_KEY }}
+          AZURE_TRANSLATOR_ENDPOINT: ${{ secrets.AZURE_TRANSLATOR_ENDPOINT }}
+          AZURE_TRANSLATOR_REGION: ${{ secrets.AZURE_TRANSLATOR_REGION }}
         run: |
-          for input_file in ${{ steps.files.outputs.all }}; do
-            echo "Processing ${input_file}..."
-            echo "done_something=yes" >> $GITHUB_OUTPUT
-            sh ./scripts/base64encode.sh $input_file
+          for input_file in ${{ steps.files.outputs.all }}; do 
+            input_file_extension=${input_file: -7}
+            if [[ "$input_file_extension" == "en.json" ]]; then
+              echo "Processing ${input_file}..."
+              echo "done_something=yes" >> $GITHUB_OUTPUT
+              python3 ./scripts/translate.py --input-file $input_file
+            fi
           done
 
       # Translate files
