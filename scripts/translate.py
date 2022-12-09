@@ -6,7 +6,7 @@ import json
 import uuid
 
 # Variables
-translate_keys = ('description', 'name', 'category', 'subcategory', 'text')
+translate_keys = ('description', 'name', 'category', 'subcategory', 'text', 'severity')
 translate_languages = ['es', 'ja', 'pt', 'ko']
 
 # Get environment variables
@@ -102,8 +102,7 @@ if args.verbose:
     print("DEBUG: Starting translations for languages", str(translate_languages))
 
 for using_language in translate_languages:
-    if args.verbose:
-        print("DEBUG: Starting translation to", using_language)
+    print("INFO: Starting translation to", using_language)
     translated_checklist = translate_object(checklist, using_language)
     # If no output file was specified, use the input file, and append the language as extension before .json
     if not args.file_name_out:
@@ -112,8 +111,7 @@ for using_language in translate_languages:
         file_name_in_noext = file_name_in_base.split('.')[0]
         file_name_out = file_name_in_noext + '.' + using_language + '.json'
         file_name_out = os.path.join(file_name_in_dir, file_name_out)
-        if args.verbose:
-            print("DEBUG: saving output file to", file_name_out)
+        print("INFO: saving output file to", file_name_out)
         translated_checklist_string = json.dumps(translated_checklist, sort_keys=True, ensure_ascii=False, indent=4, separators=(',', ': '))
         with open(file_name_out, 'w', encoding='utf-8') as f:
             f.write(translated_checklist_string)
