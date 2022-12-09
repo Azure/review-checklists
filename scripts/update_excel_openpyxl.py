@@ -13,6 +13,7 @@ import argparse
 import sys
 import os
 import requests
+import glob
 from openpyxl import load_workbook
 from openpyxl.worksheet.datavalidation import DataValidation
 
@@ -22,6 +23,8 @@ parser.add_argument('--checklist-file', dest='checklist_file', action='store',
                     help='You can optionally supply a JSON file containing the checklist you want to dump to the Excel spreadsheet. Otherwise it will take the latest file from Github')
 parser.add_argument('--only-english', dest='only_english', action='store_true', default=False,
                     help='if checklist files are specified, ignore the non-English ones and only generate a spreadsheet for the English version (default: False)')
+parser.add_argument('--find-all', dest='find_all', action='store_true', default=False,
+                    help='if checklist files are specified, find all the languages for the given checklists (default: False)')
 parser.add_argument('--technology', dest='technology', action='store',
                     help='If you do not supply a JSON file with the checklist, you need to specify the technology from which the latest checklist will be downloaded from Github')
 parser.add_argument('--excel-file', dest='excel_file', action='store',
@@ -232,10 +235,27 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
 # Download checklist
 if checklist_file:
     checklist_file_list = checklist_file.split(" ")
-    # If only-english parameter was supplied, take only the English version and remove duplicates
+    # If --only-english parameter was supplied, take only the English version and remove duplicates
     if args.only_english:
         checklist_file_list = [file[:-8] + '.en.json' for file in checklist_file_list]
         checklist_file_list = list(set(checklist_file_list))
+        if args.verbose:
+            print("DEBUG: new checklist file list:", str(checklist_file_list))
+    # If --find-all paramater was supplied, find all the languages for the checklist
+    if args.find_all:
+        new_file_list = []
+        for checklist_file in checklist_file_list:
+            filedir = os.path.dirname(checklist_file)
+            filebase = os.path.basename(checklist_file)
+            filebase_noext = filebase[:-8]   # Remove '.en.json'
+            file_match_list = glob.glob(os.path.join(filedir, filebase_noext + '.*.json'))
+            for checklist_match in file_match_list:
+                # new_file_list.append(os.path.join(filedir, checklist_match))
+                new_file_list.append(checklist_match)
+        checklist_file_list = list(set(new_file_list))
+        if args.verbose:
+            print("DEBUG: new checklist file list:", str(checklist_file_list))
+    # Go over the list
     for checklist_file in checklist_file_list:
         if args.verbose:
             print("DEBUG: Opening checklist file", checklist_file)
