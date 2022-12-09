@@ -245,7 +245,7 @@ if checklist_file:
                 checklist_data = json.load(f)
         except Exception as e:
             print("ERROR: Error when processing JSON file", checklist_file, "-", str(e))
-            sys.exit(1)
+            sys.exit(0)
         # Set input and output files
         input_excel_file = excel_file
         if args.output_excel_file:
