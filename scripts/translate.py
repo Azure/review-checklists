@@ -84,7 +84,7 @@ def translate_object(checklist_object, language):
     translated_object = checklist_object.copy()
     for (k, v) in translated_object.items():
         if isinstance(v, list):
-            translated_items = ()
+            translated_items = []
             for list_item in v:
                 translated_items.append(translate_object(list_item, language))
             translated_object[k] = translated_items
