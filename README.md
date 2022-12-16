@@ -6,7 +6,7 @@
 
 Quick links for using the checklists in this repo:
 
-- [Latest release of the Excel spreadsheet](https://github.com/Azure/review-checklists/releases/latest/download/review_checklist.xlsm)
+- [Latest release of the Excel spreadsheet](https://github.com/Azure/review-checklists/releases/latest/download/review_checklist.xlsm) (follow Security settings running macros section to unblock file)
 - [https://aka.ms/ftaaas](https://aka.ms/ftaaas) for a web frontend (check out our sister repo [https://github.com/Azure/fta-aas](https://github.com/Azure/fta-aas)).
 
 Summary of checklists supported and the respective responsible owners:
