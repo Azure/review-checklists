@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Sheet1"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = True
 Option Explicit
 Option Base 0
 Private Declare PtrSafe Function URLDownloadToFile Lib "urlmon" Alias "URLDownloadToFileA" (ByVal pCaller As Long, ByVal szURL As String, ByVal szFileName As String, ByVal dwReserved As Long, ByVal lpfnCB As Long) As Long
@@ -823,11 +814,14 @@ Dim row As Integer
 '    End Select
 
     'Import Azure Resource Graph queries only if the language is English (otherwise the translated queries are imported)
-    If Cells(language_selection_row, language_selection_col) = "English" Then
-        import_graph_queries = True
-    Else
-        MsgBox "Azure Resource Graph queries will not be imported, since the selected language is not English", vbInformation + vbOKOnly
-    End If
+    'If Cells(language_selection_row, language_selection_col) = "English" Then
+    '    import_graph_queries = True
+    'Else
+    '    MsgBox "Azure Resource Graph queries will not be imported, since the selected language is not English", vbInformation + vbOKOnly
+    'End If
+    
+    'After translation has been fixed, we can now import the Graph queries safely :)
+    import_graph_queries = True
     
     'Error message if tech or lang could not be found
     If Not tech_found Then
