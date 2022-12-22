@@ -20,6 +20,7 @@ Summary of checklists supported and the respective responsible owners:
 | Security | GA | [@mgodfrey50](https://github.com/mgodfrey50) [@rudneir2](https://github.com/rudneir2) |
 | AVS | Preview | [@fskelly](https://github.com/fskelly) [@mgodfrey50](https://github.com/mgodfrey50) [@Kiwibayer](https://github.com/Kiwibayer) [@robinher](https://github.com/robinher) |
 | SAP | Preview | [@AlastairMorrison](https://github.com/AlastairMorrison) [@videshmukh](https://github.com/videshmukh) |
+| API Management | Preview | [@andredewes](https://github.com/andredewes) [@seenu433](https://github.com/seenu433) |
 
 ## What is an Azure Design Review?
 
