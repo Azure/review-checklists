@@ -14,7 +14,7 @@ You can download the script in any environment that supports Azure CLI, such as 
 
 ```Shell
 wget –quiet –output-document ./checklist_graph.sh https://raw.githubusercontent.com/Azure/review-checklists/main/scripts/checklist_graph.sh
-chmod +x ./checklist_graph.sh
+chmod +xr ./checklist_graph.sh
 ```
 
 ### Basic usage
