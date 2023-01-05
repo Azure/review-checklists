@@ -78,14 +78,6 @@ In other cases the file opens with the following message, which prevents you fro
 
 ![how to unblock a file to run macros](./pictures/unblock.png)
 
-2. Additionally, you might want to add the folder where you cloned this repo to the list of exceptions in Windows Security (in the Virus & Threat Protection section):
-
-![how to add an exception to windows security 1](./pictures/defender_settings_1.png)
-![how to add an exception to windows security 2](./pictures/defender_settings_2.png)
-![how to add an exception to windows security 3](./pictures/defender_settings_3.png)
-![how to add an exception to windows security 4](./pictures/defender_settings_4.png)
-
-
 ## Using the spreadsheet to generate JSON checklist files (advanced)
 
 If you wish to do contributions to the checklists, one option is the following:
