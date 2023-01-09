@@ -10,6 +10,11 @@ The script [checklist_graph.sh](./checklist_graph.sh) can do the automated graph
 
 > :warning: ***The `checklist_graph.sh` script must be run from a Bash environment shell. If you are using Azure Cloud Shell be sure to select the correct environment.***
 
+> Note: In case you are in the context of a private AKS cluster (API server is private), there is no restriction to use Azure Cloud Shell to run the `checklist_graph.sh` script. 
+> Make sure that the identity (the one Azure Cloud Shell uses) used to execute the checklist_graph script, [has appropriate rights in Azure RBAC with at least read access to the resources you want to query](https://learn.microsoft.com/en-us/azure/governance/resource-graph/overview#permissions-in-azure-resource-graph) (in this case AKS cluster(s)). 
+> Without at least read permissions to the Azure object or object group, results won't be returned.
+> The script just queries the Azure Resource Graph API and does not communicate with the API Server(s) of your clusters(s).
+	
 You can download the script in any environment that supports Azure CLI, such as the [Azure Cloud Shell](https://shell.azure.com). In order to download the script and prepare it for execution you can run this command:
 
 ```Shell
@@ -84,3 +89,13 @@ All previous commands can be scoped to a management group, instead of to a singl
 ```
 
 The output is the same as the previous examples, depending on which flags are used.
+
+### Troubleshoot
+
+To troubleshoot the execution of the `checklist_graph.sh` script you can run the command:
+
+```
+./checklist_graph.sh --technology=aks --format=json --debug
+```
+
+and check the debug messages being written in the Azure Cloud Shell console
