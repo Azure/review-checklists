@@ -33,7 +33,7 @@ try:
     with open(args.input_file) as f:
         checklist = json.load(f)
 except Exception as e:
-    print("ERROR: Error when processing JSON file, nothing changed", args.file_name_in, "-", str(e))
+    print("ERROR: Error when processing JSON file, nothing changed", args.input_file, "-", str(e))
 
 # Sort the items per category and subcategory
 items = checklist['items']
