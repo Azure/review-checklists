@@ -100,9 +100,9 @@ if [[ "$help" == "yes" ]]
 then
     script_name="$0"
      echo "Please run this script as:
-        $script_name [--technology=lz|aks|avd] [--category=<category_id>] [--format=json|text] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--debug]
+        $script_name [--technology=lz|aks|avd|appsvc] [--category=<category_id>] [--format=json|text] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--debug]
         $script_name [--file=<json_file_path>] [--category=<category_id>] [--format=json|text] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--debug]
-        $script_name [--list-categories] [--base-url=<base_url>] [--technology=lz|aks|avd] [--debug]"
+        $script_name [--list-categories] [--base-url=<base_url>] [--technology=lz|aks|avd|appsvc] [--debug]"
     exit
 fi
 
