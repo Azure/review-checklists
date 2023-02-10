@@ -13,7 +13,7 @@ import sys
 import requests
 
 # Get input arguments
-parser = argparse.ArgumentParser(description='Update a checklist spreadsheet with JSON-formated Azure Resource Graph results')
+parser = argparse.ArgumentParser(description='Update a checklist spreadsheet with JSON-formatted Azure Resource Graph results')
 parser.add_argument('--output-file', dest='output_file', action='store',
                     help='You can optionally supply the name of the JSON file that will be created. Otherwise no output will be generated')
 parser.add_argument('--category', dest='category_filter', action='store',

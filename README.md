@@ -54,7 +54,7 @@ Please feel free to open an issue or create a PR if you find any error or missin
 
 5. Go row by row, and set the "Status" field to one of the available options, and write any remarks in the "Comments" field (such as why a recommendation is not relevant, or who will fix the open item)
 
-   1. Since there are many rows in a review, it is recommended procededing in chunks: either going area after area (first "Networking", then "Security", etc) or starting with the "High" priority elements and afterwards moving down to "Medium" and "Low"
+   1. Since there are many rows in a review, it is recommended proceeding in chunks: either going area after area (first "Networking", then "Security", etc) or starting with the "High" priority elements and afterwards moving down to "Medium" and "Low"
    1. If any recommendation is not clear, there is a "More Info" link with more context information.
    1. **IMPORTANT**: design decisions are not a checkbox exercise, but a series of compromises. It is OK deviating from certain recommendations, if the implications are clear (for example, sacrificing security with operational simplicity or lower cost for non-critical applications)
 

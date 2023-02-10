@@ -65,10 +65,10 @@ Output:
 This example shows how to run this for analysis on all categories in a single subscription. The output can be copy/pasted to the Excel spreadsheet (category by category). Command:
 
 ```
-./checklist_graph.sh --techonology=aks --format=text
+./checklist_graph.sh --technology=aks --format=text
 ```
 
-Output (truncated for brevity). Note that the resources are formated with the syntax `<resource-group>/<resource-name>`:
+Output (truncated for brevity). Note that the resources are formatted with the syntax `<resource-group>/<resource-name>`:
 
 ```
 CHECKLIST ITEM: Use Availability Zones if supported in your Azure region:

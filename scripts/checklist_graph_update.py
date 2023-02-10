@@ -21,7 +21,7 @@ from openpyxl import load_workbook
 import xlwings as xw
 
 # Get input arguments
-parser = argparse.ArgumentParser(description='Update a checklist spreadsheet with JSON-formated Azure Resource Graph results')
+parser = argparse.ArgumentParser(description='Update a checklist spreadsheet with JSON-formatted Azure Resource Graph results')
 parser.add_argument('--graph-file', dest='graph_file', action='store',
                     help='You need to supply a JSON file containing the results of Azure Resource Graph Queries')
 parser.add_argument('--excel-file', dest='excel_file', action='store',
