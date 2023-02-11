@@ -122,6 +122,9 @@ def generate_workbook(output_file, checklist_data):
 
     # Initialize an empty workbook
     workbook = block_workbook
+    workbook_title = "## " + checklist_data['metadata']['name']
+    workbook_title += "\n---\n\nThis workbook has been automatically generated out of the checklists in the [Azure Review Checklists repo](https://github.com/Azure/review-checklists)."
+    workbook['items'][0]['content']['json'] = workbook_title
 
     # Generate one tab in the workbook for each category
     category_id = 0
