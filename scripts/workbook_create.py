@@ -232,26 +232,9 @@ if args.verbose:
 # Download checklist or process from local file
 if checklist_file:
     checklist_file_list = checklist_file.split(" ")
-    # If --only-english parameter was supplied, take only the English version and remove duplicates
-    if args.only_english:
-        checklist_file_list = [file[:-8] + '.en.json' for file in checklist_file_list]
-        checklist_file_list = list(set(checklist_file_list))
-        if args.verbose:
-            print("DEBUG: new checklist file list:", str(checklist_file_list))
-    # If --find-all paramater was supplied, find all the languages for the checklist
-    if args.find_all:
-        new_file_list = []
-        for checklist_file in checklist_file_list:
-            filedir = os.path.dirname(checklist_file)
-            filebase = os.path.basename(checklist_file)
-            filebase_noext = filebase[:-8]   # Remove '.en.json'
-            file_match_list = glob.glob(os.path.join(filedir, filebase_noext + '.*.json'))
-            for checklist_match in file_match_list:
-                # new_file_list.append(os.path.join(filedir, checklist_match))
-                new_file_list.append(checklist_match)
-        checklist_file_list = list(set(new_file_list))
-        if args.verbose:
-            print("DEBUG: new checklist file list:", str(checklist_file_list))
+    # Take only the English versions of the checklists and remove duplicates
+    checklist_file_list = [file[:-8] + '.en.json' for file in checklist_file_list]
+    checklist_file_list = list(set(checklist_file_list))
     # Go over the list(s)
     for checklist_file in checklist_file_list:
         if args.verbose:
