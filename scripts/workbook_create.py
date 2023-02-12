@@ -121,7 +121,7 @@ def load_building_blocks():
 def generate_workbook(output_file, checklist_data):
 
     # Initialize an empty workbook
-    workbook = block_workbook
+    workbook = json.loads(json.dumps(block_workbook))
     workbook_title = "## " + checklist_data['metadata']['name']
     workbook_title += "\n---\n\nThis workbook has been automatically generated out of the checklists in the [Azure Review Checklists repo](https://github.com/Azure/review-checklists)."
     workbook['items'][0]['content']['json'] = workbook_title
@@ -132,8 +132,8 @@ def generate_workbook(output_file, checklist_data):
     category_dict = {}
     for item in checklist_data.get("categories"):
         category_title = item.get("name")
+        category_dict[category_title] = category_id  # We will use this dict later to know where to put each query
         category_id += 1
-        category_dict[category_title] = category_id + 1  # We will use this dict later to know where to put each query
         # Create new link
         new_link = block_link.copy()
         new_link['id'] = str(uuid.uuid4())   # RANDOM GUID
@@ -152,10 +152,13 @@ def generate_workbook(output_file, checklist_data):
         #     print ("DEBUG: Adding link: {0}".format(json.dumps(new_link)))
         #     print ("DEBUG: Adding section: {0}".format(json.dumps(new_section)))
         #     print("DEBUG: Workbook so far: {0}".format(json.dumps(workbook)))
-        workbook['items'][1]['content']['links'].append(new_link.copy())   # I am getting crazy with Python variable references :(
+        workbook['items'][2]['content']['links'].append(new_link.copy())   # I am getting crazy with Python variable references :(
         # Add section to workbook
         new_new_section=json.loads(json.dumps(new_section.copy()))
         workbook['items'].append(new_new_section)
+
+    if args.verbose:
+        print("DEBUG: category dictionary generated: {0}".format(str(category_dict)))
 
     # For each checklist item, add a row to spreadsheet
     for item in checklist_data.get("items"):
@@ -185,9 +188,10 @@ def generate_workbook(output_file, checklist_data):
             new_query['content']['query'] = graph_query
             new_query['content']['size'] = query_size
             # Add text and query to the workbook
-            category_id = category_dict[category]
+            category_id = category_dict[category] + len(block_workbook['items'])
             if args.verbose:
-                print ("DEBUG: Adding text and query to category ID {0}, workbook object name is {1}".format(str(category_id), workbook['items'][category_id]['name']))
+                print ("DEBUG: Adding text and query to category ID {0} ({1})".format(str(category_id), category))
+                print ("DEBUG: Workbook object name is {0}".format(workbook['items'][category_id]['name']))
             new_new_text=json.loads(json.dumps(new_text.copy()))
             new_new_query=json.loads(json.dumps(new_query.copy()))
             workbook['items'][category_id]['content']['items'].append(new_new_text)
@@ -229,6 +233,7 @@ load_building_blocks()
 if args.verbose:
     print ("DEBUG: building blocks variables intialized:")
     print ("DEBUG:    - Workbook: {0}".format(str(block_workbook)))
+    print ("DEBUG:    -    Number of items: {0}".format(str(len(block_workbook['items']))))
     print ("DEBUG:    - Link: {0}".format(str(block_link)))
     print ("DEBUG:    - Query: {0}".format(str(block_query)))
 
