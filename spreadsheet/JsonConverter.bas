@@ -76,9 +76,9 @@ Private Declare Function utc_feof Lib "libc.dylib" Alias "feof" _
 
 #ElseIf VBA7 Then
 
-' http://msdn.microsoft.com/en-us/library/windows/desktop/ms724421.aspx
-' http://msdn.microsoft.com/en-us/library/windows/desktop/ms724949.aspx
-' http://msdn.microsoft.com/en-us/library/windows/desktop/ms725485.aspx
+' http://msdn.microsoft.com/library/windows/desktop/ms724421.aspx
+' http://msdn.microsoft.com/library/windows/desktop/ms724949.aspx
+' http://msdn.microsoft.com/library/windows/desktop/ms725485.aspx
 Private Declare PtrSafe Function utc_GetTimeZoneInformation Lib "kernel32" Alias "GetTimeZoneInformation" _
     (utc_lpTimeZoneInformation As utc_TIME_ZONE_INFORMATION) As Long
 Private Declare PtrSafe Function utc_SystemTimeToTzSpecificLocalTime Lib "kernel32" Alias "SystemTimeToTzSpecificLocalTime" _
@@ -691,7 +691,7 @@ Private Function json_Encode(ByVal json_Text As Variant) As String
 
         ' When AscW returns a negative number, it returns the twos complement form of that number.
         ' To convert the twos complement notation into normal binary notation, add 0xFFF to the return result.
-        ' https://support.microsoft.com/en-us/kb/272138
+        ' https://support.microsoft.com/kb/272138
         If json_AscCode < 0 Then
             json_AscCode = json_AscCode + 65536
         End If
