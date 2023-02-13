@@ -240,8 +240,9 @@ if args.verbose:
 # Download checklist or process from local file
 if checklist_file:
     checklist_file_list = checklist_file.split(" ")
-    # Take only the English versions of the checklists and remove duplicates
-    checklist_file_list = [file[:-8] + '.en.json' for file in checklist_file_list]
+    # Take only the English versions of the checklists (JSON files)
+    checklist_file_list = [file[:-8] + '.en.json' for file in checklist_file_list if (os.path.splitext(file)[1] == '.json')]
+    # Remove duplicates
     checklist_file_list = list(set(checklist_file_list))
     # Go over the list(s)
     for checklist_file in checklist_file_list:
@@ -249,15 +250,17 @@ if checklist_file:
             print("DEBUG: Opening checklist file", checklist_file)
         # Get JSON
         try:
+            # Open file
             with open(checklist_file) as f:
                 checklist_data = json.load(f)
+            # Set output file variable
+            output_file = get_output_file(checklist_file, is_file=True)
+            # Generate workbook
+            generate_workbook(output_file, checklist_data)
+        # If error, just continue
         except Exception as e:
             print("ERROR: Error when processing JSON file", checklist_file, "-", str(e))
-            sys.exit(0)
-        # Set output files
-        output_file = get_output_file(checklist_file, is_file=True)
-        # Generate workbook
-        generate_workbook(output_file, checklist_data)
+            # sys.exit(0)
 else:
     # If no input files specified, fetch the latest from Github...
     if technology:
