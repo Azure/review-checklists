@@ -19,7 +19,7 @@ This screenshot shows the `flask` container web interface that can be used to fr
 The `fillgraphdb` container needs to authenticate to Azure to send the Azure Resource Graph queries. There are two options:
 
 - **Working today**: With Service Principal credentials
-- **Roadmap**: With a [User-Managed Identity](https://docs.microsoft.com/azure/active-directory/managed-identities-azure-resources/overview#how-can-i-use-managed-identities-for-azure-resources) with read access to the subscription(s). The `identityId` parameter of the ARM template needs to be provided. Initial tests have shown that the User-Managed Identity is not available in the init containers.
+- **Roadmap**: With a [User-Managed Identity](https://learn.microsoft.com/azure/active-directory/managed-identities-azure-resources/overview#how-can-i-use-managed-identities-for-azure-resources) with read access to the subscription(s). The `identityId` parameter of the ARM template needs to be provided. Initial tests have shown that the User-Managed Identity is not available in the init containers.
 
 The [Azure CLI deployment script for Service Principals](./arm/deploy_sp.azcli) shows how to create the Service Principal, assign the reader role for the whole subscription, and launch the ARM template to create the MySQL server and the Azure Container Instance (it doesn't store the Service Principal secret in an Azure Key Vault, that would be highly advisable). If you already have the Service Principal, you can deploy the ARM template graphically as well using the button below:
 
