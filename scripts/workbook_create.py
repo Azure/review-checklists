@@ -117,6 +117,14 @@ def load_building_blocks():
         print("ERROR: Error when opening JSON workbook building block", block_file, "-", str(e))
         sys.exit(0)
 
+# Function that corrects format issues in the queries stored in JSON
+def fix_query_format(query_string):
+    if query_string:
+        query_string = str(query_string).replace('\\\\', '\\')  # Replace a double escaping inverted bar ('\\') through a single one ('\')
+        return query_string
+    else:
+        return None
+
 # Main function to generate the workbook JSON
 def generate_workbook(output_file, checklist_data):
 
@@ -171,8 +179,10 @@ def generate_workbook(output_file, checklist_data):
         severity = item.get("severity")
         link = item.get("link")
         training = item.get("training")
-        graph_query = item.get("graph")
+        graph_query = fix_query_format(item.get("graph"))
         if graph_query:
+            if args.verbose:
+                print("DEBUG: adding sections to workbook for ARG query '{0}', length of query is {1}".format(str(graph_query), str(len(str(graph_query)))))
             query_id += 1
             # Create new text
             new_text = block_text.copy()
@@ -192,8 +202,8 @@ def generate_workbook(output_file, checklist_data):
             if args.verbose:
                 print ("DEBUG: Adding text and query to category ID {0} ({1})".format(str(category_id), category))
                 print ("DEBUG: Workbook object name is {0}".format(workbook['items'][category_id]['name']))
-            new_new_text=json.loads(json.dumps(new_text.copy()))
-            new_new_query=json.loads(json.dumps(new_query.copy()))
+            new_new_text = json.loads(json.dumps(new_text.copy()))
+            new_new_query = json.loads(json.dumps(new_query.copy()))
             workbook['items'][category_id]['content']['items'].append(new_new_text)
             workbook['items'][category_id]['content']['items'].append(new_new_query)
 
