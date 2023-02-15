@@ -40,6 +40,14 @@ The "Comments" column of the spreadsheet will fill in with the results of the Az
 
 The following sections will show more advanced usage of the script.
 
+### Listing the available checklists available
+
+You can run the script to find out which checklists are available. Note that not all checklists will contain Azure Resource Graph queries:
+
+```
+./checklist_graph.sh --list-technologies
+```
+
 ### Listing the existing categories in a checklist
 
 You can run the script as well to generate a more human-readable output. For example, run this in order to execute analysis scoped to a single category. Command:
