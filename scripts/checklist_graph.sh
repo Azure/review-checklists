@@ -151,7 +151,9 @@ fi
 if [[ "$list_technologies" == "yes" ]]
 then
     while IFS= read -r checklist; do
-        echo "$checklist"
+        checklist_url="${base_url}${checklist}_checklist.en.json"
+        graph_query_no=$(curl -s "$checklist_url" | jq -r '.items[].graph' | grep -v -e '^null$' | wc -l)
+        echo "$checklist ($graph_query_no graph queries)"
     done <<< "$checklist_list"
     exit 0
 fi
