@@ -21,6 +21,8 @@ else
                 echo "Processing file $checklist_file..."
                 # Sort original checklist
                 python3 ./scripts/sort_checklist.py --input-file "$checklist_file"
+                # Timestamp original checklist
+                python3 ./scripts/timestamp_checklist.py --input-file "$checklist_file"
                 # Translate checklist
                 python3 ./scripts/translate.py --input-file "$checklist_file"
                 # Generate macro-free spreadsheets
