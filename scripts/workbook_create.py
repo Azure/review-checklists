@@ -35,6 +35,8 @@ parser.add_argument('--blocks-path', dest='blocks_path', action='store',
 parser.add_argument('--create-arm-template', dest='create_arm_template', action='store_true',
                     default=False,
                     help='create an ARM template, additionally to the workbook JSON (default: False)')
+parser.add_argument('--category', dest='category', action='store',
+                    help='if the workbook should be restricted to a category containing the specified string')
 parser.add_argument('--verbose', dest='verbose', action='store_true',
                     default=False,
                     help='run in verbose mode (default: False)')
@@ -162,26 +164,41 @@ def generate_workbook(output_file, checklist_data):
     workbook_title += "\n---\n\nThis workbook has been automatically generated out of the checklists in the [Azure Review Checklists repo](https://github.com/Azure/review-checklists)."
     workbook['items'][0]['content']['json'] = workbook_title
 
-    # Generate one tab in the workbook for each category
-    category_id = 0
+    # Decide whether we will match in the category, or subcategory, and update the corresponding variables
+    if args.category:
+        if args.verbose:
+            print("DEBUG: creating tab list with subcategories list for categories containing the term {0}...".format(args.category))
+        tab_name_field = 'subcategory'
+        tab_title_list = [x["subcategory"] for x in checklist_data.get("items") if (args.category.lower() in str(x["category"]).lower())]
+        tab_title_list = list(set(tab_title_list))
+    else:
+        if args.verbose:
+            print("DEBUG: creating tab list with categories...")
+        tab_name_field = 'category'
+        tab_title_list = [x["name"] for x in checklist_data.get("categories")]
+    if args.verbose:
+        print("DEBUG: created tab list: {0}".format(str(tab_title_list)))
+
+    # Generate one tab in the workbook for each category/subcategory
+    tab_id = 0
     query_id = 0
-    category_dict = {}
-    for item in checklist_data.get("categories"):
-        category_title = item.get("name")
-        category_dict[category_title] = category_id  # We will use this dict later to know where to put each query
-        category_id += 1
+    tab_dict = {}
+    
+    for tab_title in tab_title_list:
+        tab_dict[tab_title] = tab_id  # We will use this dict later to know where to put each query
+        tab_id += 1
         # Create new link
         new_link = block_link.copy()
         new_link['id'] = str(uuid.uuid4())   # RANDOM GUID
-        new_link['linkLabel'] = category_title
-        new_link['subTarget'] = 'category' + str(category_id)
-        new_link['preText'] = category_title
+        new_link['linkLabel'] = tab_title
+        new_link['subTarget'] = 'category' + str(tab_id)
+        new_link['preText'] = tab_title
         # Create new section
         new_section = block_section.copy()
-        new_section['name'] = 'category' + str(category_id)
-        new_section['conditionalVisibility']['value'] = 'category' + str(category_id)
-        new_section['content']['items'][0]['content']['json'] = "## " + category_title
-        new_section['content']['items'][0]['name'] = 'category' + str(category_id) + 'title'
+        new_section['name'] = 'category' + str(tab_id)
+        new_section['conditionalVisibility']['value'] = 'category' + str(tab_id)
+        new_section['content']['items'][0]['content']['json'] = "## " + tab_title
+        new_section['content']['items'][0]['name'] = 'category' + str(tab_id) + 'title'
         # Add link and query to workbook
         # if args.verbose:
         #     print()
@@ -194,21 +211,20 @@ def generate_workbook(output_file, checklist_data):
         workbook['items'].append(new_new_section)
 
     if args.verbose:
-        print("DEBUG: category dictionary generated: {0}".format(str(category_dict)))
+        print("DEBUG: category dictionary generated: {0}".format(str(tab_dict)))
 
-    # For each checklist item, add a row to spreadsheet
+    # For each checklist item, add a query to the workbook
     for item in checklist_data.get("items"):
         # Read variables from JSON
         guid = item.get("guid")
-        category = item.get("category")
-        subcategory = item.get("subcategory")
+        tab = item.get(tab_name_field)
         text = item.get("text")
         description = item.get("description")
         severity = item.get("severity")
         link = item.get("link")
         training = item.get("training")
         graph_query = fix_query_format(item.get("graph"))
-        if graph_query:
+        if graph_query and (tab in tab_title_list):
             if args.verbose:
                 print("DEBUG: adding sections to workbook for ARG query '{0}', length of query is {1}".format(str(graph_query), str(len(str(graph_query)))))
             query_id += 1
@@ -226,14 +242,14 @@ def generate_workbook(output_file, checklist_data):
             new_query['content']['query'] = graph_query
             new_query['content']['size'] = query_size
             # Add text and query to the workbook
-            category_id = category_dict[category] + len(block_workbook['items'])
+            tab_id = tab_dict[tab] + len(block_workbook['items'])
             if args.verbose:
-                print ("DEBUG: Adding text and query to category ID {0} ({1})".format(str(category_id), category))
-                print ("DEBUG: Workbook object name is {0}".format(workbook['items'][category_id]['name']))
+                print ("DEBUG: Adding text and query to tab ID {0} ({1})".format(str(tab_id), tab))
+                print ("DEBUG: Workbook object name is {0}".format(workbook['items'][tab_id]['name']))
             new_new_text = json.loads(json.dumps(new_text.copy()))
             new_new_query = json.loads(json.dumps(new_query.copy()))
-            workbook['items'][category_id]['content']['items'].append(new_new_text)
-            workbook['items'][category_id]['content']['items'].append(new_new_query)
+            workbook['items'][tab_id]['content']['items'].append(new_new_text)
+            workbook['items'][tab_id]['content']['items'].append(new_new_query)
 
     # Dump the workbook to the output file or to console, if there was any query in the original checklist
     if query_id > 0:
@@ -269,7 +285,11 @@ def get_output_file(checklist_file_or_url, is_file=True):
     elif args.output_path:
         # Get filename without path and extension
         output_file = os.path.join(args.output_path, output_file)
-        return os.path.splitext(output_file)[0] + '_workbook.json'
+        # If category specified, add to output file name
+        if args.category:
+            return os.path.splitext(output_file)[0] + str(args.category).lower() + '_workbook.json'
+        else:
+            return os.path.splitext(output_file)[0] + '_workbook.json'
     else:
         output_file = None
 
