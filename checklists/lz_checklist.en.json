@@ -907,11 +907,12 @@
         },
         {
             "category": "Network Topology and Connectivity",
-            "subcategory": "Inspection",
-            "text": "Evaluate whether the latest version of NSG flow logs provides the level of detail that you need.",
-            "guid": "2b3e4563-a4d8-4739-948b-662d6d15f512",
+            "subcategory": "Segmentation",
+            "text": "Don't rely on the NSG inbound default rules using the VirtualNetwork service tag to limit connectivity.",
+            "guid": "11deb39d-8299-4e47-bbe0-0fb5a36318a8",
             "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about"
+            "link": "https://learn.microsoft.com/azure/virtual-network/service-tags-overview#available-service-tags",
+            "graph": "resources | where type=='microsoft.network/networksecuritygroups' | mvexpand properties.securityRules | project id,name,ruleAction=properties_securityRules.properties.access,rulePriority=properties_securityRules.properties.priority,ruleDst=properties_securityRules.properties.destinationAddressPrefix,ruleSrc=properties_securityRules.properties.sourceAddressPrefix,ruleProt=properties_securityRules.properties.protocol,ruleDirection=properties_securityRules.properties.direction,rulePort=properties_securityRules.properties.destinationPortRange | summarize StarDenies=countif(ruleAction=='Deny' and ruleDst=='*' and ruleSrc=='*' and ruleProt=='*' and rulePort=='*') by id,tostring(ruleDirection) | where ruleDirection == 'Inbound' | project id,compliant=(StarDenies>0) | union (resources | where type=='microsoft.network/networksecuritygroups' | where array_length(properties.securityRules)==0 | extend compliant=false | project id,compliant)"
         },
         {
             "category": "Network Topology and Connectivity",
@@ -920,14 +921,6 @@
             "guid": "a65498f6-dfe2-437d-b143-b16c31d7aa9b",
             "severity": "Medium",
             "link": "https://learn.microsoft.com/azure/network-watcher/network-watcher-monitoring-overview"
-        },
-        {
-            "category": "Network Topology and Connectivity",
-            "subcategory": "Inspection",
-            "text": "Don't develop a custom solution to mirror traffic. Although this approach might be acceptable for small-scale scenarios, we don't encourage it at scale because of complexity and the supportability issues that might arise.",
-            "guid": "64704489-a804-42d8-ae79-d17b73b22a5a",
-            "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-traffic-inspection"
         },
         {
             "category": "Network Topology and Connectivity",
@@ -1107,7 +1100,7 @@
             "guid": "9c2299c4-d7b5-47d0-a655-562f2b3e4563",
             "severity": "Medium",
             "training": "https://learn.microsoft.com/learn/paths/implement-network-security/",
-            "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-setup-guide/organize-resources?tabs=AzureManagementGroupsAndHierarchy"
+            "graph": "Resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetName=subnets.name,subnetNsg=subnets.properties.networkSecurityGroup | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend compliant = isnotnull(subnetNsg)"           
         },
         {
             "category": "Network Topology and Connectivity",
