@@ -32,6 +32,9 @@ parser.add_argument('--output-path', dest='output_path', action='store',
                     help='Folder where to store the results (using the same name as the input_file)')
 parser.add_argument('--blocks-path', dest='blocks_path', action='store',
                     help='Folder where the building blocks to build the workbook are stored)')
+parser.add_argument('--create-arm-template', dest='create_arm_template', action='store_true',
+                    default=False,
+                    help='create an ARM template, additionally to the workbook JSON (default: False)')
 parser.add_argument('--verbose', dest='verbose', action='store_true',
                     default=False,
                     help='run in verbose mode (default: False)')
@@ -56,6 +59,7 @@ def load_building_blocks():
     global block_section
     global block_query
     global block_text
+    global block_arm
 
     # Set folder where to load from
     if args.blocks_path:
@@ -116,12 +120,31 @@ def load_building_blocks():
     except Exception as e:
         print("ERROR: Error when opening JSON workbook building block", block_file, "-", str(e))
         sys.exit(0)
+    # Load ARM template building block
+    block_file = os.path.join(blocks_path, 'block_arm.json')
+    if args.verbose:
+        print ("DEBUG: Loading file {0}...".format(block_file))
+    try:
+        with open(block_file) as f:
+            block_arm = json.load(f)
+    except Exception as e:
+        print("ERROR: Error when opening JSON ARM template building block", block_file, "-", str(e))
+        sys.exit(0)
 
 # Function that corrects format issues in the queries stored in JSON
 def fix_query_format(query_string):
     if query_string:
         query_string = str(query_string).replace('\\\\', '\\')  # Replace a double escaping inverted bar ('\\') through a single one ('\')
         return query_string
+    else:
+        return None
+
+# Function that transforms a JSON string to be included in an ARM template
+def serialize_data(workbook_string):
+    if workbook_string:
+        workbook_string = str(workbook_string).replace('"', '\"')  # Escape double quotes
+        workbook_string = str(workbook_string).replace('\\', '\\\\')  # Escape escape characters
+        return workbook_string
     else:
         return None
 
@@ -209,11 +232,23 @@ def generate_workbook(output_file, checklist_data):
 
     # Dump the workbook to the output file or to console, if there was any query in the original checklist
     if query_id > 0:
-        workbook_string = json.dumps(workbook, indent=4)
         if output_file:
+            # Dump workbook JSON into a file
+            workbook_string = json.dumps(workbook, indent=4)
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write(workbook_string)
                 f.close()
+            # Create ARM template (optionally, if specified in the parameters)
+            if args.create_arm_template:
+                arm_output_file = os.path.splitext(output_file)[0] + '_template.json'
+                if args.verbose:
+                    print ("DEBUG: Creating ARM template in file {0}...".format(arm_output_file))
+                block_arm['parameters']['workbookDisplayName']['defaultValue'] = checklist_data['metadata']['name']
+                block_arm['resources'][0]['properties']['serializedData'] = serialize_data(workbook_string)
+                arm_string = json.dumps(block_arm, indent=4)
+                with open(arm_output_file, 'w', encoding='utf-8') as f:
+                    f.write(arm_string)
+                    f.close()
         else:
             print(workbook_string)
     else:
