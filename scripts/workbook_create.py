@@ -142,8 +142,13 @@ def fix_query_format(query_string):
 # Function that transforms a JSON string to be included in an ARM template
 def serialize_data(workbook_string):
     if workbook_string:
-        workbook_string = str(workbook_string).replace('"', '\"')  # Escape double quotes
-        workbook_string = str(workbook_string).replace('\\', '\\\\')  # Escape escape characters
+        # Escape double quotes
+        workbook_string = str(workbook_string).replace('"', '\"')
+        # Escape escape characters
+        workbook_string = str(workbook_string).replace('\\', '\\\\')
+        # Undo the scaping for the newline character (otherwise the markdown in the workbook would look wrong).
+        # Note that this might impact newline characters in queries!
+        workbook_string = str(workbook_string).replace('\\\\n', '\\n')
         return workbook_string
     else:
         return None
