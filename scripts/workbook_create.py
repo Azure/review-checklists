@@ -136,7 +136,7 @@ def load_building_blocks():
 # Function that corrects format issues in the queries stored in JSON
 def fix_query_format(query_string):
     if query_string:
-        query_string = str(query_string).replace('\\\\', '\\')  # Replace a double escaping inverted bar ('\\') through a single one ('\')
+        query_string = str(query_string).replace('\\\\', '\\')  # Replace a double escaping inverted bar ('\\\\') through a single one ('\')
         return query_string
     else:
         return None
@@ -147,10 +147,10 @@ def serialize_data(workbook_string):
         # Escape double quotes
         workbook_string = str(workbook_string).replace('"', '\"')
         # Escape escape characters
-        workbook_string = str(workbook_string).replace('\\', '\\\\')
+        # workbook_string = str(workbook_string).replace('\\', '\\\\')
         # Undo the scaping for the newline character (otherwise the markdown in the workbook would look wrong).
         # Note that this might impact newline characters in queries!
-        workbook_string = str(workbook_string).replace('\\\\n', '\\n')
+        # workbook_string = str(workbook_string).replace('\\\\n', '\\n')
         return workbook_string
     else:
         return None
@@ -161,6 +161,8 @@ def generate_workbook(output_file, checklist_data):
     # Initialize an empty workbook
     workbook = json.loads(json.dumps(block_workbook))
     workbook_title = "## " + checklist_data['metadata']['name']
+    if args.category:
+        workbook_title += ' - ' + args.category[0].upper() + args.category[1:]
     workbook_title += "\n---\n\nThis workbook has been automatically generated out of the checklists in the [Azure Review Checklists repo](https://github.com/Azure/review-checklists)."
     workbook['items'][0]['content']['json'] = workbook_title
 
@@ -265,6 +267,8 @@ def generate_workbook(output_file, checklist_data):
                 if args.verbose:
                     print ("DEBUG: Creating ARM template in file {0}...".format(arm_output_file))
                 block_arm['parameters']['workbookDisplayName']['defaultValue'] = checklist_data['metadata']['name']
+                if args.category:
+                    block_arm['parameters']['workbookDisplayName']['defaultValue'] += ' - ' + args.category[0].upper() + args.category[1:]
                 block_arm['resources'][0]['properties']['serializedData'] = serialize_data(workbook_string)
                 arm_string = json.dumps(block_arm, indent=4)
                 with open(arm_output_file, 'w', encoding='utf-8') as f:
@@ -287,7 +291,7 @@ def get_output_file(checklist_file_or_url, is_file=True):
         output_file = os.path.join(args.output_path, output_file)
         # If category specified, add to output file name
         if args.category:
-            return os.path.splitext(output_file)[0] + str(args.category).lower() + '_workbook.json'
+            return os.path.splitext(output_file)[0] + '_' + str(args.category).lower() + '_workbook.json'
         else:
             return os.path.splitext(output_file)[0] + '_workbook.json'
     else:
