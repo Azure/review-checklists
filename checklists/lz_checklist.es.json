@@ -716,7 +716,7 @@
         },
         {
             "category": "Topología y conectividad de red",
-            "graph": "resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id=properties_virtualNetworkPeerings.id, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess == True)",
+            "graph": "resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id, peeringName=properties_virtualNetworkPeerings.name, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess == True)",
             "guid": "c76cb5a2-abe2-11ed-afa1-0242ac120002",
             "link": "https://learn.microsoft.com/azure/virtual-network/virtual-network-manage-peering",
             "severity": "Alto",
@@ -781,12 +781,13 @@
         },
         {
             "category": "Topología y conectividad de red",
+            "graph": "resources | where type=='microsoft.network/virtualnetworkgateways' | where properties.gatewayType == 'Vpn' | extend compliant = (tolower(properties.sku.name) contains 'az') | distinct id, compliant",
             "guid": "4d873974-8b66-42d6-b15f-512a65498f6d",
-            "link": "https://learn.microsoft.com/azure/expressroute/expressroute-routing",
+            "link": "https://learn.microsoft.com/azure/vpn-gateway/create-zone-redundant-vnet-gateway",
             "severity": "Medio",
             "subcategory": "Híbrido",
             "text": "Use puertas de enlace VPN para conectar sucursales o ubicaciones remotas a Azure. Para una mayor resiliencia, implemente puertas de enlace con redundancia de zona (donde estén disponibles).",
-            "training": "https://learn.microsoft.com/learn/modules/design-implement-azure-expressroute/"
+            "training": "https://learn.microsoft.com/training/modules/intro-to-azure-vpn-gateway/"
         },
         {
             "category": "Topología y conectividad de red",
@@ -844,7 +845,7 @@
         },
         {
             "category": "Topología y conectividad de red",
-            "graph": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10(\\\\.(25[0-5]|2[0-4][0-9]|1[0-9]{1,2}|[0-9]{1,2})){3}|((172\\\\.(1[6-9]|2[0-9]|3[01]))|192\\\\.168)(\\\\.(25[0-5]|2[0-4][0-9]|1[0-9]{1,2}|[0-9]{1,2})){2})')  | project name, id, subscriptionId, resourceGroup, compliant, cidr",
+            "graph": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10\\\\.|172\\\\.(1[6-9]|2[0-9]|3[01])\\\\.|192\\\\.168\\\\.)')  | project id, compliant, cidr",
             "guid": "3f630472-2dd6-49c5-a5c2-622f54b69bad",
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing",
             "severity": "Medio",
@@ -926,27 +927,11 @@
         },
         {
             "category": "Topología y conectividad de red",
-            "guid": "2b3e4563-a4d8-4739-948b-662d6d15f512",
-            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about",
-            "severity": "Medio",
-            "subcategory": "Inspección",
-            "text": "Evalúe si la versión más reciente de los registros de flujo de NSG proporciona el nivel de detalle que necesita."
-        },
-        {
-            "category": "Topología y conectividad de red",
             "guid": "a65498f6-dfe2-437d-b143-b16c31d7aa9b",
             "link": "https://learn.microsoft.com/azure/network-watcher/network-watcher-monitoring-overview",
             "severity": "Medio",
             "subcategory": "Inspección",
             "text": "Use soluciones de asociados para escenarios que requieran una inspección profunda de paquetes."
-        },
-        {
-            "category": "Topología y conectividad de red",
-            "guid": "64704489-a804-42d8-ae79-d17b73b22a5a",
-            "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-traffic-inspection",
-            "severity": "Medio",
-            "subcategory": "Inspección",
-            "text": "No desarrolle una solución personalizada para reflejar el tráfico. Aunque este enfoque puede ser aceptable para escenarios a pequeña escala, no lo recomendamos a escala debido a la complejidad y los problemas de compatibilidad que pueden surgir."
         },
         {
             "category": "Topología y conectividad de red",
@@ -959,11 +944,12 @@
         },
         {
             "category": "Topología y conectividad de red",
+            "graph": "resources | where type == 'microsoft.network/azurefirewalls' | project id,compliant=isnotnull(properties.firewallPolicy.id)",
             "guid": "0f1ce16e-d301-4d6e-a72e-52e3611cc58b",
             "link": "https://learn.microsoft.com/azure/firewall/",
             "severity": "Medio",
             "subcategory": "Internet",
-            "text": "Use Firewall Manager con Virtual WAN para implementar y administrar Azure Firewalls en concentradores de Virtual WAN o en redes virtuales de concentradores. Firewall Manager ahora está disponible de forma general tanto para Virtual WAN como para redes virtuales normales.",
+            "text": "Use Firewall Manager con Virtual WAN para implementar y administrar Azure Firewalls en concentradores de Virtual WAN o en redes virtuales de concentradores.",
             "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/"
         },
         {
@@ -1103,6 +1089,15 @@
         },
         {
             "category": "Topología y conectividad de red",
+            "graph": "resources | where type=='microsoft.network/networksecuritygroups' | mvexpand properties.securityRules | project id,name,ruleAction=properties_securityRules.properties.access,rulePriority=properties_securityRules.properties.priority,ruleDst=properties_securityRules.properties.destinationAddressPrefix,ruleSrc=properties_securityRules.properties.sourceAddressPrefix,ruleProt=properties_securityRules.properties.protocol,ruleDirection=properties_securityRules.properties.direction,rulePort=properties_securityRules.properties.destinationPortRange | summarize StarDenies=countif(ruleAction=='Deny' and ruleDst=='*' and ruleSrc=='*' and ruleProt=='*' and rulePort=='*') by id,tostring(ruleDirection) | where ruleDirection == 'Inbound' | project id,compliant=(StarDenies>0) | union (resources | where type=='microsoft.network/networksecuritygroups' | where array_length(properties.securityRules)==0 | extend compliant=false | project id,compliant)",
+            "guid": "11deb39d-8299-4e47-bbe0-0fb5a36318a8",
+            "link": "https://learn.microsoft.com/azure/virtual-network/service-tags-overview#available-service-tags",
+            "severity": "Medio",
+            "subcategory": "Segmentación",
+            "text": "No confíe en las reglas predeterminadas de entrada de NSG mediante la etiqueta de servicio VirtualNetwork para limitar la conectividad."
+        },
+        {
+            "category": "Topología y conectividad de red",
             "guid": "c2447ec6-6138-4a72-80f1-ce16ed301d6e",
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-landing-zone-network-segmentation",
             "severity": "Medio",
@@ -1121,8 +1116,8 @@
         },
         {
             "category": "Topología y conectividad de red",
+            "graph": "Resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetName=subnets.name,subnetNsg=subnets.properties.networkSecurityGroup | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend compliant = isnotnull(subnetNsg)",
             "guid": "9c2299c4-d7b5-47d0-a655-562f2b3e4563",
-            "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-setup-guide/organize-resources?tabs=AzureManagementGroupsAndHierarchy",
             "severity": "Medio",
             "subcategory": "Segmentación",
             "text": "El equipo de aplicaciones debe usar grupos de seguridad de aplicaciones en los grupos de seguridad de red de nivel de subred para ayudar a proteger las máquinas virtuales de varios niveles dentro de la zona de aterrizaje.",
@@ -1644,7 +1639,9 @@
         }
     ],
     "metadata": {
-        "name": "Azure Landing Zone Review"
+        "name": "Azure Landing Zone Review",
+        "state": "GA",
+        "timestamp": "Feb 23, 2023"
     },
     "severities": [
         {
