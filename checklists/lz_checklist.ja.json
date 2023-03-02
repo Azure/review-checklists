@@ -716,7 +716,7 @@
         },
         {
             "category": "ネットワーク トポロジと接続性",
-            "graph": "resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id=properties_virtualNetworkPeerings.id, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess == True)",
+            "graph": "resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id, peeringName=properties_virtualNetworkPeerings.name, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess == True)",
             "guid": "c76cb5a2-abe2-11ed-afa1-0242ac120002",
             "link": "https://learn.microsoft.com/azure/virtual-network/virtual-network-manage-peering",
             "severity": "高い",
@@ -781,12 +781,13 @@
         },
         {
             "category": "ネットワーク トポロジと接続性",
+            "graph": "resources | where type=='microsoft.network/virtualnetworkgateways' | where properties.gatewayType == 'Vpn' | extend compliant = (tolower(properties.sku.name) contains 'az') | distinct id, compliant",
             "guid": "4d873974-8b66-42d6-b15f-512a65498f6d",
-            "link": "https://learn.microsoft.com/azure/expressroute/expressroute-routing",
+            "link": "https://learn.microsoft.com/azure/vpn-gateway/create-zone-redundant-vnet-gateway",
             "severity": "中程度",
             "subcategory": "ハイブリッド",
             "text": "VPN ゲートウェイを使用して、ブランチまたはリモートの場所を Azure に接続します。回復性を高めるには、ゾーン冗長ゲートウェイ (使用可能な場合) を展開します。",
-            "training": "https://learn.microsoft.com/learn/modules/design-implement-azure-expressroute/"
+            "training": "https://learn.microsoft.com/training/modules/intro-to-azure-vpn-gateway/"
         },
         {
             "category": "ネットワーク トポロジと接続性",
@@ -844,7 +845,7 @@
         },
         {
             "category": "ネットワーク トポロジと接続性",
-            "graph": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10(\\\\.(25[0-5]|2[0-4][0-9]|1[0-9]{1,2}|[0-9]{1,2})){3}|((172\\\\.(1[6-9]|2[0-9]|3[01]))|192\\\\.168)(\\\\.(25[0-5]|2[0-4][0-9]|1[0-9]{1,2}|[0-9]{1,2})){2})')  | project name, id, subscriptionId, resourceGroup, compliant, cidr",
+            "graph": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10\\\\.|172\\\\.(1[6-9]|2[0-9]|3[01])\\\\.|192\\\\.168\\\\.)')  | project id, compliant, cidr",
             "guid": "3f630472-2dd6-49c5-a5c2-622f54b69bad",
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing",
             "severity": "中程度",
@@ -926,27 +927,11 @@
         },
         {
             "category": "ネットワーク トポロジと接続性",
-            "guid": "2b3e4563-a4d8-4739-948b-662d6d15f512",
-            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about",
-            "severity": "中程度",
-            "subcategory": "検査",
-            "text": "最新バージョンの NSG フロー ログで必要な詳細レベルが提供されているかどうかを評価します。"
-        },
-        {
-            "category": "ネットワーク トポロジと接続性",
             "guid": "a65498f6-dfe2-437d-b143-b16c31d7aa9b",
             "link": "https://learn.microsoft.com/azure/network-watcher/network-watcher-monitoring-overview",
             "severity": "中程度",
             "subcategory": "検査",
             "text": "ディープ パケット検査を必要とするシナリオには、パートナー ソリューションを使用します。"
-        },
-        {
-            "category": "ネットワーク トポロジと接続性",
-            "guid": "64704489-a804-42d8-ae79-d17b73b22a5a",
-            "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-traffic-inspection",
-            "severity": "中程度",
-            "subcategory": "検査",
-            "text": "トラフィックをミラーリングするカスタム ソリューションを開発しないでください。このアプローチは小規模なシナリオでは許容できるかもしれませんが、複雑さとサポート性の問題が発生する可能性があるため、大規模なアプローチはお勧めしません。"
         },
         {
             "category": "ネットワーク トポロジと接続性",
@@ -959,11 +944,12 @@
         },
         {
             "category": "ネットワーク トポロジと接続性",
+            "graph": "resources | where type == 'microsoft.network/azurefirewalls' | project id,compliant=isnotnull(properties.firewallPolicy.id)",
             "guid": "0f1ce16e-d301-4d6e-a72e-52e3611cc58b",
             "link": "https://learn.microsoft.com/azure/firewall/",
             "severity": "中程度",
             "subcategory": "インターネット",
-            "text": "Virtual WAN でファイアウォール マネージャーを使用して、仮想 WAN ハブ全体またはハブ仮想ネットワーク内の Azure ファイアウォールをデプロイおよび管理します。ファイアウォール マネージャーは、Virtual WAN と通常の仮想ネットワークの両方で一般提供されました。",
+            "text": "Virtual WAN でファイアウォール マネージャーを使用して、仮想 WAN ハブ全体またはハブ仮想ネットワーク内の Azure ファイアウォールをデプロイおよび管理します。",
             "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/"
         },
         {
@@ -1103,6 +1089,15 @@
         },
         {
             "category": "ネットワーク トポロジと接続性",
+            "graph": "resources | where type=='microsoft.network/networksecuritygroups' | mvexpand properties.securityRules | project id,name,ruleAction=properties_securityRules.properties.access,rulePriority=properties_securityRules.properties.priority,ruleDst=properties_securityRules.properties.destinationAddressPrefix,ruleSrc=properties_securityRules.properties.sourceAddressPrefix,ruleProt=properties_securityRules.properties.protocol,ruleDirection=properties_securityRules.properties.direction,rulePort=properties_securityRules.properties.destinationPortRange | summarize StarDenies=countif(ruleAction=='Deny' and ruleDst=='*' and ruleSrc=='*' and ruleProt=='*' and rulePort=='*') by id,tostring(ruleDirection) | where ruleDirection == 'Inbound' | project id,compliant=(StarDenies>0) | union (resources | where type=='microsoft.network/networksecuritygroups' | where array_length(properties.securityRules)==0 | extend compliant=false | project id,compliant)",
+            "guid": "11deb39d-8299-4e47-bbe0-0fb5a36318a8",
+            "link": "https://learn.microsoft.com/azure/virtual-network/service-tags-overview#available-service-tags",
+            "severity": "中程度",
+            "subcategory": "セグメンテーション",
+            "text": "接続を制限するために、仮想ネットワーク サービス タグを使用する NSG 受信の既定の規則に依存しないでください。"
+        },
+        {
+            "category": "ネットワーク トポロジと接続性",
             "guid": "c2447ec6-6138-4a72-80f1-ce16ed301d6e",
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-landing-zone-network-segmentation",
             "severity": "中程度",
@@ -1121,8 +1116,8 @@
         },
         {
             "category": "ネットワーク トポロジと接続性",
+            "graph": "Resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetName=subnets.name,subnetNsg=subnets.properties.networkSecurityGroup | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend compliant = isnotnull(subnetNsg)",
             "guid": "9c2299c4-d7b5-47d0-a655-562f2b3e4563",
-            "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-setup-guide/organize-resources?tabs=AzureManagementGroupsAndHierarchy",
             "severity": "中程度",
             "subcategory": "セグメンテーション",
             "text": "アプリケーション チームは、サブネット レベルの NSG でアプリケーション セキュリティ グループを使用して、ランディング ゾーン内の多層 VM を保護する必要があります。",
@@ -1644,7 +1639,9 @@
         }
     ],
     "metadata": {
-        "name": "Azure Landing Zone Review"
+        "name": "Azure Landing Zone Review",
+        "state": "GA",
+        "timestamp": "Feb 23, 2023"
     },
     "severities": [
         {
