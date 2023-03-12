@@ -359,7 +359,7 @@ def generate_workbook(output_file, checklist_data):
             success_formula += '+'
         success_formula += '{Section' + str(tab_id) + 'Success:value}'
         tab_id += 1
-    progress_query = 'resources | summarize count() | extend Total = ' + total_formula + ', Success = ' + success_formula + ' | extend SuccessPercent = Success/Total | project SuccessPercent' 
+    progress_query = 'resources | summarize count() | extend Total = ' + total_formula + ', Success = ' + success_formula + ' | extend SuccessPercent = round(toreal(Success)/toreal(Total), 2) * 100 | project SuccessPercent' 
     workbook['items'][3]['content']['query'] = progress_query
 
     # Dump the workbook to the output file or to console, if there was any query in the original checklist
