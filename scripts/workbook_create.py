@@ -216,7 +216,7 @@ def generate_workbook(output_file, checklist_data):
         else:
             total_expected_queries += len(items_with_query)
             if args.verbose:
-                print("DEBUG: Incrementing total_expected queries (type {0}) by {1} to {2}".format(str(type(total_expected_queries)), str(len(items_with_query)), str(total_expected_queries)))
+                # print("DEBUG: Incrementing total_expected queries (type {0}) by {1} to {2}".format(str(type(total_expected_queries)), str(len(items_with_query)), str(total_expected_queries)))
                 print("DEBUG: Leaving tab {0} in tab list, it has {1} graph queries".format(tab_title, str(len(items_with_query))))
     for tab_title in tabs_to_remove:
         tab_title_list.remove(tab_title)
