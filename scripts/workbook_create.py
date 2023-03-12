@@ -61,6 +61,7 @@ def load_building_blocks():
     global block_section
     global block_query
     global block_text
+    global block_invisible_parameter
     global block_arm
 
     # Set folder where to load from
@@ -119,6 +120,16 @@ def load_building_blocks():
     try:
         with open(block_file) as f:
             block_text = json.load(f)
+    except Exception as e:
+        print("ERROR: Error when opening JSON workbook building block", block_file, "-", str(e))
+        sys.exit(0)
+    # Load invisible parameter building block
+    block_file = os.path.join(blocks_path, 'block_invisible_parameter.json')
+    if args.verbose:
+        print ("DEBUG: Loading file {0}...".format(block_file))
+    try:
+        with open(block_file) as f:
+            block_invisible_parameter = json.load(f)
     except Exception as e:
         print("ERROR: Error when opening JSON workbook building block", block_file, "-", str(e))
         sys.exit(0)
@@ -181,42 +192,58 @@ def generate_workbook(output_file, checklist_data):
     if args.verbose:
         print("DEBUG: created tab list: {0}".format(str(tab_title_list)))
 
+    # Remove the cats/subcats without queries defined
+    for tab_title in tab_title_list:
+        items_with_query =[x['guid'] for x in checklist_data.get("items") if ((x[tab_name_field] == tab_title) and ('graph' in x.keys()))]
+        if len(items_with_query) == 0:
+            if args.verbose:
+                print("DEBUG: Removing tab {0} from list, it doesn't seem to have any graph queries defined".format(str(tab_title)))
+            tab_title_list.remove(tab_title)
+
+    # Bidimensional array to hold the graphs queries (x=>tab_index, y=>query_index)
+    queries=[]
+    for tab_title in tab_title_list:
+        queries.append([])
+
     # Generate one tab in the workbook for each category/subcategory
     tab_id = 0
     query_id = 0
     tab_dict = {}
     
     for tab_title in tab_title_list:
+
         tab_dict[tab_title] = tab_id  # We will use this dict later to know where to put each query
-        tab_id += 1
         # Create new link
         new_link = block_link.copy()
         new_link['id'] = str(uuid.uuid4())   # RANDOM GUID
         new_link['linkLabel'] = tab_title
-        new_link['subTarget'] = 'category' + str(tab_id)
+        new_link['subTarget'] = 'tab' + str(tab_id)
         new_link['preText'] = tab_title
         # Create new section
         new_section = block_section.copy()
-        new_section['name'] = 'category' + str(tab_id)
-        new_section['conditionalVisibility']['value'] = 'category' + str(tab_id)
+        new_section['name'] = 'tab' + str(tab_id)
+        new_section['conditionalVisibility']['value'] = 'tab' + str(tab_id)
         new_section['content']['items'][0]['content']['json'] = "## " + tab_title
-        new_section['content']['items'][0]['name'] = 'category' + str(tab_id) + 'title'
+        new_section['content']['items'][0]['name'] = 'tab' + str(tab_id) + 'title'
         # Add link and query to workbook
         # if args.verbose:
         #     print()
         #     print ("DEBUG: Adding link: {0}".format(json.dumps(new_link)))
         #     print ("DEBUG: Adding section: {0}".format(json.dumps(new_section)))
         #     print("DEBUG: Workbook so far: {0}".format(json.dumps(workbook)))
-        workbook['items'][2]['content']['links'].append(new_link.copy())   # I am getting crazy with Python variable references :(
+        workbook['items'][3]['content']['links'].append(new_link.copy())   # I am getting crazy with Python variable references :(
         # Add section to workbook
         new_new_section=json.loads(json.dumps(new_section.copy()))
         workbook['items'].append(new_new_section)
+        tab_id += 1
 
     if args.verbose:
-        print("DEBUG: category dictionary generated: {0}".format(str(tab_dict)))
+        print("DEBUG: tab dictionary generated: {0}".format(str(tab_dict)))
 
     # For each checklist item, add a query to the workbook
     for item in checklist_data.get("items"):
+        # We will append this to every query
+        query_suffix = ' | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed'
         # Read variables from JSON
         guid = item.get("guid")
         tab = item.get(tab_name_field)
@@ -229,7 +256,6 @@ def generate_workbook(output_file, checklist_data):
         if graph_query and (tab in tab_title_list):
             if args.verbose:
                 print("DEBUG: adding sections to workbook for ARG query '{0}', length of query is {1}".format(str(graph_query), str(len(str(graph_query)))))
-            query_id += 1
             # Create new text
             new_text = block_text.copy()
             new_text['name'] = 'querytext' + str(query_id)
@@ -241,7 +267,7 @@ def generate_workbook(output_file, checklist_data):
             # Create new query
             new_query = block_query.copy()
             new_query['name'] = 'query' + str(query_id)
-            new_query['content']['query'] = graph_query
+            new_query['content']['query'] = graph_query + query_suffix
             new_query['content']['size'] = query_size
             # Add text and query to the workbook
             tab_id = tab_dict[tab] + len(block_workbook['items'])
@@ -252,8 +278,39 @@ def generate_workbook(output_file, checklist_data):
             new_new_query = json.loads(json.dumps(new_query.copy()))
             workbook['items'][tab_id]['content']['items'].append(new_new_text)
             workbook['items'][tab_id]['content']['items'].append(new_new_query)
+            # Add query to the query array
+            tab_id = tab_title_list.index(tab)
+            queries[tab_id].append(graph_query)
+            # Increment query counter
+            query_id += 1
+
+    # Add invisible parameters to the workbook with number of success and total items
+    if args.verbose:
+        print("DEBUG: Adding hidden parameters to workbook main section for {0} tabs...".format(str(len(queries))))
+    tab_id = 0
+    for tab_title in tab_title_list:
+        print("DEBUG: Adding hidden parameters for tab {0}, with {1} queries".format(str(tab_id), str(len(queries[tab_id]))))
+        # We shouldn't have any tabs without queries, but still...
+        if len(queries[tab_id]) > 0:
+            query_id = 0
+            summary_query = queries[tab_id][query_id]
+            while query_id + 1 < len(queries[tab_id]):
+                query_id += 1
+                summary_query += "| union ({0})".format(queries[tab_id][query_id])
+            summary_query += '| summarize Total = count()'
+            new_parameter = block_invisible_parameter.copy()
+            new_parameter['query'] = summary_query
+            new_parameter['name'] = 'Section' + str(tab_id) + 'Total'
+            new_new_parameter = json.loads(json.dumps(new_parameter.copy()))
+            if args.verbose:
+                print("DEBUG: adding hidden parameter {0}".format(json.dumps(new_new_parameter)))
+            workbook['items'][2]['content']['parameters'].append(new_new_parameter)
+            # Move to the next query
+            tab_id += 1
 
     # Dump the workbook to the output file or to console, if there was any query in the original checklist
+    if args.verbose:
+        print ("DEBUG: Starting output process...")
     if query_id > 0:
         if output_file:
             # Dump workbook JSON into a file
