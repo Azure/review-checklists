@@ -176,6 +176,7 @@ def generate_workbook(output_file, checklist_data):
     if args.category:
         workbook_title += ' - ' + args.category[0].upper() + args.category[1:]
     workbook_title += "\n---\n\nThis workbook has been automatically generated out of the checklists in the [Azure Review Checklists repo](https://github.com/Azure/review-checklists)."
+    workbook_title += "\n---\n\n*NOTE*: If some queries in this workbook do not work at loading, it can be because there is a maximum fo simultaneous queries that can be sent to Azure Resource Graph. Please refresh the failed queries manually."
     workbook['items'][0]['content']['json'] = workbook_title
 
     # Decide whether we will match in the category, or subcategory, and update the corresponding variables
