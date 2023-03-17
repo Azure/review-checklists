@@ -1,16 +1,16 @@
 ######################################################################
 #
-# This script reads the checklist items from the latest checklist file
-#   in Github (or from a local file) and populates an Excel spreadsheet
-#   with the contents.
+# This script combines all of the existing checklists into one big
+#   checklist, and saves it in JSON and XLSX (macrofree) formats.
 #
 # Example usage:
-# python3 ./scripts/update_excel_openpyxl.py \
-#   --checklist-file=./checklists/aks_checklist.en.json \
-#   --find-all \
-#   --excel-file="./spreadsheet/macrofree/review_checklist_empty.xlsx" \
-#   --output-name-is-input-name \
-#   --output-path="./spreadsheet/macrofree/"
+# python3 ./scripts/create_master_checklist.py \
+#   --input-folder="./checklists" \
+#   --language="en" \
+#   --excel-file="./spreadsheet/macrofree/review_checklist_master_empty.xlsx" \
+#   --output-name="checklist.en.master" \
+#   --json-output-folder="./checklists/" \
+#   --xlsx-output-folder="./spreadsheet/macrofree/"
 # 
 # Last updated: March 2022
 #
@@ -22,67 +22,107 @@ import sys
 import os
 import requests
 import glob
+import datetime
 from openpyxl import load_workbook
 from openpyxl.worksheet.datavalidation import DataValidation
 
 # Get input arguments
 parser = argparse.ArgumentParser(description='Update a checklist spreadsheet with JSON-formatted Azure Resource Graph results')
-parser.add_argument('--checklist-file', dest='checklist_file', action='store',
-                    help='You can optionally supply a JSON file containing the checklist you want to dump to the Excel spreadsheet. Otherwise it will take the latest file from Github')
-parser.add_argument('--only-english', dest='only_english', action='store_true', default=False,
+parser.add_argument('--input-folder', dest='input_folder', action='store',
+                    help='Input folder where the checklists to merge are stored')
+parser.add_argument('--language', dest='language', action='store', default='en',
                     help='if checklist files are specified, ignore the non-English ones and only generate a spreadsheet for the English version (default: False)')
-parser.add_argument('--find-all', dest='find_all', action='store_true', default=False,
-                    help='if checklist files are specified, find all the languages for the given checklists (default: False)')
-parser.add_argument('--technology', dest='technology', action='store',
-                    help='If you do not supply a JSON file with the checklist, you need to specify the technology from which the latest checklist will be downloaded from Github')
 parser.add_argument('--excel-file', dest='excel_file', action='store',
-                    help='You need to supply an Excel file where the checklist will be written')
-parser.add_argument('--output-excel-file', dest='output_excel_file', action='store',
-                    help='You can optionally supply an Excel file where the checklist will be saved, otherwise it will be updated in-place')
-parser.add_argument('--output-path', dest='output_path', action='store',
-                    help='If using --output-name-is-input-name, folder where to store the results')
-parser.add_argument('--output-name-is-input-name', dest='output_name_is_input_name', action='store_true',
-                    default=False,
-                    help='Save the output in a file with the same filename as the JSON input, but with xlsx extension')
+                    help='You need to supply an Excel file that will be taken as template to create the XLSX file with the checklist')
+parser.add_argument('--json-output-folder', dest='json_output_folder', action='store',
+                    help='Folder where to store the JSON output')
+parser.add_argument('--xlsx-output-folder', dest='xlsx_output_folder', action='store',
+                    help='Folder where to store the macro free Excel output')
+parser.add_argument('--output-name', dest='output_name', action='store',
+                    help='File name (without extension) for the output files (.json and .xlsx extensions will be added automatically)')
 parser.add_argument('--verbose', dest='verbose', action='store_true',
                     default=False,
                     help='run in verbose mode (default: False)')
 args = parser.parse_args()
-checklist_file = args.checklist_file
-excel_file = args.excel_file
-technology = args.technology
 
-# Constants
-worksheet_checklist_name = 'Checklist'
-row1 = 8        # First row after which the Excel spreadsheet will be updated
-col_checklist_name = "A"
-row_checklist_name = "4"
-guid_column_index = "L"
-comment_column_index = "G"
-sample_cell_index = 'A4'
-col_area = "A"
-col_subarea = "B"
-col_check = "C"
-col_desc = "D"
-col_sev = "E"
-col_status = "F"
-col_comment = "G"
-col_link = "H"
-col_training = "I"
-col_arg_success = "J"
-col_arg_failure = "K"
-col_guid = "L"
-info_link_text = 'More info'
-training_link_text = 'Training'
-worksheet_values_name = 'Values'
-values_row1 = 2
-col_values_severity = "A"
-col_values_status = "B"
-col_values_area = "C"
-col_values_description = "H"
+# Consolidate all checklists into one big checklist object
+def get_consolidated_checklist(input_folder, language):
+    # Initialize checklist object
+    checklist_master_data = {
+        'items': [],
+        'metadata': {
+            'name': 'Master checklist',
+            'timestamp': datetime.date.today().strftime("%B %d, %Y")
+        }
+    }
+    # Find all files in the input folder matching the pattern "language*.json"
+    if args.verbose:
+        print("DEBUG: looking for JSON files in folder", input_folder, "with pattern *.", language + ".json...")
+    checklist_files = glob.glob(input_folder + "/*." + language + ".json")
+    if args.verbose:
+        print("DEBUG: found", len(checklist_files), "JSON files")
+    for checklist_file in checklist_files:
+        # Get JSON
+        try:
+            with open(checklist_file) as f:
+                checklist_data = json.load(f)
+                if args.verbose:
+                    print("DEBUG: JSON file", checklist_file, "loaded successfully with {0} items".format(len(checklist_data["items"])))
+                for item in checklist_data["items"]:
+                    # Add field with the name of the checklist
+                    item["checklist"] = checklist_data["metadata"]["name"]
+                # Add items to the master checklist
+                checklist_master_data['items'] += checklist_data['items']
+                # Replace the master checklist severities and status sections (for a given language they should be all the same)
+                checklist_master_data['severities'] = checklist_data['severities']
+                checklist_master_data['status'] = checklist_data['status']
+        except Exception as e:
+            print("ERROR: Error when processing JSON file", checklist_file, "-", str(e))
+    if args.verbose:
+        print("DEBUG: master checklist contains", len(checklist_master_data["items"]), "items")
+    return checklist_master_data
+
+# Dump JSON object to file
+def dump_json_file(json_object, filename):
+    if args.verbose:
+        print("DEBUG: dumping JSON object to file", filename)
+    json_string = json.dumps(json_object, sort_keys=True, ensure_ascii=False, indent=4, separators=(',', ': '))
+    with open(filename, 'w', encoding='utf-8') as f:
+        f.write(json_string)
+        f.close()
 
 # Main function
 def update_excel_file(input_excel_file, output_excel_file, checklist_data):
+    # Constants
+    worksheet_checklist_name = 'Checklist'
+    row1 = 8        # First row after which the Excel spreadsheet will be updated
+    col_checklist_name = "A"
+    row_checklist_name = "4"
+    guid_column_index = "L"
+    comment_column_index = "G"
+    sample_cell_index = 'A4'
+    col_checklist="A"
+    col_area = "B"
+    col_subarea = "C"
+    col_check = "D"
+    col_desc = "E"
+    col_sev = "F"
+    col_status = "G"
+    col_comment = "H"
+    col_link = "I"
+    col_training = "J"
+    col_arg_success = "K"
+    col_arg_failure = "L"
+    col_guid = "M"
+    info_link_text = 'More info'
+    training_link_text = 'Training'
+    worksheet_values_name = 'Values'
+    values_row1 = 2
+    col_values_severity = "A"
+    col_values_status = "B"
+    col_values_area = "C"
+    col_values_description = "H"
+
     # Load workbook
     try:
         wb = load_workbook(filename = input_excel_file)
@@ -126,6 +166,7 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
     row_counter = row1
     for item in checklist_data.get("items"):
         # Read variables from JSON
+        checklist_name = item.get("checklist")
         guid = item.get("guid")
         category = item.get("category")
         subcategory = item.get("subcategory")
@@ -138,6 +179,7 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
         graph_query_success = item.get("graph_success")
         graph_query_failure = item.get("graph_failure")
         # Update Excel
+        ws[col_checklist + str(row_counter)].value = checklist_name
         ws[col_area + str(row_counter)].value = category
         ws[col_subarea + str(row_counter)].value = subcategory
         ws[col_check + str(row_counter)].value = text
@@ -182,17 +224,6 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
     except Exception as e:
         print("ERROR: Error when selecting worksheet", worksheet_values_name, "-", str(e))
         sys.exit(1)
-
-    # Update categories
-    row_counter = values_row1
-    for item in checklist_data.get("categories"):
-        area = item.get("name")
-        wsv[col_values_area + str(row_counter)].value = area
-        row_counter += 1
-
-    # Display summary
-    if args.verbose:
-        print("DEBUG:", str(row_counter - values_row1), "categories addedd to Excel spreadsheet")
 
     # Update status
     row_counter = values_row1
@@ -241,75 +272,15 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
 ########
 
 # Download checklist
-if checklist_file:
-    checklist_file_list = checklist_file.split(" ")
-    # If --only-english parameter was supplied, take only the English version and remove duplicates
-    if args.only_english:
-        checklist_file_list = [file[:-8] + '.en.json' for file in checklist_file_list]
-        checklist_file_list = list(set(checklist_file_list))
-        if args.verbose:
-            print("DEBUG: new checklist file list:", str(checklist_file_list))
-    # If --find-all paramater was supplied, find all the languages for the checklist
-    if args.find_all:
-        new_file_list = []
-        for checklist_file in checklist_file_list:
-            filedir = os.path.dirname(checklist_file)
-            filebase = os.path.basename(checklist_file)
-            filebase_noext = filebase[:-8]   # Remove '.en.json'
-            file_match_list = glob.glob(os.path.join(filedir, filebase_noext + '.*.json'))
-            for checklist_match in file_match_list:
-                # new_file_list.append(os.path.join(filedir, checklist_match))
-                new_file_list.append(checklist_match)
-        checklist_file_list = list(set(new_file_list))
-        if args.verbose:
-            print("DEBUG: new checklist file list:", str(checklist_file_list))
-    # Go over the list
-    for checklist_file in checklist_file_list:
-        if args.verbose:
-            print("DEBUG: Opening checklist file", checklist_file)
-        # Get JSON
-        try:
-            with open(checklist_file) as f:
-                checklist_data = json.load(f)
-        except Exception as e:
-            print("ERROR: Error when processing JSON file", checklist_file, "-", str(e))
-            sys.exit(0)
-        # Set input and output files
-        input_excel_file = excel_file
-        if args.output_excel_file:
-            output_excel_file = args.output_excel_file
-        elif args.output_name_is_input_name:
-            if args.output_path:
-                # Get filename without path and extension
-                output_excel_file = os.path.splitext(os.path.basename(checklist_file))[0] + '.xlsx'
-                output_excel_file = os.path.join(args.output_path, output_excel_file)
-            else:
-                # Just change the extension
-                output_excel_file = os.path.splitext(checklist_file)[0] + '.xlsx'
-        # Update spreadsheet
-        update_excel_file(input_excel_file, output_excel_file, checklist_data)
+if args.input_folder:
+    # Get consolidated checklist
+    checklist_master_data = get_consolidated_checklist(args.input_folder, args.language)
+    # Set output file variables
+    xlsx_output_file = os.path.join(args.xlsx_output_folder, args.output_name + ".xlsx")
+    json_output_file = os.path.join(args.json_output_folder, args.output_name + ".json")
+    # Dump master checklist to JSON file
+    dump_json_file(checklist_master_data, json_output_file)
+    # Update spreadsheet
+    update_excel_file(args.excel_file, xlsx_output_file, checklist_master_data)
 else:
-    if technology:
-        checklist_url = "https://raw.githubusercontent.com/Azure/review-checklists/main/checklists/" + technology + "_checklist.en.json"
-    else:
-        checklist_url = "https://raw.githubusercontent.com/Azure/review-checklists/main/checklists/lz_checklist.en.json"
-    if args.verbose:
-        print("DEBUG: Downloading checklist file from", checklist_url)
-    response = requests.get(checklist_url)
-    # If download was successful
-    if response.status_code == 200:
-        if args.verbose:
-            print ("DEBUG: File {0} downloaded successfully".format(checklist_url))
-        try:
-            # Deserialize JSON to object variable
-            checklist_data = json.loads(response.text)
-        except Exception as e:
-            print("Error deserializing JSON content: {0}".format(str(e)))
-            sys.exit(1)
-    # Upload spreadsheet
-    if args.output_excel_file:
-        output_excel_file = args.output_excel_file
-    else:
-        output_excel_file = excel_file
-    update_excel_file(excel_file, output_excel_file, checklist_data)
-
+    print("ERROR: No input folder specified")
