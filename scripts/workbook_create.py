@@ -405,7 +405,7 @@ def generate_workbook(output_file, checklist_data):
 
     # Dump the workbook to the output file or to console, if there was any query in the original checklist
     if args.verbose:
-        print ("DEBUG: Starting output process...")
+        print ("DEBUG: Starting output process. to {0}...".format(output_file))
     if num_of_queries > 0:
         if output_file:
             # Dump workbook JSON into a file
