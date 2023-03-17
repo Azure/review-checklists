@@ -28,8 +28,24 @@ jobs:
       - id: files
         uses: masesgroup/retrieve-changed-files@v2
 
+      # Set variables that indicate whether XLSX files have been modified, which would indicate that
+      #   this action has been triggered by an automated action
+      - id: automationresult
+        name: Verify whether this action is a result of another action
+        run: |
+          for input_file in ${{ steps.files.outputs.all }}; do
+            if [[ "$input_file" == *"xlsx" ]]; then 
+              echo "excel_file_changed=yes" >> $GITHUB_OUTPUT
+            fi
+          done
+
       # Process the changed files
+      # Note that this step is not run if the previous step found an XLSX file modified
+      #   (indicating that this action is the result of another action). Hence, this step
+      #   wouldn't be run, not setting the variable `done_something`, so that the rest of
+      #   the steps are not executed either.
       - name: Work with the list of modified files
+        if: ${{ steps.automationresult.outputs.excel_file_changed }} != 'yes'
         id: translate
         env:
           AZURE_TRANSLATOR_SUBSCRIPTION_KEY: ${{ secrets.AZURE_TRANSLATOR_SUBSCRIPTION_KEY }}
@@ -52,7 +68,7 @@ jobs:
           done
 
       # Generate macro-free spreadsheets and Azure Monitor workbooks
-      - name: setup python
+      - name: Setup python
         if: ${{ steps.translate.outputs.done_something }} == 'yes'
         uses: actions/setup-python@v2
         with:
@@ -63,13 +79,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests openpyxl
       # Create Excel spreadsheets
-      - name: execute excel python script # run file
+      - name: Execute excel python script # run file
         if: ${{ steps.translate.outputs.done_something }} == 'yes'
         run: |
           python3 ./scripts/update_excel_openpyxl.py --checklist-file="${{ steps.files.outputs.all }}" --find-all --excel-file="./spreadsheet/macrofree/review_checklist_empty.xlsx" --output-name-is-input-name --output-path="./spreadsheet/macrofree/" --verbose
 
       # Create Azure Monitor workbooks
-      - name: execute workbook python script # run file
+      - name: Execute workbook python script # run file
         if: ${{ steps.translate.outputs.done_something }} == 'yes'
         run: |
           # Create workbooks for the modified file
