@@ -1,3 +1,12 @@
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+END
+Attribute VB_Name = "Sheet1"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = False
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = True
 Option Explicit
 Option Base 0
 Private Declare PtrSafe Function URLDownloadToFile Lib "urlmon" Alias "URLDownloadToFileA" (ByVal pCaller As Long, ByVal szURL As String, ByVal szFileName As String, ByVal dwReserved As Long, ByVal lpfnCB As Long) As Long
@@ -5,28 +14,33 @@ Private Declare PtrSafe Function URLDownloadToFile Lib "urlmon" Alias "URLDownlo
 'Constants
 Const row1 = 10
 Const technology_selection_row = 2
-Const technology_selection_col = 5
-Const language_selection_row = 2
-Const language_selection_col = 6
+Const technology_selection_col = 6
+Const language_selection_row = technology_selection_row
+Const language_selection_col = technology_selection_col + 1
 Const checklist_name_row = 6
 Const checklist_name_col = 1
+Const checklist_state_row = checklist_name_row + 1
+Const checklist_state_col = checklist_name_col
+Const checklist_timestamp_row = checklist_state_row
+Const checklist_timestamp_col = checklist_name_col + 1
 Const line_break = vbCrLf
 Const category_column = 1
-Const subcategory_column = 2
-Const text_column = 3
-Const description_column = 4
-Const severity_column = 5
-Const status_column = 6
-Const comments_column = 7
-Const link_column = 8
-Const training_column = 9
-Const graph_column = 10
-Const guid_column = 11
-Const sec_mod_column = 12
-Const cost_mod_column = 13
-Const scale_mod_column = 14
-Const simple_mod_column = 15
-Const ha_mod_column = 16
+Const subcategory_column = category_column + 1
+Const waf_column = subcategory_column + 1
+Const text_column = waf_column + 1
+Const description_column = text_column + 1
+Const severity_column = description_column + 1
+Const status_column = severity_column + 1
+Const comments_column = status_column + 1
+Const link_column = comments_column + 1
+Const training_column = link_column + 1
+Const graph_column = training_column + 1
+Const guid_column = graph_column + 1
+Const sec_mod_column = guid_column + 1
+Const cost_mod_column = sec_mod_column + 1
+Const scale_mod_column = cost_mod_column + 1
+Const simple_mod_column = scale_mod_column + 1
+Const ha_mod_column = simple_mod_column + 1
 Const num_columns = ha_mod_column
 Const values_sheet = "values"
 Const values_sev_column = 1
@@ -37,6 +51,7 @@ Const values_technology_selection_column = 6
 Const values_language_selection_column = 7
 Const values_technology_prefix_column = 10
 Const values_language_prefix_column = 11
+Const values_waf_column = 12
 Const row_limit = 2000   'Safety net
 Const user_info_guid_index = 1
 Const user_info_comments_index = 2
@@ -85,14 +100,12 @@ Sub export_json()
     On Error GoTo errh
     ' Constants
     Const export_file_name = "checklist.json"
-    Const values_sheet = "values"
-    Const values_category_column = 3
     ' Variables
     Dim row As Integer
     Dim json As String
-    Dim check_category As String, check_subcategory As String, check_text As String, check_description As String, check_severity As String, check_status As String, status_description As String, check_link As String, check_training As String, check_graph_query As String, check_guid As String
+    Dim check_category As String, check_subcategory As String, check_waf As String, check_text As String, check_description As String, check_severity As String, check_status As String, status_description As String, check_link As String, check_training As String, check_graph_query As String, check_guid As String
     Dim check_sec_mod, check_cost_mod, check_scale_mod, check_simple_mod, check_ha_mod
-    Dim category_name As String, severity_name As String, status_name As String
+    Dim category_name As String, severity_name As String, status_name As String, waf_name As String
     Dim export_file_path As Variant
     Dim double_quote As String
     Dim item_count As Integer, category_count As Integer, status_count As Integer
@@ -110,6 +123,7 @@ Sub export_json()
         json = json + line_break
         check_category = Cells(row, category_column)
         check_subcategory = Cells(row, subcategory_column)
+        check_waf = Cells(row, waf_column)
         check_text = Cells(row, text_column)
         check_description = Cells(row, description_column)
         check_severity = Cells(row, severity_column)
@@ -145,6 +159,7 @@ Sub export_json()
         json = json + line_break + "      " + double_quote + "subcategory" + double_quote + ": " + double_quote + correct_format_for_JSON(check_subcategory) + double_quote
         json = json + "," + line_break + "      " + double_quote + "text" + double_quote + ": " + double_quote + correct_format_for_JSON(check_text) + double_quote
         If Len(check_description) > 0 Then json = json + "," + line_break + "      " + double_quote + "description" + double_quote + ": " + double_quote + correct_format_for_JSON(check_description) + double_quote
+        If Len(check_waf) > 0 Then json = json + "," + line_break + "      " + double_quote + "waf" + double_quote + ": " + double_quote + correct_format_for_JSON(check_waf) + double_quote
         If Len(check_guid) > 0 Then json = json + "," + line_break + "      " + double_quote + "guid" + double_quote + ": " + double_quote + check_guid + double_quote
         If Len(check_sec_mod) > 0 And IsNumeric(check_sec_mod) Then json = json + "," + line_break + "      " + double_quote + "security" + double_quote + ": " + CStr(check_sec_mod)
         If Len(check_cost_mod) > 0 And IsNumeric(check_cost_mod) Then json = json + "," + line_break + "      " + double_quote + "cost" + double_quote + ": " + CStr(check_cost_mod)
@@ -174,6 +189,21 @@ Sub export_json()
         category_count = category_count + 1
     Loop
     ' Finish category section
+    json = json + line_break + "  ]," + line_break
+    ' Create WAF section
+    json = json + "  " + double_quote + "waf" + double_quote + ": ["
+    row = 2
+    Do While row < row_limit And Len(Sheets(values_sheet).Cells(row, values_waf_column)) > 0
+        If row > 2 Then json = json + ","
+        json = json + line_break
+        waf_name = Sheets(values_sheet).Cells(row, values_waf_column)
+        json = json + "    {" + line_break
+        json = json + "      " + double_quote + "name" + double_quote + ": " + double_quote + correct_format_for_JSON(waf_name) + double_quote + line_break
+        json = json + "    }"
+        row = row + 1
+        category_count = category_count + 1
+    Loop
+    ' Finish WAF section
     json = json + line_break + "  ]," + line_break
     ' Create status section
     json = json + "  " + double_quote + "status" + double_quote + ": ["
@@ -208,7 +238,9 @@ Sub export_json()
     json = json + line_break + "  ]," + line_break
     ' Create metadata section
     json = json + "  " + double_quote + "metadata" + double_quote + ": {" + line_break
-    json = json + "    " + double_quote + "name" + double_quote + ": " + double_quote + correct_format_for_JSON(Cells(checklist_name_row, checklist_name_col)) + double_quote + line_break
+    json = json + "    " + double_quote + "name" + double_quote + ": " + double_quote + correct_format_for_JSON(Cells(checklist_name_row, checklist_name_col)) + double_quote + "," + line_break
+    json = json + "    " + double_quote + "state" + double_quote + ": " + double_quote + correct_format_for_JSON(Cells(checklist_state_row, checklist_state_col)) + double_quote + "," + line_break
+    json = json + "    " + double_quote + "timestamp" + double_quote + ": " + double_quote + correct_format_for_JSON(Format(Now, "mm/dd/yyyy HH:mm:ss")) + double_quote + line_break
     ' Finish metadata section
     json = json + "  }" + line_break
     ' Finish JSON
@@ -313,7 +345,7 @@ Sub import_checklist_fromfile(json_file As Variant)
     Dim json_object, json_item As Object
     Dim double_quote As String
     Dim line_elements() As String
-    Dim row, item_count, category_count, status_count, i As Integer
+    Dim row, item_count As Integer, category_count As Integer, waf_count As Integer, status_count, i As Integer
     Dim notverified As String
     Dim get_user_info_successful As Boolean
     Dim start_time As Double
@@ -327,6 +359,7 @@ Sub import_checklist_fromfile(json_file As Variant)
     json = ""
     item_count = 0
     category_count = 0
+    waf_count = 0
     status_count = 0
     'First of all, get the info entered by the user in a global variable
     get_user_info_successful = get_user_input()
@@ -347,6 +380,12 @@ Sub import_checklist_fromfile(json_file As Variant)
     If json_object.Exists("metadata") Then
         If json_object("metadata").Exists("name") Then
             Cells(checklist_name_row, checklist_name_col) = json_object("metadata")("name")
+        End If
+        If json_object("metadata").Exists("state") Then
+            Cells(checklist_state_row, checklist_state_col) = json_object("metadata")("state")
+        End If
+        If json_object("metadata").Exists("timestamp") Then
+            Cells(checklist_timestamp_row, checklist_timestamp_col) = json_object("metadata")("timestamp")
         End If
     End If
     'Import status
@@ -404,6 +443,7 @@ Sub import_checklist_fromfile(json_file As Variant)
     Do While row < row_limit And (Len(Cells(row, category_column)) + Len(Cells(row, subcategory_column)) + Len(Cells(row, text_column)) + Len(Cells(row, status_column)) + Len(Cells(row, comments_column))) > 0
         Cells(row, category_column) = ""
         Cells(row, subcategory_column) = ""
+        Cells(row, waf_column) = ""
         Cells(row, text_column) = ""
         Cells(row, description_column) = ""
         Cells(row, severity_column) = ""
@@ -436,6 +476,30 @@ Sub import_checklist_fromfile(json_file As Variant)
         'Blank the rest of the category rows
         Do While row < row_limit And Len(Cells(row, values_category_column)) > 0
             Sheets(values_sheet).Cells(row, values_category_column) = ""
+            row = row + 1
+        Loop
+    End If
+    'Import WAF pillars
+    If json_object.Exists("waf") Then
+        row = 2
+        If TypeName(json_object("waf")) = "Dictionary" Then
+            i = 0
+            Do
+                Sheets(values_sheet).Cells(row, values_waf_column) = json_object("waf")(CStr(i))("name")
+                row = row + 1
+                waf_count = waf_count + 1
+                i = i + 1
+            Loop While json_object("waf").Exists(CStr(i))
+        Else
+            For Each json_item In json_object("waf")
+                Sheets(values_sheet).Cells(row, values_waf_column) = json_item("name")
+                row = row + 1
+                waf_count = waf_count + 1
+            Next json_item
+        End If
+        'Blank the rest of the category rows
+        Do While row < row_limit And Len(Cells(row, values_waf_column)) > 0
+            Sheets(values_sheet).Cells(row, values_waf_column) = ""
             row = row + 1
         Loop
     End If
@@ -489,7 +553,7 @@ End Function
 Sub update_row(ByVal json_item As Object, ByVal row As Integer, notverified As String, user_input_saved As Boolean)
 On Error GoTo update_row_err
     ' Variables and constants
-    Dim check_category As String, check_subcategory As String, check_text As String, check_description As String, check_severity As String, check_status As String, check_link As String, check_training As String, check_graph_query As String, check_guid As String
+    Dim check_category As String, check_subcategory As String, check_waf As String, check_text As String, check_description As String, check_severity As String, check_status As String, check_link As String, check_training As String, check_graph_query As String, check_guid As String
     Dim user_input_comments As String, user_input_status As String
     Dim check_sec_mod, check_cost_mod, check_scale_mod, check_simple_mod, check_ha_mod
     Dim get_guid_user_input_successful As Boolean
@@ -499,6 +563,7 @@ On Error GoTo update_row_err
     ' Code
     check_category = get_object_property(json_item, "category")
     check_subcategory = get_object_property(json_item, "subcategory")
+    check_waf = get_object_property(json_item, "waf")
     check_text = get_object_property(json_item, "text")
     check_description = get_object_property(json_item, "description")
     check_severity = get_object_property(json_item, "severity")
@@ -520,6 +585,7 @@ On Error GoTo update_row_err
     'Cells(row, guid_column) = check_guid
     newrow(category_column) = check_category
     newrow(subcategory_column) = check_subcategory
+    newrow(waf_column) = check_waf
     newrow(text_column) = check_text
     newrow(description_column) = check_description
     newrow(severity_column) = check_severity
@@ -723,6 +789,9 @@ Sub clear_rows()
     Loop
     'Reset checklist title
     Cells(checklist_name_row, checklist_name_col) = Sheets(values_sheet).Cells(2, 5)
+    'Delete status and timestamp
+    Cells(checklist_state_row, checklist_state_col) = ""
+    Cells(checklist_timestamp_row, checklist_timestamp_col) = ""
     'Defaults to LZ and English
     Cells(technology_selection_row, technology_selection_col) = Sheets(values_sheet).Cells(2, values_technology_selection_column)
     Cells(language_selection_row, language_selection_col) = Sheets(values_sheet).Cells(2, values_language_selection_column)
@@ -919,3 +988,4 @@ Sub test()
         End If
     End If
 End Sub
+
