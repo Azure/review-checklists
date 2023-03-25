@@ -3,6 +3,14 @@
 # This script reads the checklist items from the latest checklist file
 #   in Github (or from a local file) and populates an Excel spreadsheet
 #   with the contents.
+#
+# Example usage:
+# python3 ./scripts/update_excel_openpyxl.py \
+#   --checklist-file=./checklists/aks_checklist.en.json \
+#   --find-all \
+#   --excel-file="./spreadsheet/macrofree/review_checklist_empty.xlsx" \
+#   --output-name-is-input-name \
+#   --output-path="./spreadsheet/macrofree/"
 # 
 # Last updated: March 2022
 #
@@ -18,7 +26,7 @@ from openpyxl import load_workbook
 from openpyxl.worksheet.datavalidation import DataValidation
 
 # Get input arguments
-parser = argparse.ArgumentParser(description='Update a checklist spreadsheet with JSON-formated Azure Resource Graph results')
+parser = argparse.ArgumentParser(description='Update a checklist spreadsheet with JSON-formatted Azure Resource Graph results')
 parser.add_argument('--checklist-file', dest='checklist_file', action='store',
                     help='You can optionally supply a JSON file containing the checklist you want to dump to the Excel spreadsheet. Otherwise it will take the latest file from Github')
 parser.add_argument('--only-english', dest='only_english', action='store_true', default=False,

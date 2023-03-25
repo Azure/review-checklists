@@ -11,7 +11,7 @@ The script [checklist_graph.sh](./checklist_graph.sh) can do the automated graph
 > :warning: ***The `checklist_graph.sh` script must be run from a Bash environment shell. If you are using Azure Cloud Shell be sure to select the correct environment.***
 
 > Note: In case you are in the context of a private AKS cluster (API server is private), there is no restriction to use Azure Cloud Shell to run the `checklist_graph.sh` script. 
-> Make sure that the identity (the one Azure Cloud Shell uses) used to execute the checklist_graph script, [has appropriate rights in Azure RBAC with at least read access to the resources you want to query](https://learn.microsoft.com/en-us/azure/governance/resource-graph/overview#permissions-in-azure-resource-graph) (in this case AKS cluster(s)). 
+> Make sure that the identity (the one Azure Cloud Shell uses) used to execute the checklist_graph script, [has appropriate rights in Azure RBAC with at least read access to the resources you want to query](https://learn.microsoft.com/azure/governance/resource-graph/overview#permissions-in-azure-resource-graph) (in this case AKS cluster(s)). 
 > Without at least read permissions to the Azure object or object group, results won't be returned.
 > The script just queries the Azure Resource Graph API and does not communicate with the API Server(s) of your clusters(s).
 	
@@ -40,6 +40,14 @@ The "Comments" column of the spreadsheet will fill in with the results of the Az
 
 The following sections will show more advanced usage of the script.
 
+### Listing the available checklists available
+
+You can run the script to find out which checklists are available. Note that not all checklists will contain Azure Resource Graph queries:
+
+```
+./checklist_graph.sh --list-technologies
+```
+
 ### Listing the existing categories in a checklist
 
 You can run the script as well to generate a more human-readable output. For example, run this in order to execute analysis scoped to a single category. Command:
@@ -65,10 +73,10 @@ Output:
 This example shows how to run this for analysis on all categories in a single subscription. The output can be copy/pasted to the Excel spreadsheet (category by category). Command:
 
 ```
-./checklist_graph.sh --techonology=aks --format=text
+./checklist_graph.sh --technology=aks --format=text
 ```
 
-Output (truncated for brevity). Note that the resources are formated with the syntax `<resource-group>/<resource-name>`:
+Output (truncated for brevity). Note that the resources are formatted with the syntax `<resource-group>/<resource-name>`:
 
 ```
 CHECKLIST ITEM: Use Availability Zones if supported in your Azure region:

@@ -6,7 +6,7 @@ import json
 import uuid
 
 # Variables
-translate_keys = ('description', 'name', 'category', 'subcategory', 'text', 'severity')
+translate_keys = ('description', 'name', 'category', 'subcategory', 'waf', 'text', 'severity')
 translate_languages = ['es', 'ja', 'pt', 'ko']
 
 # Get environment variables

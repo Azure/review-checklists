@@ -12,7 +12,7 @@ import sys
 import requests
 
 # Get input arguments
-parser = argparse.ArgumentParser(description='Update a checklist spreadsheet with JSON-formated Azure Resource Graph results')
+parser = argparse.ArgumentParser(description='Update a checklist spreadsheet with JSON-formatted Azure Resource Graph results')
 parser.add_argument('--input-file', dest='input_file', action='store',
                     help='You need to supply the name of the JSON file with the checklist to be filtered')
 parser.add_argument('--output-file', dest='output_file', action='store',
@@ -33,7 +33,7 @@ try:
     with open(args.input_file) as f:
         checklist = json.load(f)
 except Exception as e:
-    print("ERROR: Error when processing JSON file, nothing changed", args.file_name_in, "-", str(e))
+    print("ERROR: Error when processing JSON file, nothing changed", args.input_file, "-", str(e))
 
 # Sort the items per category and subcategory
 items = checklist['items']

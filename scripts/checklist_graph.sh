@@ -64,6 +64,10 @@ do
                list_categories="yes"
                shift # past argument with no value
                ;;
+          -t*|--list-technologies*)
+               list_technologies="yes"
+               shift # past argument with no value
+               ;;
           -c=*|--category=*)
                category_id="${i#*=}"
                shift # past argument=value
@@ -95,14 +99,18 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
+# Get list of checklists
+checklist_list=$(curl -s "https://api.github.com/repos/Azure/review-checklists/git/trees/2ef1d5ca7dbdc4a3125901ab1364be0338f390a1?recursive=true" | jq -r '.tree[].path' | grep en.json | sed -e 's/_checklist.en.json//')
+
 # Print help message
 if [[ "$help" == "yes" ]]
 then
     script_name="$0"
      echo "Please run this script as:
-        $script_name [--technology=lz|aks|avd] [--category=<category_id>] [--format=json|text] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--debug]
-        $script_name [--file=<json_file_path>] [--category=<category_id>] [--format=json|text] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--debug]
-        $script_name [--list-categories] [--base-url=<base_url>] [--technology=lz|aks|avd] [--debug]"
+        $script_name [--list-technologies] [--base-url=<base_url>] [--debug]
+        $script_name [--list-categories] [--base-url=<base_url>] [--technology=<technology>] [--debug]
+        $script_name [--technology=<technology>] [--category=<category_id>] [--format=json|text] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--debug]
+        $script_name [--technology=<technology>] [--category=<category_id>] [--file=<json_file_path>] [--format=json|text] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--debug]"
     exit
 fi
 
@@ -139,7 +147,18 @@ else
     checklist_json=$(curl -s "$checklist_url")
 fi
 
-# If in list_categories mode, just get the categories part:
+# If in "list_technologies" mode, just get the categories part:
+if [[ "$list_technologies" == "yes" ]]
+then
+    while IFS= read -r checklist; do
+        checklist_url="${base_url}${checklist}_checklist.en.json"
+        graph_query_no=$(curl -s "$checklist_url" | jq -r '.items[].graph' | grep -v -e '^null$' | wc -l)
+        echo "$checklist ($graph_query_no graph queries)"
+    done <<< "$checklist_list"
+    exit 0
+fi
+
+# If in "list_categories" mode, just get the categories part:
 if [[ "$list_categories" == "yes" ]]
 then
     i=0
@@ -215,6 +234,7 @@ if [[ "$debug" == "yes" ]]; then echo "DEBUG: Azure CLI extension $extension_nam
 
 # Run queries
 i=0
+query_no=0
 this_category_name=""
 json_output="{ \"metadata\": {\"format\": \"${format}\", \"timestamp\": \"$(date)\"}, \"checks\": ["
 json_output_empty="yes"
@@ -245,6 +265,8 @@ while IFS= read -r graph_query; do
             echo "N/A"
         fi
     else
+        # Increase counter
+        query_no=$(($query_no+1))
         # Print title if text format
         if [[ "$format" == "text" ]]; then
             this_text=$(echo $text_list | head -$i | tail -1)
@@ -304,6 +326,10 @@ while IFS= read -r graph_query; do
         done < <(printf '%s\n' "$query_result")
     fi
 done <<< "$graph_query_list"
+
+if (( $query_no == 0 )); then
+    echo "ERROR: The checklist for the selected technology does not contain any graph query"
+fi
 
 # Close JSON format
 json_output+=" ] }"
