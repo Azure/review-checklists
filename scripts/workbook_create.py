@@ -103,7 +103,7 @@ def load_building_blocks():
     # Load itemgroup (aka section, aka tab) building block
     if args.tab_counters:
         block_file = os.path.join(blocks_path, 'block_itemgroup_withcounters.json')
-    else
+    else:
         block_file = os.path.join(blocks_path, 'block_itemgroup.json')
     if args.verbose:
         print ("DEBUG: Loading file {0}...".format(block_file))
