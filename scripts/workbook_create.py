@@ -41,6 +41,9 @@ parser.add_argument('--category', dest='category', action='store',
 parser.add_argument('--counters', dest='counters', action='store_true',
                     default=False,
                     help='Whether compliance counters will be included in the workbook. Note that workbooks generated this way usually incur in ARG throttling limits. Default is False.')
+parser.add_argument('--tab-counters', dest='tab_counters', action='store_true',
+                    default=False,
+                    help='Whether compliance counters will be included in the workbook tabs. Note that workbooks generated this way usually incur in ARG throttling limits. Default is False.')
 parser.add_argument('--verbose', dest='verbose', action='store_true',
                     default=False,
                     help='run in verbose mode (default: False)')
@@ -97,8 +100,11 @@ def load_building_blocks():
     except Exception as e:
         print("ERROR: Error when opening JSON workbook building block", block_file, "-", str(e))
         sys.exit(0)
-    # Load itemgroup (aka section) building block
-    block_file = os.path.join(blocks_path, 'block_itemgroup.json')
+    # Load itemgroup (aka section, aka tab) building block
+    if args.tab_counters:
+        block_file = os.path.join(blocks_path, 'block_itemgroup_withcounters.json')
+    else
+        block_file = os.path.join(blocks_path, 'block_itemgroup.json')
     if args.verbose:
         print ("DEBUG: Loading file {0}...".format(block_file))
     try:
