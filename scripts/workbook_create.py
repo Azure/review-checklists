@@ -38,6 +38,8 @@ parser.add_argument('--create-arm-template', dest='create_arm_template', action=
                     help='create an ARM template, additionally to the workbook JSON (default: False)')
 parser.add_argument('--category', dest='category', action='store',
                     help='if the workbook should be restricted to a category containing the specified string')
+parser.add_argument('--query-size', dest='query_tile_size', action='store',
+                    help='size of the tiles containing the query results. Valid values are: tiny, small, medium (default: medium)')
 parser.add_argument('--counters', dest='counters', action='store_true',
                     default=False,
                     help='Whether compliance counters will be included in the workbook. Note that workbooks generated this way usually incur in ARG throttling limits. Default is False.')
@@ -57,7 +59,22 @@ block_section = None
 block_query = None
 block_text = None
 
-query_size = 4 # 0: medium, 1: small, 4: tiny
+# Set the query tile size
+if args.query_tile_size:
+    if args.query_tile_size == 'tiny':
+        query_size = 4
+    elif args.query_tile_size == 'small':
+        query_size = 1
+    elif args.query_tile_size == 'medium':
+        query_size = 0
+    else:
+        if args.verbose:
+            print("ERROR: invalid value for query-size: {0}".format(args.query_tile_size))
+        sys.exit(1)
+else:
+    if args.verbose:
+        print("DEBUG: Setting query tile size to medium (default)")
+    query_size = 0
 
 # Workbook building blocks
 def load_building_blocks():
@@ -180,7 +197,22 @@ def serialize_data(workbook_string):
 def workbook_item_index(workbook, item_name):
     for i in range(len(workbook['items'])):
         if workbook['items'][i]['name'] == item_name:
+            if args.verbose:
+                print('DEBUG: Found item {0} in workbook at index {1}'.format(item_name, i))
             return i
+    if args.verbose:
+        print('ERROR: I could not find item {0} in workbook'.format(item_name))
+    return -1
+
+# Returns the index of a specific item inside of a tab (item group)
+def tab_item_index(tab_object, item_name):
+    for i in range(len(tab_object['content']['items'])):
+        if tab_object['content']['items'][i]['name'] == item_name:
+            if args.verbose:
+                print('DEBUG: Found item {0} in workbook object {1} at index {2}'.format(item_name, tab_object['name'], i))
+            return i
+    if args.verbose:
+        print('ERROR: I could not find item {0} in workbook object {1}'.format(item_name, tab_object['name']))
     return -1
 
 
@@ -192,12 +224,12 @@ def generate_workbook(output_file, checklist_data):
     workbook_title = "## " + checklist_data['metadata']['name']
     if args.category:
         workbook_title += ' - ' + args.category[0].upper() + args.category[1:]
-    workbook_title += "\n\n---\n\nThis workbook has been automatically generated out of the checklists in the [Azure Review Checklists repo](https://github.com/Azure/review-checklists)."
-    workbook_title += "\n\n---\n\n**NOTE**: If some queries in this workbook do not work at loading, it can be because there is a maximum of simultaneous queries that can be sent to Azure Resource Graph. Please refresh the failed queries manually."
+    workbook_title += "\n\n---\n\nThis workbook has been automatically generated out of the checklists in the [Azure Review Checklists repo](https://github.com/Azure/review-checklists). This repo contains best practices and recommendations around generic Landing Zones as well as specific services such as Azure Virtual Desktop, Azure Kubernetes Service or Azure VMware Solution, to name a few. This repository of best practices is curated by Azure engineers, but open to anybody to contribute."
+    workbook_title += "\n\nIf you see a problem in the queries that are part of this workbook, please open a Github issue [here](https://github.com/Azure/review-checklists/issues/new)."
     markdown_index = workbook_item_index(workbook, 'MarkdownHeader')
     workbook['items'][markdown_index]['content']['json'] = workbook_title
 
-    # If not using counters, we can change some things in the workbook
+    # If not using counters in the main section, we can change some things in the workbook
     if not args.counters:
         if args.verbose:
             print("DEBUG: removing sections from workbook. Before removing, {0} items exist".format(len(workbook['items'])))
@@ -272,11 +304,11 @@ def generate_workbook(output_file, checklist_data):
     for tab_title in tab_title_list:
         tab_dict[tab_title] = tab_id  # We will use this dict later to know where to put each query
         if args.verbose:
-            print("Adding tab {0} to workbook...".format(tab_title))
+            print("DEBUG: Adding tab {0} to workbook...".format(tab_title))
         # Create new link
         new_link = block_link.copy()
         new_link['id'] = str(uuid.uuid4())   # RANDOM GUID
-        # The tab title depends if we are generating counters or not
+        # The tab title depends if we are generating counters in the main section or not
         if args.counters:
             new_link['linkLabel'] = tab_title + ' ({Section' + str(tab_id) + 'Success:value}/{Section' + str(tab_id) + 'Total:value})'
         else:
@@ -285,25 +317,33 @@ def generate_workbook(output_file, checklist_data):
         new_link['preText'] = tab_title
         # Create new section
         new_section = block_section.copy()
+        new_section = json.loads(json.dumps(new_section.copy()))
         new_section['name'] = 'tab' + str(tab_id)
         new_section['conditionalVisibility']['value'] = 'tab' + str(tab_id)
-        new_section['content']['items'][0]['content']['json'] = "## " + tab_title
-        new_section['content']['items'][0]['name'] = 'tab' + str(tab_id) + 'title'
-        # Add link
+        tab_title_index = tab_item_index(new_section, 'TabTitle')
+        new_section['content']['items'][tab_title_index]['content']['json'] = "## " + tab_title
+        new_section['content']['items'][tab_title_index]['name'] = 'tab' + str(tab_id) + 'title'
+        # Add link to the main section in the workbook
         workbook['items'][links_index]['content']['links'].append(new_link.copy())   # I am getting crazy with Python variable references :(
         # Add section (group)
-        new_new_section=json.loads(json.dumps(new_section.copy()))
-        workbook['items'].append(new_new_section)
+        workbook['items'].append(new_section)
         tab_id += 1
 
     # Display dictionary in screen if on verbose
     if args.verbose:
         print("DEBUG: tab dictionary generated: {0}".format(str(tab_dict)))
 
+    # We will keep track of which query goes to which tab in a dictionary
+    query_id_dictionary = {}
+    for tab_title in tab_title_list:
+        query_id_dictionary[tab_title] = []
+
     # For each checklist item, add a query to the workbook
     for item in checklist_data.get("items"):
         # We will append this to every query
         query_suffix = ' | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed'
+        # Invisible parameter query suffix
+        invisible_parameter_query_suffix = "| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())"
         # Read variables from JSON
         guid = item.get("guid")
         tab = item.get(tab_name_field)
@@ -316,7 +356,9 @@ def generate_workbook(output_file, checklist_data):
         if graph_query:
             if tab in tab_title_list:
                 if args.verbose:
-                    print("DEBUG: adding sections to workbook for ARG query '{0}', length of query is {1}".format(str(graph_query), str(len(str(graph_query)))))
+                    print("DEBUG: Adding sections to workbook for ARG query '{0}', length of query is {1}".format(str(graph_query), str(len(str(graph_query)))))
+                # Add query ID to the dictionary
+                query_id_dictionary[tab].append(query_id)
                 # Create new text
                 new_text = block_text.copy()
                 new_text['name'] = 'querytext' + str(query_id)
@@ -343,6 +385,24 @@ def generate_workbook(output_file, checklist_data):
                 new_new_query = json.loads(json.dumps(new_query.copy()))
                 workbook['items'][tab_id]['content']['items'].append(new_new_text)
                 workbook['items'][tab_id]['content']['items'].append(new_new_query)
+                # If using tab counters, add the hidden parameters to the workbook
+                if args.tab_counters:
+                    tab_counter_index = tab_item_index(workbook['items'][tab_id], 'TabInvisibleParameters')
+                    # Add parameter with 'QueryStats'
+                    new_parameter = block_invisible_parameter.copy()
+                    new_parameter['query'] = graph_query + invisible_parameter_query_suffix
+                    new_parameter['name'] = 'Query' + str(query_id) + 'Stats'
+                    new_new_parameter = json.loads(json.dumps(new_parameter.copy()))
+                    workbook['items'][tab_id]['content']['items'][tab_counter_index]['content']['parameters'].append(new_new_parameter)
+                    # Add parameter with 'QueryFullyCompliant
+                    new_parameter = block_invisible_parameter.copy()
+                    new_parameter['query'] = "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query" + str(query_id) + "Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}"
+                    new_parameter['queryType'] = 8
+                    new_parameter.pop('crossComponentResources', None)      # This key is only used for ARG-based queries
+                    new_parameter.pop('resourceType', None)
+                    new_parameter['name'] = "Query{0}FullyCompliant".format(query_id)
+                    new_new_parameter = json.loads(json.dumps(new_parameter.copy()))
+                    workbook['items'][tab_id]['content']['items'][tab_counter_index]['content']['parameters'].append(new_new_parameter)
                 # Add query to the query array
                 tab_id = tab_title_list.index(tab)
                 queries[tab_id].append(graph_query)
@@ -352,7 +412,71 @@ def generate_workbook(output_file, checklist_data):
             # else:
             #     if args.verbose:
             #         print("ERROR: Query {0} in section {1}, but section not in the section list!".format(graph_query, tab))
-    
+
+    # If using tab counters, we need to add the invisible parameters for the total for each tab
+    if args.tab_counters:
+        if args.verbose:
+            print("DEBUG: Adding tab counters to all tabs, here the query_id_dictionary: {0}...".format(str(query_id_dictionary)))
+        for tab in query_id_dictionary:
+            query_id_list = query_id_dictionary[tab]
+            # Get the index for this tab in the workbook
+            if args.counters:
+                tab_id = tab_dict[tab] + len(block_workbook['items'])
+            else:
+                # If not using counters, we removed two sections...
+                tab_id = tab_dict[tab] + len(block_workbook['items']) - 2
+            if args.verbose:
+                print("DEBUG: Getting the index in tab (workbook item {0}) for the item 'TabInvisibleParameters'...".format(tab_id))
+            tab_counter_index = tab_item_index(workbook['items'][tab_id], 'TabInvisibleParameters')
+            # Debug
+            if args.verbose:
+                print("DEBUG: Adding tab counters (index in tab {3}) to Tab{0} {1} with index {2}...".format(tab_dict[tab], tab, tab_id, tab_counter_index))
+            # Add parameter for 'Section Success'
+            new_parameter = block_invisible_parameter.copy()
+            new_parameter['name'] = "Tab{0}Success".format(tab_dict[tab])
+            success_sum_query = ''
+            for tab_query_id in query_id_dictionary[tab]:
+                if len(success_sum_query) > 0:
+                    success_sum_query += '+'
+                success_sum_query += '{Query' + str(tab_query_id) + 'Stats:$.Success}'
+            new_parameter['criteriaData'] = [{"criteriaContext": {"operator": "Default", "resultValType": "expression", "resultVal": success_sum_query }}]
+            new_parameter.pop('crossComponentResources', None)
+            new_parameter.pop('resourceType', None)
+            new_parameter.pop('query', None)
+            new_parameter.pop('queryType', None)
+            new_new_parameter = json.loads(json.dumps(new_parameter.copy()))
+            workbook['items'][tab_id]['content']['items'][tab_counter_index]['content']['parameters'].append(new_new_parameter)
+            # Add parameter for 'Section Total'
+            new_parameter = block_invisible_parameter.copy()
+            new_parameter['name'] = "Tab{0}Total".format(tab_dict[tab])
+            total_sum_query = ''
+            for tab_query_id in query_id_dictionary[tab]:
+                if len(total_sum_query) > 0:
+                    total_sum_query += '+'
+                total_sum_query += '{Query' + str(tab_query_id) + 'Stats:$.Total}'
+            new_parameter['criteriaData'] = [{"criteriaContext": {"operator": "Default", "resultValType": "expression", "resultVal": total_sum_query }}]
+            new_parameter.pop('crossComponentResources', None)
+            new_parameter.pop('resourceType', None)
+            new_parameter.pop('query', None)
+            new_parameter.pop('queryType', None)
+            new_new_parameter = json.loads(json.dumps(new_parameter.copy()))
+            workbook['items'][tab_id]['content']['items'][tab_counter_index]['content']['parameters'].append(new_new_parameter)
+            # Add parameter for 'Section Percent'
+            new_parameter = block_invisible_parameter.copy()
+            new_parameter['name'] = "Tab{0}Percent".format(tab_dict[tab])
+            new_parameter['criteriaData'] = [{"criteriaContext": {"operator": "Default", "resultValType": "expression", "resultVal": 'round(100*{Tab' + str(tab_dict[tab]) + 'Success}/{Tab' + str(tab_dict[tab]) + 'Total})' }}]
+            new_parameter.pop('crossComponentResources', None)
+            new_parameter.pop('resourceType', None)
+            new_parameter.pop('query', None)
+            new_parameter.pop('queryType', None)
+            new_new_parameter = json.loads(json.dumps(new_parameter.copy()))
+            workbook['items'][tab_id]['content']['items'][tab_counter_index]['content']['parameters'].append(new_new_parameter)
+            # Adjust tile to use the percent parameter
+            tab_percent_tile_index = tab_item_index(workbook['items'][tab_id], 'TabPercentTile')
+            if args.verbose:
+                print("DEBUG: Adjusting tile (index in tab {3}) to use the percent parameter for Tab{0} {1} with index {2}...".format(tab_dict[tab], tab, tab_id, tab_percent_tile_index))
+            workbook['items'][tab_id]['content']['items'][tab_percent_tile_index]['content']['query'] = "{\"version\":\"1.0.0\",\"content\":\"{\\\"Column1\\\": \\\"{Tab" + str(tab_dict[tab]) + "Percent}\\\", \\\"Column2\\\": \\\"Percent of succesful checks\\\"}\",\"transformers\":null}"
+
     # Store the number of queries processed in its own variable (will be checked when deciding whether generating output or not)
     num_of_queries = query_id
     if num_of_queries != total_expected_queries:
@@ -411,7 +535,7 @@ def generate_workbook(output_file, checklist_data):
 
     # Dump the workbook to the output file or to console, if there was any query in the original checklist
     if args.verbose:
-        print ("DEBUG: Starting output process. to {0}...".format(output_file))
+        print ("DEBUG: Starting output process to {0}...".format(output_file))
     if num_of_queries > 0:
         if output_file:
             # Dump workbook JSON into a file

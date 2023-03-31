@@ -50,7 +50,15 @@
         {
             "type": 1,
             "content": {
-                "json": "## Azure Landing Zone Review\n\n---\n\nThis workbook has been automatically generated out of the checklists in the [Azure Review Checklists repo](https://github.com/Azure/review-checklists).\n\n---\n\n**NOTE**: If some queries in this workbook do not work at loading, it can be because there is a maximum of simultaneous queries that can be sent to Azure Resource Graph. Please refresh the failed queries manually."
+                "json": "If you set \"Only show failed\" to \"Yes\", the different queries will only show items that have failed their compliance checks.",
+                "style": "info"
+            },
+            "name": "InfoBox"
+        },
+        {
+            "type": 1,
+            "content": {
+                "json": "## Azure Landing Zone Review\n\n---\n\nThis workbook has been automatically generated out of the checklists in the [Azure Review Checklists repo](https://github.com/Azure/review-checklists). This repo contains best practices and recommendations around generic Landing Zones as well as specific services such as Azure Virtual Desktop, Azure Kubernetes Service or Azure VMware Solution, to name a few. This repository of best practices is curated by Azure engineers, but open to anybody to contribute.\n\nIf you see a problem in the queries that are part of this workbook, please open a Github issue [here](https://github.com/Azure/review-checklists/issues/new)."
             },
             "customWidth": "100",
             "name": "MarkdownHeader"
@@ -62,7 +70,7 @@
                 "style": "tabs",
                 "links": [
                     {
-                        "id": "78713cb1-bb10-48a5-9cf3-a8628cb2e30a",
+                        "id": "009073fd-327a-49bb-b1a4-3e1729e8c951",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Network Topology and Connectivity",
@@ -71,7 +79,7 @@
                         "style": "primary"
                     },
                     {
-                        "id": "c3e61659-1668-4a0b-bc8c-30c36d9de6c3",
+                        "id": "033161b9-33b0-48ba-a87b-509137700382",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Security, Governance and Compliance",
@@ -80,7 +88,7 @@
                         "style": "primary"
                     },
                     {
-                        "id": "3d667bae-750b-4aa5-98ea-16811a42e7d3",
+                        "id": "0343810e-e603-4111-ba4a-32f97f3f2cf0",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Management Group and Subscriptions",
@@ -99,11 +107,481 @@
                 "groupType": "editable",
                 "items": [
                     {
+                        "type": 9,
+                        "content": {
+                            "version": "KqlParameterItem/1.0",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "parameters": [
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query4Stats",
+                                    "type": 1,
+                                    "query": "resources | where type == 'microsoft.network/applicationgateways' | project id, compliant = (properties.webApplicationFirewallConfiguration.enabled == True and properties.webApplicationFirewallConfiguration.firewallMode == 'Prevention')| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query4FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query4Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query5Stats",
+                                    "type": 1,
+                                    "query": "resources | where type == 'microsoft.network/applicationgateways' | project id, compliant = properties.sku.name in ('Standard_v2', 'WAF_v2') | project id,compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query5FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query5Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query6Stats",
+                                    "type": 1,
+                                    "query": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query6FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query6Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query7Stats",
+                                    "type": 1,
+                                    "query": "resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id, peeringName=properties_virtualNetworkPeerings.name, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess == True)| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query7FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query7Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query8Stats",
+                                    "type": 1,
+                                    "query": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier !in ('Basic', 'Standard')| project name, id, subscriptionId, resourceGroup, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query8FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query8Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query9Stats",
+                                    "type": 1,
+                                    "query": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier contains 'AZ'| project name, id, subscriptionId, resourceGroup, Type, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query9FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query9Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query10Stats",
+                                    "type": 1,
+                                    "query": "resources | where type=='microsoft.network/virtualnetworkgateways' | where properties.gatewayType == 'Vpn' | extend compliant = (tolower(properties.sku.name) contains 'az') | distinct id, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query10FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query10Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query11Stats",
+                                    "type": 1,
+                                    "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)')  | project id, compliant, cidr| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query11FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query11Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query12Stats",
+                                    "type": 1,
+                                    "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend compliant = addressMask > 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query12FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query12Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query13Stats",
+                                    "type": 1,
+                                    "query": "resources | where type == 'microsoft.network/azurefirewalls' | project id,compliant=isnotnull(properties.firewallPolicy.id)| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query13FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query13Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query14Stats",
+                                    "type": 1,
+                                    "query": "resources | where type =~ 'microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets = properties.subnets | mv-expand subnets | project id = subnets.id, resourceGroup, VNet = name, serviceEndpoints = subnets.properties.serviceEndpoints, compliant = (isnull(subnets.properties.serviceEndpoints) or array_length(subnets.properties.serviceEndpoints) == 0) | order by compliant asc| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query14FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query14Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query15Stats",
+                                    "type": 1,
+                                    "query": "resources | where type=='microsoft.network/networksecuritygroups' | mvexpand properties.securityRules | project id,name,ruleAction=properties_securityRules.properties.access,rulePriority=properties_securityRules.properties.priority,ruleDst=properties_securityRules.properties.destinationAddressPrefix,ruleSrc=properties_securityRules.properties.sourceAddressPrefix,ruleProt=properties_securityRules.properties.protocol,ruleDirection=properties_securityRules.properties.direction,rulePort=properties_securityRules.properties.destinationPortRange | summarize StarDenies=countif(ruleAction=='Deny' and ruleDst=='*' and ruleSrc=='*' and ruleProt=='*' and rulePort=='*') by id,tostring(ruleDirection) | where ruleDirection == 'Inbound' | project id,compliant=(StarDenies>0) | union (resources | where type=='microsoft.network/networksecuritygroups' | where array_length(properties.securityRules)==0 | extend compliant=false | project id,compliant)| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query15FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query15Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query16Stats",
+                                    "type": 1,
+                                    "query": "Resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetName=subnets.name,subnetNsg=subnets.properties.networkSecurityGroup | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend compliant = isnotnull(subnetNsg)| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query16FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query16Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Tab0Success",
+                                    "type": 1,
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "criteriaData": [
+                                        {
+                                            "criteriaContext": {
+                                                "operator": "Default",
+                                                "resultValType": "expression",
+                                                "resultVal": "{Query4Stats:$.Success}+{Query5Stats:$.Success}+{Query6Stats:$.Success}+{Query7Stats:$.Success}+{Query8Stats:$.Success}+{Query9Stats:$.Success}+{Query10Stats:$.Success}+{Query11Stats:$.Success}+{Query12Stats:$.Success}+{Query13Stats:$.Success}+{Query14Stats:$.Success}+{Query15Stats:$.Success}+{Query16Stats:$.Success}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Tab0Total",
+                                    "type": 1,
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "criteriaData": [
+                                        {
+                                            "criteriaContext": {
+                                                "operator": "Default",
+                                                "resultValType": "expression",
+                                                "resultVal": "{Query4Stats:$.Total}+{Query5Stats:$.Total}+{Query6Stats:$.Total}+{Query7Stats:$.Total}+{Query8Stats:$.Total}+{Query9Stats:$.Total}+{Query10Stats:$.Total}+{Query11Stats:$.Total}+{Query12Stats:$.Total}+{Query13Stats:$.Total}+{Query14Stats:$.Total}+{Query15Stats:$.Total}+{Query16Stats:$.Total}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Tab0Percent",
+                                    "type": 1,
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "criteriaData": [
+                                        {
+                                            "criteriaContext": {
+                                                "operator": "Default",
+                                                "resultValType": "expression",
+                                                "resultVal": "round(100*{Tab0Success}/{Tab0Total})"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ],
+                            "style": "pills",
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources"
+                        },
+                        "name": "TabInvisibleParameters"
+                    },
+                    {
                         "type": 1,
                         "content": {
                             "json": "## Network Topology and Connectivity"
                         },
+                        "customWidth": "50",
                         "name": "tab0title"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"Column1\\\": \\\"{Tab0Percent}\\\", \\\"Column2\\\": \\\"Percent of succesful checks\\\"}\",\"transformers\":null}",
+                            "size": 3,
+                            "queryType": 8,
+                            "visualization": "tiles",
+                            "tileSettings": {
+                                "titleContent": {
+                                    "columnMatch": "Column1",
+                                    "formatter": 4,
+                                    "formatOptions": {
+                                        "min": 0,
+                                        "max": 100,
+                                        "palette": "redGreen"
+                                    },
+                                    "numberFormat": {
+                                        "unit": 0,
+                                        "options": {
+                                            "style": "decimal"
+                                        }
+                                    }
+                                },
+                                "subtitleContent": {
+                                    "columnMatch": "Column2"
+                                },
+                                "showBorder": true
+                            }
+                        },
+                        "customWidth": "50",
+                        "name": "TabPercentTile"
                     },
                     {
                         "type": 1,
@@ -117,7 +595,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resources | where type == 'microsoft.network/applicationgateways' | project id, compliant = (properties.webApplicationFirewallConfiguration.enabled == True and properties.webApplicationFirewallConfiguration.firewallMode == 'Prevention') | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -179,7 +657,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resources | where type == 'microsoft.network/applicationgateways' | project id, compliant = properties.sku.name in ('Standard_v2', 'WAF_v2') | project id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -241,7 +719,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -303,7 +781,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id, peeringName=properties_virtualNetworkPeerings.name, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess == True) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -365,7 +843,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier !in ('Basic', 'Standard')| project name, id, subscriptionId, resourceGroup, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -427,7 +905,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier contains 'AZ'| project name, id, subscriptionId, resourceGroup, Type, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -489,7 +967,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resources | where type=='microsoft.network/virtualnetworkgateways' | where properties.gatewayType == 'Vpn' | extend compliant = (tolower(properties.sku.name) contains 'az') | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -551,7 +1029,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)')  | project id, compliant, cidr | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -613,7 +1091,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend compliant = addressMask > 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -675,7 +1153,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resources | where type == 'microsoft.network/azurefirewalls' | project id,compliant=isnotnull(properties.firewallPolicy.id) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -737,7 +1215,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resources | where type =~ 'microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets = properties.subnets | mv-expand subnets | project id = subnets.id, resourceGroup, VNet = name, serviceEndpoints = subnets.properties.serviceEndpoints, compliant = (isnull(subnets.properties.serviceEndpoints) or array_length(subnets.properties.serviceEndpoints) == 0) | order by compliant asc | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -799,7 +1277,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resources | where type=='microsoft.network/networksecuritygroups' | mvexpand properties.securityRules | project id,name,ruleAction=properties_securityRules.properties.access,rulePriority=properties_securityRules.properties.priority,ruleDst=properties_securityRules.properties.destinationAddressPrefix,ruleSrc=properties_securityRules.properties.sourceAddressPrefix,ruleProt=properties_securityRules.properties.protocol,ruleDirection=properties_securityRules.properties.direction,rulePort=properties_securityRules.properties.destinationPortRange | summarize StarDenies=countif(ruleAction=='Deny' and ruleDst=='*' and ruleSrc=='*' and ruleProt=='*' and rulePort=='*') by id,tostring(ruleDirection) | where ruleDirection == 'Inbound' | project id,compliant=(StarDenies>0) | union (resources | where type=='microsoft.network/networksecuritygroups' | where array_length(properties.securityRules)==0 | extend compliant=false | project id,compliant) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -861,7 +1339,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "Resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetName=subnets.name,subnetNsg=subnets.properties.networkSecurityGroup | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend compliant = isnotnull(subnetNsg) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -927,11 +1405,145 @@
                 "groupType": "editable",
                 "items": [
                     {
+                        "type": 9,
+                        "content": {
+                            "version": "KqlParameterItem/1.0",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "parameters": [
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query17Stats",
+                                    "type": 1,
+                                    "query": "ResourceContainers | where type=='microsoft.resources/subscriptions'| parse id with '/subscriptions/' SubscriptionID| project subscriptionId, SubscriptionName = name| join kind=leftouter (Resources| where type == 'microsoft.keyvault/vaults'| project id, name, subscriptionId) on subscriptionId| join kind= leftouter (Resources| where type == 'microsoft.keyvault/vaults'| summarize ResourceCount = count() by subscriptionId) on subscriptionId| extend RCount = iff(isnull(ResourceCount), 0, ResourceCount)| project-away ResourceCount| extend compliant = (RCount <> 1)| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query17FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query17Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Tab1Success",
+                                    "type": 1,
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "criteriaData": [
+                                        {
+                                            "criteriaContext": {
+                                                "operator": "Default",
+                                                "resultValType": "expression",
+                                                "resultVal": "{Query17Stats:$.Success}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Tab1Total",
+                                    "type": 1,
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "criteriaData": [
+                                        {
+                                            "criteriaContext": {
+                                                "operator": "Default",
+                                                "resultValType": "expression",
+                                                "resultVal": "{Query17Stats:$.Total}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Tab1Percent",
+                                    "type": 1,
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "criteriaData": [
+                                        {
+                                            "criteriaContext": {
+                                                "operator": "Default",
+                                                "resultValType": "expression",
+                                                "resultVal": "round(100*{Tab1Success}/{Tab1Total})"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ],
+                            "style": "pills",
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources"
+                        },
+                        "name": "TabInvisibleParameters"
+                    },
+                    {
                         "type": 1,
                         "content": {
                             "json": "## Security, Governance and Compliance"
                         },
+                        "customWidth": "50",
                         "name": "tab1title"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"Column1\\\": \\\"{Tab1Percent}\\\", \\\"Column2\\\": \\\"Percent of succesful checks\\\"}\",\"transformers\":null}",
+                            "size": 3,
+                            "queryType": 8,
+                            "visualization": "tiles",
+                            "tileSettings": {
+                                "titleContent": {
+                                    "columnMatch": "Column1",
+                                    "formatter": 4,
+                                    "formatOptions": {
+                                        "min": 0,
+                                        "max": 100,
+                                        "palette": "redGreen"
+                                    },
+                                    "numberFormat": {
+                                        "unit": 0,
+                                        "options": {
+                                            "style": "decimal"
+                                        }
+                                    }
+                                },
+                                "subtitleContent": {
+                                    "columnMatch": "Column2"
+                                },
+                                "showBorder": true
+                            }
+                        },
+                        "customWidth": "50",
+                        "name": "TabPercentTile"
                     },
                     {
                         "type": 1,
@@ -945,7 +1557,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "ResourceContainers | where type=='microsoft.resources/subscriptions'| parse id with '/subscriptions/' SubscriptionID| project subscriptionId, SubscriptionName = name| join kind=leftouter (Resources| where type == 'microsoft.keyvault/vaults'| project id, name, subscriptionId) on subscriptionId| join kind= leftouter (Resources| where type == 'microsoft.keyvault/vaults'| summarize ResourceCount = count() by subscriptionId) on subscriptionId| extend RCount = iff(isnull(ResourceCount), 0, ResourceCount)| project-away ResourceCount| extend compliant = (RCount <> 1) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -1011,11 +1623,229 @@
                 "groupType": "editable",
                 "items": [
                     {
+                        "type": 9,
+                        "content": {
+                            "version": "KqlParameterItem/1.0",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "parameters": [
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query0Stats",
+                                    "type": 1,
+                                    "query": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend compliant =( array_length(mgmtChain) <= 4 and array_length(mgmtChain) > 1)| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query0FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query0Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query1Stats",
+                                    "type": 1,
+                                    "query": "resources | extend compliant = isnotnull(['tags']) | project name, id, subscriptionId, resourceGroup, tags, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query1FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query1Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query2Stats",
+                                    "type": 1,
+                                    "query": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend compliant = (array_length(mgmtChain) > 1)| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query2FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query2Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query3Stats",
+                                    "type": 1,
+                                    "query": "resources | extend compliant = isnotnull(['tags']) | project name, id, subscriptionId, resourceGroup, tags, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query3FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query3Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Tab2Success",
+                                    "type": 1,
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "criteriaData": [
+                                        {
+                                            "criteriaContext": {
+                                                "operator": "Default",
+                                                "resultValType": "expression",
+                                                "resultVal": "{Query0Stats:$.Success}+{Query1Stats:$.Success}+{Query2Stats:$.Success}+{Query3Stats:$.Success}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Tab2Total",
+                                    "type": 1,
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "criteriaData": [
+                                        {
+                                            "criteriaContext": {
+                                                "operator": "Default",
+                                                "resultValType": "expression",
+                                                "resultVal": "{Query0Stats:$.Total}+{Query1Stats:$.Total}+{Query2Stats:$.Total}+{Query3Stats:$.Total}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Tab2Percent",
+                                    "type": 1,
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "criteriaData": [
+                                        {
+                                            "criteriaContext": {
+                                                "operator": "Default",
+                                                "resultValType": "expression",
+                                                "resultVal": "round(100*{Tab2Success}/{Tab2Total})"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ],
+                            "style": "pills",
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources"
+                        },
+                        "name": "TabInvisibleParameters"
+                    },
+                    {
                         "type": 1,
                         "content": {
                             "json": "## Management Group and Subscriptions"
                         },
+                        "customWidth": "50",
                         "name": "tab2title"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"Column1\\\": \\\"{Tab2Percent}\\\", \\\"Column2\\\": \\\"Percent of succesful checks\\\"}\",\"transformers\":null}",
+                            "size": 3,
+                            "queryType": 8,
+                            "visualization": "tiles",
+                            "tileSettings": {
+                                "titleContent": {
+                                    "columnMatch": "Column1",
+                                    "formatter": 4,
+                                    "formatOptions": {
+                                        "min": 0,
+                                        "max": 100,
+                                        "palette": "redGreen"
+                                    },
+                                    "numberFormat": {
+                                        "unit": 0,
+                                        "options": {
+                                            "style": "decimal"
+                                        }
+                                    }
+                                },
+                                "subtitleContent": {
+                                    "columnMatch": "Column2"
+                                },
+                                "showBorder": true
+                            }
+                        },
+                        "customWidth": "50",
+                        "name": "TabPercentTile"
                     },
                     {
                         "type": 1,
@@ -1029,7 +1859,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend compliant =( array_length(mgmtChain) <= 4 and array_length(mgmtChain) > 1) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -1091,7 +1921,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resources | extend compliant = isnotnull(['tags']) | project name, id, subscriptionId, resourceGroup, tags, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -1153,7 +1983,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend compliant = (array_length(mgmtChain) > 1) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -1215,7 +2045,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resources | extend compliant = isnotnull(['tags']) | project name, id, subscriptionId, resourceGroup, tags, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
