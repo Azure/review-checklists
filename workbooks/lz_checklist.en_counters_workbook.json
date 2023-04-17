@@ -48,6 +48,14 @@
             "name": "WorkbookSelectors"
         },
         {
+            "type": 1,
+            "content": {
+                "json": "If you set \"Only show failed\" to \"Yes\", the different queries will only show items that have failed their compliance checks.",
+                "style": "info"
+            },
+            "name": "InfoBox"
+        },
+        {
             "type": 9,
             "content": {
                 "version": "KqlParameterItem/1.0",
@@ -60,7 +68,7 @@
                         "version": "KqlParameterItem/1.0",
                         "name": "Section0Total",
                         "type": 1,
-                        "query": "resources | where type == 'microsoft.network/applicationgateways' | project id, compliant = (properties.webApplicationFirewallConfiguration.enabled == True and properties.webApplicationFirewallConfiguration.firewallMode == 'Prevention')| union (resources | where type == 'microsoft.network/applicationgateways' | project id, compliant = properties.sku.name in ('Standard_v2', 'WAF_v2') | project id,compliant)| union (resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode)| union (resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id, peeringName=properties_virtualNetworkPeerings.name, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess == True))| union (resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier !in ('Basic', 'Standard')| project name, id, subscriptionId, resourceGroup, compliant)| union (resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier contains 'AZ'| project name, id, subscriptionId, resourceGroup, Type, compliant)| union (resources | where type=='microsoft.network/virtualnetworkgateways' | where properties.gatewayType == 'Vpn' | extend compliant = (tolower(properties.sku.name) contains 'az') | distinct id, compliant)| union (resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)')  | project id, compliant, cidr)| union (resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend compliant = addressMask > 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, compliant)| union (resources | where type == 'microsoft.network/azurefirewalls' | project id,compliant=isnotnull(properties.firewallPolicy.id))| union (resources | where type =~ 'microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets = properties.subnets | mv-expand subnets | project id = subnets.id, resourceGroup, VNet = name, serviceEndpoints = subnets.properties.serviceEndpoints, compliant = (isnull(subnets.properties.serviceEndpoints) or array_length(subnets.properties.serviceEndpoints) == 0) | order by compliant asc)| union (resources | where type=='microsoft.network/networksecuritygroups' | mvexpand properties.securityRules | project id,name,ruleAction=properties_securityRules.properties.access,rulePriority=properties_securityRules.properties.priority,ruleDst=properties_securityRules.properties.destinationAddressPrefix,ruleSrc=properties_securityRules.properties.sourceAddressPrefix,ruleProt=properties_securityRules.properties.protocol,ruleDirection=properties_securityRules.properties.direction,rulePort=properties_securityRules.properties.destinationPortRange | summarize StarDenies=countif(ruleAction=='Deny' and ruleDst=='*' and ruleSrc=='*' and ruleProt=='*' and rulePort=='*') by id,tostring(ruleDirection) | where ruleDirection == 'Inbound' | project id,compliant=(StarDenies>0) | union (resources | where type=='microsoft.network/networksecuritygroups' | where array_length(properties.securityRules)==0 | extend compliant=false | project id,compliant))| union (Resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetName=subnets.name,subnetNsg=subnets.properties.networkSecurityGroup | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend compliant = isnotnull(subnetNsg))| summarize Total = tostring(count())",
+                        "query": "resources | where type == 'microsoft.network/applicationgateways' | project id, compliant = properties.sku.name in ('Standard_v2', 'WAF_v2') | project id,compliant| union (resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode)| union (resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id, peeringName=properties_virtualNetworkPeerings.name, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess == True))| union (resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier !in ('Basic', 'Standard')| project name, id, subscriptionId, resourceGroup, compliant)| union (resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier contains 'AZ'| project name, id, subscriptionId, resourceGroup, Type, compliant)| union (resources | where type=='microsoft.network/virtualnetworkgateways' | where properties.gatewayType == 'Vpn' | extend compliant = (tolower(properties.sku.name) contains 'az') | distinct id, compliant)| union (resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)')  | project id, compliant, cidr)| union (resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend compliant = addressMask > 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, compliant)| union (resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.dnsSettings.enableProxy == true) | distinct id,compliant)| union (resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.sku.tier == 'Premium') | distinct id,compliant)| union (resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.threatIntelMode == 'Deny') | distinct id,compliant)| union (resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.intrusionDetection.mode == 'Deny') | project id, compliant)| union (resources | where type =~ 'microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets = properties.subnets | mv-expand subnets | project id = subnets.id, resourceGroup, VNet = name, serviceEndpoints = subnets.properties.serviceEndpoints, compliant = (isnull(subnets.properties.serviceEndpoints) or array_length(subnets.properties.serviceEndpoints) == 0) | order by compliant asc)| union (resources | where type=='microsoft.network/networksecuritygroups' | mvexpand properties.securityRules | project id,name,ruleAction=properties_securityRules.properties.access,rulePriority=properties_securityRules.properties.priority,ruleDst=properties_securityRules.properties.destinationAddressPrefix,ruleSrc=properties_securityRules.properties.sourceAddressPrefix,ruleProt=properties_securityRules.properties.protocol,ruleDirection=properties_securityRules.properties.direction,rulePort=properties_securityRules.properties.destinationPortRange | summarize StarDenies=countif(ruleAction=='Deny' and ruleDst=='*' and ruleSrc=='*' and ruleProt=='*' and rulePort=='*') by id,tostring(ruleDirection) | where ruleDirection == 'Inbound' | project id,compliant=(StarDenies>0) | union (resources | where type=='microsoft.network/networksecuritygroups' | where array_length(properties.securityRules)==0 | extend compliant=false | project id,compliant))| union (Resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetName=subnets.name,subnetNsg=subnets.properties.networkSecurityGroup | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend compliant = isnotnull(subnetNsg))| summarize Total = tostring(count())",
                         "crossComponentResources": [
                             "{Subscription}"
                         ],
@@ -76,7 +84,7 @@
                         "version": "KqlParameterItem/1.0",
                         "name": "Section0Success",
                         "type": 1,
-                        "query": "resources | where type == 'microsoft.network/applicationgateways' | project id, compliant = (properties.webApplicationFirewallConfiguration.enabled == True and properties.webApplicationFirewallConfiguration.firewallMode == 'Prevention')| union (resources | where type == 'microsoft.network/applicationgateways' | project id, compliant = properties.sku.name in ('Standard_v2', 'WAF_v2') | project id,compliant)| union (resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode)| union (resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id, peeringName=properties_virtualNetworkPeerings.name, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess == True))| union (resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier !in ('Basic', 'Standard')| project name, id, subscriptionId, resourceGroup, compliant)| union (resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier contains 'AZ'| project name, id, subscriptionId, resourceGroup, Type, compliant)| union (resources | where type=='microsoft.network/virtualnetworkgateways' | where properties.gatewayType == 'Vpn' | extend compliant = (tolower(properties.sku.name) contains 'az') | distinct id, compliant)| union (resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)')  | project id, compliant, cidr)| union (resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend compliant = addressMask > 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, compliant)| union (resources | where type == 'microsoft.network/azurefirewalls' | project id,compliant=isnotnull(properties.firewallPolicy.id))| union (resources | where type =~ 'microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets = properties.subnets | mv-expand subnets | project id = subnets.id, resourceGroup, VNet = name, serviceEndpoints = subnets.properties.serviceEndpoints, compliant = (isnull(subnets.properties.serviceEndpoints) or array_length(subnets.properties.serviceEndpoints) == 0) | order by compliant asc)| union (resources | where type=='microsoft.network/networksecuritygroups' | mvexpand properties.securityRules | project id,name,ruleAction=properties_securityRules.properties.access,rulePriority=properties_securityRules.properties.priority,ruleDst=properties_securityRules.properties.destinationAddressPrefix,ruleSrc=properties_securityRules.properties.sourceAddressPrefix,ruleProt=properties_securityRules.properties.protocol,ruleDirection=properties_securityRules.properties.direction,rulePort=properties_securityRules.properties.destinationPortRange | summarize StarDenies=countif(ruleAction=='Deny' and ruleDst=='*' and ruleSrc=='*' and ruleProt=='*' and rulePort=='*') by id,tostring(ruleDirection) | where ruleDirection == 'Inbound' | project id,compliant=(StarDenies>0) | union (resources | where type=='microsoft.network/networksecuritygroups' | where array_length(properties.securityRules)==0 | extend compliant=false | project id,compliant))| union (Resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetName=subnets.name,subnetNsg=subnets.properties.networkSecurityGroup | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend compliant = isnotnull(subnetNsg))| where compliant == 1 | summarize Total = tostring(count())",
+                        "query": "resources | where type == 'microsoft.network/applicationgateways' | project id, compliant = properties.sku.name in ('Standard_v2', 'WAF_v2') | project id,compliant| union (resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode)| union (resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id, peeringName=properties_virtualNetworkPeerings.name, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess == True))| union (resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier !in ('Basic', 'Standard')| project name, id, subscriptionId, resourceGroup, compliant)| union (resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier contains 'AZ'| project name, id, subscriptionId, resourceGroup, Type, compliant)| union (resources | where type=='microsoft.network/virtualnetworkgateways' | where properties.gatewayType == 'Vpn' | extend compliant = (tolower(properties.sku.name) contains 'az') | distinct id, compliant)| union (resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)')  | project id, compliant, cidr)| union (resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend compliant = addressMask > 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, compliant)| union (resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.dnsSettings.enableProxy == true) | distinct id,compliant)| union (resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.sku.tier == 'Premium') | distinct id,compliant)| union (resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.threatIntelMode == 'Deny') | distinct id,compliant)| union (resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.intrusionDetection.mode == 'Deny') | project id, compliant)| union (resources | where type =~ 'microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets = properties.subnets | mv-expand subnets | project id = subnets.id, resourceGroup, VNet = name, serviceEndpoints = subnets.properties.serviceEndpoints, compliant = (isnull(subnets.properties.serviceEndpoints) or array_length(subnets.properties.serviceEndpoints) == 0) | order by compliant asc)| union (resources | where type=='microsoft.network/networksecuritygroups' | mvexpand properties.securityRules | project id,name,ruleAction=properties_securityRules.properties.access,rulePriority=properties_securityRules.properties.priority,ruleDst=properties_securityRules.properties.destinationAddressPrefix,ruleSrc=properties_securityRules.properties.sourceAddressPrefix,ruleProt=properties_securityRules.properties.protocol,ruleDirection=properties_securityRules.properties.direction,rulePort=properties_securityRules.properties.destinationPortRange | summarize StarDenies=countif(ruleAction=='Deny' and ruleDst=='*' and ruleSrc=='*' and ruleProt=='*' and rulePort=='*') by id,tostring(ruleDirection) | where ruleDirection == 'Inbound' | project id,compliant=(StarDenies>0) | union (resources | where type=='microsoft.network/networksecuritygroups' | where array_length(properties.securityRules)==0 | extend compliant=false | project id,compliant))| union (Resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetName=subnets.name,subnetNsg=subnets.properties.networkSecurityGroup | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend compliant = isnotnull(subnetNsg))| where compliant == 1 | summarize Total = tostring(count())",
                         "crossComponentResources": [
                             "{Subscription}"
                         ],
@@ -161,7 +169,7 @@
         {
             "type": 1,
             "content": {
-                "json": "## Azure Landing Zone Review\n\n---\n\nThis workbook has been automatically generated out of the checklists in the [Azure Review Checklists repo](https://github.com/Azure/review-checklists).\n\n---\n\n**NOTE**: If some queries in this workbook do not work at loading, it can be because there is a maximum of simultaneous queries that can be sent to Azure Resource Graph. Please refresh the failed queries manually."
+                "json": "## Azure Landing Zone Review\n\n---\n\nThis workbook has been automatically generated out of the checklists in the [Azure Review Checklists repo](https://github.com/Azure/review-checklists). This repo contains best practices and recommendations around generic Landing Zones as well as specific services such as Azure Virtual Desktop, Azure Kubernetes Service or Azure VMware Solution, to name a few. This repository of best practices is curated by Azure engineers, but open to anybody to contribute.\n\nIf you see a problem in the queries that are part of this workbook, please open a Github issue [here](https://github.com/Azure/review-checklists/issues/new)."
             },
             "customWidth": "50",
             "name": "MarkdownHeader"
@@ -205,7 +213,7 @@
                 "style": "tabs",
                 "links": [
                     {
-                        "id": "d998fe3e-f0e4-4945-b178-1505feca3dcd",
+                        "id": "948381aa-4e46-4e1b-baf9-2e0463278844",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Network Topology and Connectivity ({Section0Success:value}/{Section0Total:value})",
@@ -214,7 +222,7 @@
                         "style": "primary"
                     },
                     {
-                        "id": "b4479d3a-7c10-417f-9b15-9e46933e11dd",
+                        "id": "0b9e5664-931c-48c6-81b1-fbb5cfbe947d",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Security, Governance and Compliance ({Section1Success:value}/{Section1Total:value})",
@@ -223,7 +231,7 @@
                         "style": "primary"
                     },
                     {
-                        "id": "75df5ba4-b624-45cc-b999-4183c9364b6c",
+                        "id": "765b45a1-fc70-4301-919e-8c758e9d2e9b",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Management Group and Subscriptions ({Section2Success:value}/{Section2Total:value})",
@@ -251,7 +259,7 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "For secure delivery of HTTP/S apps, ensure that WAF protection and policies are enabled in your Application Gateways. Check [this link](https://learn.microsoft.com/azure/web-application-firewall/ag/application-gateway-waf-faq) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-application-delivery/) can help to educate yourself on this."
+                            "json": "Ensure you are using Application Gateway v2 SKU. Check [this link](https://learn.microsoft.com/azure/application-gateway/overview-v2) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-application-delivery/) can help to educate yourself on this."
                         },
                         "name": "querytext4"
                     },
@@ -259,8 +267,8 @@
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/applicationgateways' | project id, compliant = (properties.webApplicationFirewallConfiguration.enabled == True and properties.webApplicationFirewallConfiguration.firewallMode == 'Prevention') | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "query": "resources | where type == 'microsoft.network/applicationgateways' | project id, compliant = properties.sku.name in ('Standard_v2', 'WAF_v2') | project id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -313,7 +321,7 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Ensure you are using Application Gateway v2 SKU. Check [this link](https://learn.microsoft.com/azure/application-gateway/overview-v2) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-application-delivery/) can help to educate yourself on this."
+                            "json": "Deploy your WAF profiles for Front Door in 'Prevention' mode.. Check [this link](https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings) for further information."
                         },
                         "name": "querytext5"
                     },
@@ -321,8 +329,8 @@
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/applicationgateways' | project id, compliant = properties.sku.name in ('Standard_v2', 'WAF_v2') | project id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "query": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -375,7 +383,7 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Deploy your WAF profiles for Front Door in 'Prevention' mode.. Check [this link](https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings) for further information."
+                            "json": "Use the setting 'Allow traffic to remote virtual network' when configuring VNet peerings. Check [this link](https://learn.microsoft.com/azure/virtual-network/virtual-network-manage-peering) for further information."
                         },
                         "name": "querytext6"
                     },
@@ -383,8 +391,8 @@
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id, peeringName=properties_virtualNetworkPeerings.name, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess == True) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -437,7 +445,7 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Use the setting 'Allow traffic to remote virtual network' when configuring VNet peerings. Check [this link](https://learn.microsoft.com/azure/virtual-network/virtual-network-manage-peering) for further information."
+                            "json": "Ensure that you're using the right SKU for the ExpressRoute/VPN gateways based on bandwidth and performance requirements.. Check [this link](https://learn.microsoft.com/azure/expressroute/expressroute-routing) for further information.. [This training](https://learn.microsoft.com/learn/modules/design-implement-azure-expressroute/) can help to educate yourself on this."
                         },
                         "name": "querytext7"
                     },
@@ -445,8 +453,8 @@
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id, peeringName=properties_virtualNetworkPeerings.name, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess == True) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "query": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier !in ('Basic', 'Standard')| project name, id, subscriptionId, resourceGroup, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -499,7 +507,7 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Ensure that you're using the right SKU for the ExpressRoute/VPN gateways based on bandwidth and performance requirements.. Check [this link](https://learn.microsoft.com/azure/expressroute/expressroute-routing) for further information.. [This training](https://learn.microsoft.com/learn/modules/design-implement-azure-expressroute/) can help to educate yourself on this."
+                            "json": "Deploy a zone-redundant ExpressRoute gateway in the supported Azure regions.. Check [this link](https://learn.microsoft.com/azure/expressroute/expressroute-about-virtual-network-gateways) for further information.. [This training](https://learn.microsoft.com/learn/modules/design-implement-azure-expressroute/) can help to educate yourself on this."
                         },
                         "name": "querytext8"
                     },
@@ -507,8 +515,8 @@
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier !in ('Basic', 'Standard')| project name, id, subscriptionId, resourceGroup, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "query": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier contains 'AZ'| project name, id, subscriptionId, resourceGroup, Type, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -561,7 +569,7 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Deploy a zone-redundant ExpressRoute gateway in the supported Azure regions.. Check [this link](https://learn.microsoft.com/azure/expressroute/expressroute-about-virtual-network-gateways) for further information.. [This training](https://learn.microsoft.com/learn/modules/design-implement-azure-expressroute/) can help to educate yourself on this."
+                            "json": "Use VPN gateways to connect branches or remote locations to Azure. For higher resilience, deploy zone-redundant gateways (where available).. Check [this link](https://learn.microsoft.com/azure/vpn-gateway/create-zone-redundant-vnet-gateway) for further information.. [This training](https://learn.microsoft.com/training/modules/intro-to-azure-vpn-gateway/) can help to educate yourself on this."
                         },
                         "name": "querytext9"
                     },
@@ -569,8 +577,8 @@
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier contains 'AZ'| project name, id, subscriptionId, resourceGroup, Type, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "query": "resources | where type=='microsoft.network/virtualnetworkgateways' | where properties.gatewayType == 'Vpn' | extend compliant = (tolower(properties.sku.name) contains 'az') | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -623,7 +631,7 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Use VPN gateways to connect branches or remote locations to Azure. For higher resilience, deploy zone-redundant gateways (where available).. Check [this link](https://learn.microsoft.com/azure/vpn-gateway/create-zone-redundant-vnet-gateway) for further information.. [This training](https://learn.microsoft.com/training/modules/intro-to-azure-vpn-gateway/) can help to educate yourself on this."
+                            "json": "Use IP addresses from the address allocation ranges for private internets (RFC 1918).. Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
                         },
                         "name": "querytext10"
                     },
@@ -631,8 +639,8 @@
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/virtualnetworkgateways' | where properties.gatewayType == 'Vpn' | extend compliant = (tolower(properties.sku.name) contains 'az') | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)')  | project id, compliant, cidr | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -685,7 +693,7 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Ensure to use IP addresses from the address allocation for private internets (RFC 1918).. Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
+                            "json": "Ensure that IP address space isn't wasted, don't create unnecessarily large virtual networks (for example /16) . Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
                         },
                         "name": "querytext11"
                     },
@@ -693,8 +701,8 @@
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)')  | project id, compliant, cidr | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend compliant = addressMask > 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -747,7 +755,7 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Ensure that IP address space isn't wasted, don't create unnecessarily large virtual networks (for example /16) . Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
+                            "json": "Use FQDN-based network rules and Azure Firewall with DNS proxy to filter egress traffic to the Internet not supported by application rules.. Check [this link](https://learn.microsoft.com/azure/firewall/fqdn-filtering-network-rules) for further information."
                         },
                         "name": "querytext12"
                     },
@@ -755,8 +763,8 @@
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend compliant = addressMask > 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "query": "resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.dnsSettings.enableProxy == true) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -809,7 +817,7 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Use Firewall Manager with Virtual WAN to deploy and manage Azure firewalls across Virtual WAN hubs or in hub virtual networks.. Check [this link](https://learn.microsoft.com/azure/firewall/) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/) can help to educate yourself on this."
+                            "json": "Use Azure Firewall Premium for additional security and protection.. Check [this link](https://learn.microsoft.com/azure/firewall/premium-features) for further information."
                         },
                         "name": "querytext13"
                     },
@@ -817,8 +825,8 @@
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/azurefirewalls' | project id,compliant=isnotnull(properties.firewallPolicy.id) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "query": "resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.sku.tier == 'Premium') | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -871,7 +879,7 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Don't enable virtual network service endpoints by default on all subnets.. Check [this link](https://learn.microsoft.com/azure/app-service/networking-features) for further information.. [This training](https://learn.microsoft.com/learn/paths/implement-network-security/?source=learn) can help to educate yourself on this."
+                            "json": "Configure Azure Firewall Threat Intelligence mode to Alert and Deny for additional protection.. Check [this link](https://learn.microsoft.com/azure/firewall/premium-features) for further information."
                         },
                         "name": "querytext14"
                     },
@@ -879,8 +887,8 @@
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type =~ 'microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets = properties.subnets | mv-expand subnets | project id = subnets.id, resourceGroup, VNet = name, serviceEndpoints = subnets.properties.serviceEndpoints, compliant = (isnull(subnets.properties.serviceEndpoints) or array_length(subnets.properties.serviceEndpoints) == 0) | order by compliant asc | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "query": "resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.threatIntelMode == 'Deny') | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -933,7 +941,7 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Don't rely on the NSG inbound default rules using the VirtualNetwork service tag to limit connectivity.. Check [this link](https://learn.microsoft.com/azure/virtual-network/service-tags-overview#available-service-tags) for further information."
+                            "json": "Configure Azure Firewall IDPS mode to Deny for additional protection.. Check [this link](https://learn.microsoft.com/azure/firewall/premium-features#idps) for further information."
                         },
                         "name": "querytext15"
                     },
@@ -941,8 +949,8 @@
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/networksecuritygroups' | mvexpand properties.securityRules | project id,name,ruleAction=properties_securityRules.properties.access,rulePriority=properties_securityRules.properties.priority,ruleDst=properties_securityRules.properties.destinationAddressPrefix,ruleSrc=properties_securityRules.properties.sourceAddressPrefix,ruleProt=properties_securityRules.properties.protocol,ruleDirection=properties_securityRules.properties.direction,rulePort=properties_securityRules.properties.destinationPortRange | summarize StarDenies=countif(ruleAction=='Deny' and ruleDst=='*' and ruleSrc=='*' and ruleProt=='*' and rulePort=='*') by id,tostring(ruleDirection) | where ruleDirection == 'Inbound' | project id,compliant=(StarDenies>0) | union (resources | where type=='microsoft.network/networksecuritygroups' | where array_length(properties.securityRules)==0 | extend compliant=false | project id,compliant) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "query": "resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.intrusionDetection.mode == 'Deny') | project id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -995,7 +1003,7 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "The application team should use application security groups at the subnet-level NSGs to help protect multi-tier VMs within the landing zone.. [This training](https://learn.microsoft.com/learn/paths/implement-network-security/) can help to educate yourself on this."
+                            "json": "Don't enable virtual network service endpoints by default on all subnets.. Check [this link](https://learn.microsoft.com/azure/app-service/networking-features) for further information.. [This training](https://learn.microsoft.com/learn/paths/implement-network-security/?source=learn) can help to educate yourself on this."
                         },
                         "name": "querytext16"
                     },
@@ -1003,8 +1011,8 @@
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "Resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetName=subnets.name,subnetNsg=subnets.properties.networkSecurityGroup | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend compliant = isnotnull(subnetNsg) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "query": "resources | where type =~ 'microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets = properties.subnets | mv-expand subnets | project id = subnets.id, resourceGroup, VNet = name, serviceEndpoints = subnets.properties.serviceEndpoints, compliant = (isnull(subnets.properties.serviceEndpoints) or array_length(subnets.properties.serviceEndpoints) == 0) | order by compliant asc | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -1053,33 +1061,11 @@
                             }
                         },
                         "name": "query16"
-                    }
-                ]
-            },
-            "conditionalVisibility": {
-                "parameterName": "VisibleTab",
-                "comparison": "isEqualTo",
-                "value": "tab0"
-            },
-            "name": "tab0"
-        },
-        {
-            "type": 12,
-            "content": {
-                "version": "NotebookGroup/1.0",
-                "groupType": "editable",
-                "items": [
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "## Security, Governance and Compliance"
-                        },
-                        "name": "tab1title"
                     },
                     {
                         "type": 1,
                         "content": {
-                            "json": "Use different Azure Key Vaults for different applications and regions to avoid transaction scale limits and restrict access to secrets.. Check [this link](https://learn.microsoft.com/azure/key-vault/general/overview-throttling) for further information."
+                            "json": "Don't rely on the NSG inbound default rules using the VirtualNetwork service tag to limit connectivity.. Check [this link](https://learn.microsoft.com/azure/virtual-network/service-tags-overview#available-service-tags) for further information."
                         },
                         "name": "querytext17"
                     },
@@ -1087,8 +1073,8 @@
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "ResourceContainers | where type=='microsoft.resources/subscriptions'| parse id with '/subscriptions/' SubscriptionID| project subscriptionId, SubscriptionName = name| join kind=leftouter (Resources| where type == 'microsoft.keyvault/vaults'| project id, name, subscriptionId) on subscriptionId| join kind= leftouter (Resources| where type == 'microsoft.keyvault/vaults'| summarize ResourceCount = count() by subscriptionId) on subscriptionId| extend RCount = iff(isnull(ResourceCount), 0, ResourceCount)| project-away ResourceCount| extend compliant = (RCount <> 1) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "query": "resources | where type=='microsoft.network/networksecuritygroups' | mvexpand properties.securityRules | project id,name,ruleAction=properties_securityRules.properties.access,rulePriority=properties_securityRules.properties.priority,ruleDst=properties_securityRules.properties.destinationAddressPrefix,ruleSrc=properties_securityRules.properties.sourceAddressPrefix,ruleProt=properties_securityRules.properties.protocol,ruleDirection=properties_securityRules.properties.direction,rulePort=properties_securityRules.properties.destinationPortRange | summarize StarDenies=countif(ruleAction=='Deny' and ruleDst=='*' and ruleSrc=='*' and ruleProt=='*' and rulePort=='*') by id,tostring(ruleDirection) | where ruleDirection == 'Inbound' | project id,compliant=(StarDenies>0) | union (resources | where type=='microsoft.network/networksecuritygroups' | where array_length(properties.securityRules)==0 | extend compliant=false | project id,compliant) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -1137,6 +1123,152 @@
                             }
                         },
                         "name": "query17"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "The application team should use application security groups at the subnet-level NSGs to help protect multi-tier VMs within the landing zone.. [This training](https://learn.microsoft.com/learn/paths/implement-network-security/) can help to educate yourself on this."
+                        },
+                        "name": "querytext18"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "Resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetName=subnets.name,subnetNsg=subnets.properties.networkSecurityGroup | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend compliant = isnotnull(subnetNsg) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query18"
+                    }
+                ]
+            },
+            "conditionalVisibility": {
+                "parameterName": "VisibleTab",
+                "comparison": "isEqualTo",
+                "value": "tab0"
+            },
+            "name": "tab0"
+        },
+        {
+            "type": 12,
+            "content": {
+                "version": "NotebookGroup/1.0",
+                "groupType": "editable",
+                "items": [
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "## Security, Governance and Compliance"
+                        },
+                        "name": "tab1title"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Use different Azure Key Vaults for different applications and regions to avoid transaction scale limits and restrict access to secrets.. Check [this link](https://learn.microsoft.com/azure/key-vault/general/overview-throttling) for further information."
+                        },
+                        "name": "querytext19"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "ResourceContainers | where type=='microsoft.resources/subscriptions'| parse id with '/subscriptions/' SubscriptionID| project subscriptionId, SubscriptionName = name| join kind=leftouter (Resources| where type == 'microsoft.keyvault/vaults'| project id, name, subscriptionId) on subscriptionId| join kind= leftouter (Resources| where type == 'microsoft.keyvault/vaults'| summarize ResourceCount = count() by subscriptionId) on subscriptionId| extend RCount = iff(isnull(ResourceCount), 0, ResourceCount)| project-away ResourceCount| extend compliant = (RCount <> 1) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query19"
                     }
                 ]
             },
@@ -1172,7 +1304,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend compliant =( array_length(mgmtChain) <= 4 and array_length(mgmtChain) > 1) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -1234,7 +1366,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resources | extend compliant = isnotnull(['tags']) | project name, id, subscriptionId, resourceGroup, tags, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -1296,7 +1428,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend compliant = (array_length(mgmtChain) > 1) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -1358,7 +1490,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resources | extend compliant = isnotnull(['tags']) | project name, id, subscriptionId, resourceGroup, tags, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
