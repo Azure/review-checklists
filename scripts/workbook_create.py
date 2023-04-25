@@ -310,7 +310,7 @@ def generate_workbook(output_file, checklist_data):
         new_link['id'] = str(uuid.uuid4())   # RANDOM GUID
         # The tab title depends if we are generating counters in the main section or not
         if args.counters:
-            new_link['linkLabel'] = tab_title + ' ({Section' + str(tab_id) + 'Success:value}/{Section' + str(tab_id) + 'Total:value})'
+            new_link['linkLabel'] = tab_title + ' ({Tab' + str(tab_id) + 'Success:value}/{Tab' + str(tab_id) + 'Total:value})'
         else:
             new_link['linkLabel'] = tab_title
         new_link['subTarget'] = 'tab' + str(tab_id)
@@ -385,7 +385,7 @@ def generate_workbook(output_file, checklist_data):
                 new_new_query = json.loads(json.dumps(new_query.copy()))
                 workbook['items'][tab_id]['content']['items'].append(new_new_text)
                 workbook['items'][tab_id]['content']['items'].append(new_new_query)
-                # If using tab counters, add the hidden parameters to the workbook
+                # If using tab counters, add the hidden parameters to the workbook tab
                 if args.tab_counters:
                     tab_counter_index = tab_item_index(workbook['items'][tab_id], 'TabInvisibleParameters')
                     # Add parameter with 'QueryStats'
@@ -403,6 +403,25 @@ def generate_workbook(output_file, checklist_data):
                     new_parameter['name'] = "Query{0}FullyCompliant".format(query_id)
                     new_new_parameter = json.loads(json.dumps(new_parameter.copy()))
                     workbook['items'][tab_id]['content']['items'][tab_counter_index]['content']['parameters'].append(new_new_parameter)
+                # If using global counters, add the hidden parameters to the workbook main section
+                if args.counters:
+                    hidden_parameter_index = workbook_item_index(workbook, 'InvisibleParameters')
+                    # Add parameter with 'QueryStats'
+                    new_parameter = block_invisible_parameter.copy()
+                    new_parameter['query'] = graph_query + invisible_parameter_query_suffix
+                    new_parameter['name'] = 'Query' + str(query_id) + 'Stats'
+                    new_new_parameter = json.loads(json.dumps(new_parameter.copy()))
+                    workbook['items'][hidden_parameter_index]['content']['parameters'].append(new_new_parameter)
+                    # Add parameter with 'QueryFullyCompliant
+                    new_parameter = block_invisible_parameter.copy()
+                    new_parameter['query'] = "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query" + str(query_id) + "Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}"
+                    new_parameter['queryType'] = 8
+                    new_parameter.pop('crossComponentResources', None)      # This key is only used for ARG-based queries
+                    new_parameter.pop('resourceType', None)
+                    new_parameter['name'] = "Query{0}FullyCompliant".format(query_id)
+                    new_new_parameter = json.loads(json.dumps(new_parameter.copy()))
+                    workbook['items'][hidden_parameter_index]['content']['parameters'].append(new_new_parameter)
+
                 # Add query to the query array
                 tab_id = tab_title_list.index(tab)
                 queries[tab_id].append(graph_query)
@@ -414,53 +433,69 @@ def generate_workbook(output_file, checklist_data):
             #         print("ERROR: Query {0} in section {1}, but section not in the section list!".format(graph_query, tab))
 
     # If using tab counters, we need to add the invisible parameters for the total for each tab
-    if args.tab_counters:
+    if args.tab_counters or args.counters:
+        hidden_parameter_index = workbook_item_index(workbook, 'InvisibleParameters')
+        wb_success_sum_query = ''
+        wb_total_sum_query = ''
         if args.verbose:
             print("DEBUG: Adding tab counters to all tabs, here the query_id_dictionary: {0}...".format(str(query_id_dictionary)))
         for tab in query_id_dictionary:
             query_id_list = query_id_dictionary[tab]
             # Get the index for this tab in the workbook
-            if args.counters:
-                tab_id = tab_dict[tab] + len(block_workbook['items'])
-            else:
-                # If not using counters, we removed two sections...
-                tab_id = tab_dict[tab] + len(block_workbook['items']) - 2
-            if args.verbose:
-                print("DEBUG: Getting the index in tab (workbook item {0}) for the item 'TabInvisibleParameters'...".format(tab_id))
-            tab_counter_index = tab_item_index(workbook['items'][tab_id], 'TabInvisibleParameters')
-            # Debug
-            if args.verbose:
-                print("DEBUG: Adding tab counters (index in tab {3}) to Tab{0} {1} with index {2}...".format(tab_dict[tab], tab, tab_id, tab_counter_index))
+            if args.tab_counters:
+                if args.counters:
+                    tab_id = tab_dict[tab] + len(block_workbook['items'])
+                else:
+                    # If not using counters, we removed two sections...
+                    tab_id = tab_dict[tab] + len(block_workbook['items']) - 2
+                if args.verbose:
+                    print("DEBUG: Getting the index in tab (workbook item {0}) for the item 'TabInvisibleParameters'...".format(tab_id))
+                tab_counter_index = tab_item_index(workbook['items'][tab_id], 'TabInvisibleParameters')
+                # Debug
+                if args.verbose:
+                    print("DEBUG: Adding tab counters (index in tab {3}) to Tab{0} {1} with index {2}...".format(tab_dict[tab], tab, tab_id, tab_counter_index))
             # Add parameter for 'Section Success'
             new_parameter = block_invisible_parameter.copy()
             new_parameter['name'] = "Tab{0}Success".format(tab_dict[tab])
-            success_sum_query = ''
+            tab_success_sum_query = ''
             for tab_query_id in query_id_dictionary[tab]:
-                if len(success_sum_query) > 0:
-                    success_sum_query += '+'
-                success_sum_query += '{Query' + str(tab_query_id) + 'Stats:$.Success}'
-            new_parameter['criteriaData'] = [{"criteriaContext": {"operator": "Default", "resultValType": "expression", "resultVal": success_sum_query }}]
+                if len(tab_success_sum_query) > 0:
+                    tab_success_sum_query += '+'
+                tab_success_sum_query += '{Query' + str(tab_query_id) + 'Stats:$.Success}'
+                if len(wb_success_sum_query) > 0:
+                    wb_success_sum_query += '+'
+                wb_success_sum_query += '{Query' + str(tab_query_id) + 'Stats:$.Success}'
+            new_parameter['criteriaData'] = [{"criteriaContext": {"operator": "Default", "resultValType": "expression", "resultVal": tab_success_sum_query }}]
             new_parameter.pop('crossComponentResources', None)
             new_parameter.pop('resourceType', None)
             new_parameter.pop('query', None)
             new_parameter.pop('queryType', None)
             new_new_parameter = json.loads(json.dumps(new_parameter.copy()))
-            workbook['items'][tab_id]['content']['items'][tab_counter_index]['content']['parameters'].append(new_new_parameter)
+            if args.tab_counters:
+                workbook['items'][tab_id]['content']['items'][tab_counter_index]['content']['parameters'].append(new_new_parameter)
+            if args.counters:
+                workbook['items'][hidden_parameter_index]['content']['parameters'].append(new_new_parameter)
             # Add parameter for 'Section Total'
             new_parameter = block_invisible_parameter.copy()
             new_parameter['name'] = "Tab{0}Total".format(tab_dict[tab])
-            total_sum_query = ''
+            tab_total_sum_query = ''
             for tab_query_id in query_id_dictionary[tab]:
-                if len(total_sum_query) > 0:
-                    total_sum_query += '+'
-                total_sum_query += '{Query' + str(tab_query_id) + 'Stats:$.Total}'
-            new_parameter['criteriaData'] = [{"criteriaContext": {"operator": "Default", "resultValType": "expression", "resultVal": total_sum_query }}]
+                if len(tab_total_sum_query) > 0:
+                    tab_total_sum_query += '+'
+                tab_total_sum_query += '{Query' + str(tab_query_id) + 'Stats:$.Total}'
+                if len(wb_total_sum_query) > 0:
+                    wb_total_sum_query += '+'
+                wb_total_sum_query += '{Query' + str(tab_query_id) + 'Stats:$.Total}'
+            new_parameter['criteriaData'] = [{"criteriaContext": {"operator": "Default", "resultValType": "expression", "resultVal": tab_total_sum_query }}]
             new_parameter.pop('crossComponentResources', None)
             new_parameter.pop('resourceType', None)
             new_parameter.pop('query', None)
             new_parameter.pop('queryType', None)
             new_new_parameter = json.loads(json.dumps(new_parameter.copy()))
-            workbook['items'][tab_id]['content']['items'][tab_counter_index]['content']['parameters'].append(new_new_parameter)
+            if args.tab_counters:
+                workbook['items'][tab_id]['content']['items'][tab_counter_index]['content']['parameters'].append(new_new_parameter)
+            if args.counters:
+                workbook['items'][hidden_parameter_index]['content']['parameters'].append(new_new_parameter)
             # Add parameter for 'Section Percent'
             new_parameter = block_invisible_parameter.copy()
             new_parameter['name'] = "Tab{0}Percent".format(tab_dict[tab])
@@ -470,13 +505,56 @@ def generate_workbook(output_file, checklist_data):
             new_parameter.pop('query', None)
             new_parameter.pop('queryType', None)
             new_new_parameter = json.loads(json.dumps(new_parameter.copy()))
-            workbook['items'][tab_id]['content']['items'][tab_counter_index]['content']['parameters'].append(new_new_parameter)
+            if args.tab_counters:
+                workbook['items'][tab_id]['content']['items'][tab_counter_index]['content']['parameters'].append(new_new_parameter)
+            if args.counters:
+                workbook['items'][hidden_parameter_index]['content']['parameters'].append(new_new_parameter)
             # Adjust tile to use the percent parameter
-            tab_percent_tile_index = tab_item_index(workbook['items'][tab_id], 'TabPercentTile')
+            if args.tab_counters:
+                tab_percent_tile_index = tab_item_index(workbook['items'][tab_id], 'TabPercentTile')
+                if args.verbose:
+                    print("DEBUG: Adjusting tile (index in tab {3}) to use the percent parameter for Tab{0} {1} with index {2}...".format(tab_dict[tab], tab, tab_id, tab_percent_tile_index))
+                workbook['items'][tab_id]['content']['items'][tab_percent_tile_index]['content']['query'] = "{\"version\":\"1.0.0\",\"content\":\"{\\\"Column1\\\": \\\"{Tab" + str(tab_dict[tab]) + "Percent}\\\", \\\"Column2\\\": \\\"Percent of succesful checks\\\"}\",\"transformers\":null}"
+        # After going through the tabs, if we still need to add the total parameters to the workbook header:
+        if args.counters:
+            # Total
+            new_parameter = block_invisible_parameter.copy()
+            new_parameter['name'] = "WorkbookTotal"
+            new_parameter['criteriaData'] = [{"criteriaContext": {"operator": "Default", "resultValType": "expression", "resultVal": wb_total_sum_query }}]
+            new_parameter.pop('crossComponentResources', None)
+            new_parameter.pop('resourceType', None)
+            new_parameter.pop('query', None)
+            new_parameter.pop('queryType', None)
+            new_new_parameter = json.loads(json.dumps(new_parameter.copy()))
+            workbook['items'][hidden_parameter_index]['content']['parameters'].append(new_new_parameter)
+            # Success
+            new_parameter = block_invisible_parameter.copy()
+            new_parameter['name'] = "WorkbookSuccess"
+            new_parameter['criteriaData'] = [{"criteriaContext": {"operator": "Default", "resultValType": "expression", "resultVal": wb_success_sum_query }}]
+            new_parameter.pop('crossComponentResources', None)
+            new_parameter.pop('resourceType', None)
+            new_parameter.pop('query', None)
+            new_parameter.pop('queryType', None)
+            new_new_parameter = json.loads(json.dumps(new_parameter.copy()))
+            workbook['items'][hidden_parameter_index]['content']['parameters'].append(new_new_parameter)
+            # Percent
+            new_parameter = block_invisible_parameter.copy()
+            new_parameter['name'] = "WorkbookPercent"
+            new_parameter['criteriaData'] = [{"criteriaContext": {"operator": "Default", "resultValType": "expression", "resultVal": 'round(100*{WorkbookSuccess}/{WorkbookTotal})' }}]
+            new_parameter.pop('crossComponentResources', None)
+            new_parameter.pop('resourceType', None)
+            new_parameter.pop('query', None)
+            new_parameter.pop('queryType', None)
+            new_new_parameter = json.loads(json.dumps(new_parameter.copy()))
+            workbook['items'][hidden_parameter_index]['content']['parameters'].append(new_new_parameter)
+            # Configure the percentile index
+            wb_percent_tile_index = workbook_item_index(workbook, 'ProgressTile')
             if args.verbose:
-                print("DEBUG: Adjusting tile (index in tab {3}) to use the percent parameter for Tab{0} {1} with index {2}...".format(tab_dict[tab], tab, tab_id, tab_percent_tile_index))
-            workbook['items'][tab_id]['content']['items'][tab_percent_tile_index]['content']['query'] = "{\"version\":\"1.0.0\",\"content\":\"{\\\"Column1\\\": \\\"{Tab" + str(tab_dict[tab]) + "Percent}\\\", \\\"Column2\\\": \\\"Percent of succesful checks\\\"}\",\"transformers\":null}"
-
+                print("DEBUG: Adjusting tile (index in tab {0}) to use the percent parameters...".format(wb_percent_tile_index))
+            workbook['items'][wb_percent_tile_index]['content']['query'] = "{\"version\":\"1.0.0\",\"content\":\"{\\\"WorkbookPercent\\\": \\\"{WorkbookPercent}\\\", \\\"SubTitle\\\": \\\"Percent of successful checks\\\"}\",\"transformers\":null}"
+            workbook['items'][wb_percent_tile_index]['content']['queryType'] = 8
+            workbook['items'][wb_percent_tile_index]['content'].pop('crossComponentResources', None)
+            workbook['items'][wb_percent_tile_index]['content'].pop('resourceType', None)
     # Store the number of queries processed in its own variable (will be checked when deciding whether generating output or not)
     num_of_queries = query_id
     if num_of_queries != total_expected_queries:
@@ -484,8 +562,8 @@ def generate_workbook(output_file, checklist_data):
             print('WARNING: Something is not quite right, I was expecting to process {0} queries, but I found {1}'.format(str(total_expected_queries), str(num_of_queries)))
 
     # If generating workbook with detailed counters
-    if args.counters:
-
+    # Disabling this code for now, global counters to be added in previous block
+    if args.counters and False:
         # Add invisible parameters to the workbook with number of success and total items
         if args.verbose:
             print("DEBUG: Adding hidden parameters to workbook main section for {0} tabs...".format(str(len(queries))))
