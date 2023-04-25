@@ -282,7 +282,8 @@ while IFS= read -r graph_query; do
             if [[ -n "$result" ]]; then
                 # Extract the tab-separated fields (ID and compliant)
                 resource_id=$(echo $result | cut -f 1)
-                result_id=$(echo $result | cut -f 2)
+                result_id_temp=$(echo $result | cut -f 2)
+                result_id=${result_id_temp:0:1}
                 # Print output in color if format is text
                 if [[ "$format" == "text" ]]; then
                     if [[ "$result_id" == "1" ]]; then
