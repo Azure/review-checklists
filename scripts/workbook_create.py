@@ -348,6 +348,7 @@ def generate_workbook(output_file, checklist_data):
         guid = item.get("guid")
         tab = item.get(tab_name_field)
         text = item.get("text")
+
         description = item.get("description")
         severity = item.get("severity")
         link = item.get("link")
@@ -362,7 +363,7 @@ def generate_workbook(output_file, checklist_data):
                 # Create new text
                 new_text = block_text.copy()
                 new_text['name'] = 'querytext' + str(query_id)
-                new_text['content']['json'] = text
+                new_text['content']['json'] = text.strip(' ').strip('.')
                 if link:
                     new_text['content']['json'] += ". Check [this link](" + link + ") for further information."
                 if training:
