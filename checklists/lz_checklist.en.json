@@ -754,6 +754,26 @@
         },
         {
             "category": "Network Topology and Connectivity",
+            "subcategory": "Segmentation",
+            "text": "Use a /26 prefix for your Azure Firewall subnets.",
+            "waf": "Security",
+            "guid": "22d6419e-b627-4d95-9e7d-019fa759387f",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/firewall/firewall-faq#why-does-azure-firewall-need-a--26-subnet-size",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'AzureFirewallSubnet' | extend compliant = (subnetPrefixLength == 26) | distinct id, compliant"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Segmentation",
+            "text": "Use at least a /27 prefix for your Gateway subnets",
+            "waf": "Security",
+            "guid": "f2aad7e3-bb03-4adc-8606-4123d342a917",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/expressroute/expressroute-howto-add-gateway-resource-manager#add-a-gateway",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'GatewaySubnet' | extend compliant = (subnetPrefixLength <= 27) | distinct id, compliant"
+        },
+        {
+            "category": "Network Topology and Connectivity",
             "subcategory": "Hub and spoke",
             "text": "For network architectures with multiple hub-and-spoke topologies across Azure regions, use global virtual network peerings between the hub VNets to connect the regions to each other. ",
             "waf": "Performance",
@@ -1126,6 +1146,16 @@
         },
         {
             "category": "Network Topology and Connectivity",
+            "subcategory": "Internet",
+            "text": "For subnets in VNets not connected to Virtual WAN, attach a route table so that Internet traffic is redirected to Azure Firewall or a Network Virtual Appliance",
+            "waf": "Security",
+            "guid": "a3784907-9836-4271-aafc-93535f8ec08b",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/virtual-network/virtual-networks-udr-overview",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetId=tostring(subnets.id), subnetName=tostring(subnets.name),subnetRT=subnets.properties.routeTable.id | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend hasRT = isnotnull(subnetRT) | distinct id, hasRT, subnetId | join kind=fullouter (resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | extend isVWAN=(tolower(split(properties_virtualNetworkPeerings.name, '_')[0]) == 'remotevnettohubpeering') | mv-expand properties.subnets | project id, isVWAN, name, subnetId=tostring(properties_subnets.id), subnetName=tostring(properties_subnets.name) | summarize PeeredToVWAN=max(isVWAN) by id, subnetId | project id, subnetId, isVWANpeer = (PeeredToVWAN == true)) on subnetId | project id=iff(isnotempty(id), id, id1), subnetId=iff(isnotempty(subnetId), subnetId, subnetId1), hasRT, isVWANpeer | extend compliant = (hasRT==true or isVWANpeer==true) | distinct id, subnetId, compliant"
+        },
+        {
+            "category": "Network Topology and Connectivity",
             "subcategory": "PaaS",
             "text": "Ensure that control-plane communication for Azure PaaS services injected into a virtual network is not broken, for example with a 0.0.0.0/0 route or an NSG rule that blocks control plane traffic.",
             "waf": "Security",
@@ -1257,16 +1287,6 @@
         {
             "category": "Network Topology and Connectivity",
             "subcategory": "Virtual WAN",
-            "text": "Connect Virtual WAN hubs to on-premises datacenters by using ExpressRoute",
-            "waf": "Performance",
-            "guid": "65a917e1-f348-4ef2-94c2-7d42e8bbac75",
-            "severity": "Low",
-            "training": "https://learn.microsoft.com/learn/modules/configure-expressroute-virtual-wan/",
-            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about"
-        },
-        {
-            "category": "Network Topology and Connectivity",
-            "subcategory": "Virtual WAN",
             "text": "Follow the principle 'traffic in Azure stays in Azure' so that communication across resources in Azure occurs via the Microsoft backbone network",
             "waf": "Performance",
             "guid": "8ac6a9e0-1e6a-483d-b5de-32c199248160",
@@ -1276,21 +1296,13 @@
         {
             "category": "Network Topology and Connectivity",
             "subcategory": "Virtual WAN",
-            "text": "For outbound Internet traffic protection and filtering, deploy Azure Firewall",
+            "text": "For outbound Internet traffic protection and filtering, deploy Azure Firewall in secured hubs",
             "waf": "Security",
             "guid": "7d5d1e4e-6146-458d-9558-fd77249b8211",
             "severity": "Medium",
             "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
-            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about"
-        },
-        {
-            "category": "Network Topology and Connectivity",
-            "subcategory": "Virtual WAN",
-            "text": "When deploying partner networking technologies and NVAs in VWAN, verify configuration with partner vendor's guidance to ensure there are no conflicting configurations",
-            "waf": "Reliability",
-            "guid": "12df27ee-412e-47f9-a3f6-304722dd69c5",
-            "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about"
+            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about",
+            "graph": "resources | where type=='microsoft.network/virtualhubs' | extend compliant = isnotnull(properties.azureFirewall.id) | project id, compliant"
         },
         {
             "category": "Network Topology and Connectivity",
@@ -1309,6 +1321,42 @@
             "guid": "261623a7-65a9-417e-8f34-8ef254c27d42",
             "severity": "Medium",
             "link": "https://learn.microsoft.com/azure/virtual-wan/azure-monitor-insights"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Virtual WAN",
+            "text": "Make sure that your IaC deployments does not disable branch-to-branch traffic in Virtual WAN, unless these flows should be explicitly blocked.",
+            "waf": "Reliability",
+            "guid": "727c77e1-b9aa-4a37-a024-129d042422c1",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-faq#is-branch-to-branch-connectivity-allowed-in-virtual-wan"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Virtual WAN",
+            "text": "Use AS-Path as hub routing preference, since it is more flexible than ExpressRoute or VPN.",
+            "waf": "Reliability",
+            "guid": "d49ac006-6670-4bc9-9948-d3e0a3a94f4d",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/virtual-wan/about-virtual-hub-routing-preference"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Virtual WAN",
+            "text": "Make sure that your IaC deployments are configuring label-based propagation in Virtual WAN, otherwise connectivity between virtual hubs will be impaired.",
+            "waf": "Reliability",
+            "guid": "2586b854-237e-47f1-84a1-d45d4cd2310d",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/virtual-wan/about-virtual-hub-routing#labels"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Virtual WAN",
+            "text": "Assign enough IP space to virtual hubs, ideally a /23 prefix.",
+            "waf": "Reliability",
+            "guid": "9c75dfef-573c-461c-a698-68598595581a",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-faq#what-is-the-recommended-hub-address-space-during-hub-creation"
         },
         {
             "category": "Network Topology and Connectivity ",
