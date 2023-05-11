@@ -595,6 +595,17 @@
         },
         {
             "category": "네트워크 토폴로지 및 연결",
+            "graph": "resources | where type=='microsoft.network/applicationgateways' | extend subnetId = tostring(properties.gatewayIPConfigurations[0].properties.subnet.id) | project id, subnetId | join (resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetId = tostring(subnets.id), subnetPrefixLength = split(subnets.properties.addressPrefix, '/')[1]) on subnetId | extend compliant = (subnetPrefixLength <= 26) | distinct id,compliant",
+            "guid": "dfc50f87-3800-424c-937b-ed5f186e7c15",
+            "link": "https://learn.microsoft.com/azure/application-gateway/configuration-infrastructure#size-of-the-subnet",
+            "severity": "보통",
+            "subcategory": "앱 제공",
+            "text": "응용 프로그램 게이트웨이는 IP 접두사가 /26보다 크거나 같은 서브넷에 배포해야 합니다",
+            "training": "https://learn.microsoft.com/learn/paths/secure-application-delivery/",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결",
             "description": "일반적으로 역방향 프록시 및 특히 WAF의 관리는 네트워킹보다 애플리케이션에 더 가깝기 때문에 앱과 동일한 구독에 속합니다. 연결 구독에서 Application Gateway 및 WAF를 중앙 집중화하는 것은 단일 팀에서 관리하는 경우 괜찮을 수 있습니다.",
             "guid": "48b662d6-d15f-4512-a654-98f6dfe237de",
             "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/ag-overview",
@@ -721,6 +732,16 @@
         },
         {
             "category": "네트워크 토폴로지 및 연결",
+            "graph": "resources | where type=='microsoft.network/loadbalancers' | mvexpand properties.outboundRules | summarize countOutRules=count() by id | join kind=rightouter (resources | where type=='microsoft.network/loadbalancers' | project id) on id | project id=id1, compliant = isnull(countOutRules)",
+            "guid": "97a2fd46-64b0-1dfa-b72d-9c8869496d75",
+            "link": "https://learn.microsoft.com/azure/nat-gateway/nat-overview#outbound-connectivity",
+            "severity": "높다",
+            "subcategory": "앱 제공",
+            "text": "SNAT 확장성 향상을 위해 Load Balancer 아웃바운드 규칙 대신 Azure NAT Gateway 사용Use Azure NAT Gateway instead of Load Balancer outbound rules for better SNAT scalability",
+            "waf": "신뢰도"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결",
             "guid": "de0d5973-cd4c-4d21-a088-137f5e6c4cfd",
             "link": "https://learn.microsoft.com/azure/virtual-network/network-security-group-how-it-works",
             "severity": "보통",
@@ -773,6 +794,16 @@
             "severity": "낮다",
             "subcategory": "허브 및 스포크",
             "text": "허브 및 스포크 시나리오에서 ExpressRoute와 VPN 게이트웨이 간에 전송해야 하는 경우 Azure Route Server를 사용합니다.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'RouteServerSubnet' | extend compliant = (subnetPrefixLength <= 27) | distinct id, compliant",
+            "guid": "91b9d7d5-91e1-4dcb-8f1f-fa7e465646cc",
+            "link": "https://learn.microsoft.com/azure/route-server/quickstart-configure-route-server-portal#create-a-route-server-1",
+            "severity": "낮다",
+            "subcategory": "허브 및 스포크",
+            "text": "Route Server를 사용하는 경우 Route Server 서브넷에 /27 접두사를 사용합니다.",
             "waf": "안전"
         },
         {
@@ -949,12 +980,12 @@
         },
         {
             "category": "네트워크 토폴로지 및 연결",
-            "guid": "ee1ac551-c4d5-46cf-b035-d0a3c50d87ad",
-            "link": "https://learn.microsoft.com/azure/bastion/bastion-overview",
-            "severity": "보통",
+            "guid": "2df4930f-6a43-49a3-926b-309f02c302f0",
+            "link": "https://learn.microsoft.com/azure/architecture/reference-architectures/identity/adds-extend-domain#vm-recommendations",
+            "severity": "높다",
             "subcategory": "잡종",
-            "text": "Azure Bastion을 사용하여 네트워크에 안전하게 연결하는 것이 좋습니다.",
-            "waf": "안전"
+            "text": "AD DS를 실행하는 VM을 두 개 이상 도메인 컨트롤러로 배포하는 경우 다른 가용성 영역에 추가합니다. 지역에서 사용할 수 없는 경우 가용성 집합에 배포합니다.",
+            "waf": "신뢰도"
         },
         {
             "category": "네트워크 토폴로지 및 연결",
@@ -1036,6 +1067,25 @@
             "text": "Azure DNS에 대한 자동 등록을 사용하도록 설정하여 가상 네트워크 내에 배포된 가상 머신에 대한 DNS 레코드의 수명 주기를 자동으로 관리합니다.",
             "training": "https://learn.microsoft.com/learn/paths/az-104-manage-virtual-networks/",
             "waf": "작업"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결",
+            "guid": "ee1ac551-c4d5-46cf-b035-d0a3c50d87ad",
+            "link": "https://learn.microsoft.com/azure/bastion/bastion-overview",
+            "severity": "보통",
+            "subcategory": "인터넷",
+            "text": "Azure Bastion을 사용하여 네트워크에 안전하게 연결하는 것이 좋습니다.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'AzureBastionSubnet' | extend compliant = (subnetPrefixLength <= 26) | distinct id, compliant",
+            "guid": "6eab9eb6-762b-485e-8ea8-15aa5dba0bd0",
+            "link": "https://learn.microsoft.com/en-us/azure/bastion/bastion-faq#subnet",
+            "severity": "보통",
+            "subcategory": "인터넷",
+            "text": "서브넷 /26 이상에서 Azure Bastion을 사용합니다.",
+            "waf": "안전"
         },
         {
             "category": "네트워크 토폴로지 및 연결",
@@ -1149,6 +1199,16 @@
         },
         {
             "category": "네트워크 토폴로지 및 연결",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetId=tostring(subnets.id), subnetName=tostring(subnets.name),subnetRT=subnets.properties.routeTable.id | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend hasRT = isnotnull(subnetRT) | distinct id, hasRT, subnetId | join kind=fullouter (resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | extend isVWAN=(tolower(split(properties_virtualNetworkPeerings.name, '_')[0]) == 'remotevnettohubpeering') | mv-expand properties.subnets | project id, isVWAN, name, subnetId=tostring(properties_subnets.id), subnetName=tostring(properties_subnets.name) | summarize PeeredToVWAN=max(isVWAN) by id, subnetId | project id, subnetId, isVWANpeer = (PeeredToVWAN == true)) on subnetId | project id=iff(isnotempty(id), id, id1), subnetId=iff(isnotempty(subnetId), subnetId, subnetId1), hasRT, isVWANpeer | extend compliant = (hasRT==true or isVWANpeer==true) | distinct id, subnetId, compliant",
+            "guid": "a3784907-9836-4271-aafc-93535f8ec08b",
+            "link": "https://learn.microsoft.com/azure/virtual-network/virtual-networks-udr-overview",
+            "severity": "높다",
+            "subcategory": "인터넷",
+            "text": "VNet의 서브넷이 Virtual WAN에 연결되지 않은 경우 인터넷 트래픽이 Azure Firewall 또는 네트워크 가상 어플라이언스로 리디렉션되도록 경로 테이블을 연결합니다",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결",
             "guid": "d301d6e8-72e5-42e3-911c-c58b5a4b1511",
             "link": "https://learn.microsoft.com/azure/virtual-network/vnet-integration-for-azure-services",
             "severity": "높다",
@@ -1196,6 +1256,26 @@
             "subcategory": "파스 보안",
             "text": "가상 네트워크 서비스 엔드포인트를 사용하는 경우 NVA에서 송신 FQDN을 필터링하여 데이터 반출을 방지합니다.",
             "training": "https://learn.microsoft.com/learn/paths/implement-network-security/?source=learn",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'AzureFirewallSubnet' | extend compliant = (subnetPrefixLength == 26) | distinct id, compliant",
+            "guid": "22d6419e-b627-4d95-9e7d-019fa759387f",
+            "link": "https://learn.microsoft.com/azure/firewall/firewall-faq#why-does-azure-firewall-need-a--26-subnet-size",
+            "severity": "높다",
+            "subcategory": "세분화",
+            "text": "Azure Firewall 서브넷에 /26 접두사를 사용합니다.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'GatewaySubnet' | extend compliant = (subnetPrefixLength <= 27) | distinct id, compliant",
+            "guid": "f2aad7e3-bb03-4adc-8606-4123d342a917",
+            "link": "https://learn.microsoft.com/azure/expressroute/expressroute-howto-add-gateway-resource-manager#add-a-gateway",
+            "severity": "높다",
+            "subcategory": "세분화",
+            "text": "게이트웨이 서브넷에 대해 최소 /27 접두사 사용Use at least a /27 prefix for your Gateway subnets",
             "waf": "안전"
         },
         {
@@ -1279,16 +1359,6 @@
         },
         {
             "category": "네트워크 토폴로지 및 연결",
-            "guid": "65a917e1-f348-4ef2-94c2-7d42e8bbac75",
-            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about",
-            "severity": "낮다",
-            "subcategory": "가상 WAN",
-            "text": "ExpressRoute를 사용하여 온-프레미스 데이터 센터에 Virtual WAN 허브 연결Connect Virtual WAN hubs to on-premises datacenters by using ExpressRoute",
-            "training": "https://learn.microsoft.com/learn/modules/configure-expressroute-virtual-wan/",
-            "waf": "공연"
-        },
-        {
-            "category": "네트워크 토폴로지 및 연결",
             "guid": "8ac6a9e0-1e6a-483d-b5de-32c199248160",
             "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about",
             "severity": "낮다",
@@ -1298,22 +1368,14 @@
         },
         {
             "category": "네트워크 토폴로지 및 연결",
+            "graph": "resources | where type=='microsoft.network/virtualhubs' | extend compliant = isnotnull(properties.azureFirewall.id) | project id, compliant",
             "guid": "7d5d1e4e-6146-458d-9558-fd77249b8211",
             "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about",
             "severity": "보통",
             "subcategory": "가상 WAN",
-            "text": "아웃바운드 인터넷 트래픽 보호 및 필터링의 경우 Azure Firewall을 배포합니다",
+            "text": "아웃바운드 인터넷 트래픽 보호 및 필터링의 경우 보안 허브에 Azure Firewall을 배포합니다",
             "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
             "waf": "안전"
-        },
-        {
-            "category": "네트워크 토폴로지 및 연결",
-            "guid": "12df27ee-412e-47f9-a3f6-304722dd69c5",
-            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about",
-            "severity": "보통",
-            "subcategory": "가상 WAN",
-            "text": "VWAN에 파트너 네트워킹 기술 및 NVA를 배포할 때 파트너 공급업체의 지침에 따라 구성을 확인하여 충돌하는 구성이 없는지 확인합니다",
-            "waf": "신뢰도"
         },
         {
             "category": "네트워크 토폴로지 및 연결",
@@ -1334,12 +1396,39 @@
             "waf": "작업"
         },
         {
-            "category": "네트워크 토폴로지 및 연결 ",
-            "guid": "2df4930f-6a43-49a3-926b-309f02c302f0",
-            "link": "https://learn.microsoft.com/azure/architecture/reference-architectures/identity/adds-extend-domain#vm-recommendations",
+            "category": "네트워크 토폴로지 및 연결",
+            "guid": "727c77e1-b9aa-4a37-a024-129d042422c1",
+            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-faq#is-branch-to-branch-connectivity-allowed-in-virtual-wan",
+            "severity": "보통",
+            "subcategory": "가상 WAN",
+            "text": "이러한 흐름을 명시적으로 차단해야 하는 경우가 아니면 IaC 배포가 Virtual WAN에서 분기 간 트래픽을 사용하지 않도록 설정하지 않는지 확인합니다.",
+            "waf": "신뢰도"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결",
+            "guid": "d49ac006-6670-4bc9-9948-d3e0a3a94f4d",
+            "link": "https://learn.microsoft.com/azure/virtual-wan/about-virtual-hub-routing-preference",
+            "severity": "보통",
+            "subcategory": "가상 WAN",
+            "text": "AS-Path는 ExpressRoute 또는 VPN보다 유연하므로 허브 라우팅 기본 설정으로 사용합니다.",
+            "waf": "신뢰도"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결",
+            "guid": "2586b854-237e-47f1-84a1-d45d4cd2310d",
+            "link": "https://learn.microsoft.com/azure/virtual-wan/about-virtual-hub-routing#labels",
+            "severity": "보통",
+            "subcategory": "가상 WAN",
+            "text": "IaC 배포가 Virtual WAN에서 레이블 기반 전파를 구성하고 있는지 확인하고, 그렇지 않으면 가상 허브 간의 연결이 손상됩니다.",
+            "waf": "신뢰도"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결",
+            "guid": "9c75dfef-573c-461c-a698-68598595581a",
+            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-faq#what-is-the-recommended-hub-address-space-during-hub-creation",
             "severity": "높다",
-            "subcategory": "잡종",
-            "text": "AD DS를 실행하는 VM을 두 개 이상 도메인 컨트롤러로 배포하는 경우 다른 가용성 영역에 추가합니다. 지역에서 사용할 수 없는 경우 가용성 집합에 배포합니다.",
+            "subcategory": "가상 WAN",
+            "text": "가상 허브에 충분한 IP 공간(이상적으로는 /23 접두사)을 할당합니다.",
             "waf": "신뢰도"
         },
         {
@@ -1799,7 +1888,7 @@
     "metadata": {
         "name": "Azure Landing Zone Review",
         "state": "GA",
-        "timestamp": "April 19, 2023"
+        "timestamp": "May 11, 2023"
     },
     "severities": [
         {
