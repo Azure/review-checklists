@@ -709,6 +709,16 @@
         },
         {
             "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery",
+            "text": "Use Azure NAT Gateway instead of Load Balancer outbound rules for better SNAT scalability",
+            "waf": "Reliability",
+            "guid": "97a2fd46-64b0-1dfa-b72d-9c8869496d75",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/nat-gateway/nat-overview#outbound-connectivity",
+            "graph": "resources | where type=='microsoft.network/loadbalancers' | mvexpand properties.outboundRules | summarize countOutRules=count() by id | join kind=rightouter (resources | where type=='microsoft.network/loadbalancers' | project id) on id | project id=id1, compliant = isnull(countOutRules)"
+        },
+        {
+            "category": "Network Topology and Connectivity",
             "subcategory": "Encryption",
             "text": "When you're using ExpressRoute Direct, configure MACsec in order to encrypt traffic at the layer-two level between the organization's routers and MSEE. The diagram shows this encryption in flow.",
             "waf": "Security",
@@ -772,26 +782,6 @@
             "severity": "Low",
             "link": "https://learn.microsoft.com/azure/route-server/quickstart-configure-route-server-portal#create-a-route-server-1",
             "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'RouteServerSubnet' | extend compliant = (subnetPrefixLength <= 27) | distinct id, compliant"
-        },
-        {
-            "category": "Network Topology and Connectivity",
-            "subcategory": "Segmentation",
-            "text": "Use a /26 prefix for your Azure Firewall subnets.",
-            "waf": "Security",
-            "guid": "22d6419e-b627-4d95-9e7d-019fa759387f",
-            "severity": "High",
-            "link": "https://learn.microsoft.com/azure/firewall/firewall-faq#why-does-azure-firewall-need-a--26-subnet-size",
-            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'AzureFirewallSubnet' | extend compliant = (subnetPrefixLength == 26) | distinct id, compliant"
-        },
-        {
-            "category": "Network Topology and Connectivity",
-            "subcategory": "Segmentation",
-            "text": "Use at least a /27 prefix for your Gateway subnets",
-            "waf": "Security",
-            "guid": "f2aad7e3-bb03-4adc-8606-4123d342a917",
-            "severity": "High",
-            "link": "https://learn.microsoft.com/azure/expressroute/expressroute-howto-add-gateway-resource-manager#add-a-gateway",
-            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'GatewaySubnet' | extend compliant = (subnetPrefixLength <= 27) | distinct id, compliant"
         },
         {
             "category": "Network Topology and Connectivity",
@@ -967,22 +957,12 @@
         },
         {
             "category": "Network Topology and Connectivity",
-            "subcategory": "Internet",
-            "text": "Consider using Azure Bastion to securely connect to your network.",
-            "waf": "Security",
-            "guid": "ee1ac551-c4d5-46cf-b035-d0a3c50d87ad",
-            "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/bastion/bastion-overview"
-        },
-        {
-            "category": "Network Topology and Connectivity",
-            "subcategory": "Internet",
-            "text": "Use Azure Bastion in a subnet /26 or larger.",
-            "waf": "Security",
-            "guid": "6eab9eb6-762b-485e-8ea8-15aa5dba0bd0",
-            "severity": "Medium",
-            "link": "https://learn.microsoft.com/en-us/azure/bastion/bastion-faq#subnet",
-            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'AzureBastionSubnet' | extend compliant = (subnetPrefixLength <= 26) | distinct id, compliant"
+            "subcategory": "Hybrid",
+            "text": "If you are deploying at least two VMs running AD DS as domain controllers, add them to different Availability Zones. If not available in the region, deploy in an Availability Set.",
+            "waf": "Reliability",
+            "guid": "2df4930f-6a43-49a3-926b-309f02c302f0",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/architecture/reference-architectures/identity/adds-extend-domain#vm-recommendations"
         },
         {
             "category": "Network Topology and Connectivity",
@@ -1064,6 +1044,25 @@
             "severity": "High",
             "training": "https://learn.microsoft.com/learn/paths/az-104-manage-virtual-networks/",
             "link": "https://learn.microsoft.com/azure/dns/private-dns-autoregistration"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Internet",
+            "text": "Consider using Azure Bastion to securely connect to your network.",
+            "waf": "Security",
+            "guid": "ee1ac551-c4d5-46cf-b035-d0a3c50d87ad",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/bastion/bastion-overview"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Internet",
+            "text": "Use Azure Bastion in a subnet /26 or larger.",
+            "waf": "Security",
+            "guid": "6eab9eb6-762b-485e-8ea8-15aa5dba0bd0",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/en-us/azure/bastion/bastion-faq#subnet",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'AzureBastionSubnet' | extend compliant = (subnetPrefixLength <= 26) | distinct id, compliant"
         },
         {
             "category": "Network Topology and Connectivity",
@@ -1239,6 +1238,26 @@
         {
             "category": "Network Topology and Connectivity",
             "subcategory": "Segmentation",
+            "text": "Use a /26 prefix for your Azure Firewall subnets.",
+            "waf": "Security",
+            "guid": "22d6419e-b627-4d95-9e7d-019fa759387f",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/firewall/firewall-faq#why-does-azure-firewall-need-a--26-subnet-size",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'AzureFirewallSubnet' | extend compliant = (subnetPrefixLength == 26) | distinct id, compliant"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Segmentation",
+            "text": "Use at least a /27 prefix for your Gateway subnets",
+            "waf": "Security",
+            "guid": "f2aad7e3-bb03-4adc-8606-4123d342a917",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/expressroute/expressroute-howto-add-gateway-resource-manager#add-a-gateway",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'GatewaySubnet' | extend compliant = (subnetPrefixLength <= 27) | distinct id, compliant"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Segmentation",
             "text": "Don't rely on the NSG inbound default rules using the VirtualNetwork service tag to limit connectivity.",
             "waf": "Security",
             "guid": "11deb39d-8299-4e47-bbe0-0fb5a36318a8",
@@ -1388,25 +1407,6 @@
             "guid": "9c75dfef-573c-461c-a698-68598595581a",
             "severity": "High",
             "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-faq#what-is-the-recommended-hub-address-space-during-hub-creation"
-        },
-        {
-            "category": "Network Topology and Connectivity",
-            "subcategory": "Hybrid",
-            "text": "If you are deploying at least two VMs running AD DS as domain controllers, add them to different Availability Zones. If not available in the region, deploy in an Availability Set.",
-            "waf": "Reliability",
-            "guid": "2df4930f-6a43-49a3-926b-309f02c302f0",
-            "severity": "High",
-            "link": "https://learn.microsoft.com/azure/architecture/reference-architectures/identity/adds-extend-domain#vm-recommendations"
-        },
-        {
-            "category": "Network Topology and Connectivity",
-            "subcategory": "App delivery",
-            "text": "Use Azure NAT Gateway instead of Load Balancer outbound rules for better SNAT scalability",
-            "waf": "Reliability",
-            "guid": "97a2fd46-64b0-1dfa-b72d-9c8869496d75",
-            "severity": "High",
-            "link": "https://learn.microsoft.com/azure/nat-gateway/nat-overview#outbound-connectivity",
-            "graph": "resources | where type=='microsoft.network/loadbalancers' | mvexpand properties.outboundRules | summarize countOutRules=count() by id | join kind=rightouter (resources | where type=='microsoft.network/loadbalancers' | project id) on id | project id=id1, compliant = isnull(countOutRules)"
         },
         {
             "category": "Operations",
@@ -1938,6 +1938,6 @@
     "metadata": {
         "name": "Azure Landing Zone Review",
         "state": "GA",
-        "timestamp": "April 19, 2023"
+        "timestamp": "May 11, 2023"
     }
 }

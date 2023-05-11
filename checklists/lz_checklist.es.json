@@ -595,6 +595,17 @@
         },
         {
             "category": "Topología y conectividad de red",
+            "graph": "resources | where type=='microsoft.network/applicationgateways' | extend subnetId = tostring(properties.gatewayIPConfigurations[0].properties.subnet.id) | project id, subnetId | join (resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetId = tostring(subnets.id), subnetPrefixLength = split(subnets.properties.addressPrefix, '/')[1]) on subnetId | extend compliant = (subnetPrefixLength <= 26) | distinct id,compliant",
+            "guid": "dfc50f87-3800-424c-937b-ed5f186e7c15",
+            "link": "https://learn.microsoft.com/azure/application-gateway/configuration-infrastructure#size-of-the-subnet",
+            "severity": "Medio",
+            "subcategory": "Entrega de aplicaciones",
+            "text": "Las puertas de enlace de aplicaciones deben implementarse en subredes con prefijos IP iguales o mayores que /26",
+            "training": "https://learn.microsoft.com/learn/paths/secure-application-delivery/",
+            "waf": "Seguridad"
+        },
+        {
+            "category": "Topología y conectividad de red",
             "description": "La administración de proxies inversos en general y WAF en particular está más cerca de la aplicación que de la red, por lo que pertenecen a la misma suscripción que la aplicación. La centralización de Application Gateway y WAF en la suscripción de conectividad podría estar bien si está administrada por un solo equipo.",
             "guid": "48b662d6-d15f-4512-a654-98f6dfe237de",
             "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/ag-overview",
@@ -721,6 +732,16 @@
         },
         {
             "category": "Topología y conectividad de red",
+            "graph": "resources | where type=='microsoft.network/loadbalancers' | mvexpand properties.outboundRules | summarize countOutRules=count() by id | join kind=rightouter (resources | where type=='microsoft.network/loadbalancers' | project id) on id | project id=id1, compliant = isnull(countOutRules)",
+            "guid": "97a2fd46-64b0-1dfa-b72d-9c8869496d75",
+            "link": "https://learn.microsoft.com/azure/nat-gateway/nat-overview#outbound-connectivity",
+            "severity": "Alto",
+            "subcategory": "Entrega de aplicaciones",
+            "text": "Use Azure NAT Gateway en lugar de reglas de salida del equilibrador de carga para una mejor escalabilidad de SNAT",
+            "waf": "Fiabilidad"
+        },
+        {
+            "category": "Topología y conectividad de red",
             "guid": "de0d5973-cd4c-4d21-a088-137f5e6c4cfd",
             "link": "https://learn.microsoft.com/azure/virtual-network/network-security-group-how-it-works",
             "severity": "Medio",
@@ -773,6 +794,16 @@
             "severity": "Bajo",
             "subcategory": "Hub and spoke",
             "text": "Si necesita tránsito entre ExpressRoute y puertas de enlace VPN en escenarios radiales, use Azure Route Server.",
+            "waf": "Seguridad"
+        },
+        {
+            "category": "Topología y conectividad de red",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'RouteServerSubnet' | extend compliant = (subnetPrefixLength <= 27) | distinct id, compliant",
+            "guid": "91b9d7d5-91e1-4dcb-8f1f-fa7e465646cc",
+            "link": "https://learn.microsoft.com/azure/route-server/quickstart-configure-route-server-portal#create-a-route-server-1",
+            "severity": "Bajo",
+            "subcategory": "Hub and spoke",
+            "text": "Si utiliza Route Server, utilice un prefijo /27 para la subred de Route Server.",
             "waf": "Seguridad"
         },
         {
@@ -949,12 +980,12 @@
         },
         {
             "category": "Topología y conectividad de red",
-            "guid": "ee1ac551-c4d5-46cf-b035-d0a3c50d87ad",
-            "link": "https://learn.microsoft.com/azure/bastion/bastion-overview",
-            "severity": "Medio",
+            "guid": "2df4930f-6a43-49a3-926b-309f02c302f0",
+            "link": "https://learn.microsoft.com/azure/architecture/reference-architectures/identity/adds-extend-domain#vm-recommendations",
+            "severity": "Alto",
             "subcategory": "Híbrido",
-            "text": "Considere la posibilidad de usar Azure Bastion para conectarse de forma segura a la red.",
-            "waf": "Seguridad"
+            "text": "Si va a implementar al menos dos máquinas virtuales que ejecutan AD DS como controladores de dominio, agréguelas a diferentes zonas de disponibilidad. Si no está disponible en la región, implemente en un conjunto de disponibilidad.",
+            "waf": "Fiabilidad"
         },
         {
             "category": "Topología y conectividad de red",
@@ -1036,6 +1067,25 @@
             "text": "Habilite el registro automático de DNS de Azure para administrar automáticamente el ciclo de vida de los registros DNS de las máquinas virtuales implementadas en una red virtual.",
             "training": "https://learn.microsoft.com/learn/paths/az-104-manage-virtual-networks/",
             "waf": "Operaciones"
+        },
+        {
+            "category": "Topología y conectividad de red",
+            "guid": "ee1ac551-c4d5-46cf-b035-d0a3c50d87ad",
+            "link": "https://learn.microsoft.com/azure/bastion/bastion-overview",
+            "severity": "Medio",
+            "subcategory": "Internet",
+            "text": "Considere la posibilidad de usar Azure Bastion para conectarse de forma segura a la red.",
+            "waf": "Seguridad"
+        },
+        {
+            "category": "Topología y conectividad de red",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'AzureBastionSubnet' | extend compliant = (subnetPrefixLength <= 26) | distinct id, compliant",
+            "guid": "6eab9eb6-762b-485e-8ea8-15aa5dba0bd0",
+            "link": "https://learn.microsoft.com/en-us/azure/bastion/bastion-faq#subnet",
+            "severity": "Medio",
+            "subcategory": "Internet",
+            "text": "Use Azure Bastion en una subred /26 o superior.",
+            "waf": "Seguridad"
         },
         {
             "category": "Topología y conectividad de red",
@@ -1149,6 +1199,16 @@
         },
         {
             "category": "Topología y conectividad de red",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetId=tostring(subnets.id), subnetName=tostring(subnets.name),subnetRT=subnets.properties.routeTable.id | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend hasRT = isnotnull(subnetRT) | distinct id, hasRT, subnetId | join kind=fullouter (resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | extend isVWAN=(tolower(split(properties_virtualNetworkPeerings.name, '_')[0]) == 'remotevnettohubpeering') | mv-expand properties.subnets | project id, isVWAN, name, subnetId=tostring(properties_subnets.id), subnetName=tostring(properties_subnets.name) | summarize PeeredToVWAN=max(isVWAN) by id, subnetId | project id, subnetId, isVWANpeer = (PeeredToVWAN == true)) on subnetId | project id=iff(isnotempty(id), id, id1), subnetId=iff(isnotempty(subnetId), subnetId, subnetId1), hasRT, isVWANpeer | extend compliant = (hasRT==true or isVWANpeer==true) | distinct id, subnetId, compliant",
+            "guid": "a3784907-9836-4271-aafc-93535f8ec08b",
+            "link": "https://learn.microsoft.com/azure/virtual-network/virtual-networks-udr-overview",
+            "severity": "Alto",
+            "subcategory": "Internet",
+            "text": "Para las subredes de redes virtuales no conectadas a Virtual WAN, adjunte una tabla de ruteo para que el tráfico de Internet se redirija a Azure Firewall o a un dispositivo virtual de red",
+            "waf": "Seguridad"
+        },
+        {
+            "category": "Topología y conectividad de red",
             "guid": "d301d6e8-72e5-42e3-911c-c58b5a4b1511",
             "link": "https://learn.microsoft.com/azure/virtual-network/vnet-integration-for-azure-services",
             "severity": "Alto",
@@ -1196,6 +1256,26 @@
             "subcategory": "Paas",
             "text": "Si usa extremos de servicio de red virtual, filtre los FQDN de salida en un NVA para evitar la exfiltración de datos.",
             "training": "https://learn.microsoft.com/learn/paths/implement-network-security/?source=learn",
+            "waf": "Seguridad"
+        },
+        {
+            "category": "Topología y conectividad de red",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'AzureFirewallSubnet' | extend compliant = (subnetPrefixLength == 26) | distinct id, compliant",
+            "guid": "22d6419e-b627-4d95-9e7d-019fa759387f",
+            "link": "https://learn.microsoft.com/azure/firewall/firewall-faq#why-does-azure-firewall-need-a--26-subnet-size",
+            "severity": "Alto",
+            "subcategory": "Segmentación",
+            "text": "Use un prefijo /26 para las subredes de Azure Firewall.",
+            "waf": "Seguridad"
+        },
+        {
+            "category": "Topología y conectividad de red",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'GatewaySubnet' | extend compliant = (subnetPrefixLength <= 27) | distinct id, compliant",
+            "guid": "f2aad7e3-bb03-4adc-8606-4123d342a917",
+            "link": "https://learn.microsoft.com/azure/expressroute/expressroute-howto-add-gateway-resource-manager#add-a-gateway",
+            "severity": "Alto",
+            "subcategory": "Segmentación",
+            "text": "Usar al menos un prefijo /27 para las subredes de puerta de enlace",
             "waf": "Seguridad"
         },
         {
@@ -1279,16 +1359,6 @@
         },
         {
             "category": "Topología y conectividad de red",
-            "guid": "65a917e1-f348-4ef2-94c2-7d42e8bbac75",
-            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about",
-            "severity": "Bajo",
-            "subcategory": "Virtual WAN",
-            "text": "Conexión de concentradores de Virtual WAN a centros de datos locales mediante ExpressRoute",
-            "training": "https://learn.microsoft.com/learn/modules/configure-expressroute-virtual-wan/",
-            "waf": "Rendimiento"
-        },
-        {
-            "category": "Topología y conectividad de red",
             "guid": "8ac6a9e0-1e6a-483d-b5de-32c199248160",
             "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about",
             "severity": "Bajo",
@@ -1298,22 +1368,14 @@
         },
         {
             "category": "Topología y conectividad de red",
+            "graph": "resources | where type=='microsoft.network/virtualhubs' | extend compliant = isnotnull(properties.azureFirewall.id) | project id, compliant",
             "guid": "7d5d1e4e-6146-458d-9558-fd77249b8211",
             "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about",
             "severity": "Medio",
             "subcategory": "Virtual WAN",
-            "text": "Para la protección y el filtrado del tráfico saliente de Internet, implemente Azure Firewall",
+            "text": "Para la protección y el filtrado del tráfico saliente de Internet, implemente Azure Firewall en centros seguros",
             "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
             "waf": "Seguridad"
-        },
-        {
-            "category": "Topología y conectividad de red",
-            "guid": "12df27ee-412e-47f9-a3f6-304722dd69c5",
-            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about",
-            "severity": "Medio",
-            "subcategory": "Virtual WAN",
-            "text": "Al implementar tecnologías de red de socios y NVA en VWAN, verifique la configuración con la guía del proveedor del socio para asegurarse de que no haya configuraciones conflictivas",
-            "waf": "Fiabilidad"
         },
         {
             "category": "Topología y conectividad de red",
@@ -1334,12 +1396,39 @@
             "waf": "Operaciones"
         },
         {
-            "category": "Topología y conectividad de red ",
-            "guid": "2df4930f-6a43-49a3-926b-309f02c302f0",
-            "link": "https://learn.microsoft.com/azure/architecture/reference-architectures/identity/adds-extend-domain#vm-recommendations",
+            "category": "Topología y conectividad de red",
+            "guid": "727c77e1-b9aa-4a37-a024-129d042422c1",
+            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-faq#is-branch-to-branch-connectivity-allowed-in-virtual-wan",
+            "severity": "Medio",
+            "subcategory": "Virtual WAN",
+            "text": "Asegúrese de que las implementaciones de IaC no deshabilitan el tráfico de rama a rama en Virtual WAN, a menos que estos flujos se bloqueen explícitamente.",
+            "waf": "Fiabilidad"
+        },
+        {
+            "category": "Topología y conectividad de red",
+            "guid": "d49ac006-6670-4bc9-9948-d3e0a3a94f4d",
+            "link": "https://learn.microsoft.com/azure/virtual-wan/about-virtual-hub-routing-preference",
+            "severity": "Medio",
+            "subcategory": "Virtual WAN",
+            "text": "Utilice AS-Path como preferencia de enrutamiento de concentradores, ya que es más flexible que ExpressRoute o VPN.",
+            "waf": "Fiabilidad"
+        },
+        {
+            "category": "Topología y conectividad de red",
+            "guid": "2586b854-237e-47f1-84a1-d45d4cd2310d",
+            "link": "https://learn.microsoft.com/azure/virtual-wan/about-virtual-hub-routing#labels",
+            "severity": "Medio",
+            "subcategory": "Virtual WAN",
+            "text": "Asegúrese de que las implementaciones de IaC configuran la propagación basada en etiquetas en Virtual WAN; de lo contrario, la conectividad entre los concentradores virtuales se verá afectada.",
+            "waf": "Fiabilidad"
+        },
+        {
+            "category": "Topología y conectividad de red",
+            "guid": "9c75dfef-573c-461c-a698-68598595581a",
+            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-faq#what-is-the-recommended-hub-address-space-during-hub-creation",
             "severity": "Alto",
-            "subcategory": "Híbrido",
-            "text": "Si va a implementar al menos dos máquinas virtuales que ejecutan AD DS como controladores de dominio, agréguelas a diferentes zonas de disponibilidad. Si no está disponible en la región, implemente en un conjunto de disponibilidad.",
+            "subcategory": "Virtual WAN",
+            "text": "Asigne suficiente espacio IP a los concentradores virtuales, idealmente un prefijo /23.",
             "waf": "Fiabilidad"
         },
         {
@@ -1799,7 +1888,7 @@
     "metadata": {
         "name": "Azure Landing Zone Review",
         "state": "GA",
-        "timestamp": "April 19, 2023"
+        "timestamp": "May 11, 2023"
     },
     "severities": [
         {

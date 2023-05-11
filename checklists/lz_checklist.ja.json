@@ -595,6 +595,17 @@
         },
         {
             "category": "ネットワーク トポロジと接続性",
+            "graph": "resources | where type=='microsoft.network/applicationgateways' | extend subnetId = tostring(properties.gatewayIPConfigurations[0].properties.subnet.id) | project id, subnetId | join (resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetId = tostring(subnets.id), subnetPrefixLength = split(subnets.properties.addressPrefix, '/')[1]) on subnetId | extend compliant = (subnetPrefixLength <= 26) | distinct id,compliant",
+            "guid": "dfc50f87-3800-424c-937b-ed5f186e7c15",
+            "link": "https://learn.microsoft.com/azure/application-gateway/configuration-infrastructure#size-of-the-subnet",
+            "severity": "中程度",
+            "subcategory": "アプリ配信",
+            "text": "アプリケーション ゲートウェイは、IP プレフィックスが /26 以上のサブネットにデプロイする必要があります。",
+            "training": "https://learn.microsoft.com/learn/paths/secure-application-delivery/",
+            "waf": "安全"
+        },
+        {
+            "category": "ネットワーク トポロジと接続性",
             "description": "リバースプロキシ全般、特にWAFの管理は、ネットワークよりもアプリケーションに近いため、アプリと同じサブスクリプションに属します。アプリケーション ゲートウェイと WAF を接続サブスクリプションに一元化することは、1 つのチームによって管理されている場合は問題ない可能性があります。",
             "guid": "48b662d6-d15f-4512-a654-98f6dfe237de",
             "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/ag-overview",
@@ -721,6 +732,16 @@
         },
         {
             "category": "ネットワーク トポロジと接続性",
+            "graph": "resources | where type=='microsoft.network/loadbalancers' | mvexpand properties.outboundRules | summarize countOutRules=count() by id | join kind=rightouter (resources | where type=='microsoft.network/loadbalancers' | project id) on id | project id=id1, compliant = isnull(countOutRules)",
+            "guid": "97a2fd46-64b0-1dfa-b72d-9c8869496d75",
+            "link": "https://learn.microsoft.com/azure/nat-gateway/nat-overview#outbound-connectivity",
+            "severity": "高い",
+            "subcategory": "アプリ配信",
+            "text": "ロード バランサーのアウトバウンド規則の代わりに Azure NAT ゲートウェイを使用して、SNAT のスケーラビリティを向上させる",
+            "waf": "確実"
+        },
+        {
+            "category": "ネットワーク トポロジと接続性",
             "guid": "de0d5973-cd4c-4d21-a088-137f5e6c4cfd",
             "link": "https://learn.microsoft.com/azure/virtual-network/network-security-group-how-it-works",
             "severity": "中程度",
@@ -773,6 +794,16 @@
             "severity": "低い",
             "subcategory": "ハブ アンド スポーク",
             "text": "ハブ アンド スポーク シナリオで ExpressRoute と VPN ゲートウェイ間の転送が必要な場合は、Azure Route Server を使用します。",
+            "waf": "安全"
+        },
+        {
+            "category": "ネットワーク トポロジと接続性",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'RouteServerSubnet' | extend compliant = (subnetPrefixLength <= 27) | distinct id, compliant",
+            "guid": "91b9d7d5-91e1-4dcb-8f1f-fa7e465646cc",
+            "link": "https://learn.microsoft.com/azure/route-server/quickstart-configure-route-server-portal#create-a-route-server-1",
+            "severity": "低い",
+            "subcategory": "ハブ アンド スポーク",
+            "text": "ルート サーバーを使用している場合は、ルート サーバー サブネットに /27 プレフィックスを使用します。",
             "waf": "安全"
         },
         {
@@ -949,12 +980,12 @@
         },
         {
             "category": "ネットワーク トポロジと接続性",
-            "guid": "ee1ac551-c4d5-46cf-b035-d0a3c50d87ad",
-            "link": "https://learn.microsoft.com/azure/bastion/bastion-overview",
-            "severity": "中程度",
+            "guid": "2df4930f-6a43-49a3-926b-309f02c302f0",
+            "link": "https://learn.microsoft.com/azure/architecture/reference-architectures/identity/adds-extend-domain#vm-recommendations",
+            "severity": "高い",
             "subcategory": "ハイブリッド",
-            "text": "Azure Bastion を使用してネットワークに安全に接続することを検討します。",
-            "waf": "安全"
+            "text": "AD DS を実行している VM をドメイン コントローラーとして少なくとも 2 つデプロイする場合は、それらを異なる可用性ゾーンに追加します。リージョンで使用できない場合は、可用性セットにデプロイします。",
+            "waf": "確実"
         },
         {
             "category": "ネットワーク トポロジと接続性",
@@ -1036,6 +1067,25 @@
             "text": "Azure DNS の自動登録を有効にして、仮想ネットワーク内にデプロイされた仮想マシンの DNS レコードのライフサイクルを自動的に管理します。",
             "training": "https://learn.microsoft.com/learn/paths/az-104-manage-virtual-networks/",
             "waf": "オペレーションズ"
+        },
+        {
+            "category": "ネットワーク トポロジと接続性",
+            "guid": "ee1ac551-c4d5-46cf-b035-d0a3c50d87ad",
+            "link": "https://learn.microsoft.com/azure/bastion/bastion-overview",
+            "severity": "中程度",
+            "subcategory": "インターネット",
+            "text": "Azure Bastion を使用してネットワークに安全に接続することを検討します。",
+            "waf": "安全"
+        },
+        {
+            "category": "ネットワーク トポロジと接続性",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'AzureBastionSubnet' | extend compliant = (subnetPrefixLength <= 26) | distinct id, compliant",
+            "guid": "6eab9eb6-762b-485e-8ea8-15aa5dba0bd0",
+            "link": "https://learn.microsoft.com/en-us/azure/bastion/bastion-faq#subnet",
+            "severity": "中程度",
+            "subcategory": "インターネット",
+            "text": "Azure Bastion は、/26 以上のサブネットで使用します。",
+            "waf": "安全"
         },
         {
             "category": "ネットワーク トポロジと接続性",
@@ -1149,6 +1199,16 @@
         },
         {
             "category": "ネットワーク トポロジと接続性",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetId=tostring(subnets.id), subnetName=tostring(subnets.name),subnetRT=subnets.properties.routeTable.id | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend hasRT = isnotnull(subnetRT) | distinct id, hasRT, subnetId | join kind=fullouter (resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | extend isVWAN=(tolower(split(properties_virtualNetworkPeerings.name, '_')[0]) == 'remotevnettohubpeering') | mv-expand properties.subnets | project id, isVWAN, name, subnetId=tostring(properties_subnets.id), subnetName=tostring(properties_subnets.name) | summarize PeeredToVWAN=max(isVWAN) by id, subnetId | project id, subnetId, isVWANpeer = (PeeredToVWAN == true)) on subnetId | project id=iff(isnotempty(id), id, id1), subnetId=iff(isnotempty(subnetId), subnetId, subnetId1), hasRT, isVWANpeer | extend compliant = (hasRT==true or isVWANpeer==true) | distinct id, subnetId, compliant",
+            "guid": "a3784907-9836-4271-aafc-93535f8ec08b",
+            "link": "https://learn.microsoft.com/azure/virtual-network/virtual-networks-udr-overview",
+            "severity": "高い",
+            "subcategory": "インターネット",
+            "text": "仮想 WAN に接続されていない VNet 内のサブネットの場合は、インターネット トラフィックが Azure Firewall またはネットワーク仮想アプライアンスにリダイレクトされるようにルート テーブルをアタッチします。",
+            "waf": "安全"
+        },
+        {
+            "category": "ネットワーク トポロジと接続性",
             "guid": "d301d6e8-72e5-42e3-911c-c58b5a4b1511",
             "link": "https://learn.microsoft.com/azure/virtual-network/vnet-integration-for-azure-services",
             "severity": "高い",
@@ -1196,6 +1256,26 @@
             "subcategory": "PaaS",
             "text": "仮想ネットワーク サービス エンドポイントを使用している場合は、NVA 上のエグレス FQDN をフィルター処理して、データの流出を防ぎます。",
             "training": "https://learn.microsoft.com/learn/paths/implement-network-security/?source=learn",
+            "waf": "安全"
+        },
+        {
+            "category": "ネットワーク トポロジと接続性",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'AzureFirewallSubnet' | extend compliant = (subnetPrefixLength == 26) | distinct id, compliant",
+            "guid": "22d6419e-b627-4d95-9e7d-019fa759387f",
+            "link": "https://learn.microsoft.com/azure/firewall/firewall-faq#why-does-azure-firewall-need-a--26-subnet-size",
+            "severity": "高い",
+            "subcategory": "セグメンテーション",
+            "text": "Azure ファイアウォール サブネットには /26 プレフィックスを使用します。",
+            "waf": "安全"
+        },
+        {
+            "category": "ネットワーク トポロジと接続性",
+            "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'GatewaySubnet' | extend compliant = (subnetPrefixLength <= 27) | distinct id, compliant",
+            "guid": "f2aad7e3-bb03-4adc-8606-4123d342a917",
+            "link": "https://learn.microsoft.com/azure/expressroute/expressroute-howto-add-gateway-resource-manager#add-a-gateway",
+            "severity": "高い",
+            "subcategory": "セグメンテーション",
+            "text": "ゲートウェイ サブネットに少なくとも /27 プレフィックスを使用する",
             "waf": "安全"
         },
         {
@@ -1279,16 +1359,6 @@
         },
         {
             "category": "ネットワーク トポロジと接続性",
-            "guid": "65a917e1-f348-4ef2-94c2-7d42e8bbac75",
-            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about",
-            "severity": "低い",
-            "subcategory": "仮想 WAN",
-            "text": "ExpressRoute を使用して仮想 WAN ハブをオンプレミスのデータセンターに接続する",
-            "training": "https://learn.microsoft.com/learn/modules/configure-expressroute-virtual-wan/",
-            "waf": "パフォーマンス"
-        },
-        {
-            "category": "ネットワーク トポロジと接続性",
             "guid": "8ac6a9e0-1e6a-483d-b5de-32c199248160",
             "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about",
             "severity": "低い",
@@ -1298,22 +1368,14 @@
         },
         {
             "category": "ネットワーク トポロジと接続性",
+            "graph": "resources | where type=='microsoft.network/virtualhubs' | extend compliant = isnotnull(properties.azureFirewall.id) | project id, compliant",
             "guid": "7d5d1e4e-6146-458d-9558-fd77249b8211",
             "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about",
             "severity": "中程度",
             "subcategory": "仮想 WAN",
-            "text": "送信インターネット トラフィックの保護とフィルター処理のために、Azure Firewall をデプロイする",
+            "text": "送信インターネット トラフィックの保護とフィルター処理のために、セキュリティで保護されたハブに Azure Firewall をデプロイする",
             "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
             "waf": "安全"
-        },
-        {
-            "category": "ネットワーク トポロジと接続性",
-            "guid": "12df27ee-412e-47f9-a3f6-304722dd69c5",
-            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about",
-            "severity": "中程度",
-            "subcategory": "仮想 WAN",
-            "text": "VWAN にパートナー ネットワーク テクノロジと NVA をデプロイする場合は、パートナー ベンダーのガイダンスを使用して構成を確認し、構成が競合していないことを確認します。",
-            "waf": "確実"
         },
         {
             "category": "ネットワーク トポロジと接続性",
@@ -1335,11 +1397,38 @@
         },
         {
             "category": "ネットワーク トポロジと接続性",
-            "guid": "2df4930f-6a43-49a3-926b-309f02c302f0",
-            "link": "https://learn.microsoft.com/azure/architecture/reference-architectures/identity/adds-extend-domain#vm-recommendations",
+            "guid": "727c77e1-b9aa-4a37-a024-129d042422c1",
+            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-faq#is-branch-to-branch-connectivity-allowed-in-virtual-wan",
+            "severity": "中程度",
+            "subcategory": "仮想 WAN",
+            "text": "これらのフローを明示的にブロックする必要がある場合を除き、IaC 展開で Virtual WAN のブランチ間トラフィックが無効にならないようにしてください。",
+            "waf": "確実"
+        },
+        {
+            "category": "ネットワーク トポロジと接続性",
+            "guid": "d49ac006-6670-4bc9-9948-d3e0a3a94f4d",
+            "link": "https://learn.microsoft.com/azure/virtual-wan/about-virtual-hub-routing-preference",
+            "severity": "中程度",
+            "subcategory": "仮想 WAN",
+            "text": "ハブ ルーティングの基本設定として AS-Path を使用すると、ExpressRoute や VPN よりも柔軟性があります。",
+            "waf": "確実"
+        },
+        {
+            "category": "ネットワーク トポロジと接続性",
+            "guid": "2586b854-237e-47f1-84a1-d45d4cd2310d",
+            "link": "https://learn.microsoft.com/azure/virtual-wan/about-virtual-hub-routing#labels",
+            "severity": "中程度",
+            "subcategory": "仮想 WAN",
+            "text": "IaC デプロイで Virtual WAN でラベルベースの伝達を構成していないことを確認すると、仮想ハブ間の接続が損なわれます。",
+            "waf": "確実"
+        },
+        {
+            "category": "ネットワーク トポロジと接続性",
+            "guid": "9c75dfef-573c-461c-a698-68598595581a",
+            "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-faq#what-is-the-recommended-hub-address-space-during-hub-creation",
             "severity": "高い",
-            "subcategory": "ハイブリッド",
-            "text": "AD DS を実行している VM をドメイン コントローラーとして少なくとも 2 つデプロイする場合は、それらを異なる可用性ゾーンに追加します。リージョンで使用できない場合は、可用性セットにデプロイします。",
+            "subcategory": "仮想 WAN",
+            "text": "仮想ハブに十分な IP 領域 (理想的には /23 プレフィックス) を割り当てます。",
             "waf": "確実"
         },
         {
@@ -1799,7 +1888,7 @@
     "metadata": {
         "name": "Azure Landing Zone Review",
         "state": "GA",
-        "timestamp": "April 19, 2023"
+        "timestamp": "May 11, 2023"
     },
     "severities": [
         {
