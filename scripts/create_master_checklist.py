@@ -98,20 +98,21 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
     row1 = 8        # First row after which the Excel spreadsheet will be updated
     col_checklist_name = "A"
     row_checklist_name = "4"
-    guid_column_index = "L"
-    comment_column_index = "G"
+    guid_column_index = "M"
+    comment_column_index = "I"
     sample_cell_index = 'A4'
     col_checklist="A"
     col_area = "B"
     col_subarea = "C"
-    col_check = "D"
-    col_desc = "E"
-    col_sev = "F"
-    col_status = "G"
-    col_comment = "H"
-    col_link = "I"
-    col_training = "J"
-    col_arg_success = "K"
+    col_waf_pillar = "D"
+    col_check = "E"
+    col_desc = "F"
+    col_sev = "G"
+    col_status = "H"
+    col_comment = "I"
+    col_link = "J"
+    col_training = "K"
+    col_arg_success = "L"
     col_arg_failure = "L"
     col_guid = "M"
     info_link_text = 'More info'
@@ -170,6 +171,7 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
         guid = item.get("guid")
         category = item.get("category")
         subcategory = item.get("subcategory")
+        waf_pillar = item.get("waf")
         text = item.get("text")
         description = item.get("description")
         severity = item.get("severity")
@@ -182,6 +184,7 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
         ws[col_checklist + str(row_counter)].value = checklist_name
         ws[col_area + str(row_counter)].value = category
         ws[col_subarea + str(row_counter)].value = subcategory
+        ws[col_waf_pillar + str(row_counter)].value = waf_pillar
         ws[col_check + str(row_counter)].value = text
         ws[col_desc + str(row_counter)].value = description
         ws[col_sev + str(row_counter)].value = severity
@@ -211,10 +214,11 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
         # Next row
         row_counter += 1
 
+    number_of_checks = row_counter - row1
+    
     # Display summary
     if args.verbose:
-        number_of_checks = row_counter - row1
-        print("DEBUG:", str(number_of_checks), "checks addedd to Excel spreadsheet")
+        print("DEBUG:", str(number_of_checks), "checks added to Excel spreadsheet")
 
     # Get worksheet
     try:
