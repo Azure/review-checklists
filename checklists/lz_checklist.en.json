@@ -861,8 +861,18 @@
             "waf": "Cost",
             "guid": "7025b442-f6e9-4af6-b11f-c9574916016f",
             "severity": "High",
-            "graph": "resources | where type=='microsoft.network/expressroutecircuits' | extend compliant = (tolower(sku.family) == 'metereddata') | distinct id,compliant",
+            "graph": "resources | where type=='microsoft.network/expressroutecircuits' | extend compliant = (tolower(sku.family) == 'metereddata' or tolower(sku.tier) == 'local') | distinct id,compliant",
             "link": "https://learn.microsoft.com/azure/expressroute/plan-manage-cost"
+        },        
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Hybrid",
+            "text": "Leverage the Local SKU of ExpressRoute to reduce the cost of your circuits, if your circuits' peering location supports your Azure regions for the Local SKU.",
+            "waf": "Cost",
+            "guid": "f4e7926a-ec35-476e-a412-5dd17136bd62",
+            "severity": "High",
+            "graph": "resources | where type=='microsoft.network/connections' | where properties.connectionType == 'ExpressRoute' | project id, gwid=tostring(properties.virtualNetworkGateway1.id), circuitid=tostring(properties.peer.id) | join (resources | where type=='microsoft.network/expressroutecircuits' | project circuitid=tostring(id), circuitsku=sku.tier) on circuitid | project id=gwid, compliant = (circuitsku == 'blah') | summarize compliant=max(compliant) by id",
+            "link": "https://learn.microsoft.com/azure/expressroute/expressroute-faqs#expressroute-local"
         },        
         {
             "category": "Network Topology and Connectivity",
