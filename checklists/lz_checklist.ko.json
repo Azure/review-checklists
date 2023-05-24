@@ -732,7 +732,7 @@
         },
         {
             "category": "네트워크 토폴로지 및 연결",
-            "graph": "resources | where type=='microsoft.network/loadbalancers' | mvexpand properties.outboundRules | summarize countOutRules=count() by id | join kind=rightouter (resources | where type=='microsoft.network/loadbalancers' | project id) on id | project id=id1, compliant = isnull(countOutRules)",
+            "graph": "resources | where type=='microsoft.network/loadbalancers' | extend countOutRules=array_length(properties.outboundRules) | extend compliant = (countOutRules == 0) | distinct id,compliant",
             "guid": "97a2fd46-64b0-1dfa-b72d-9c8869496d75",
             "link": "https://learn.microsoft.com/azure/nat-gateway/nat-overview#outbound-connectivity",
             "severity": "높다",
@@ -876,6 +876,26 @@
             "text": "대역폭 및 성능 요구 사항에 따라 ExpressRoute/VPN 게이트웨이에 적합한 SKU를 사용하고 있는지 확인합니다.",
             "training": "https://learn.microsoft.com/learn/modules/design-implement-azure-expressroute/",
             "waf": "공연"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결",
+            "graph": "resources | where type=='microsoft.network/expressroutecircuits' | extend compliant = (tolower(sku.family) == 'metereddata' or tolower(sku.tier) == 'local') | distinct id,compliant",
+            "guid": "7025b442-f6e9-4af6-b11f-c9574916016f",
+            "link": "https://learn.microsoft.com/azure/expressroute/plan-manage-cost",
+            "severity": "높다",
+            "subcategory": "잡종",
+            "text": "비용을 정당화하는 대역폭에 도달하는 경우에만 무제한 데이터 ExpressRoute 회로를 사용하고 있는지 확인합니다.",
+            "waf": "비용"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결",
+            "graph": "resources | where type=='microsoft.network/connections' | where properties.connectionType == 'ExpressRoute' | project id, gwid=tostring(properties.virtualNetworkGateway1.id), circuitid=tostring(properties.peer.id) | join (resources | where type=='microsoft.network/expressroutecircuits' | project circuitid=tostring(id), circuitsku=sku.tier) on circuitid | project id=gwid, compliant = (circuitsku == 'blah') | summarize compliant=max(compliant) by id",
+            "guid": "f4e7926a-ec35-476e-a412-5dd17136bd62",
+            "link": "https://learn.microsoft.com/azure/expressroute/expressroute-faqs#expressroute-local",
+            "severity": "높다",
+            "subcategory": "잡종",
+            "text": "회로의 피어링 위치가 로컬 SKU에 대한 Azure 지역을 지원하는 경우 ExpressRoute의 로컬 SKU를 활용하여 회로 비용을 줄입니다.",
+            "waf": "비용"
         },
         {
             "category": "네트워크 토폴로지 및 연결",
@@ -1888,7 +1908,7 @@
     "metadata": {
         "name": "Azure Landing Zone Review",
         "state": "GA",
-        "timestamp": "May 11, 2023"
+        "timestamp": "May 24, 2023"
     },
     "severities": [
         {

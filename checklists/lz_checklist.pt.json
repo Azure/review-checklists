@@ -732,7 +732,7 @@
         },
         {
             "category": "Topologia de rede e conectividade",
-            "graph": "resources | where type=='microsoft.network/loadbalancers' | mvexpand properties.outboundRules | summarize countOutRules=count() by id | join kind=rightouter (resources | where type=='microsoft.network/loadbalancers' | project id) on id | project id=id1, compliant = isnull(countOutRules)",
+            "graph": "resources | where type=='microsoft.network/loadbalancers' | extend countOutRules=array_length(properties.outboundRules) | extend compliant = (countOutRules == 0) | distinct id,compliant",
             "guid": "97a2fd46-64b0-1dfa-b72d-9c8869496d75",
             "link": "https://learn.microsoft.com/azure/nat-gateway/nat-overview#outbound-connectivity",
             "severity": "Alto",
@@ -876,6 +876,26 @@
             "text": "Verifique se você está usando a SKU certa para os gateways ExpressRoute/VPN com base nos requisitos de largura de banda e desempenho.",
             "training": "https://learn.microsoft.com/learn/modules/design-implement-azure-expressroute/",
             "waf": "Desempenho"
+        },
+        {
+            "category": "Topologia de rede e conectividade",
+            "graph": "resources | where type=='microsoft.network/expressroutecircuits' | extend compliant = (tolower(sku.family) == 'metereddata' or tolower(sku.tier) == 'local') | distinct id,compliant",
+            "guid": "7025b442-f6e9-4af6-b11f-c9574916016f",
+            "link": "https://learn.microsoft.com/azure/expressroute/plan-manage-cost",
+            "severity": "Alto",
+            "subcategory": "Híbrido",
+            "text": "Certifique-se de que você está usando circuitos de Rota Expressa de dados ilimitados somente se atingir a largura de banda que justifica seu custo.",
+            "waf": "Custar"
+        },
+        {
+            "category": "Topologia de rede e conectividade",
+            "graph": "resources | where type=='microsoft.network/connections' | where properties.connectionType == 'ExpressRoute' | project id, gwid=tostring(properties.virtualNetworkGateway1.id), circuitid=tostring(properties.peer.id) | join (resources | where type=='microsoft.network/expressroutecircuits' | project circuitid=tostring(id), circuitsku=sku.tier) on circuitid | project id=gwid, compliant = (circuitsku == 'blah') | summarize compliant=max(compliant) by id",
+            "guid": "f4e7926a-ec35-476e-a412-5dd17136bd62",
+            "link": "https://learn.microsoft.com/azure/expressroute/expressroute-faqs#expressroute-local",
+            "severity": "Alto",
+            "subcategory": "Híbrido",
+            "text": "Aproveite a SKU Local da Rota Expressa para reduzir o custo de seus circuitos, se o local de emparelhamento de seus circuitos oferecer suporte às regiões do Azure para a SKU Local.",
+            "waf": "Custar"
         },
         {
             "category": "Topologia de rede e conectividade",
@@ -1888,7 +1908,7 @@
     "metadata": {
         "name": "Azure Landing Zone Review",
         "state": "GA",
-        "timestamp": "May 11, 2023"
+        "timestamp": "May 24, 2023"
     },
     "severities": [
         {
