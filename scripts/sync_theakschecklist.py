@@ -66,8 +66,6 @@ if len(local_items) != len(remote_items):
         print("DEBUG: The number of items in the local and remote checklist does not match")
     for remote_item in remote_items:
         if not find_guid(local_items, remote_item['guid']):
-            if args.verbose:
-                print("DEBUG: Item with GUID", remote_item['guid'], "not found in local checklist")
             new_items.append(remote_item)
 if args.verbose:
     print("DEBUG: Found", len(new_items), "new items in the remote checklist")
