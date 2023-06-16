@@ -70,34 +70,34 @@
                 "style": "tabs",
                 "links": [
                     {
-                        "id": "b2ac324c-382f-4e08-96b4-fbc22c9386c3",
+                        "id": "cc9f7922-f9e2-477f-9065-488cd7fba646",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
-                        "linkLabel": "PaaS",
+                        "linkLabel": "IP plan",
                         "subTarget": "tab0",
-                        "preText": "PaaS",
+                        "preText": "IP plan",
                         "style": "primary"
                     },
                     {
-                        "id": "816cb32c-3a6a-4f5f-9b97-95f04ab91c2b",
+                        "id": "8b17faad-0404-45ca-8a71-631874b21e2b",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
-                        "linkLabel": "Internet",
+                        "linkLabel": "Hub and spoke",
                         "subTarget": "tab1",
-                        "preText": "Internet",
+                        "preText": "Hub and spoke",
                         "style": "primary"
                     },
                     {
-                        "id": "b22cf829-a313-49ad-bd6a-000053e3f6d7",
+                        "id": "85c2b476-271c-4f97-9cdd-86e4713a78fa",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
-                        "linkLabel": "Virtual WAN",
+                        "linkLabel": "Hybrid",
                         "subTarget": "tab2",
-                        "preText": "Virtual WAN",
+                        "preText": "Hybrid",
                         "style": "primary"
                     },
                     {
-                        "id": "5e6fd20c-be1b-41ce-9791-50dd793112bb",
+                        "id": "e9551f2b-94df-43eb-8779-60540fc11e96",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "App delivery",
@@ -106,7 +106,7 @@
                         "style": "primary"
                     },
                     {
-                        "id": "fd54d2f3-643b-4f9d-b422-d9fd3a3d5b9e",
+                        "id": "aba3e909-c09f-4740-b2a4-8128883a9f92",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Segmentation",
@@ -115,30 +115,30 @@
                         "style": "primary"
                     },
                     {
-                        "id": "1b384e52-1d17-442e-8cfe-e6f2fe020512",
+                        "id": "2e9eb73b-cf15-4d28-bc51-535c86fd7c6d",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
-                        "linkLabel": "Hybrid",
+                        "linkLabel": "Virtual WAN",
                         "subTarget": "tab5",
-                        "preText": "Hybrid",
+                        "preText": "Virtual WAN",
                         "style": "primary"
                     },
                     {
-                        "id": "a409cad9-e953-4838-8173-c5024e1bc629",
+                        "id": "5c0d89df-1848-4241-91d7-5e972230a674",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
-                        "linkLabel": "IP plan",
+                        "linkLabel": "PaaS",
                         "subTarget": "tab6",
-                        "preText": "IP plan",
+                        "preText": "PaaS",
                         "style": "primary"
                     },
                     {
-                        "id": "ed36ec87-e3a2-4806-b2e5-585b57a6404c",
+                        "id": "8b118eca-dd30-454b-902c-8f9cc897e57f",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
-                        "linkLabel": "Hub and spoke",
+                        "linkLabel": "Internet",
                         "subTarget": "tab7",
-                        "preText": "Hub and spoke",
+                        "preText": "Internet",
                         "style": "primary"
                     }
                 ]
@@ -154,22 +154,22 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "## PaaS"
+                            "json": "## IP plan"
                         },
                         "name": "tab0title"
                     },
                     {
                         "type": 1,
                         "content": {
-                            "json": "Don't enable virtual network service endpoints by default on all subnets. Check [this link](https://learn.microsoft.com/azure/app-service/networking-features) for further information.. [This training](https://learn.microsoft.com/learn/paths/implement-network-security/?source=learn) can help to educate yourself on this."
+                            "json": "Use IP addresses from the address allocation ranges for private internets (RFC 1918). Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
                         },
-                        "name": "querytext19"
+                        "name": "querytext11"
                     },
                     {
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type =~ 'microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets = properties.subnets | mv-expand subnets | project id = subnets.id, resourceGroup, VNet = name, serviceEndpoints = subnets.properties.serviceEndpoints, compliant = (isnull(subnets.properties.serviceEndpoints) or array_length(subnets.properties.serviceEndpoints) == 0) | order by compliant asc | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)')  | project id, compliant, cidr | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
                             "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
@@ -218,7 +218,69 @@
                                 ]
                             }
                         },
-                        "name": "query19"
+                        "name": "query11"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Ensure that IP address space isn't wasted, don't create unnecessarily large virtual networks (for example /16). Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
+                        },
+                        "name": "querytext12"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend compliant = addressMask > 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query12"
                     }
                 ]
             },
@@ -238,22 +300,22 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "## Internet"
+                            "json": "## Hub and spoke"
                         },
                         "name": "tab1title"
                     },
                     {
                         "type": 1,
                         "content": {
-                            "json": "Use Azure Bastion in a subnet /26 or larger. Check [this link](https://learn.microsoft.com/en-us/azure/bastion/bastion-faq#subnet) for further information."
+                            "json": "If using Route Server, use a /27 prefix for the Route Server subnet. Check [this link](https://learn.microsoft.com/azure/route-server/quickstart-configure-route-server-portal#create-a-route-server-1) for further information."
                         },
-                        "name": "querytext13"
+                        "name": "querytext4"
                     },
                     {
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'AzureBastionSubnet' | extend compliant = (subnetPrefixLength <= 26) | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "query": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'RouteServerSubnet' | extend compliant = (subnetPrefixLength <= 27) | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
                             "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
@@ -302,20 +364,20 @@
                                 ]
                             }
                         },
-                        "name": "query13"
+                        "name": "query4"
                     },
                     {
                         "type": 1,
                         "content": {
-                            "json": "Use FQDN-based network rules and Azure Firewall with DNS proxy to filter egress traffic to the Internet not supported by application rules. Check [this link](https://learn.microsoft.com/azure/firewall/fqdn-filtering-network-rules) for further information."
+                            "json": "Use the setting 'Allow traffic to remote virtual network' when configuring VNet peerings. Check [this link](https://learn.microsoft.com/azure/virtual-network/virtual-network-manage-peering) for further information."
                         },
-                        "name": "querytext14"
+                        "name": "querytext5"
                     },
                     {
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.dnsSettings.enableProxy == true) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id, peeringName=properties_virtualNetworkPeerings.name, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess == True) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
                             "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
@@ -364,255 +426,7 @@
                                 ]
                             }
                         },
-                        "name": "query14"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Use Azure Firewall Premium for additional security and protection. Check [this link](https://learn.microsoft.com/azure/firewall/premium-features) for further information."
-                        },
-                        "name": "querytext15"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.sku.tier == 'Premium') | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query15"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Configure Azure Firewall Threat Intelligence mode to Alert and Deny for additional protection. Check [this link](https://learn.microsoft.com/azure/firewall/premium-features) for further information."
-                        },
-                        "name": "querytext16"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.threatIntelMode == 'Deny') | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query16"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Configure Azure Firewall IDPS mode to Deny for additional protection. Check [this link](https://learn.microsoft.com/azure/firewall/premium-features#idps) for further information."
-                        },
-                        "name": "querytext17"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.intrusionDetection.mode == 'Deny') | project id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query17"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "For subnets in VNets not connected to Virtual WAN, attach a route table so that Internet traffic is redirected to Azure Firewall or a Network Virtual Appliance. Check [this link](https://learn.microsoft.com/azure/virtual-network/virtual-networks-udr-overview) for further information."
-                        },
-                        "name": "querytext18"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetId=tostring(subnets.id), subnetName=tostring(subnets.name),subnetRT=subnets.properties.routeTable.id | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend hasRT = isnotnull(subnetRT) | distinct id, hasRT, subnetId | join kind=fullouter (resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | extend isVWAN=(tolower(split(properties_virtualNetworkPeerings.name, '_')[0]) == 'remotevnettohubpeering') | mv-expand properties.subnets | project id, isVWAN, name, subnetId=tostring(properties_subnets.id), subnetName=tostring(properties_subnets.name) | summarize PeeredToVWAN=max(isVWAN) by id, subnetId | project id, subnetId, isVWANpeer = (PeeredToVWAN == true)) on subnetId | project id=iff(isnotempty(id), id, id1), subnetId=iff(isnotempty(subnetId), subnetId, subnetId1), hasRT, isVWANpeer | extend compliant = (hasRT==true or isVWANpeer==true) | distinct id, subnetId, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query18"
+                        "name": "query5"
                     }
                 ]
             },
@@ -632,22 +446,22 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "## Virtual WAN"
+                            "json": "## Hybrid"
                         },
                         "name": "tab2title"
                     },
                     {
                         "type": 1,
                         "content": {
-                            "json": "For outbound Internet traffic protection and filtering, deploy Azure Firewall in secured hubs. Check [this link](https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/) can help to educate yourself on this."
+                            "json": "Ensure that you're using the right SKU for the ExpressRoute/VPN gateways based on bandwidth and performance requirements. Check [this link](https://learn.microsoft.com/azure/expressroute/expressroute-routing) for further information.. [This training](https://learn.microsoft.com/learn/modules/design-implement-azure-expressroute/) can help to educate yourself on this."
                         },
-                        "name": "querytext24"
+                        "name": "querytext6"
                     },
                     {
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/virtualhubs' | extend compliant = isnotnull(properties.azureFirewall.id) | project id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "query": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier !in ('Basic', 'Standard')| project name, id, subscriptionId, resourceGroup, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
                             "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
@@ -696,7 +510,255 @@
                                 ]
                             }
                         },
-                        "name": "query24"
+                        "name": "query6"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Ensure that you're using unlimited-data ExpressRoute circuits only if you reach the bandwidth that justifies their cost. Check [this link](https://learn.microsoft.com/azure/expressroute/plan-manage-cost) for further information."
+                        },
+                        "name": "querytext7"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type=='microsoft.network/expressroutecircuits' | extend compliant = (tolower(sku.family) == 'metereddata' or tolower(sku.tier) == 'local') | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query7"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Leverage the Local SKU of ExpressRoute to reduce the cost of your circuits, if your circuits' peering location supports your Azure regions for the Local SKU. Check [this link](https://learn.microsoft.com/azure/expressroute/expressroute-faqs#expressroute-local) for further information."
+                        },
+                        "name": "querytext8"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type=='microsoft.network/connections' | where properties.connectionType == 'ExpressRoute' | project id, gwid=tostring(properties.virtualNetworkGateway1.id), circuitid=tostring(properties.peer.id) | join (resources | where type=='microsoft.network/expressroutecircuits' | project circuitid=tostring(id), circuitsku=sku.tier) on circuitid | project id=gwid, compliant = (circuitsku == 'Local') | summarize compliant=max(compliant) by id | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query8"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Deploy a zone-redundant ExpressRoute gateway in the supported Azure regions. Check [this link](https://learn.microsoft.com/azure/expressroute/expressroute-about-virtual-network-gateways) for further information.. [This training](https://learn.microsoft.com/learn/modules/design-implement-azure-expressroute/) can help to educate yourself on this."
+                        },
+                        "name": "querytext9"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier contains 'AZ'| project name, id, subscriptionId, resourceGroup, Type, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query9"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Use VPN gateways to connect branches or remote locations to Azure. For higher resilience, deploy zone-redundant gateways (where available). Check [this link](https://learn.microsoft.com/azure/vpn-gateway/create-zone-redundant-vnet-gateway) for further information.. [This training](https://learn.microsoft.com/training/modules/intro-to-azure-vpn-gateway/) can help to educate yourself on this."
+                        },
+                        "name": "querytext10"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type=='microsoft.network/virtualnetworkgateways' | where properties.gatewayType == 'Vpn' | extend compliant = (tolower(properties.sku.name) contains 'az') | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query10"
                     }
                 ]
             },
@@ -1256,22 +1318,22 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "## Hybrid"
+                            "json": "## Virtual WAN"
                         },
                         "name": "tab5title"
                     },
                     {
                         "type": 1,
                         "content": {
-                            "json": "Ensure that you're using the right SKU for the ExpressRoute/VPN gateways based on bandwidth and performance requirements. Check [this link](https://learn.microsoft.com/azure/expressroute/expressroute-routing) for further information.. [This training](https://learn.microsoft.com/learn/modules/design-implement-azure-expressroute/) can help to educate yourself on this."
+                            "json": "For outbound Internet traffic protection and filtering, deploy Azure Firewall in secured hubs. Check [this link](https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/) can help to educate yourself on this."
                         },
-                        "name": "querytext6"
+                        "name": "querytext24"
                     },
                     {
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier !in ('Basic', 'Standard')| project name, id, subscriptionId, resourceGroup, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "query": "resources | where type=='microsoft.network/virtualhubs' | extend compliant = isnotnull(properties.azureFirewall.id) | project id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
                             "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
@@ -1320,255 +1382,7 @@
                                 ]
                             }
                         },
-                        "name": "query6"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Ensure that you're using unlimited-data ExpressRoute circuits only if you reach the bandwidth that justifies their cost. Check [this link](https://learn.microsoft.com/azure/expressroute/plan-manage-cost) for further information."
-                        },
-                        "name": "querytext7"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/expressroutecircuits' | extend compliant = (tolower(sku.family) == 'metereddata' or tolower(sku.tier) == 'local') | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query7"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Leverage the Local SKU of ExpressRoute to reduce the cost of your circuits, if your circuits' peering location supports your Azure regions for the Local SKU. Check [this link](https://learn.microsoft.com/azure/expressroute/expressroute-faqs#expressroute-local) for further information."
-                        },
-                        "name": "querytext8"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/connections' | where properties.connectionType == 'ExpressRoute' | project id, gwid=tostring(properties.virtualNetworkGateway1.id), circuitid=tostring(properties.peer.id) | join (resources | where type=='microsoft.network/expressroutecircuits' | project circuitid=tostring(id), circuitsku=sku.tier) on circuitid | project id=gwid, compliant = (circuitsku == 'Local') | summarize compliant=max(compliant) by id | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query8"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Deploy a zone-redundant ExpressRoute gateway in the supported Azure regions. Check [this link](https://learn.microsoft.com/azure/expressroute/expressroute-about-virtual-network-gateways) for further information.. [This training](https://learn.microsoft.com/learn/modules/design-implement-azure-expressroute/) can help to educate yourself on this."
-                        },
-                        "name": "querytext9"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier contains 'AZ'| project name, id, subscriptionId, resourceGroup, Type, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query9"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Use VPN gateways to connect branches or remote locations to Azure. For higher resilience, deploy zone-redundant gateways (where available). Check [this link](https://learn.microsoft.com/azure/vpn-gateway/create-zone-redundant-vnet-gateway) for further information.. [This training](https://learn.microsoft.com/training/modules/intro-to-azure-vpn-gateway/) can help to educate yourself on this."
-                        },
-                        "name": "querytext10"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/virtualnetworkgateways' | where properties.gatewayType == 'Vpn' | extend compliant = (tolower(properties.sku.name) contains 'az') | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query10"
+                        "name": "query24"
                     }
                 ]
             },
@@ -1588,22 +1402,22 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "## IP plan"
+                            "json": "## PaaS"
                         },
                         "name": "tab6title"
                     },
                     {
                         "type": 1,
                         "content": {
-                            "json": "Use IP addresses from the address allocation ranges for private internets (RFC 1918). Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
+                            "json": "Don't enable virtual network service endpoints by default on all subnets. Check [this link](https://learn.microsoft.com/azure/app-service/networking-features) for further information.. [This training](https://learn.microsoft.com/learn/paths/implement-network-security/?source=learn) can help to educate yourself on this."
                         },
-                        "name": "querytext11"
+                        "name": "querytext19"
                     },
                     {
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)')  | project id, compliant, cidr | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "query": "resources | where type =~ 'microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets = properties.subnets | mv-expand subnets | project id = subnets.id, resourceGroup, VNet = name, serviceEndpoints = subnets.properties.serviceEndpoints, compliant = (isnull(subnets.properties.serviceEndpoints) or array_length(subnets.properties.serviceEndpoints) == 0) | order by compliant asc | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
                             "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
@@ -1652,69 +1466,7 @@
                                 ]
                             }
                         },
-                        "name": "query11"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Ensure that IP address space isn't wasted, don't create unnecessarily large virtual networks (for example /16). Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
-                        },
-                        "name": "querytext12"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend compliant = addressMask > 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query12"
+                        "name": "query19"
                     }
                 ]
             },
@@ -1734,22 +1486,22 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "## Hub and spoke"
+                            "json": "## Internet"
                         },
                         "name": "tab7title"
                     },
                     {
                         "type": 1,
                         "content": {
-                            "json": "If using Route Server, use a /27 prefix for the Route Server subnet. Check [this link](https://learn.microsoft.com/azure/route-server/quickstart-configure-route-server-portal#create-a-route-server-1) for further information."
+                            "json": "Use Azure Bastion in a subnet /26 or larger. Check [this link](https://learn.microsoft.com/en-us/azure/bastion/bastion-faq#subnet) for further information."
                         },
-                        "name": "querytext4"
+                        "name": "querytext13"
                     },
                     {
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'RouteServerSubnet' | extend compliant = (subnetPrefixLength <= 27) | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "query": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'AzureBastionSubnet' | extend compliant = (subnetPrefixLength <= 26) | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
                             "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
@@ -1798,20 +1550,20 @@
                                 ]
                             }
                         },
-                        "name": "query4"
+                        "name": "query13"
                     },
                     {
                         "type": 1,
                         "content": {
-                            "json": "Use the setting 'Allow traffic to remote virtual network' when configuring VNet peerings. Check [this link](https://learn.microsoft.com/azure/virtual-network/virtual-network-manage-peering) for further information."
+                            "json": "Use FQDN-based network rules and Azure Firewall with DNS proxy to filter egress traffic to the Internet not supported by application rules. Check [this link](https://learn.microsoft.com/azure/firewall/fqdn-filtering-network-rules) for further information."
                         },
-                        "name": "querytext5"
+                        "name": "querytext14"
                     },
                     {
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id, peeringName=properties_virtualNetworkPeerings.name, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess == True) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "query": "resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.dnsSettings.enableProxy == true) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
                             "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
@@ -1860,7 +1612,255 @@
                                 ]
                             }
                         },
-                        "name": "query5"
+                        "name": "query14"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Use Azure Firewall Premium for additional security and protection. Check [this link](https://learn.microsoft.com/azure/firewall/premium-features) for further information."
+                        },
+                        "name": "querytext15"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.sku.tier == 'Premium') | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query15"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Configure Azure Firewall Threat Intelligence mode to Alert and Deny for additional protection. Check [this link](https://learn.microsoft.com/azure/firewall/premium-features) for further information."
+                        },
+                        "name": "querytext16"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.threatIntelMode == 'Deny') | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query16"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Configure Azure Firewall IDPS mode to Deny for additional protection. Check [this link](https://learn.microsoft.com/azure/firewall/premium-features#idps) for further information."
+                        },
+                        "name": "querytext17"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type=='microsoft.network/firewallpolicies' | extend compliant = (properties.intrusionDetection.mode == 'Deny') | project id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query17"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "For subnets in VNets not connected to Virtual WAN, attach a route table so that Internet traffic is redirected to Azure Firewall or a Network Virtual Appliance. Check [this link](https://learn.microsoft.com/azure/virtual-network/virtual-networks-udr-overview) for further information."
+                        },
+                        "name": "querytext18"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetId=tostring(subnets.id), subnetName=tostring(subnets.name),subnetRT=subnets.properties.routeTable.id | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend hasRT = isnotnull(subnetRT) | distinct id, hasRT, subnetId | join kind=fullouter (resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | extend isVWAN=(tolower(split(properties_virtualNetworkPeerings.name, '_')[0]) == 'remotevnettohubpeering') | mv-expand properties.subnets | project id, isVWAN, name, subnetId=tostring(properties_subnets.id), subnetName=tostring(properties_subnets.name) | summarize PeeredToVWAN=max(isVWAN) by id, subnetId | project id, subnetId, isVWANpeer = (PeeredToVWAN == true)) on subnetId | project id=iff(isnotempty(id), id, id1), subnetId=iff(isnotempty(subnetId), subnetId, subnetId1), hasRT, isVWANpeer | extend compliant = (hasRT==true or isVWANpeer==true) | distinct id, subnetId, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query18"
                     }
                 ]
             },
