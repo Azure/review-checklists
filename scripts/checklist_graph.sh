@@ -17,9 +17,10 @@
 #    -d/--debug: increase verbosity
 #
 # Example:
-#       ./checklist_graph.sh -l -t=aks
-#       ./checklist_graph.sh -c=0 -t=aks -f=text
-#       ./checklist_graph.sh -t=aks -f=json >graph_results.json
+#       ./checklist_graph.sh --list-technologies
+#       ./checklist_graph.sh --technology=aks --list-categories
+#       ./checklist_graph.sh --technology=aks --category=0 --format=text
+#       ./checklist_graph.sh --technology=aks --format=json >graph_results.json
 #
 # Jose Moreno, October 2021
 ###################################################################################################
@@ -99,9 +100,6 @@ do
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-# Get list of checklists
-checklist_list=$(curl -s "https://api.github.com/repos/Azure/review-checklists/git/trees/2ef1d5ca7dbdc4a3125901ab1364be0338f390a1?recursive=true" | jq -r '.tree[].path' | grep en.json | sed -e 's/_checklist.en.json//')
-
 # Print help message
 if [[ "$help" == "yes" ]]
 then
@@ -129,6 +127,20 @@ else
     if [[ "$debug" == "yes" ]]; then echo "DEBUG: Setting management group $mg as scope for the az graph query commands..."; fi
 fi
 
+# If in "list_technologies" mode, just get the categories part:
+if [[ "$list_technologies" == "yes" ]]
+then
+    # Get list of checklists
+    checklist_list=$(curl -s "https://api.github.com/repos/Azure/review-checklists/git/trees/2ef1d5ca7dbdc4a3125901ab1364be0338f390a1?recursive=true" | jq -r '.tree[].path' | grep en.json | sed -e 's/_checklist.en.json//')
+    while IFS= read -r checklist; do
+        checklist_url="${base_url}${checklist}_checklist.en.json"
+        if [[ "$debug" == "yes" ]]; then echo "DEBUG: Processing JSON content from URL $checklist_url..."; fi
+        graph_query_no=$(curl -s "$checklist_url" | jq -r '.items[].graph' | grep -v -e '^null$' | wc -l)
+        echo "$checklist ($graph_query_no graph queries)"
+    done <<< "$checklist_list"
+    exit 0
+fi
+
 # Download checklist from Github or upload from file
 if [[ -n "$filename" ]]
 then
@@ -145,17 +157,6 @@ else
     checklist_url="${base_url}${technology}_checklist.en.json"
     if [[ "$debug" == "yes" ]]; then echo "DEBUG: Getting checklist from $checklist_url..."; fi
     checklist_json=$(curl -s "$checklist_url")
-fi
-
-# If in "list_technologies" mode, just get the categories part:
-if [[ "$list_technologies" == "yes" ]]
-then
-    while IFS= read -r checklist; do
-        checklist_url="${base_url}${checklist}_checklist.en.json"
-        graph_query_no=$(curl -s "$checklist_url" | jq -r '.items[].graph' | grep -v -e '^null$' | wc -l)
-        echo "$checklist ($graph_query_no graph queries)"
-    done <<< "$checklist_list"
-    exit 0
 fi
 
 # If in "list_categories" mode, just get the categories part:
