@@ -1,12 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "Sheet1"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = True
-Attribute VB_Exposed = True
 Option Explicit
 Option Base 0
 Private Declare PtrSafe Function URLDownloadToFile Lib "urlmon" Alias "URLDownloadToFileA" (ByVal pCaller As Long, ByVal szURL As String, ByVal szFileName As String, ByVal dwReserved As Long, ByVal lpfnCB As Long) As Long
@@ -283,7 +274,7 @@ Sub import_checklist_fromurl()
         'Look at the option buttons to set global variables that control technology (LZ, AKS, AVD, AVS, Security) and language
         set_checklist_variables
         'Append the technology and options variables (default to English and LZ)
-        If Len(selected_technology) = 0 Then selected_technology = "lz"
+        If Len(selected_technology) = 0 Then selected_technology = "alz"
         If Len(selected_language) = 0 Then selected_language = "en"
         checklist_url = checklist_base_url + selected_technology + "_checklist." + selected_language + ".json"
         'Get the filename of the URL
@@ -845,7 +836,7 @@ Dim row As Integer
 '    'Look at the technology cell
 '    Select Case Cells(technology_selection_row, technology_selection_col)
 '        Case Sheets(values_sheet).Cells(2, values_technology_selection_column)
-'            selected_technology = "lz"
+'            selected_technology = "alz"
 '        Case Sheets(values_sheet).Cells(3, values_technology_selection_column)
 '            selected_technology = "aks"
 '        Case Sheets(values_sheet).Cells(4, values_technology_selection_column)
@@ -856,7 +847,7 @@ Dim row As Integer
 '            selected_technology = "security"
 '        Case Else
 '            MsgBox "Technology option " & Cells(technology_selection_row, technology_selection_col) & " unknown, defaulting to Landing Zone review", vbCritical
-'            selected_technology = "lz"
+'            selected_technology = "alz"
 '    End Select
     
 '    'Look at the language cell
@@ -904,7 +895,7 @@ Dim row As Integer
     Exit Sub
 set_checklist_variables_err:
     MsgBox "Error while reading checklist selection options, defaulting to Landing Zone and English: " & CStr(Err.Number) & ": " & Err.Description, vbCritical
-    selected_technology = "lz"
+    selected_technology = "alz"
     selected_language = "en"
     import_graph_queries = True
 End Sub
@@ -988,4 +979,3 @@ Sub test()
         End If
     End If
 End Sub
-
