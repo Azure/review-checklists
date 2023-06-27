@@ -292,7 +292,7 @@ else:
     if technology:
         checklist_url = "https://raw.githubusercontent.com/Azure/review-checklists/main/checklists/" + technology + "_checklist.en.json"
     else:
-        checklist_url = "https://raw.githubusercontent.com/Azure/review-checklists/main/checklists/lz_checklist.en.json"
+        checklist_url = "https://raw.githubusercontent.com/Azure/review-checklists/main/checklists/alz_checklist.en.json"
     if args.verbose:
         print("DEBUG: Downloading checklist file from", checklist_url)
     response = requests.get(checklist_url)

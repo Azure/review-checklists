@@ -24,9 +24,9 @@ Summary of checklists supported and the respective responsible owners:
 
 ## What is an Azure Design Review?
 
-A common request of many organizations starting with public cloud is having their design double-checked to make sure that best practices are being followed. One of the teams in Microsoft providing this kind of design reviews and guidance is [FastTrack for Azure (FTA)](https://azure.microsoft.com/programs/azure-fasttrack/), part of Azure Engineering at Microsoft.
+A common request of many organizations starting with public cloud is having their design double-checked to make sure that best practices are being followed. The scope of this exercise could vary, from generic Azure Landing Zones to workload-specific deployments.
 
-When doing Azure design reviews (or any review for that matter), Microsoft employees (such as FastTrack for Azure engineers) and Microsoft partners often leverage Excel spreadsheets as the medium of choice to document findings and track design improvements and recommendations. A problem with Excel spreadsheets is that they are not easily made subject to revision control. Additionally, team collaboration with branching, issues, pull requests, reviews and others is difficult at best, impossible in most cases.
+When doing Azure design reviews (or any review for that matter), Microsoft employees and Microsoft partners often leverage Excel spreadsheets as the medium of choice to document findings and track design improvements and recommendations. A problem with Excel spreadsheets is that they are not easily made subject to revision control. Additionally, team collaboration with branching, issues, pull requests, reviews and others is difficult at best, impossible in most cases.
 
 ## Why this repository?
 
