@@ -2,328 +2,130 @@
     "$schema": "checklist.schema.json",
     "items": [
         {
-            "category": "Foundation",
-            "subcategory": "General",
-            "text": "Determine in which Azure regions AVD Host Pools will be deployed.",
-            "description": "AVD is a non-regional service, Host Pools can be created in any region, automatic redirection from closest front-end will happen automatically.",
-            "guid": "42e52f47-21d9-428c-8b1b-d521e44a29a9",
+            "category": "Business Continuity and Disaster Recovery",
+            "subcategory": "Compute",
+            "text": "Determine the expected High Availability SLA for applications/desktops published through AVD",
+            "description": "AVD control plane does not offer a financially backed service level agreement. We strive to attain at least 99.9% availability for the Azure Virtual Desktop service URLs. The availability of the session host virtual machines in your subscription is covered by the Virtual Machines SLA. Dependent resources/services and infrastructure availability must be also considered to properly satisfy global high-availability requirements.",
+            "guid": "56c57ba5-9119-4bf8-b8f5-c586c7d9cdc1",
             "severity": "High",
-            "link": "https://azure.microsoft.com/global-infrastructure/services/?products=virtual-desktop"
+            "link": "https://azure.microsoft.com/support/legal/sla/virtual-desktop/v1_0/"
         },
         {
-            "category": "Foundation",
-            "subcategory": "General",
-            "text": "Determine metadata location for AVD service",
-            "description": "AVD must store metadata to support the service; this is stored in the specified geography. However, this is independent of the regions where Host Pools are located.",
-            "guid": "bad37ead-53cc-47ce-8d7a-aab3571449ab",
+            "category": "Business Continuity and Disaster Recovery",
+            "subcategory": "Compute",
+            "text": "Assess Geo Disaster Recovery requirements for AVD Host Pools",
+            "description": "'Active-Active' model can be achieved with multiple host pools in different regions. A single Host Pool with VMs from different regions is not recommended. If multiple pools for same users will be used, the problem of how to synchronize/replicate user profiles must be solved. FSLogix Cloud Cache could be used, but need to be carefully reviewed and planned, or customers can decide to do not synchronize/replicate at all. 'Active-Passive' can be achieved using Azure Site Recovery (ASR) or on-demand Pool deployment with automated mechanism. For a detailed discussion on multi-region BCDR, please read the companion article in the 'More Info' column and this FSLogix related page: https://learn.microsoft.com/en-us/fslogix/concepts-container-recovery-business-continuity.",
+            "guid": "6acc076e-f9b1-441a-a989-579e76b897e7",
             "severity": "Medium",
-            "link": "https://docs.microsoft.com/azure/virtual-desktop/data-locations"
+            "link": "https://learn.microsoft.com/azure/architecture/example-scenario/wvd/azure-virtual-desktop-multi-region-bcdr"
         },
         {
-            "category": "Foundation",
-            "subcategory": "Capacity Planning",
-            "text": "Determine the Host Pool type to use",
-            "description": "A host pool is a collection of Azure virtual machines that register to Azure Virtual Desktop as session hosts. A host pool can be one of two types: Personal and Pooled. Which type to use, and how many, is a key design decision that must be documented and validated. See companion article in 'More Info' column for more details.",
-            "guid": "8468c55a-775c-46ee-a5b8-6ad8844ce3b2",
-            "severity": "High",
-            "link": "https://learn.microsoft.com/azure/virtual-desktop/terminology#host-pools"
-        },
-        {
-            "category": "Foundation",
-            "subcategory": "Capacity Planning",
-            "text": "Estimate the number of different Host Pools to deploy ",
-            "description": "Use your design criteria to determine the number of Host Pools to deploy. This will be based on factors such as different OS images, multi-region support, guest VM hardware differences (such as GPU support or no), different user expectations and uptime requirements (examples might be 'Executives', 'Office Workers', 'Developers', etc.), and Host Pool RDP settings (such as drive redirection support). These will determine the number of host pools as well as how many hosts will be in each pool.",
-            "guid": "4e98495f-d3c0-4af2-aa59-a793395a32a7",
-            "severity": "High",
-            "link": "https://learn.microsoft.com/azure/virtual-desktop/terminology?WT.mc_id=Portal-fx#host-pools"
-        },
-        {
-            "category": "Foundation",
-            "subcategory": "Capacity Planning",
-            "text": "For Personal Host Pool type, select the proper assignment type",
-            "description": "Confirm that the difference between automatic and direct assignment is well understood and the selected option is appropriate for the scenario in question. Automatic is the default setting.",
-            "guid": "b38b875b-a1cf-4204-a901-3a5d3ce474db",
+            "category": "Business Continuity and Disaster Recovery",
+            "subcategory": "Compute",
+            "text": "Separate critical applications in different AVD Host Pools",
+            "description": "Before approaching Azure Virtual Desktop BCDR planning and design, it is important to initially consider which applications are consumed through AVD are critical. You may want to separate them from non-critical apps and use a separate Host Pool with a different disaster recovery approach and capabilities.",
+            "guid": "10a7da7b-e996-46e1-9d3c-4ada97cc3d13",
             "severity": "Low",
-            "link": "https://docs.microsoft.com/azure/virtual-desktop/configure-host-pool-personal-desktop-assignment-type"
+            "link": "https://docs.microsoft.com/azure/virtual-desktop/disaster-recovery"
         },
         {
-            "category": "Foundation",
-            "subcategory": "Capacity Planning",
-            "text": "For Pooled Host Pool type, select the best load balancing method",
-            "description": "Check which one to use and available options, autoscale ignores existing load-balancing algorithms.",
-            "guid": "cbd8682a-6abc-4a2a-9fda-1dbf3dc95d48",
-            "severity": "Low",
-            "link": "https://docs.microsoft.com/azure/virtual-desktop/host-pool-load-balancing"
-        },
-        {
-            "category": "Foundation",
-            "subcategory": "Capacity Planning",
-            "text": "For Pooled Host Pool type, VMs shouldn't have more than 32 cores",
-            "description": "The number of cores increase, the system's synchronization overhead also increases. Especially for multiple user's sign-in simultaneously. Make sure not to use a VM that is too large for the session host",
-            "guid": "b3724959-4943-4577-a3a9-e10ff6345f24",
-            "severity": "Medium",
-            "link": "https://learn.microsoft.com/windows-server/remote/remote-desktop-services/virtual-machine-recs"
-        },        
-        {
-            "category": "Foundation",
-            "subcategory": "Capacity Planning",
-            "text": "Do not use the same Host Pool to offer both full desktops (DAG) and Remote Apps to the same set of users",
-            "description": "AVD does not support assigning both the RemoteApp and Desktop Application Group (DAG) in a single host pool to the same set of users. Doing so will cause a single user to have two user sessions in a single host pool. Users aren't supposed to have two active sessions at the same time in the same host pool using the same profile.",
-            "guid": "b384b7ed-1cdd-457e-a2cd-c8d4d55bc144",
+            "category": "Business Continuity and Disaster Recovery",
+            "subcategory": "Compute",
+            "text": "Plan the best resiliency option for AVD Host Pool deployment",
+            "description": "Each Host Pool can be deployed using Availability Zones (AZ) or Availability Set (AS). To maximize resiliency, usage of AZ is recommended: at Host Pool creation time you can decide to spread Host Pool Session Hosts across all available AZ. Usage of AS will not protect from single datacenter failure, then should be used only in regions where AZ are not available. More details on AZ and AVD in the companion article. For a comparison between AZ and AS you can read here: https://learn.microsoft.com/en-us/azure/virtual-machines/availability.",
+            "guid": "25ab225c-6f4e-4168-9fdd-dea8a4b7cdeb",
             "severity": "High",
-            "link": "https://learn.microsoft.com/azure/virtual-desktop/terminology?WT.mc_id=Portal-fx#application-groups"
+            "link": "https://techcommunity.microsoft.com/t5/azure-virtual-desktop-blog/announcing-general-availability-of-support-for-azure/ba-p/3636262"
         },
         {
-            "category": "Foundation",
-            "subcategory": "Capacity Planning",
-            "text": "Estimate the number of Application Groups required across all Host Pools in the Microsoft Entra ID tenant",
-            "description": "There is a limit of 500 Application Groups that can be created in AVD for each Microsoft Entra ID (former Azure AD) tenant. The limit can be increased (see the companion link for details) but it is not recommended.",
-            "guid": "971cc4a4-b1f7-4c12-90e0-1ad96808f00c",
+            "category": "Business Continuity and Disaster Recovery",
+            "subcategory": "Compute",
+            "text": "Assess the requirement to backup AVD Session Host VMs",
+            "description": "Azure Backup can be used to protect Host Pool VMs. For Pooled Pools, this is not necessary since should be stateless. Instead, this option can be considered for Personal Host Pools.",
+            "guid": "4c61fc3f-c14e-4ea6-b69e-8d9a3eec218e",
             "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits#azure-virtual-desktop-service-limits"
+            "link": "https://docs.microsoft.com/azure/virtual-desktop/disaster-recovery"
         },
         {
-            "category": "Foundation",
-            "subcategory": "Capacity Planning",
-            "text": "Estimate the number of Applications for each Application Group",
-            "description": "Applications are grouped under Application Groups as containers for publishing and assigning permissions: we recommend that you do not publish more than 50 applications per application group.",
-            "guid": "fa9f2895-473d-439b-ab8e-5a5cf92c7f32",
+            "category": "Business Continuity and Disaster Recovery",
+            "subcategory": "Compute",
+            "text": "Prepare a local DR strategy for Personal Host Pool Session Hosts",
+            "description": "Even for Personal Pools, usage of Availability Zones, when available, is recommended. Three possible in-region DR strategies are possible, it is recommended to select the best one based on cost, RTO/RPO, and if it is really necessary to save the entire VM OS disk: (1) create each session host in a specific zone (AZ) and then use Azure Site Recovery (ASR) to replicate to a different zone. (2) Use Azure Backup to backup and restore the specific session host in a different AZ. (3) Create a new session host in a different AZ and rely on FSLogix and/or OneDrive to make data and settings available on the new machine. All options require administrator intervention for DR and direct user assignment at Host Pool level, then must be planned and configured in advance.",
+            "guid": "5da58639-ca3a-4961-890b-29663c5e10d",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/site-recovery/azure-to-azure-how-to-enable-zone-to-zone-disaster-recovery"
+        },
+        {
+            "category": "Business Continuity and Disaster Recovery",
+            "subcategory": "Dependencies",
+            "text": "Plan for Golden Image cross-region availability",
+            "description": "If custom images are used to deploy AVD Host Pool VMs, it is important to ensure those artifacts are available in all regions where AVD is deployed. Azure Compute Gallery service can be used to replicate images across all regions where a Host Pool is deployed, with redundant storage and in multiple copies. Please be aware that the Azure Compute Gallery service isn't a global resource. For disaster recovery scenarios, the best practice is to have at least two galleries, in different regions.",
+            "guid": "dd2e0d5d-771d-441e-9610-cc57b4a4a141",
             "severity": "Low",
-            "link": "https://learn.microsoft.com/azure/architecture/example-scenario/wvd/windows-virtual-desktop#considerations"
+            "link": "https://learn.microsoft.com/azure/virtual-machines/azure-compute-gallery"
         },
         {
-            "category": "Foundation",
-            "subcategory": "Capacity Planning",
-            "text": "Evaluate the usage of FSLogix for Personal Host Pools",
-            "description": "FSLogix is not required for Personal Host Pools since each VM is statically assigned to a single user, then no immediate needs for a roaming profile solution. In some usage scenarios FSLogix can help. For example, a VM can be re-assigned, or user moved to another desktop, or roaming profile can be used to save user profile in a different location for DR purposes.",
-            "guid": "38b19ab6-0693-4992-9394-5590883916ec",
-            "severity": "Low",
-            "link": "https://learn.microsoft.com/en-us/azure/virtual-desktop/configure-host-pool-personal-desktop-assignment-type?tabs=azure#reassign-a-personal-desktop"
+            "category": "Business Continuity and Disaster Recovery",
+            "subcategory": "Dependencies",
+            "text": "Assess Infrastructure & Application dependencies ",
+            "description": "If users of the AVD infrastructure need on-premises resource access, high availability of network infrastructure required to connect is also critical and should be considered. Resiliency of authentication infrastructure needs to be assessed and evaluated. BCDR aspects for dependent applications and other resources need to be considered to ensure availability in the secondary DR location.",
+            "guid": "fd339489-8c12-488b-9c6a-57cfb644451e",
+            "severity": "Medium",
+            "link": "https://docs.microsoft.com/azure/virtual-desktop/disaster-recovery"
         },
         {
-            "category": "Foundation",
-            "subcategory": "Capacity Planning",
-            "text": "Run workload performance test to determine the best Azure VM SKU and size to use",
-            "description": "Use the link provided to set a starting point for SKU decision, then validate using a performance test. Ensure a minimum of four cores for Production is selected per Session Host (multi-session)",
-            "guid": "e1112dbd-7ba0-412e-9b94-ef6e047d2ea2",
+            "category": "Business Continuity and Disaster Recovery",
+            "subcategory": "Storage",
+            "text": "Assess which data need to be protected in the Profile and Office Containers",
+            "description": "Not all data inside FSLogix user profiles may deserve protection from disaster. Additionally, if external storage is used, for example OneDrive or File Servers/Shares, what is remaining in the FSLogix profile is minimal and could be lost in some extreme circumstances. In other cases, data inside the profile can be rebuilt from other storages (for example Outlook Inbox in cached mode).",
+            "guid": "687ab077-adb5-49e5-a960-3334fdf8cc23",
+            "severity": "Medium",
+            "link": "https://docs.microsoft.com/fslogix/manage-profile-content-cncpt"
+        },
+        {
+            "category": "Business Continuity and Disaster Recovery",
+            "subcategory": "Storage",
+            "text": "Build a backup protection strategy for Profile and Office Containers",
+            "description": "Preventing data loss for critical user data is important, first step is to assess which data need to be saved and protected. If using OneDrive or other external storage, saving user Profile and/or Office Containers data maybe not necessary. Appropriate mechanism must be considered to provide protection for critical user data. Azure Backup service can be used to protect Profile and Office Containers data when stored on Azure Files Standard and Premium tiers. Azure NetApp Files Snapshots and Policies can be used for Azure NetApp Files (all tiers).",
+            "guid": "fc4972cc-3cd2-45bf-a707-6e9eab4bed32",
+            "severity": "Medium",
+            "link": "https://docs.microsoft.com/azure/virtual-desktop/disaster-recovery"
+        },
+        {
+            "category": "Business Continuity and Disaster Recovery",
+            "subcategory": "Storage",
+            "text": "Assess Profile Container storage replication requirements and resiliency for BCDR purpose",
+            "description": "In AVD, multiple replication mechanisms and strategies can be used for user data residing in FSLogix containers: [Profile Pattern #1]: Native Azure storage replication mechanisms, for example Azure Files Standard GRS replication, Azure NetApp Files Cross Region Replication. Use Zone Replicated Storage (ZRS) or Geo replicated storage (GRS) for Azure Files is recommended. LRS with local-only resiliency can be used if no zone/region protection is required. NOTE: Azure Files Share Standard is LRS/ZRS/GRS, but with 100TB large support enabled only LRS/ZRS are supported. [Profile Pattern #2]: FSLogix Cloud Cache is built in automatic mechanism to replicate containers between different (up to 4) storage accounts. Cloud Cache should be used only when:(1) User Profile or Office containers data availability required high-availability SLA is critical and need to be resilient to region failure. (2) Selected storage option is not able to satisfy BCDR requirements. For example, with Azure File Share Premium tier, or Azure File Share Standard with Large File Support enabled, GRS is not available. (3) When replication between disparate storage is required. [Profile Pattern #3]: Only set up geo disaster recovery for application data and not for user data/profile containers: store important application data in separate storages, like OneDrive or other external storage with its own built-in DR mechanism.",
+            "guid": "9f7547c1-746d-4c56-868a-714435bd09dd",
+            "severity": "Medium",
+            "link": "https://docs.microsoft.com/azure/virtual-desktop/disaster-recovery"
+        },
+        {
+            "category": "Business Continuity and Disaster Recovery",
+            "subcategory": "Storage",
+            "text": "Review Azure Files disaster recovery strategy",
+            "description": "For local disaster recovery, Azure Backup for Azure Files can be used. For cross-region geo disaster recovery: GRS for Azure Files is only available with standard SKU and no large share support, then not suitable in most customer scenarios. If geo-replication is required with Azure File Share Premium, replication with FSLogix Cloud Cache can be evaluated, or 'in-region' Availability Zone (AZ) only resiliency should be considered.",
+            "guid": "3d4f3537-c134-46dc-9602-7a71efe1bd05",
+            "severity": "Medium",
+            "link": "https://docs.microsoft.com/azure/backup/backup-afs"
+        },
+        {
+            "category": "Business Continuity and Disaster Recovery",
+            "subcategory": "Storage",
+            "text": "Use Zone Redundant Storage (ZRS) for Azure Files to maximize resiliency",
+            "description": "Zone Redundant Storage will maximize in-region resiliency for the user profile data. ZRS is supported for premium file shares through the 'FileStorage' storage account kind. ZRS is supported in standard general-purpose v2 storage accounts. Usage of zone redundant storage must be paired with zone redundant deployment of Session Hosts in each Host Pool. ",
+            "guid": "10d4e875-d502-4142-a795-f2b6eff34f88",
             "severity": "High",
-            "link": "https://docs.microsoft.com/windows-server/remote/remote-desktop-services/virtual-machine-recs"
+            "link": "https://learn.microsoft.com/azure/storage/files/files-redundancy#zone-redundant-storage"
         },
         {
-            "category": "Foundation",
-            "subcategory": "Capacity Planning",
-            "text": "Verify AVD scalability limits for the environment",
-            "description": "It is critical to check AVD capacity and limits reported in the referenced article. Additional limits and thresholds apply for network, compute, storage and service management. ",
-            "guid": "992b1cd6-d2f5-44b2-a769-e3a691e8838a",
-            "severity": "High",
-            "link": "https://learn.microsoft.com/azure/architecture/example-scenario/wvd/windows-virtual-desktop#considerations"
-        },
-        {
-            "category": "Foundation",
-            "subcategory": "Capacity Planning",
-            "text": "Determine if  Session Hosts will require GPU",
-            "description": "Host Pools with GPU require special configuration, please be sure to review the referenced article.",
-            "guid": "c936667e-13c0-4056-94b1-e945a459837e",
-            "severity": "Low",
-            "link": "https://docs.microsoft.com/azure/virtual-desktop/configure-vm-gpu"
-        },
-        {
-            "category": "Foundation",
-            "subcategory": "Capacity Planning",
-            "text": "Use Azure VM SKUs able to leverage Accelerated Networking",
-            "description": "Whenever is possible, it is recommended to leverage VM SKUs with Accelerated Networking feature. This feature does require specific VM SKU/size and OS versions, please see the list and requirement in the companion article.",
-            "guid": "b47a393a-0803-4272-a479-8b1578b219a4",
-            "severity": "Low",
-            "link": "https://learn.microsoft.com/azure/virtual-network/accelerated-networking-overview"
-        },
-        {
-            "category": "Foundation",
-            "subcategory": "Clients & Users",
-            "text": "Assess how many users will connect to AVD and from which regions",
-            "description": "For proper planning and deployment, it is important to assess the maximum number of concurrent and total users for each Host Pool. Additionally, users from different regions may require different Host Pools to ensure the best user experience.",
-            "guid": "bb91a33d-90ca-4e2c-a881-3706f7c0cb9f",
+            "category": "Business Continuity and Disaster Recovery",
+            "subcategory": "Storage",
+            "text": "Review Azure NetApp Files disaster recovery strategy",
+            "description": "For local disaster recovery, Azure NetApp Files (ANF) native backup is available. ANF is essentially locally redundant, then for cross-region geo disaster recovery it is necessary to use an additional mechanism that is Cross-Region Replication (CRR) https://learn.microsoft.com/en-us/azure/azure-netapp-files/cross-region-replication-create-peering. Currently, ANF does not provide replication nor redundancy across different Availability Zones (AZ), only the possibility to select in which single AZ to place the ANF volume: https://learn.microsoft.com/en-us/azure/azure-netapp-files/manage-availability-zone-volume-placement.",
+            "guid": "23429db7-2281-4376-85cc-57b4a4b18142",
             "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/virtual-desktop/overview"
-        },
-        {
-            "category": "Foundation",
-            "subcategory": "Clients & Users",
-            "text": "Assess external dependencies for each Host Pool",
-            "description": "The dependencies on resources external to the AVD pool should be assessed and reviewed, for example Active Directory, external file shares or other storage, on-premises services and resources, network infrastructure components like VPN and or ExpressRoute, external services and 3rd-party components. For all these resources, latency from the AVD Host Pool needs to be evaluated and connectivity considered. Additionally, BCDR considerations need to be applied to these dependencies as well.",
-            "guid": "6abca2a4-fda1-4dbf-9dc9-5d48c7c791dc",
-            "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/architecture/example-scenario/wvd/windows-virtual-desktop?toc=%2Fazure%2Fvirtual-desktop%2Ftoc.json&bc=%2Fazure%2Fvirtual-desktop%2Fbreadcrumb%2Ftoc.json"
-        },
-        {
-            "category": "Foundation",
-            "subcategory": "Clients & Users",
-            "text": "Review user client OS used and AVD client type",
-            "description": "AVD offers a variety of client types (fat, thin, web) to connect over different platforms (Windows, MacOS, iOS, Android). Review limitations of each client and compare multiple options when possible.",
-            "guid": "a1f6d565-99e5-458b-a37d-4985e1112dbd",
-            "severity": "Low",
-            "link": "https://learn.microsoft.com/en-us/azure/virtual-desktop/users/connect-windows"
-        },
-        {
-            "category": "Foundation",
-            "subcategory": "Clients & Users",
-            "text": "Run a PoC to validate end-to-end user experience and impact of network latency",
-            "description": "Depending on the user locations, and AVD region deployment, users may have a non-optimal experience, hence is important to test as soon as possible in a small PoC environment. Run the 'Azure Virtual Desktop Experience Estimator' tool to select the best Azure region to deploy Host Pools. Beyond 150ms latency, user experience may be not optimal.",
-            "guid": "d2f54b29-769e-43a6-a1e8-838ac936667e",
-            "severity": "High",
-            "link": "https://azure.microsoft.com/services/virtual-desktop/assessment/"
-        },
-        {
-            "category": "Foundation",
-            "subcategory": "Clients & Users",
-            "text": "Assess and document RDP settings for all user groups",
-            "description": "RDP settings can currently only be configured at the host pool level, not per user/group. If different settings are required for different set of users, it is recommended to create multiple Host Pools.",
-            "guid": "3b365a5c-7acb-4e48-abe5-4cd79f2e8776",
-            "severity": "Low",
-            "link": "https://docs.microsoft.com/azure/virtual-desktop/customize-rdp-properties"
-        },
-        {
-            "category": "Foundation",
-            "subcategory": "General",
-            "text": "Check Azure quotas and availability for specific VM sizes and types in the selected regions",
-            "description": "Check for specific VM SKUs, especially if you need GPU or high-specs SKUs, and eventually Azure NetApp Files if used.",
-            "guid": "8053d89e-89dc-47b3-9be2-a1a27f7a9e91",
-            "severity": "Low",
-            "link": "https://docs.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits"
-        },
-        {
-            "category": "Identity",
-            "subcategory": "Requirements",
-            "text": "A Microsoft Entra ID tenant must be available with at least one subscription linked",
-            "description": "An Azure subscription must be parented to the same Microsoft Entra ID (former Azure AD) tenant, that contains a virtual network that either contains or is connected to the Windows Server Active Directory Domain Services or Microsoft Entra ID Domain Services instance.",
-            "guid": "6ceb5443-5125-4922-9442-93bb628537a5",
-            "severity": "High",
-            "link": "https://learn.microsoft.com/azure/virtual-desktop/prerequisites?tabs=portal#identity"
-        },
-        {
-            "category": "Identity",
-            "subcategory": "Requirements",
-            "text": "Review and document your identity scenario",
-            "description": "Azure Virtual Desktop supports different types of identities depending on which configuration you choose. Please review the supported scenarios mentioned in the 'More Info' article and document the design decision accordingly in the 'Comment' column. Critically, external identities (B2B or B2C) are not supported. Be sure to review also the list of supported scenarios in https://learn.microsoft.com/en-us/azure/virtual-desktop/prerequisites?tabs=portal#supported-identity-scenarios.",
-            "guid": "b4ce4781-7557-4a1f-8043-332ae199d44c",
-            "severity": "High",
-            "link": "https://learn.microsoft.com/azure/virtual-desktop/authentication"
-        },
-        {
-            "category": "Identity",
-            "subcategory": "Requirements",
-            "text": "Assess User Account types and requirements",
-            "description": "Users need accounts that are in Microsoft Entra ID (former Azure AD). If you're also using AD DS or Azure AD Domain Services in your deployment of Azure Virtual Desktop, these accounts will need to be hybrid identities, which means the user accounts are synchronized. If you're using Microsoft Entra ID with AD DS, you'll need to configure Azure AD Connect to synchronize user identity data between AD DS and Microsoft Entra ID. If you're using Microsoft Entra ID with Azure AD Domain Services, user accounts are synchronized one way from Microsoft Entra ID to Azure AD Domain Services. This synchronization process is automatic. AVD also supports Microsoft Entra ID native accounts with some restrictions. External identities (B2B or B2C) are not supported.",
-            "guid": "f9b141a8-98a5-435e-9378-97e71ca7da7b",
-            "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/virtual-desktop/prerequisites?tabs=portal#supported-identity-scenarios"
-        },
-        {
-            "category": "Identity",
-            "subcategory": "Requirements",
-            "text": "If Single-Sign On (SSO) is a requirement, review the supported scenarios and prerequisites",
-            "description": "AVD supports SSO using either Active Directory Federation Services (AD FS) or Microsoft Entra ID (former Azure AD) authentication. The latter is recommended, please check the requirements and limitation in the 'More Info' article. Using AD FS could be a viable choice if already present in the customer environment, it is not recommended to deploy a brand new ADFS infrastructure just for AVD SSO implementation.",
-            "guid": "5f9f680a-ba07-4429-bbf7-93d7071561f4",
-            "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/virtual-desktop/authentication#single-sign-on-sso"
-        },
-        {
-            "category": "Identity",
-            "subcategory": "Requirements",
-            "text": "Select the proper AVD Session Host domain join type",
-            "description": "VMs can be Windows Active Directory (AD) domain-joined, Hybrid AD-joined, Microsoft Entra ID (former Azure AD) Joined or Azure AD Domain Services joined. Be sure to review supported scenarios, limitations and requirements from the referenced article.",
-            "guid": "ea962a15-9394-46da-a7cc-3923266b2258",
-            "severity": "High",
-            "link": "https://learn.microsoft.com/azure/virtual-desktop/prerequisites?tabs=portal#supported-identity-scenarios"
-        },
-        {
-            "category": "Identity",
-            "subcategory": "Requirements",
-            "text": "Before using Azure AD Domain Services (AAD-DS) for AVD, be sure to review the limitations.",
-            "description": "Compare self-managed Windows Active Directory Domain Services, Microsoft Entra ID (former Azure AD), and managed Azure AD Domain Services (AAD-DS)",
-            "guid": "6f4a1651-bddd-4ea8-a487-cdeb4861bc3b",
-            "severity": "Low",
-            "link": "https://docs.microsoft.com/azure/active-directory-domain-services/compare-identity-solutions"
-        },
-        {
-            "category": "Identity",
-            "subcategory": "Active Directory",
-            "text": "Create at least two Active Directory Domain Controllers (DCs) in Azure VNet environment close to AVD Host Pool",
-            "description": "AD DCs in Azure are recommended (at least two in different AZ) to reduce latency for users logging into AVD session hosts, and eventually for Azure NetApp Files and AD integration. A DC need to be able to talk to DCs for ALL child domains. As alternative, on-premise connectivity must be used to reach AD DCs.",
-            "guid": "c14aea7e-65e8-4d9a-9aec-218e6436b073",
-            "severity": "Medium",
-            "link": "https://docs.microsoft.com/azure/architecture/reference-architectures/identity/adds-extend-domain"
-        },
-        {
-            "category": "Identity",
-            "subcategory": "Active Directory",
-            "text": "Create a specific OU in Active Directory for each Host Pool",
-            "description": "Recommended to create a separate OU per Host Pool under a separate OU hierarchy. These OUs will contain machine accounts of AVD Session Hosts. ",
-            "guid": "6db55f57-9603-4334-adf9-cc23418db612",
-            "severity": "Medium",
-            "link": "https://docs.microsoft.com/azure/virtual-desktop/create-host-pools-azure-marketplace"
-        },
-        {
-            "category": "Identity",
-            "subcategory": "Active Directory",
-            "text": "Review Domain GPOs that will be applied to OU and impacting Host Pool Session Hosts functionalities",
-            "description": "Carefully review, and potentially block/filter inheritance of GPOs to the OUs containing AVD Host Pools. ",
-            "guid": "7126504b-b47a-4393-a080-327294798b15",
-            "severity": "Medium",
-            "link": "https://docs.microsoft.com/previous-versions/windows/desktop/Policy/group-policy-hierarchy"
-        },
-        {
-            "category": "Identity",
-            "subcategory": "Active Directory",
-            "text": "Configure FSLogix settings using the built-in provided GPO ADMX template",
-            "description": "If Active Directory Domain GPOs are used, it is recommended to configure FSLogix using the built-in provided GPO ADMX template referenced in the companion article in the 'More Info' column",
-            "guid": "2226a8e3-50a4-4ac3-8bd6-ee150553051f",
-            "severity": "Medium",
-            "link": "https://learn.microsoft.com/fslogix/how-to-use-group-policy-templates"
-        },
-        {
-            "category": "Identity",
-            "subcategory": "Active Directory",
-            "text": "Create a dedicated user account with only permissions to join VM to the domain",
-            "description": "It is recommended to have a specific dedicated account with minimal permissions, and without the default 10 joins limitation. Review the companion article for more details.",
-            "guid": "347dc560-28a7-41ff-b1cd-15dd2f0d5e77",
-            "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/virtual-desktop/prerequisites?tabs=portal#session-hosts"
-        },
-        {
-            "category": "Identity",
-            "subcategory": "Active Directory",
-            "text": "Create a domain user group for each set of users that will be granted access to each Host Pool Application Group (DAG or RAG)",
-            "description": "Avoid granting access per user, instead use AD groups and replicate them using Active Directory Connector (ADC) in Microsoft Entra ID (former Azure AD). ",
-            "guid": "2d41e361-1cc5-47b4-a4b1-410d43958a8c",
-            "severity": "Medium",
-            "link": "https://docs.microsoft.com/azure/virtual-desktop/manage-app-groups"
-        },
-        {
-            "category": "Identity",
-            "subcategory": "Active Directory",
-            "text": "Review your organization password expiration policy for accounts used by Azure Files AD integration",
-            "description": "If Azure Files Active Directory (AD) integration is used, as part of the configuration procedure, an AD account to represent the storage account (file share) will be created. You can choose to register as a computer account or service logon account, see FAQ for details. For computer accounts, there is a default password expiration age set in AD at 30 days. Similarly, the service logon account may have a default password expiration age set on the AD domain or Organizational Unit (OU). For both account types, we recommend you check the password expiration age configured in your AD environment and plan to update the password of your storage account identity of the AD account before the maximum password age. You can consider creating a new AD Organizational Unit (OU) in AD and disabling password expiration policy on computer accounts or service logon accounts accordingly.",
-            "guid": "2289b3d6-b57c-4fc6-9546-1e1a3e3453a3",
-            "severity": "High",
-            "link": "https://docs.microsoft.com/azure/storage/files/storage-files-identity-ad-ds-enable"
-        },
-        {
-            "category": "Identity",
-            "subcategory": "Active Directory",
-            "text": "A Windows Server Active Directory forest/domain must be in sync with Microsoft Entra ID",
-            "description": "You can configure this using Active Directory Connect (ADC) or Azure AD Domain Services (for hybrid or cloud organizations). Microsoft Entra ID is the new name for Azure Active Directory (Azure AD).",
-            "guid": "5119bf8e-8f58-4542-a7d9-cec166cd072a",
-            "severity": "High",
-            "link": "https://learn.microsoft.com/azure/virtual-desktop/prerequisites?tabs=portal#identity"
-        },
-        {
-            "category": "Identity",
-            "subcategory": "Microsoft Entra ID",
-            "text": "Configure Azure Files share for Microsoft Entra ID (former Azure AD) Kerberos authentication on Microsoft Entra ID Joined scenario",
-            "description": "If Azure Files is used and pre-requisites can be satisfied, it is recommended to configure (Microsoft Entra ID) Kerberos authentication. This configuration will allow to store FSLogix profiles that can be accessed by hybrid user identities from Azure AD-joined session hosts without requiring network line-of-sight to domain controllers.",
-            "guid": "e777fd5e-c5f1-4d6e-8fa9-fc210b88e338",
-            "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/storage/files/storage-files-identity-auth-hybrid-identities-enable"
+            "link": "https://learn.microsoft.com/azure/azure-netapp-files/cross-region-replication-create-peering"
         },
         {
             "category": "Compute",
@@ -495,258 +297,330 @@
             "guid": "adecb27f-dc40-40f5-aca2-0090f633b1c9",
             "severity": "Low",
             "link": "https://learn.microsoft.com/azure/virtual-desktop/multimedia-redirection"
-        },            
-        {
-            "category": "Networking",
-            "subcategory": "Networking",
-            "text": "Determine if hybrid connectivity is required to connect to on-premises environment",
-            "description": "If required to connect to on-premises environment, assess the current connectivity option or plan for the required connectivity (ExpressRoute, Azure S2S or 3rd-party NVA VPN). ",
-            "guid": "dd399cfd-7b28-4dc8-9555-6202bfe4563b",
-            "severity": "Medium",
-            "link": "https://docs.microsoft.com/azure/architecture/reference-architectures/hybrid-networking/"
         },
         {
-            "category": "Networking",
-            "subcategory": "Networking",
-            "text": "Determine Azure Virtual Network (VNet) placement for each AVD Host Pool",
-            "description": "AVD Host Pools can be deployed in either Azure Virtual WAN or traditional 'Hub & Spoke' network topologies. It is recommended to deploy each Host Pool in a separate 'spoke' VNet, using 'hub' is not recommended.",
-            "guid": "c8639648-a652-4d6c-85e5-02965388e5de",
-            "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/scenarios/wvd/eslz-network-topology-and-connectivity"
-        },
-        {
-            "category": "Networking",
-            "subcategory": "Networking",
-            "text": "Assess which on-premises resources are required from AVD Host Pools",
-            "description": "Evaluate the bandwidth requirements, ensure VPN/ER bandwidth will be enough, ensure proper routing and firewall rules are in place, test end-to-end latency. ",
-            "guid": "d227dd14-2b06-4c21-a799-9a646f4389a7",
-            "severity": "Medium",
-            "link": "https://docs.microsoft.com/azure/architecture/reference-architectures/hybrid-networking/"
-        },
-        {
-            "category": "Networking",
-            "subcategory": "Networking",
-            "text": "Need to control/restrict Internet outbound traffic for AVD hosts?",
-            "description": "Several options are available. You can use Azure Firewall or equivalent 3rd-party NVA, Network Security Group (NSG) and/or Proxy servers. NSG is not able to enable/disable by URL, only ports and protocols. Proxy should be used only as explicit setting in user browser. Details on using Azure Firewall Premium with AVD are reported in the companion article in the 'More Info' column. Be sure to allow proper access to required AVD URLs. Forced Tunneling to on-premises is not recommended.",
-            "guid": "fc4972cd-3cd2-41bf-9703-6e5e6b4bed3d",
-            "severity": "Medium",
-            "link": " https://docs.microsoft.com/azure/firewall/protect-windows-virtual-desktop"
-        },
-        {
-            "category": "Networking",
-            "subcategory": "Networking",
-            "text": "Ensure AVD control plane endpoints are accessible",
-            "description": "Required URLs for AVD control plane access by session hosts are documented here: https://docs.microsoft.com/azure/virtual-desktop/safe-url-list. A check tool is available to verify connectivity from the session hosts: https://docs.microsoft.com/azure/virtual-desktop/safe-url-list#required-url-check-tool. Forced Tunneling to on-premises is not recommended.",
-            "guid": "65c7acbe-45bb-4e60-ad89-f2e87778424d",
+            "category": "Foundation",
+            "subcategory": "Capacity Planning",
+            "text": "Determine the Host Pool type to use",
+            "description": "A host pool is a collection of Azure virtual machines that register to Azure Virtual Desktop as session hosts. A host pool can be one of two types: Personal and Pooled. Which type to use, and how many, is a key design decision that must be documented and validated. See companion article in 'More Info' column for more details.",
+            "guid": "8468c55a-775c-46ee-a5b8-6ad8844ce3b2",
             "severity": "High",
-            "link": "https://docs.microsoft.com/azure/virtual-desktop/safe-url-list"
+            "link": "https://learn.microsoft.com/azure/virtual-desktop/terminology#host-pools"
         },
         {
-            "category": "Networking",
-            "subcategory": "Networking",
-            "text": "Need to control/restrict Internet outbound traffic only for users on AVD hosts? ",
-            "description": "Consider the usage of Azure Defender Endpoint or similar 3rd-party agents to control user web navigation, see the Security section for more details.",
-            "guid": "73676ae4-6691-4e88-95ad-a42223e13810",
-            "severity": "Medium",
-            "link": "https://learn.microsoft.com/microsoft-365/security/defender-endpoint/onboard-windows-multi-session-device?view=o365-worldwide"
+            "category": "Foundation",
+            "subcategory": "Capacity Planning",
+            "text": "Estimate the number of different Host Pools to deploy ",
+            "description": "Use your design criteria to determine the number of Host Pools to deploy. This will be based on factors such as different OS images, multi-region support, guest VM hardware differences (such as GPU support or no), different user expectations and uptime requirements (examples might be 'Executives', 'Office Workers', 'Developers', etc.), and Host Pool RDP settings (such as drive redirection support). These will determine the number of host pools as well as how many hosts will be in each pool.",
+            "guid": "4e98495f-d3c0-4af2-aa59-a793395a32a7",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/virtual-desktop/terminology?WT.mc_id=Portal-fx#host-pools"
         },
         {
-            "category": "Networking",
-            "subcategory": "Networking",
-            "text": "Review custom UDR and NSG for AVD Host Pool subnets",
-            "description": "Custom UDR and NSG can be applied to AVD Host Pool subnets, for example to redirect to Azure Firewall or NVA, or to filter/block network traffic. In this case is recommended to carefully review to ensure optimal path for outbound traffic to AVD control plane is used. Service Tags can now be used with UDR and NSG, then AVD management plane traffic can be easily allowed: https://learn.microsoft.com/en-us/azure/virtual-desktop/safe-url-list.",
-            "guid": "523181a9-4174-4158-93ff-7ae7c6d37431",
+            "category": "Foundation",
+            "subcategory": "Capacity Planning",
+            "text": "For Personal Host Pool type, select the proper assignment type",
+            "description": "Confirm that the difference between automatic and direct assignment is well understood and the selected option is appropriate for the scenario in question. Automatic is the default setting.",
+            "guid": "b38b875b-a1cf-4204-a901-3a5d3ce474db",
             "severity": "Low",
-            "link": "https://docs.microsoft.com/azure/firewall/protect-windows-virtual-desktop"
+            "link": "https://docs.microsoft.com/azure/virtual-desktop/configure-host-pool-personal-desktop-assignment-type"
         },
         {
-            "category": "Networking",
-            "subcategory": "Networking",
-            "text": "Do not use Proxy servers, SSL termination and Deep Packet Inspection for AVD control plane traffic",
-            "description": "Network traffic from AVD Session Host VMs to AVD control plane should be as direct as possible. Redirecting this traffic through a Proxy or Firewall with deep packet inspection and/or SSL termination could cause serious issues and bad customer experience. It is recommended to bypass Proxy and Firewall just for the AVD control plane. User generated traffic surfing the web instead, should be filtered by Firewall and/or redirected to a Proxy. For details and guidelines, please see the companion article in the 'More Info' column.",
-            "guid": "cc6edca0-aeca-4566-9e92-cf246f1465af",
-            "severity": "High",
-            "link": "https://learn.microsoft.com/azure/virtual-desktop/proxy-server-support"
-        },
-        {
-            "category": "Networking",
-            "subcategory": "Networking",
-            "text": "Check the network bandwidth required for each user and in total for the VM SKU",
-            "description": "It is recommended to assess and review networking bandwidth requirements for users, based on the specific workload type. The referenced article provide general estimations and recommendations, but specific measure are required for proper sizing. ",
-            "guid": "516785c6-fa96-4c96-ad88-408f372734c8",
+            "category": "Foundation",
+            "subcategory": "Capacity Planning",
+            "text": "For Pooled Host Pool type, select the best load balancing method",
+            "description": "Check which one to use and available options, autoscale ignores existing load-balancing algorithms.",
+            "guid": "cbd8682a-6abc-4a2a-9fda-1dbf3dc95d48",
             "severity": "Low",
-            "link": "https://learn.microsoft.com/azure/virtual-desktop/rdp-bandwidth"
+            "link": "https://docs.microsoft.com/azure/virtual-desktop/host-pool-load-balancing"
         },
         {
-            "category": "Networking",
-            "subcategory": "Networking",
-            "text": "Evaluate usage Private Endpoint for Azure Files share",
-            "description": "If Azure Files SMB share will be used to store user profiles via FSLogix, the usage of Private Endpoint (PE) for private access to the storage is recommended. AVD Session Hosts will access the storage using a private IP in the same VNet, a separate subnet is recommended. This feature has an additional cost that must be evaluated. If PE will not be used, at least Service Endpoint is recommended (no cost associated).",
-            "guid": "ec27d589-9178-426d-8df2-ff60020f30a6",
+            "category": "Foundation",
+            "subcategory": "Capacity Planning",
+            "text": "For Pooled Host Pool type, VMs shouldn't have more than 32 cores",
+            "description": "The number of cores increase, the system's synchronization overhead also increases. Especially for multiple user's sign-in simultaneously. Make sure not to use a VM that is too large for the session host",
+            "guid": "b3724959-4943-4577-a3a9-e10ff6345f24",
             "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/storage/files/storage-files-networking-endpoints"
+            "link": "https://learn.microsoft.com/windows-server/remote/remote-desktop-services/virtual-machine-recs"
         },
         {
-            "category": "Networking",
-            "subcategory": "Networking",
-            "text": "Evaluate usage of RDP ShortPath for clients connecting from managed internal networks",
-            "description": "Connections to Azure Virtual Desktop can use TCP or UDP. RDP Shortpath is a feature of AVD that establishes a direct UDP-based transport between a supported Windows Remote Desktop client and session host. if clients have line of sight to AVD session hosts from internal network (VPN usage is not recommended), this feature can provide lower latency and best performances as explained in https://learn.microsoft.com/en-us/azure/virtual-desktop/rdp-shortpath?tabs=managed-networks#key-benefits.",
-            "guid": "b2074747-d01a-4f61-b1aa-92ad793d9ff4",
+            "category": "Foundation",
+            "subcategory": "Capacity Planning",
+            "text": "Do not use the same Host Pool to offer both full desktops (DAG) and Remote Apps to the same set of users",
+            "description": "AVD does not support assigning both the RemoteApp and Desktop Application Group (DAG) in a single host pool to the same set of users. Doing so will cause a single user to have two user sessions in a single host pool. Users aren't supposed to have two active sessions at the same time in the same host pool using the same profile.",
+            "guid": "b384b7ed-1cdd-457e-a2cd-c8d4d55bc144",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/virtual-desktop/terminology?WT.mc_id=Portal-fx#application-groups"
+        },
+        {
+            "category": "Foundation",
+            "subcategory": "Capacity Planning",
+            "text": "Estimate the number of Application Groups required across all Host Pools in the Microsoft Entra ID tenant",
+            "description": "There is a limit of 500 Application Groups that can be created in AVD for each Microsoft Entra ID (former Azure AD) tenant. The limit can be increased (see the companion link for details) but it is not recommended.",
+            "guid": "971cc4a4-b1f7-4c12-90e0-1ad96808f00c",
             "severity": "Medium",
-            "link": "https://docs.microsoft.com/azure/virtual-desktop/shortpath"
+            "link": "https://learn.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits#azure-virtual-desktop-service-limits"
         },
         {
-            "category": "Storage",
+            "category": "Foundation",
             "subcategory": "Capacity Planning",
-            "text": "Determine which type of managed disk will be used for the Session Hosts",
-            "description": "Possible options: Standard HDD, Standard SSD, or Premium SSD. Ephemeral disks are not supported, Ultra-Disks not recommended. Recommended to evaluate Premium for OS disk if user density is not low, and if Cloud Cache will be used. ",
-            "guid": "3611c818-b0a0-4bc5-80e4-3a18a9cd289c",
-            "severity": "Medium",
-            "link": "https://docs.microsoft.com/azure/virtual-machines/disks-types"
-        },
-        {
-            "category": "Storage",
-            "subcategory": "Capacity Planning",
-            "text": "Determine which storage backend solution will be used for FSLogix Profiles",
-            "description": "Possible options are: Azure NetApp Files, Azure Files, VM based File Server. File-server it is not recommended. Azure Files Premium typically a good starting point. NetApp usually required for large scale / high-performant environment. For a detailed comparison see the article in the 'More Info' column.",
-            "guid": "ed6b17db-8255-4462-b2ae-e4553afc8339",
-            "severity": "High",
-            "link": "https://docs.microsoft.com/azure/virtual-desktop/store-fslogix-profile"
-        },
-        {
-            "category": "Storage",
-            "subcategory": "Capacity Planning",
-            "text": "Do not share storage and profiles between different Host Pools",
-            "description": "Every Host Pool should use a separate set of storage accounts/volumes (at least one) and shares. Users should have a different profile for each Host Pool since settings and configurations are specific to each Host Pool. Additionally, accessing different Host Pools at the same time can cause errors on the shared user profile VHD/X. Usage of different storage accounts/volumes for multiple shares is also recommended to scale independently.",
-            "guid": "2fad62bd-5004-453c-ace4-64d862e7f5a4",
-            "severity": "High",
-            "link": "https://learn.microsoft.com/azure/virtual-desktop/store-fslogix-profile"
-        },
-        {
-            "category": "Storage",
-            "subcategory": "Capacity Planning",
-            "text": "Verify storage scalability limits and Host Pool requirements",
-            "description": "As a starting point for estimating profile container storage performance requirements we recommend to assume 10 IOPS per user in the steady state and 50 IOPS per user during sign-in/sign-out. Space requirements is simply obtained based on the maximum profiles size in FSLogix per the total number of users for each Host Pool. Multiple storage accounts can be used for the same Host Pool if required.",
-            "guid": "680e7828-9c93-4665-9d02-bff4564b0d93",
-            "severity": "High",
-            "link": "https://learn.microsoft.com/azure/virtual-desktop/faq#what-s-the-largest-profile-size-fslogix-can-handle-"
-        },
-        {
-            "category": "Storage",
-            "subcategory": "Capacity Planning",
-            "text": "For optimal performance, the storage solution and the FSLogix profile container should be in the same Azure region.",
-            "description": "Avoid introducing additional latency and costs associated with cross-region network traffic where possible.",
-            "guid": "8aad53cc-79e2-4e86-9673-57c549675c5e",
-            "severity": "High",
-            "link": "https://docs.microsoft.com/azure/virtual-desktop/fslogix-containers-azure-files"
-        },
-        {
-            "category": "Storage",
-            "subcategory": "FSLogix",
-            "text": "Do not use Office Containers (ODFC) if not strictly required and justified",
-            "description": "The recommendation in Azure Virtual Desktop is to use Profile Container without Office Container (ODFC) split unless you are planning for specific Business Continuity and Disaster Recovery (BCDR) scenarios as described in the Disaster Recovery section below. https://docs.microsoft.com/fslogix/profile-container-office-container-cncpt ",
-            "guid": "df47d2d9-2881-4b1c-b5d1-e54a29759e39",
-            "severity": "High",
-            "link": "https://learn.microsoft.com/fslogix/concepts-container-types#when-to-use-profile-and-odfc-containers"
-        },
-        {
-            "category": "Storage",
-            "subcategory": "FSLogix",
-            "text": "Configure the recommended antivirus exclusions for FSLogix (includes not scanning VHD(x) files on connect).",
-            "description": "Make sure to configure the following antivirus exclusions for FSLogix Profile Container virtual hard drives, as documented in the referenced article in the 'More Info' column.",
-            "guid": "83f63047-22ee-479d-9b5c-3632054b69ba",
-            "severity": "Medium",
-            "link": "https://learn.microsoft.com/fslogix/overview-prerequisites#configure-antivirus-file-and-folder-exclusions"
-        },
-        {
-            "category": "Storage",
-            "subcategory": "FSLogix",
-            "text": "Review and confirm configured maximum profile size in FSLogix",
-            "description": "Profile containers have a default max size of 30GB. If large Profile Containers are anticipated, and customers wants to try to keep them small, consider using OneDrive to host Office 365 files outside the FSLogix profile.",
-            "guid": "01e6a84d-e5df-443d-8992-481718d5d1e5",
-            "severity": "High",
-            "link": "https://docs.microsoft.com/fslogix/profile-container-configuration-reference"
-        },
-        {
-            "category": "Storage",
-            "subcategory": "FSLogix",
-            "text": "Review FSLogix registry keys and determine which ones to apply",
-            "description": "Defaults and recommended settings are reported in the companion article in the 'More Info' column. If not recommended keys and/or values must be used, be sure to review with a Microsoft AVD expert and clearly document your choices.",
-            "guid": "d34aad5e-8c78-4e1d-9666-7313c405674c",
-            "severity": "High",
-            "link": "https://learn.microsoft.com/fslogix/concepts-configuration-examples"
-        },
-        {
-            "category": "Storage",
-            "subcategory": "FSLogix",
-            "text": "Avoid usage of concurrent or multiple connections",
-            "description": "Concurrent or multiple connections are not recommended in Azure Virtual Desktop. Concurrent connections are also not supported by Session Hosts running in an Azure Virtual Desktop Host Pool. OneDrive, if used, doesn't support concurrent or multiple connections using the same container, under any circumstance. For multiple connections, usage of the same profile disk is not recommended.",
-            "guid": "5e985b85-9c77-43e7-b261-623b775a917e",
-            "severity": "High",
-            "link": "https://learn.microsoft.com/fslogix/concepts-multi-concurrent-connections"
-        },
-        {
-            "category": "Storage",
-            "subcategory": "FSLogix",
-            "text": "If FSLogix Cloud Cache is used, consider moving the cache directory to the VM temporary drive.",
-            "description": "Cloud Cache uses OS drive as local cache storage and may generate lot of pressure on the VM disk. Depending on the VM SKU and size used, the VM temporary drive can be a viable and performant solution where to relocate Cloud Cache cached content. Before adopting this solution, tests should be executed to confirm performance and stability. More details on Cloud Cache can be found here: https://learn.microsoft.com/en-us/fslogix/concepts-fslogix-cloud-cache. ",
-            "guid": "b2d1215a-e114-4ba3-9df5-85ecdcd9bd3b",
+            "text": "Estimate the number of Applications for each Application Group",
+            "description": "Applications are grouped under Application Groups as containers for publishing and assigning permissions: we recommend that you do not publish more than 50 applications per application group.",
+            "guid": "fa9f2895-473d-439b-ab8e-5a5cf92c7f32",
             "severity": "Low",
-            "link": "https://docs.microsoft.com/fslogix/cloud-cache-configuration-reference"
+            "link": "https://learn.microsoft.com/azure/architecture/example-scenario/wvd/windows-virtual-desktop#considerations"
         },
         {
-            "category": "Storage",
-            "subcategory": "FSLogix",
-            "text": "Review the usage of FSLogix redirection.",
-            "description": "REDIRECTION.XML file is used to control what folders are redirected out of the profile container to the 'C:' drive. Exclusions should be the exception and should never be used unless the specific exclusion is completely understood by the person configuring the exclusion. Exclusions should always be fully tested in the environment where they are intended to be implemented. Configuring exclusions may impact functionality, stability and performance.",
-            "guid": "0b50ca97-b1d2-473c-b4d9-6e98b0f912de",
-            "severity": "Medium",
-            "link": "https://docs.microsoft.com/fslogix/manage-profile-content-cncpt#redirectionsxml"
-        },
-        {
-            "category": "Storage",
-            "subcategory": "Azure Files",
-            "text": "Check best-practices for Azure Files",
-            "description": "If used, make sure to check the list of best practices and recommendations described in the referenced article.",
-            "guid": "9164e990-9ae2-48c8-9c33-b6b7808bafe6",
-            "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/virtual-desktop/fslogix-containers-azure-files#best-practices-for-azure-virtual-desktop"
-        },
-        {
-            "category": "Storage",
-            "subcategory": "Azure Files",
-            "text": "Enable SMB multichannel when using a premium file share to host FSLogix profile containers.",
-            "description": "SMB Multichannel enables clients to use multiple network connections that provide increased performance while lowering the cost of ownership. Increased performance is achieved through bandwidth aggregation over multiple NICs and utilizing Receive Side Scaling (RSS) support for NICs to distribute the IO load across multiple CPUs.",
-            "guid": "5784b6ca-5e9e-4bcf-8b54-c95459ea7369",
+            "category": "Foundation",
+            "subcategory": "Capacity Planning",
+            "text": "Evaluate the usage of FSLogix for Personal Host Pools",
+            "description": "FSLogix is not required for Personal Host Pools since each VM is statically assigned to a single user, then no immediate needs for a roaming profile solution. In some usage scenarios FSLogix can help. For example, a VM can be re-assigned, or user moved to another desktop, or roaming profile can be used to save user profile in a different location for DR purposes.",
+            "guid": "38b19ab6-0693-4992-9394-5590883916ec",
             "severity": "Low",
-            "link": "https://learn.microsoft.com/azure/storage/files/storage-files-smb-multichannel-performance"
+            "link": "https://learn.microsoft.com/en-us/azure/virtual-desktop/configure-host-pool-personal-desktop-assignment-type?tabs=azure#reassign-a-personal-desktop"
         },
         {
-            "category": "Storage",
-            "subcategory": "Azure NetApp Files",
-            "text": "If NetApp Files storage is required, check storage service availability in your specific region.",
-            "description": "If a second region is required for DR purposes verify NetApp availability in there as well.",
-            "guid": "4a359836-ee79-4d6c-9d3a-364a5b7abae3",
-            "severity": "Medium",
-            "link": "https://azure.microsoft.com/global-infrastructure/services/"
-        },
-        {
-            "category": "Storage",
-            "subcategory": "Azure NetApp Files",
-            "text": "If NetApp Files storage is used enable CA (Continuous Availability) option to increase resiliency",
-            "description": "CA option is a recommended setting in the FSLogix scenario, as it enables a more resilient SMB session between the Session Host and NetApp Files.",
-            "guid": "a2661898-866a-4c8d-9d1f-8cfc86e88024",
-            "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/virtual-desktop/create-fslogix-profile-container"
-        },
-        {
-            "category": "Storage",
-            "subcategory": "Azure NetApp Files",
-            "text": "If Azure NetApp Files storage is used, check Active Directory Site name setting in the Active Directory Connection configuration",
-            "description": "An Active Directory Site should be created for the Azure virtual network environment where Azure NetApp Files (ANF) subnet will be created, and that site name should be specified in the ANF connection property when executing the join procedure as explained in the reference article.",
-            "guid": "6647e977-db49-48a8-bc35-743f17499d42",
+            "category": "Foundation",
+            "subcategory": "Capacity Planning",
+            "text": "Run workload performance test to determine the best Azure VM SKU and size to use",
+            "description": "Use the link provided to set a starting point for SKU decision, then validate using a performance test. Ensure a minimum of four cores for Production is selected per Session Host (multi-session)",
+            "guid": "e1112dbd-7ba0-412e-9b94-ef6e047d2ea2",
             "severity": "High",
-            "link": "https://docs.microsoft.com/azure/azure-netapp-files/create-active-directory-connections"
+            "link": "https://docs.microsoft.com/windows-server/remote/remote-desktop-services/virtual-machine-recs"
+        },
+        {
+            "category": "Foundation",
+            "subcategory": "Capacity Planning",
+            "text": "Verify AVD scalability limits for the environment",
+            "description": "It is critical to check AVD capacity and limits reported in the referenced article. Additional limits and thresholds apply for network, compute, storage and service management. ",
+            "guid": "992b1cd6-d2f5-44b2-a769-e3a691e8838a",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/architecture/example-scenario/wvd/windows-virtual-desktop#considerations"
+        },
+        {
+            "category": "Foundation",
+            "subcategory": "Capacity Planning",
+            "text": "Determine if  Session Hosts will require GPU",
+            "description": "Host Pools with GPU require special configuration, please be sure to review the referenced article.",
+            "guid": "c936667e-13c0-4056-94b1-e945a459837e",
+            "severity": "Low",
+            "link": "https://docs.microsoft.com/azure/virtual-desktop/configure-vm-gpu"
+        },
+        {
+            "category": "Foundation",
+            "subcategory": "Capacity Planning",
+            "text": "Use Azure VM SKUs able to leverage Accelerated Networking",
+            "description": "Whenever is possible, it is recommended to leverage VM SKUs with Accelerated Networking feature. This feature does require specific VM SKU/size and OS versions, please see the list and requirement in the companion article.",
+            "guid": "b47a393a-0803-4272-a479-8b1578b219a4",
+            "severity": "Low",
+            "link": "https://learn.microsoft.com/azure/virtual-network/accelerated-networking-overview"
+        },
+        {
+            "category": "Foundation",
+            "subcategory": "Clients & Users",
+            "text": "Assess how many users will connect to AVD and from which regions",
+            "description": "For proper planning and deployment, it is important to assess the maximum number of concurrent and total users for each Host Pool. Additionally, users from different regions may require different Host Pools to ensure the best user experience.",
+            "guid": "bb91a33d-90ca-4e2c-a881-3706f7c0cb9f",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/virtual-desktop/overview"
+        },
+        {
+            "category": "Foundation",
+            "subcategory": "Clients & Users",
+            "text": "Assess external dependencies for each Host Pool",
+            "description": "The dependencies on resources external to the AVD pool should be assessed and reviewed, for example Active Directory, external file shares or other storage, on-premises services and resources, network infrastructure components like VPN and or ExpressRoute, external services and 3rd-party components. For all these resources, latency from the AVD Host Pool needs to be evaluated and connectivity considered. Additionally, BCDR considerations need to be applied to these dependencies as well.",
+            "guid": "6abca2a4-fda1-4dbf-9dc9-5d48c7c791dc",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/architecture/example-scenario/wvd/windows-virtual-desktop?toc=%2Fazure%2Fvirtual-desktop%2Ftoc.json&bc=%2Fazure%2Fvirtual-desktop%2Fbreadcrumb%2Ftoc.json"
+        },
+        {
+            "category": "Foundation",
+            "subcategory": "Clients & Users",
+            "text": "Review user client OS used and AVD client type",
+            "description": "AVD offers a variety of client types (fat, thin, web) to connect over different platforms (Windows, MacOS, iOS, Android). Review limitations of each client and compare multiple options when possible.",
+            "guid": "a1f6d565-99e5-458b-a37d-4985e1112dbd",
+            "severity": "Low",
+            "link": "https://learn.microsoft.com/en-us/azure/virtual-desktop/users/connect-windows"
+        },
+        {
+            "category": "Foundation",
+            "subcategory": "Clients & Users",
+            "text": "Run a PoC to validate end-to-end user experience and impact of network latency",
+            "description": "Depending on the user locations, and AVD region deployment, users may have a non-optimal experience, hence is important to test as soon as possible in a small PoC environment. Run the 'Azure Virtual Desktop Experience Estimator' tool to select the best Azure region to deploy Host Pools. Beyond 150ms latency, user experience may be not optimal.",
+            "guid": "d2f54b29-769e-43a6-a1e8-838ac936667e",
+            "severity": "High",
+            "link": "https://azure.microsoft.com/services/virtual-desktop/assessment/"
+        },
+        {
+            "category": "Foundation",
+            "subcategory": "Clients & Users",
+            "text": "Assess and document RDP settings for all user groups",
+            "description": "RDP settings can currently only be configured at the host pool level, not per user/group. If different settings are required for different set of users, it is recommended to create multiple Host Pools.",
+            "guid": "3b365a5c-7acb-4e48-abe5-4cd79f2e8776",
+            "severity": "Low",
+            "link": "https://docs.microsoft.com/azure/virtual-desktop/customize-rdp-properties"
+        },
+        {
+            "category": "Foundation",
+            "subcategory": "General",
+            "text": "Determine in which Azure regions AVD Host Pools will be deployed.",
+            "description": "AVD is a non-regional service, Host Pools can be created in any region, automatic redirection from closest front-end will happen automatically.",
+            "guid": "42e52f47-21d9-428c-8b1b-d521e44a29a9",
+            "severity": "High",
+            "link": "https://azure.microsoft.com/global-infrastructure/services/?products=virtual-desktop"
+        },
+        {
+            "category": "Foundation",
+            "subcategory": "General",
+            "text": "Determine metadata location for AVD service",
+            "description": "AVD must store metadata to support the service; this is stored in the specified geography. However, this is independent of the regions where Host Pools are located.",
+            "guid": "bad37ead-53cc-47ce-8d7a-aab3571449ab",
+            "severity": "Medium",
+            "link": "https://docs.microsoft.com/azure/virtual-desktop/data-locations"
+        },
+        {
+            "category": "Foundation",
+            "subcategory": "General",
+            "text": "Check Azure quotas and availability for specific VM sizes and types in the selected regions",
+            "description": "Check for specific VM SKUs, especially if you need GPU or high-specs SKUs, and eventually Azure NetApp Files if used.",
+            "guid": "8053d89e-89dc-47b3-9be2-a1a27f7a9e91",
+            "severity": "Low",
+            "link": "https://docs.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits"
+        },
+        {
+            "category": "Identity",
+            "subcategory": "Active Directory",
+            "text": "Create at least two Active Directory Domain Controllers (DCs) in Azure VNet environment close to AVD Host Pool",
+            "description": "AD DCs in Azure are recommended (at least two in different AZ) to reduce latency for users logging into AVD session hosts, and eventually for Azure NetApp Files and AD integration. A DC need to be able to talk to DCs for ALL child domains. As alternative, on-premise connectivity must be used to reach AD DCs.",
+            "guid": "c14aea7e-65e8-4d9a-9aec-218e6436b073",
+            "severity": "Medium",
+            "link": "https://docs.microsoft.com/azure/architecture/reference-architectures/identity/adds-extend-domain"
+        },
+        {
+            "category": "Identity",
+            "subcategory": "Active Directory",
+            "text": "Create a specific OU in Active Directory for each Host Pool",
+            "description": "Recommended to create a separate OU per Host Pool under a separate OU hierarchy. These OUs will contain machine accounts of AVD Session Hosts. ",
+            "guid": "6db55f57-9603-4334-adf9-cc23418db612",
+            "severity": "Medium",
+            "link": "https://docs.microsoft.com/azure/virtual-desktop/create-host-pools-azure-marketplace"
+        },
+        {
+            "category": "Identity",
+            "subcategory": "Active Directory",
+            "text": "Review Domain GPOs that will be applied to OU and impacting Host Pool Session Hosts functionalities",
+            "description": "Carefully review, and potentially block/filter inheritance of GPOs to the OUs containing AVD Host Pools. ",
+            "guid": "7126504b-b47a-4393-a080-327294798b15",
+            "severity": "Medium",
+            "link": "https://docs.microsoft.com/previous-versions/windows/desktop/Policy/group-policy-hierarchy"
+        },
+        {
+            "category": "Identity",
+            "subcategory": "Active Directory",
+            "text": "Configure FSLogix settings using the built-in provided GPO ADMX template",
+            "description": "If Active Directory Domain GPOs are used, it is recommended to configure FSLogix using the built-in provided GPO ADMX template referenced in the companion article in the 'More Info' column",
+            "guid": "2226a8e3-50a4-4ac3-8bd6-ee150553051f",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/fslogix/how-to-use-group-policy-templates"
+        },
+        {
+            "category": "Identity",
+            "subcategory": "Active Directory",
+            "text": "Create a dedicated user account with only permissions to join VM to the domain",
+            "description": "It is recommended to have a specific dedicated account with minimal permissions, and without the default 10 joins limitation. Review the companion article for more details.",
+            "guid": "347dc560-28a7-41ff-b1cd-15dd2f0d5e77",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/virtual-desktop/prerequisites?tabs=portal#session-hosts"
+        },
+        {
+            "category": "Identity",
+            "subcategory": "Active Directory",
+            "text": "Create a domain user group for each set of users that will be granted access to each Host Pool Application Group (DAG or RAG)",
+            "description": "Avoid granting access per user, instead use AD groups and replicate them using Active Directory Connector (ADC) in Microsoft Entra ID (former Azure AD). ",
+            "guid": "2d41e361-1cc5-47b4-a4b1-410d43958a8c",
+            "severity": "Medium",
+            "link": "https://docs.microsoft.com/azure/virtual-desktop/manage-app-groups"
+        },
+        {
+            "category": "Identity",
+            "subcategory": "Active Directory",
+            "text": "Review your organization password expiration policy for accounts used by Azure Files AD integration",
+            "description": "If Azure Files Active Directory (AD) integration is used, as part of the configuration procedure, an AD account to represent the storage account (file share) will be created. You can choose to register as a computer account or service logon account, see FAQ for details. For computer accounts, there is a default password expiration age set in AD at 30 days. Similarly, the service logon account may have a default password expiration age set on the AD domain or Organizational Unit (OU). For both account types, we recommend you check the password expiration age configured in your AD environment and plan to update the password of your storage account identity of the AD account before the maximum password age. You can consider creating a new AD Organizational Unit (OU) in AD and disabling password expiration policy on computer accounts or service logon accounts accordingly.",
+            "guid": "2289b3d6-b57c-4fc6-9546-1e1a3e3453a3",
+            "severity": "High",
+            "link": "https://docs.microsoft.com/azure/storage/files/storage-files-identity-ad-ds-enable"
+        },
+        {
+            "category": "Identity",
+            "subcategory": "Active Directory",
+            "text": "A Windows Server Active Directory forest/domain must be in sync with Microsoft Entra ID",
+            "description": "You can configure this using Active Directory Connect (ADC) or Azure AD Domain Services (for hybrid or cloud organizations). Microsoft Entra ID is the new name for Azure Active Directory (Azure AD).",
+            "guid": "5119bf8e-8f58-4542-a7d9-cec166cd072a",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/virtual-desktop/prerequisites?tabs=portal#identity"
+        },
+        {
+            "category": "Identity",
+            "subcategory": "Microsoft Entra ID",
+            "text": "Configure Azure Files share for Microsoft Entra ID (former Azure AD) Kerberos authentication on Microsoft Entra ID Joined scenario",
+            "description": "If Azure Files is used and pre-requisites can be satisfied, it is recommended to configure (Microsoft Entra ID) Kerberos authentication. This configuration will allow to store FSLogix profiles that can be accessed by hybrid user identities from Azure AD-joined session hosts without requiring network line-of-sight to domain controllers.",
+            "guid": "e777fd5e-c5f1-4d6e-8fa9-fc210b88e338",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/storage/files/storage-files-identity-auth-hybrid-identities-enable"
+        },
+        {
+            "category": "Identity",
+            "subcategory": "Requirements",
+            "text": "A Microsoft Entra ID tenant must be available with at least one subscription linked",
+            "description": "An Azure subscription must be parented to the same Microsoft Entra ID (former Azure AD) tenant, that contains a virtual network that either contains or is connected to the Windows Server Active Directory Domain Services or Microsoft Entra ID Domain Services instance.",
+            "guid": "6ceb5443-5125-4922-9442-93bb628537a5",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/virtual-desktop/prerequisites?tabs=portal#identity"
+        },
+        {
+            "category": "Identity",
+            "subcategory": "Requirements",
+            "text": "Review and document your identity scenario",
+            "description": "Azure Virtual Desktop supports different types of identities depending on which configuration you choose. Please review the supported scenarios mentioned in the 'More Info' article and document the design decision accordingly in the 'Comment' column. Critically, external identities (B2B or B2C) are not supported. Be sure to review also the list of supported scenarios in https://learn.microsoft.com/en-us/azure/virtual-desktop/prerequisites?tabs=portal#supported-identity-scenarios.",
+            "guid": "b4ce4781-7557-4a1f-8043-332ae199d44c",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/virtual-desktop/authentication"
+        },
+        {
+            "category": "Identity",
+            "subcategory": "Requirements",
+            "text": "Assess User Account types and requirements",
+            "description": "Users need accounts that are in Microsoft Entra ID (former Azure AD). If you're also using AD DS or Azure AD Domain Services in your deployment of Azure Virtual Desktop, these accounts will need to be hybrid identities, which means the user accounts are synchronized. If you're using Microsoft Entra ID with AD DS, you'll need to configure Azure AD Connect to synchronize user identity data between AD DS and Microsoft Entra ID. If you're using Microsoft Entra ID with Azure AD Domain Services, user accounts are synchronized one way from Microsoft Entra ID to Azure AD Domain Services. This synchronization process is automatic. AVD also supports Microsoft Entra ID native accounts with some restrictions. External identities (B2B or B2C) are not supported.",
+            "guid": "f9b141a8-98a5-435e-9378-97e71ca7da7b",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/virtual-desktop/prerequisites?tabs=portal#supported-identity-scenarios"
+        },
+        {
+            "category": "Identity",
+            "subcategory": "Requirements",
+            "text": "If Single-Sign On (SSO) is a requirement, review the supported scenarios and prerequisites",
+            "description": "AVD supports SSO using either Active Directory Federation Services (AD FS) or Microsoft Entra ID (former Azure AD) authentication. The latter is recommended, please check the requirements and limitation in the 'More Info' article. Using AD FS could be a viable choice if already present in the customer environment, it is not recommended to deploy a brand new ADFS infrastructure just for AVD SSO implementation.",
+            "guid": "5f9f680a-ba07-4429-bbf7-93d7071561f4",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/virtual-desktop/authentication#single-sign-on-sso"
+        },
+        {
+            "category": "Identity",
+            "subcategory": "Requirements",
+            "text": "Select the proper AVD Session Host domain join type",
+            "description": "VMs can be Windows Active Directory (AD) domain-joined, Hybrid AD-joined, Microsoft Entra ID (former Azure AD) Joined or Azure AD Domain Services joined. Be sure to review supported scenarios, limitations and requirements from the referenced article.",
+            "guid": "ea962a15-9394-46da-a7cc-3923266b2258",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/virtual-desktop/prerequisites?tabs=portal#supported-identity-scenarios"
+        },
+        {
+            "category": "Identity",
+            "subcategory": "Requirements",
+            "text": "Before using Azure AD Domain Services (AAD-DS) for AVD, be sure to review the limitations.",
+            "description": "Compare self-managed Windows Active Directory Domain Services, Microsoft Entra ID (former Azure AD), and managed Azure AD Domain Services (AAD-DS)",
+            "guid": "6f4a1651-bddd-4ea8-a487-cdeb4861bc3b",
+            "severity": "Low",
+            "link": "https://docs.microsoft.com/azure/active-directory-domain-services/compare-identity-solutions"
         },
         {
             "category": "Monitoring and Management",
@@ -756,7 +630,7 @@
             "guid": "5549524b-36c0-4f1a-892b-ab3ca78f5db2",
             "severity": "Low",
             "link": "https://learn.microsoft.com/azure/virtual-desktop/administrative-template"
-        },  
+        },
         {
             "category": "Monitoring and Management",
             "subcategory": "Management",
@@ -770,7 +644,7 @@
             "category": "Monitoring and Management",
             "subcategory": "Management",
             "text": "Evaluate Intune for AVD Session Hosts management",
-            "description": "We recommend using Microsoft Intune, if requirements can be satisfied, to manage your Azure Virtual Desktop environment. Review supported scenarios and requirements to enable Intune for AVD Session Host management in the referenced article in the “More Info” column. Document your choice in the 'Comment' column. In that article, review the different requirements and capabilities for single-session https://learn.microsoft.com/en-us/mem/intune/fundamentals/windows-virtual-desktop and multi-session https://learn.microsoft.com/en-us/mem/intune/fundamentals/windows-virtual-desktop-multi-session AVD.",
+            "description": "We recommend using Microsoft Intune, if requirements can be satisfied, to manage your Azure Virtual Desktop environment. Review supported scenarios and requirements to enable Intune for AVD Session Host management in the referenced article in the \u201cMore Info\u201d column. Document your choice in the 'Comment' column. In that article, review the different requirements and capabilities for single-session https://learn.microsoft.com/en-us/mem/intune/fundamentals/windows-virtual-desktop and multi-session https://learn.microsoft.com/en-us/mem/intune/fundamentals/windows-virtual-desktop-multi-session AVD.",
             "guid": "63a08be1-6004-4b4a-a79b-f3239faae113",
             "severity": "Medium",
             "link": "https://learn.microsoft.com/mem/intune/fundamentals/azure-virtual-desktop"
@@ -902,6 +776,114 @@
             "link": "https://docs.microsoft.com/azure/virtual-desktop/set-up-service-alerts"
         },
         {
+            "category": "Networking",
+            "subcategory": "Networking",
+            "text": "Determine if hybrid connectivity is required to connect to on-premises environment",
+            "description": "If required to connect to on-premises environment, assess the current connectivity option or plan for the required connectivity (ExpressRoute, Azure S2S or 3rd-party NVA VPN). ",
+            "guid": "dd399cfd-7b28-4dc8-9555-6202bfe4563b",
+            "severity": "Medium",
+            "link": "https://docs.microsoft.com/azure/architecture/reference-architectures/hybrid-networking/"
+        },
+        {
+            "category": "Networking",
+            "subcategory": "Networking",
+            "text": "Determine Azure Virtual Network (VNet) placement for each AVD Host Pool",
+            "description": "AVD Host Pools can be deployed in either Azure Virtual WAN or traditional 'Hub & Spoke' network topologies. It is recommended to deploy each Host Pool in a separate 'spoke' VNet, using 'hub' is not recommended.",
+            "guid": "c8639648-a652-4d6c-85e5-02965388e5de",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/scenarios/wvd/eslz-network-topology-and-connectivity"
+        },
+        {
+            "category": "Networking",
+            "subcategory": "Networking",
+            "text": "Assess which on-premises resources are required from AVD Host Pools",
+            "description": "Evaluate the bandwidth requirements, ensure VPN/ER bandwidth will be enough, ensure proper routing and firewall rules are in place, test end-to-end latency. ",
+            "guid": "d227dd14-2b06-4c21-a799-9a646f4389a7",
+            "severity": "Medium",
+            "link": "https://docs.microsoft.com/azure/architecture/reference-architectures/hybrid-networking/"
+        },
+        {
+            "category": "Networking",
+            "subcategory": "Networking",
+            "text": "Need to control/restrict Internet outbound traffic for AVD hosts?",
+            "description": "Several options are available. You can use Azure Firewall or equivalent 3rd-party NVA, Network Security Group (NSG) and/or Proxy servers. NSG is not able to enable/disable by URL, only ports and protocols. Proxy should be used only as explicit setting in user browser. Details on using Azure Firewall Premium with AVD are reported in the companion article in the 'More Info' column. Be sure to allow proper access to required AVD URLs. Forced Tunneling to on-premises is not recommended.",
+            "guid": "fc4972cd-3cd2-41bf-9703-6e5e6b4bed3d",
+            "severity": "Medium",
+            "link": " https://docs.microsoft.com/azure/firewall/protect-windows-virtual-desktop"
+        },
+        {
+            "category": "Networking",
+            "subcategory": "Networking",
+            "text": "Ensure AVD control plane endpoints are accessible",
+            "description": "Required URLs for AVD control plane access by session hosts are documented here: https://docs.microsoft.com/azure/virtual-desktop/safe-url-list. A check tool is available to verify connectivity from the session hosts: https://docs.microsoft.com/azure/virtual-desktop/safe-url-list#required-url-check-tool. Forced Tunneling to on-premises is not recommended.",
+            "guid": "65c7acbe-45bb-4e60-ad89-f2e87778424d",
+            "severity": "High",
+            "link": "https://docs.microsoft.com/azure/virtual-desktop/safe-url-list"
+        },
+        {
+            "category": "Networking",
+            "subcategory": "Networking",
+            "text": "Need to control/restrict Internet outbound traffic only for users on AVD hosts? ",
+            "description": "Consider the usage of Azure Defender Endpoint or similar 3rd-party agents to control user web navigation, see the Security section for more details.",
+            "guid": "73676ae4-6691-4e88-95ad-a42223e13810",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/microsoft-365/security/defender-endpoint/onboard-windows-multi-session-device?view=o365-worldwide"
+        },
+        {
+            "category": "Networking",
+            "subcategory": "Networking",
+            "text": "Review custom UDR and NSG for AVD Host Pool subnets",
+            "description": "Custom UDR and NSG can be applied to AVD Host Pool subnets, for example to redirect to Azure Firewall or NVA, or to filter/block network traffic. In this case is recommended to carefully review to ensure optimal path for outbound traffic to AVD control plane is used. Service Tags can now be used with UDR and NSG, then AVD management plane traffic can be easily allowed: https://learn.microsoft.com/en-us/azure/virtual-desktop/safe-url-list.",
+            "guid": "523181a9-4174-4158-93ff-7ae7c6d37431",
+            "severity": "Low",
+            "link": "https://docs.microsoft.com/azure/firewall/protect-windows-virtual-desktop"
+        },
+        {
+            "category": "Networking",
+            "subcategory": "Networking",
+            "text": "Do not use Proxy servers, SSL termination and Deep Packet Inspection for AVD control plane traffic",
+            "description": "Network traffic from AVD Session Host VMs to AVD control plane should be as direct as possible. Redirecting this traffic through a Proxy or Firewall with deep packet inspection and/or SSL termination could cause serious issues and bad customer experience. It is recommended to bypass Proxy and Firewall just for the AVD control plane. User generated traffic surfing the web instead, should be filtered by Firewall and/or redirected to a Proxy. For details and guidelines, please see the companion article in the 'More Info' column.",
+            "guid": "cc6edca0-aeca-4566-9e92-cf246f1465af",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/virtual-desktop/proxy-server-support"
+        },
+        {
+            "category": "Networking",
+            "subcategory": "Networking",
+            "text": "Check the network bandwidth required for each user and in total for the VM SKU",
+            "description": "It is recommended to assess and review networking bandwidth requirements for users, based on the specific workload type. The referenced article provide general estimations and recommendations, but specific measure are required for proper sizing. ",
+            "guid": "516785c6-fa96-4c96-ad88-408f372734c8",
+            "severity": "Low",
+            "link": "https://learn.microsoft.com/azure/virtual-desktop/rdp-bandwidth"
+        },
+        {
+            "category": "Networking",
+            "subcategory": "Networking",
+            "text": "Evaluate usage Private Endpoint for Azure Files share",
+            "description": "If Azure Files SMB share will be used to store user profiles via FSLogix, the usage of Private Endpoint (PE) for private access to the storage is recommended. AVD Session Hosts will access the storage using a private IP in the same VNet, a separate subnet is recommended. This feature has an additional cost that must be evaluated. If PE will not be used, at least Service Endpoint is recommended (no cost associated).",
+            "guid": "ec27d589-9178-426d-8df2-ff60020f30a6",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/storage/files/storage-files-networking-endpoints"
+        },
+        {
+            "category": "Networking",
+            "subcategory": "Networking",
+            "text": "Evaluate usage of RDP ShortPath for clients connecting from managed internal networks",
+            "description": "Connections to Azure Virtual Desktop can use TCP or UDP. RDP Shortpath is a feature of AVD that establishes a direct UDP-based transport between a supported Windows Remote Desktop client and session host. if clients have line of sight to AVD session hosts from internal network (VPN usage is not recommended), this feature can provide lower latency and best performances as explained in https://learn.microsoft.com/en-us/azure/virtual-desktop/rdp-shortpath?tabs=managed-networks#key-benefits.",
+            "guid": "b2074747-d01a-4f61-b1aa-92ad793d9ff4",
+            "severity": "Medium",
+            "link": "https://docs.microsoft.com/azure/virtual-desktop/shortpath"
+        },
+        {
+            "category": "Security",
+            "subcategory": "Active Directory",
+            "text": "Review Active Directory GPO to secure RDP sessions",
+            "description": "Security mechanisms provided by GPO should be used, if available. For example, it is possible to impose desktop screen lock and idle session disconnection time. Existing GPOs applied to on-premises environment should be reviewed and eventually applied also to secure also AVD Hosts when joined to the domain.",
+            "guid": "a135e337-897e-431c-97d6-8cb6a22ac19f",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/virtual-desktop/security-guide#establish-maximum-inactive-time-and-disconnection-policies"
+        },
+        {
             "category": "Security",
             "subcategory": "Host Configuration",
             "text": "Ensure anti-virus and anti-malware solutions are used",
@@ -923,11 +905,11 @@
             "category": "Security",
             "subcategory": "Host Configuration",
             "text": "Enable Trusted launch in Azure Gen2 VM Session Hosts",
-            "description": "Trusted launch are Gen2 Azure VMs with enhanced security features aimed to protect against “bottom of the stack” threats through attack vectors such as rootkits, boot kits, and kernel-level malware. Recommended to enable and leverage Secure Boot, Virtual TPM (vTPM) and Integrity Monitoring.",
+            "description": "Trusted launch are Gen2 Azure VMs with enhanced security features aimed to protect against \u201cbottom of the stack\u201d threats through attack vectors such as rootkits, boot kits, and kernel-level malware. Recommended to enable and leverage Secure Boot, Virtual TPM (vTPM) and Integrity Monitoring.",
             "guid": "36a5a67f-bb9e-4d5b-9547-8c4479816b28",
             "severity": "Medium",
             "link": "https://learn.microsoft.com/azure/virtual-desktop/security-guide#azure-virtual-desktop-support-for-trusted-launch"
-        },   
+        },
         {
             "category": "Security",
             "subcategory": "Host Configuration",
@@ -954,7 +936,7 @@
             "guid": "7ce2cd20-85b4-4f82-828e-6558736ede6a",
             "severity": "Medium",
             "link": "https://learn.microsoft.com/azure/virtual-desktop/security-guide#other-security-tips-for-session-hosts"
-        },   
+        },
         {
             "category": "Security",
             "subcategory": "Management",
@@ -1020,15 +1002,6 @@
         },
         {
             "category": "Security",
-            "subcategory": "Active Directory",
-            "text": "Review Active Directory GPO to secure RDP sessions",
-            "description": "Security mechanisms provided by GPO should be used, if available. For example, it is possible to impose desktop screen lock and idle session disconnection time. Existing GPOs applied to on-premises environment should be reviewed and eventually applied also to secure also AVD Hosts when joined to the domain.",
-            "guid": "a135e337-897e-431c-97d6-8cb6a22ac19f",
-            "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/virtual-desktop/security-guide#establish-maximum-inactive-time-and-disconnection-policies"
-        },
-        {
-            "category": "Security",
             "subcategory": "Microsoft Entra ID",
             "text": "Evaluate the usage of Multi-Factor Authentication (MFA) and Conditional Access (CA) for AVD users",
             "description": "Enabling MFA and CA lets you manage risks before you grant users access to your AVD environment. When deciding which users to grant access to, we recommend you also consider who the user is, how they sign in, and which device they're using. Additional details and configuration procedures are provided in the companion article. Microsoft Entra ID is the new name for Azure Active Directory (Azure AD).",
@@ -1046,130 +1019,157 @@
             "link": "https://learn.microsoft.com/security/zero-trust/azure-infrastructure-avd"
         },
         {
-            "category": "Business Continuity and Disaster Recovery",
-            "subcategory": "Compute",
-            "text": "Determine the expected High Availability SLA for applications/desktops published through AVD",
-            "description": "AVD control plane does not offer a financially backed service level agreement. We strive to attain at least 99.9% availability for the Azure Virtual Desktop service URLs. The availability of the session host virtual machines in your subscription is covered by the Virtual Machines SLA. Dependent resources/services and infrastructure availability must be also considered to properly satisfy global high-availability requirements.",
-            "guid": "56c57ba5-9119-4bf8-b8f5-c586c7d9cdc1",
-            "severity": "High",
-            "link": "https://azure.microsoft.com/support/legal/sla/virtual-desktop/v1_0/"
-        },
-        {
-            "category": "Business Continuity and Disaster Recovery",
-            "subcategory": "Compute",
-            "text": "Assess Geo Disaster Recovery requirements for AVD Host Pools",
-            "description": "'Active-Active' model can be achieved with multiple host pools in different regions. A single Host Pool with VMs from different regions is not recommended. If multiple pools for same users will be used, the problem of how to synchronize/replicate user profiles must be solved. FSLogix Cloud Cache could be used, but need to be carefully reviewed and planned, or customers can decide to do not synchronize/replicate at all. 'Active-Passive' can be achieved using Azure Site Recovery (ASR) or on-demand Pool deployment with automated mechanism. For a detailed discussion on multi-region BCDR, please read the companion article in the 'More Info' column and this FSLogix related page: https://learn.microsoft.com/en-us/fslogix/concepts-container-recovery-business-continuity.",
-            "guid": "6acc076e-f9b1-441a-a989-579e76b897e7",
+            "category": "Storage",
+            "subcategory": "Azure Files",
+            "text": "Check best-practices for Azure Files",
+            "description": "If used, make sure to check the list of best practices and recommendations described in the referenced article.",
+            "guid": "9164e990-9ae2-48c8-9c33-b6b7808bafe6",
             "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/architecture/example-scenario/wvd/azure-virtual-desktop-multi-region-bcdr"
+            "link": "https://learn.microsoft.com/azure/virtual-desktop/fslogix-containers-azure-files#best-practices-for-azure-virtual-desktop"
         },
         {
-            "category": "Business Continuity and Disaster Recovery",
-            "subcategory": "Compute",
-            "text": "Separate critical applications in different AVD Host Pools",
-            "description": "Before approaching Azure Virtual Desktop BCDR planning and design, it is important to initially consider which applications are consumed through AVD are critical. You may want to separate them from non-critical apps and use a separate Host Pool with a different disaster recovery approach and capabilities.",
-            "guid": "10a7da7b-e996-46e1-9d3c-4ada97cc3d13",
+            "category": "Storage",
+            "subcategory": "Azure Files",
+            "text": "Enable SMB multichannel when using a premium file share to host FSLogix profile containers.",
+            "description": "SMB Multichannel enables clients to use multiple network connections that provide increased performance while lowering the cost of ownership. Increased performance is achieved through bandwidth aggregation over multiple NICs and utilizing Receive Side Scaling (RSS) support for NICs to distribute the IO load across multiple CPUs.",
+            "guid": "5784b6ca-5e9e-4bcf-8b54-c95459ea7369",
             "severity": "Low",
-            "link": "https://docs.microsoft.com/azure/virtual-desktop/disaster-recovery"
+            "link": "https://learn.microsoft.com/azure/storage/files/storage-files-smb-multichannel-performance"
         },
         {
-            "category": "Business Continuity and Disaster Recovery",
-            "subcategory": "Compute",
-            "text": "Plan the best resiliency option for AVD Host Pool deployment",
-            "description": "Each Host Pool can be deployed using Availability Zones (AZ) or Availability Set (AS). To maximize resiliency, usage of AZ is recommended: at Host Pool creation time you can decide to spread Host Pool Session Hosts across all available AZ. Usage of AS will not protect from single datacenter failure, then should be used only in regions where AZ are not available. More details on AZ and AVD in the companion article. For a comparison between AZ and AS you can read here: https://learn.microsoft.com/en-us/azure/virtual-machines/availability.",
-            "guid": "25ab225c-6f4e-4168-9fdd-dea8a4b7cdeb",
+            "category": "Storage",
+            "subcategory": "Azure NetApp Files",
+            "text": "If NetApp Files storage is required, check storage service availability in your specific region.",
+            "description": "If a second region is required for DR purposes verify NetApp availability in there as well.",
+            "guid": "4a359836-ee79-4d6c-9d3a-364a5b7abae3",
+            "severity": "Medium",
+            "link": "https://azure.microsoft.com/global-infrastructure/services/"
+        },
+        {
+            "category": "Storage",
+            "subcategory": "Azure NetApp Files",
+            "text": "If NetApp Files storage is used enable CA (Continuous Availability) option to increase resiliency",
+            "description": "CA option is a recommended setting in the FSLogix scenario, as it enables a more resilient SMB session between the Session Host and NetApp Files.",
+            "guid": "a2661898-866a-4c8d-9d1f-8cfc86e88024",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/virtual-desktop/create-fslogix-profile-container"
+        },
+        {
+            "category": "Storage",
+            "subcategory": "Azure NetApp Files",
+            "text": "If Azure NetApp Files storage is used, check Active Directory Site name setting in the Active Directory Connection configuration",
+            "description": "An Active Directory Site should be created for the Azure virtual network environment where Azure NetApp Files (ANF) subnet will be created, and that site name should be specified in the ANF connection property when executing the join procedure as explained in the reference article.",
+            "guid": "6647e977-db49-48a8-bc35-743f17499d42",
             "severity": "High",
-            "link": "https://techcommunity.microsoft.com/t5/azure-virtual-desktop-blog/announcing-general-availability-of-support-for-azure/ba-p/3636262"
+            "link": "https://docs.microsoft.com/azure/azure-netapp-files/create-active-directory-connections"
         },
         {
-            "category": "Business Continuity and Disaster Recovery",
-            "subcategory": "Compute",
-            "text": "Assess the requirement to backup AVD Session Host VMs",
-            "description": "Azure Backup can be used to protect Host Pool VMs. For Pooled Pools, this is not necessary since should be stateless. Instead, this option can be considered for Personal Host Pools.",
-            "guid": "4c61fc3f-c14e-4ea6-b69e-8d9a3eec218e",
+            "category": "Storage",
+            "subcategory": "Capacity Planning",
+            "text": "Determine which type of managed disk will be used for the Session Hosts",
+            "description": "Possible options: Standard HDD, Standard SSD, or Premium SSD. Ephemeral disks are not supported, Ultra-Disks not recommended. Recommended to evaluate Premium for OS disk if user density is not low, and if Cloud Cache will be used. ",
+            "guid": "3611c818-b0a0-4bc5-80e4-3a18a9cd289c",
             "severity": "Medium",
-            "link": "https://docs.microsoft.com/azure/virtual-desktop/disaster-recovery"
+            "link": "https://docs.microsoft.com/azure/virtual-machines/disks-types"
         },
         {
-            "category": "Business Continuity and Disaster Recovery",
-            "subcategory": "Compute",
-            "text": "Prepare a local DR strategy for Personal Host Pool Session Hosts",
-            "description": "Even for Personal Pools, usage of Availability Zones, when available, is recommended. Three possible in-region DR strategies are possible, it is recommended to select the best one based on cost, RTO/RPO, and if it is really necessary to save the entire VM OS disk: (1) create each session host in a specific zone (AZ) and then use Azure Site Recovery (ASR) to replicate to a different zone. (2) Use Azure Backup to backup and restore the specific session host in a different AZ. (3) Create a new session host in a different AZ and rely on FSLogix and/or OneDrive to make data and settings available on the new machine. All options require administrator intervention for DR and direct user assignment at Host Pool level, then must be planned and configured in advance.",
-            "guid": "5da58639-ca3a-4961-890b-29663c5e10d",
+            "category": "Storage",
+            "subcategory": "Capacity Planning",
+            "text": "Determine which storage backend solution will be used for FSLogix Profiles",
+            "description": "Possible options are: Azure NetApp Files, Azure Files, VM based File Server. File-server it is not recommended. Azure Files Premium typically a good starting point. NetApp usually required for large scale / high-performant environment. For a detailed comparison see the article in the 'More Info' column.",
+            "guid": "ed6b17db-8255-4462-b2ae-e4553afc8339",
+            "severity": "High",
+            "link": "https://docs.microsoft.com/azure/virtual-desktop/store-fslogix-profile"
+        },
+        {
+            "category": "Storage",
+            "subcategory": "Capacity Planning",
+            "text": "Do not share storage and profiles between different Host Pools",
+            "description": "Every Host Pool should use a separate set of storage accounts/volumes (at least one) and shares. Users should have a different profile for each Host Pool since settings and configurations are specific to each Host Pool. Additionally, accessing different Host Pools at the same time can cause errors on the shared user profile VHD/X. Usage of different storage accounts/volumes for multiple shares is also recommended to scale independently.",
+            "guid": "2fad62bd-5004-453c-ace4-64d862e7f5a4",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/virtual-desktop/store-fslogix-profile"
+        },
+        {
+            "category": "Storage",
+            "subcategory": "Capacity Planning",
+            "text": "Verify storage scalability limits and Host Pool requirements",
+            "description": "As a starting point for estimating profile container storage performance requirements we recommend to assume 10 IOPS per user in the steady state and 50 IOPS per user during sign-in/sign-out. Space requirements is simply obtained based on the maximum profiles size in FSLogix per the total number of users for each Host Pool. Multiple storage accounts can be used for the same Host Pool if required.",
+            "guid": "680e7828-9c93-4665-9d02-bff4564b0d93",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/virtual-desktop/faq#what-s-the-largest-profile-size-fslogix-can-handle-"
+        },
+        {
+            "category": "Storage",
+            "subcategory": "Capacity Planning",
+            "text": "For optimal performance, the storage solution and the FSLogix profile container should be in the same Azure region.",
+            "description": "Avoid introducing additional latency and costs associated with cross-region network traffic where possible.",
+            "guid": "8aad53cc-79e2-4e86-9673-57c549675c5e",
+            "severity": "High",
+            "link": "https://docs.microsoft.com/azure/virtual-desktop/fslogix-containers-azure-files"
+        },
+        {
+            "category": "Storage",
+            "subcategory": "FSLogix",
+            "text": "Do not use Office Containers (ODFC) if not strictly required and justified",
+            "description": "The recommendation in Azure Virtual Desktop is to use Profile Container without Office Container (ODFC) split unless you are planning for specific Business Continuity and Disaster Recovery (BCDR) scenarios as described in the Disaster Recovery section below. https://docs.microsoft.com/fslogix/profile-container-office-container-cncpt ",
+            "guid": "df47d2d9-2881-4b1c-b5d1-e54a29759e39",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/fslogix/concepts-container-types#when-to-use-profile-and-odfc-containers"
+        },
+        {
+            "category": "Storage",
+            "subcategory": "FSLogix",
+            "text": "Configure the recommended antivirus exclusions for FSLogix (includes not scanning VHD(x) files on connect).",
+            "description": "Make sure to configure the following antivirus exclusions for FSLogix Profile Container virtual hard drives, as documented in the referenced article in the 'More Info' column.",
+            "guid": "83f63047-22ee-479d-9b5c-3632054b69ba",
             "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/site-recovery/azure-to-azure-how-to-enable-zone-to-zone-disaster-recovery"
+            "link": "https://learn.microsoft.com/fslogix/overview-prerequisites#configure-antivirus-file-and-folder-exclusions"
         },
         {
-            "category": "Business Continuity and Disaster Recovery",
-            "subcategory": "Dependencies",
-            "text": "Plan for Golden Image cross-region availability",
-            "description": "If custom images are used to deploy AVD Host Pool VMs, it is important to ensure those artifacts are available in all regions where AVD is deployed. Azure Compute Gallery service can be used to replicate images across all regions where a Host Pool is deployed, with redundant storage and in multiple copies. Please be aware that the Azure Compute Gallery service isn't a global resource. For disaster recovery scenarios, the best practice is to have at least two galleries, in different regions.",
-            "guid": "dd2e0d5d-771d-441e-9610-cc57b4a4a141",
+            "category": "Storage",
+            "subcategory": "FSLogix",
+            "text": "Review and confirm configured maximum profile size in FSLogix",
+            "description": "Profile containers have a default max size of 30GB. If large Profile Containers are anticipated, and customers wants to try to keep them small, consider using OneDrive to host Office 365 files outside the FSLogix profile.",
+            "guid": "01e6a84d-e5df-443d-8992-481718d5d1e5",
+            "severity": "High",
+            "link": "https://docs.microsoft.com/fslogix/profile-container-configuration-reference"
+        },
+        {
+            "category": "Storage",
+            "subcategory": "FSLogix",
+            "text": "Review FSLogix registry keys and determine which ones to apply",
+            "description": "Defaults and recommended settings are reported in the companion article in the 'More Info' column. If not recommended keys and/or values must be used, be sure to review with a Microsoft AVD expert and clearly document your choices.",
+            "guid": "d34aad5e-8c78-4e1d-9666-7313c405674c",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/fslogix/concepts-configuration-examples"
+        },
+        {
+            "category": "Storage",
+            "subcategory": "FSLogix",
+            "text": "Avoid usage of concurrent or multiple connections",
+            "description": "Concurrent or multiple connections are not recommended in Azure Virtual Desktop. Concurrent connections are also not supported by Session Hosts running in an Azure Virtual Desktop Host Pool. OneDrive, if used, doesn't support concurrent or multiple connections using the same container, under any circumstance. For multiple connections, usage of the same profile disk is not recommended.",
+            "guid": "5e985b85-9c77-43e7-b261-623b775a917e",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/fslogix/concepts-multi-concurrent-connections"
+        },
+        {
+            "category": "Storage",
+            "subcategory": "FSLogix",
+            "text": "If FSLogix Cloud Cache is used, consider moving the cache directory to the VM temporary drive.",
+            "description": "Cloud Cache uses OS drive as local cache storage and may generate lot of pressure on the VM disk. Depending on the VM SKU and size used, the VM temporary drive can be a viable and performant solution where to relocate Cloud Cache cached content. Before adopting this solution, tests should be executed to confirm performance and stability. More details on Cloud Cache can be found here: https://learn.microsoft.com/en-us/fslogix/concepts-fslogix-cloud-cache. ",
+            "guid": "b2d1215a-e114-4ba3-9df5-85ecdcd9bd3b",
             "severity": "Low",
-            "link": "https://learn.microsoft.com/azure/virtual-machines/azure-compute-gallery"
+            "link": "https://docs.microsoft.com/fslogix/cloud-cache-configuration-reference"
         },
         {
-            "category": "Business Continuity and Disaster Recovery",
-            "subcategory": "Dependencies",
-            "text": "Assess Infrastructure & Application dependencies ",
-            "description": "If users of the AVD infrastructure need on-premises resource access, high availability of network infrastructure required to connect is also critical and should be considered. Resiliency of authentication infrastructure needs to be assessed and evaluated. BCDR aspects for dependent applications and other resources need to be considered to ensure availability in the secondary DR location.",
-            "guid": "fd339489-8c12-488b-9c6a-57cfb644451e",
+            "category": "Storage",
+            "subcategory": "FSLogix",
+            "text": "Review the usage of FSLogix redirection.",
+            "description": "REDIRECTION.XML file is used to control what folders are redirected out of the profile container to the 'C:' drive. Exclusions should be the exception and should never be used unless the specific exclusion is completely understood by the person configuring the exclusion. Exclusions should always be fully tested in the environment where they are intended to be implemented. Configuring exclusions may impact functionality, stability and performance.",
+            "guid": "0b50ca97-b1d2-473c-b4d9-6e98b0f912de",
             "severity": "Medium",
-            "link": "https://docs.microsoft.com/azure/virtual-desktop/disaster-recovery"
-        },
-        {
-            "category": "Business Continuity and Disaster Recovery",
-            "subcategory": "Storage",
-            "text": "Assess which data need to be protected in the Profile and Office Containers",
-            "description": "Not all data inside FSLogix user profiles may deserve protection from disaster. Additionally, if external storage is used, for example OneDrive or File Servers/Shares, what is remaining in the FSLogix profile is minimal and could be lost in some extreme circumstances. In other cases, data inside the profile can be rebuilt from other storages (for example Outlook Inbox in cached mode).",
-            "guid": "687ab077-adb5-49e5-a960-3334fdf8cc23",
-            "severity": "Medium",
-            "link": "https://docs.microsoft.com/fslogix/manage-profile-content-cncpt"
-        },
-        {
-            "category": "Business Continuity and Disaster Recovery",
-            "subcategory": "Storage",
-            "text": "Build a backup protection strategy for Profile and Office Containers",
-            "description": "Preventing data loss for critical user data is important, first step is to assess which data need to be saved and protected. If using OneDrive or other external storage, saving user Profile and/or Office Containers data maybe not necessary. Appropriate mechanism must be considered to provide protection for critical user data. Azure Backup service can be used to protect Profile and Office Containers data when stored on Azure Files Standard and Premium tiers. Azure NetApp Files Snapshots and Policies can be used for Azure NetApp Files (all tiers).",
-            "guid": "fc4972cc-3cd2-45bf-a707-6e9eab4bed32",
-            "severity": "Medium",
-            "link": "https://docs.microsoft.com/azure/virtual-desktop/disaster-recovery"
-        },
-        {
-            "category": "Business Continuity and Disaster Recovery",
-            "subcategory": "Storage",
-            "text": "Assess Profile Container storage replication requirements and resiliency for BCDR purpose",
-            "description": "In AVD, multiple replication mechanisms and strategies can be used for user data residing in FSLogix containers: [Profile Pattern #1]: Native Azure storage replication mechanisms, for example Azure Files Standard GRS replication, Azure NetApp Files Cross Region Replication. Use Zone Replicated Storage (ZRS) or Geo replicated storage (GRS) for Azure Files is recommended. LRS with local-only resiliency can be used if no zone/region protection is required. NOTE: Azure Files Share Standard is LRS/ZRS/GRS, but with 100TB large support enabled only LRS/ZRS are supported. [Profile Pattern #2]: FSLogix Cloud Cache is built in automatic mechanism to replicate containers between different (up to 4) storage accounts. Cloud Cache should be used only when:(1) User Profile or Office containers data availability required high-availability SLA is critical and need to be resilient to region failure. (2) Selected storage option is not able to satisfy BCDR requirements. For example, with Azure File Share Premium tier, or Azure File Share Standard with Large File Support enabled, GRS is not available. (3) When replication between disparate storage is required. [Profile Pattern #3]: Only set up geo disaster recovery for application data and not for user data/profile containers: store important application data in separate storages, like OneDrive or other external storage with its own built-in DR mechanism.",
-            "guid": "9f7547c1-746d-4c56-868a-714435bd09dd",
-            "severity": "Medium",
-            "link": "https://docs.microsoft.com/azure/virtual-desktop/disaster-recovery"
-        },
-        {
-            "category": "Business Continuity and Disaster Recovery",
-            "subcategory": "Storage",
-            "text": "Review Azure Files disaster recovery strategy",
-            "description": "For local disaster recovery, Azure Backup for Azure Files can be used. For cross-region geo disaster recovery: GRS for Azure Files is only available with standard SKU and no large share support, then not suitable in most customer scenarios. If geo-replication is required with Azure File Share Premium, replication with FSLogix Cloud Cache can be evaluated, or 'in-region' Availability Zone (AZ) only resiliency should be considered.",
-            "guid": "3d4f3537-c134-46dc-9602-7a71efe1bd05",
-            "severity": "Medium",
-            "link": "https://docs.microsoft.com/azure/backup/backup-afs"
-        },
-        {
-            "category": "Business Continuity and Disaster Recovery",
-            "subcategory": "Storage",
-            "text": "Use Zone Redundant Storage (ZRS) for Azure Files to maximize resiliency",
-            "description": "Zone Redundant Storage will maximize in-region resiliency for the user profile data. ZRS is supported for premium file shares through the 'FileStorage' storage account kind. ZRS is supported in standard general-purpose v2 storage accounts. Usage of zone redundant storage must be paired with zone redundant deployment of Session Hosts in each Host Pool. ",
-            "guid": "10d4e875-d502-4142-a795-f2b6eff34f88",
-            "severity": "High",
-            "link": "https://learn.microsoft.com/azure/storage/files/files-redundancy#zone-redundant-storage"
-        },
-        {
-            "category": "Business Continuity and Disaster Recovery",
-            "subcategory": "Storage",
-            "text": "Review Azure NetApp Files disaster recovery strategy",
-            "description": "For local disaster recovery, Azure NetApp Files (ANF) native backup is available. ANF is essentially locally redundant, then for cross-region geo disaster recovery it is necessary to use an additional mechanism that is Cross-Region Replication (CRR) https://learn.microsoft.com/en-us/azure/azure-netapp-files/cross-region-replication-create-peering. Currently, ANF does not provide replication nor redundancy across different Availability Zones (AZ), only the possibility to select in which single AZ to place the ANF volume: https://learn.microsoft.com/en-us/azure/azure-netapp-files/manage-availability-zone-volume-placement.",
-            "guid": "23429db7-2281-4376-85cc-57b4a4b18142",
-            "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/azure-netapp-files/cross-region-replication-create-peering"
+            "link": "https://docs.microsoft.com/fslogix/manage-profile-content-cncpt#redirectionsxml"
         }
     ],
     "categories": [
@@ -1234,6 +1234,6 @@
     "metadata": {
         "name": "Azure Virtual Desktop Review",
         "state": "GA",
-        "timestamp": "July 17, 2023"
+        "timestamp": "July 14, 2023"
     }
 }
