@@ -15,6 +15,8 @@ parser.add_argument('--cosmosdb-key', dest='cosmosdb_key', action='store',
                     help='You need to supply a read/write key to access your CosmosDB')
 parser.add_argument('--input-file', dest='input_file', action='store',
                     help='You need to supply file name where the JSON checklist is located')
+parser.add_argument('--discriminator', dest='discriminator', action='store',
+                    help='Optionally, you can add the a Discriminator field to each document')
 
 args = parser.parse_args()
 
@@ -64,13 +66,15 @@ except exceptions.CosmosResourceExistsError:
     print("ERROR: Container", container_name, "already exists.")
 
 # Upload checklist items
-print ("DEBUG: adding items, this can take a few minutes...")
+print ("DEBUG: Adding items, this can take a few minutes...")
 item_counter = 0
 for item in checklist['items']:
     # print("DEBUG: uploading item: {0}".format(str(item)))
     item['id'] = item['guid']
+    if args.discriminator:
+        item['Discriminator'] = args.discriminator
     container.create_item(body=item)
     item_counter += 1
 
 # Finish
-print("{0} items were uploaded to {1}".format(item_counter, cosmosdb_url))
+print("{0} items were uploaded to {1}".format(item_counter, args.cosmosdb_url))
