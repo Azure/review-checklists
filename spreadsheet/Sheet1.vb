@@ -5,17 +5,18 @@ Private Declare PtrSafe Function URLDownloadToFile Lib "urlmon" Alias "URLDownlo
 'Constants
 Const row1 = 10
 Const technology_selection_row = 2
-Const technology_selection_col = 6
+Const technology_selection_col = 7
 Const language_selection_row = technology_selection_row
 Const language_selection_col = technology_selection_col + 1
 Const checklist_name_row = 6
-Const checklist_name_col = 1
+Const checklist_name_col = 2
 Const checklist_state_row = checklist_name_row + 1
 Const checklist_state_col = checklist_name_col
-Const checklist_timestamp_row = checklist_state_row
+Const checklist_timestamp_row = checklist_state_row + 1
 Const checklist_timestamp_col = checklist_name_col + 1
 Const line_break = vbCrLf
-Const category_column = 1
+Const id_column = 1
+Const category_column = id_column + 1
 Const subcategory_column = category_column + 1
 Const waf_column = subcategory_column + 1
 Const text_column = waf_column + 1
@@ -94,12 +95,13 @@ Sub export_json()
     ' Variables
     Dim row As Integer
     Dim json As String
-    Dim check_category As String, check_subcategory As String, check_waf As String, check_text As String, check_description As String, check_severity As String, check_status As String, status_description As String, check_link As String, check_training As String, check_graph_query As String, check_guid As String
+    Dim check_id As String, check_category As String, check_subcategory As String, check_waf As String, check_text As String, check_description As String, check_severity As String, check_status As String, status_description As String, check_link As String, check_training As String, check_graph_query As String, check_guid As String
     Dim check_sec_mod, check_cost_mod, check_scale_mod, check_simple_mod, check_ha_mod
     Dim category_name As String, severity_name As String, status_name As String, waf_name As String
     Dim export_file_path As Variant
     Dim double_quote As String
     Dim item_count As Integer, category_count As Integer, status_count As Integer
+    Dim cat_id As Integer, rel_subcat_id As Integer, rel_item_id As Integer
     ' Initialization
     double_quote = Chr(34) ' double quote as a variable
     row = row1
@@ -108,10 +110,33 @@ Sub export_json()
     item_count = 0
     category_count = 0
     status_count = 0
+    cat_id = 0
+    rel_subcat_id = 0
+    rel_item_id = 0
+    check_category = ""
+    check_subcategory = ""
     ' Loop through all rows as long as there is content
     Do While row < row_limit And Len(Cells(row, category_column)) > 0
         If row > row1 Then json = json + ","
         json = json + line_break
+        'Update ID counters
+        If Cells(row, category_column) <> check_category Then
+            'New category
+            cat_id = cat_id + 1
+            rel_subcat_id = 1
+            rel_item_id = 1
+        Else
+            'New subcategory
+            If Cells(row, subcategory_column) <> check_subcategory Then
+                rel_subcat_id = rel_subcat_id + 1
+                rel_item_id = 1
+            Else
+                'Same category and subcategory
+                rel_item_id = rel_item_id + 1
+            End If
+        End If
+        'Get values
+        check_id = Cells(row, id_column)
         check_category = Cells(row, category_column)
         check_subcategory = Cells(row, subcategory_column)
         check_waf = Cells(row, waf_column)
@@ -127,6 +152,8 @@ Sub export_json()
         check_ha_mod = Cells(row, ha_mod_column)
         'If there was no GUID, generate one
         If Len(check_guid) = 0 Then check_guid = generate_guid()
+        'If there was no ID, generate one with the cat/subcat/item IDs
+        If Len(check_id) = 0 Then check_id = Trim(Str(cat_id)) & "." & Trim(Str(rel_subcat_id)) & "." & Trim(Format(rel_item_id, "00"))
         'Only read More Info hyperlink if the cell contains one
         If Cells(row, link_column).Hyperlinks.Count > 0 Then
             'Anchors are not contained by the Address property, we need to concat the Subaddress too
@@ -152,6 +179,7 @@ Sub export_json()
         If Len(check_description) > 0 Then json = json + "," + line_break + "      " + double_quote + "description" + double_quote + ": " + double_quote + correct_format_for_JSON(check_description) + double_quote
         If Len(check_waf) > 0 Then json = json + "," + line_break + "      " + double_quote + "waf" + double_quote + ": " + double_quote + correct_format_for_JSON(check_waf) + double_quote
         If Len(check_guid) > 0 Then json = json + "," + line_break + "      " + double_quote + "guid" + double_quote + ": " + double_quote + check_guid + double_quote
+        If Len(check_id) > 0 Then json = json + "," + line_break + "      " + double_quote + "id" + double_quote + ": " + double_quote + check_id + double_quote
         If Len(check_sec_mod) > 0 And IsNumeric(check_sec_mod) Then json = json + "," + line_break + "      " + double_quote + "security" + double_quote + ": " + CStr(check_sec_mod)
         If Len(check_cost_mod) > 0 And IsNumeric(check_cost_mod) Then json = json + "," + line_break + "      " + double_quote + "cost" + double_quote + ": " + CStr(check_cost_mod)
         If Len(check_scale_mod) > 0 And IsNumeric(check_scale_mod) Then json = json + "," + line_break + "      " + double_quote + "scale" + double_quote + ": " + CStr(check_scale_mod)
@@ -432,6 +460,7 @@ Sub import_checklist_fromfile(json_file As Variant)
     End If
     'Blank the rest of the item rows
     Do While row < row_limit And (Len(Cells(row, category_column)) + Len(Cells(row, subcategory_column)) + Len(Cells(row, text_column)) + Len(Cells(row, status_column)) + Len(Cells(row, comments_column))) > 0
+        Cells(row, id_column) = ""
         Cells(row, category_column) = ""
         Cells(row, subcategory_column) = ""
         Cells(row, waf_column) = ""
@@ -544,7 +573,7 @@ End Function
 Sub update_row(ByVal json_item As Object, ByVal row As Integer, notverified As String, user_input_saved As Boolean)
 On Error GoTo update_row_err
     ' Variables and constants
-    Dim check_category As String, check_subcategory As String, check_waf As String, check_text As String, check_description As String, check_severity As String, check_status As String, check_link As String, check_training As String, check_graph_query As String, check_guid As String
+    Dim check_id As String, check_category As String, check_subcategory As String, check_waf As String, check_text As String, check_description As String, check_severity As String, check_status As String, check_link As String, check_training As String, check_graph_query As String, check_guid As String
     Dim user_input_comments As String, user_input_status As String
     Dim check_sec_mod, check_cost_mod, check_scale_mod, check_simple_mod, check_ha_mod
     Dim get_guid_user_input_successful As Boolean
@@ -552,6 +581,7 @@ On Error GoTo update_row_err
     ' Defaults to English "Not Verified"
     If Len(notverified) = 0 Then notverified = "Not verified"
     ' Code
+    check_id = get_object_property(json_item, "id")
     check_category = get_object_property(json_item, "category")
     check_subcategory = get_object_property(json_item, "subcategory")
     check_waf = get_object_property(json_item, "waf")
@@ -568,12 +598,8 @@ On Error GoTo update_row_err
     check_scale_mod = get_object_property(json_item, "scale")
     check_simple_mod = get_object_property(json_item, "simple")
     check_ha_mod = get_object_property(json_item, "ha")
-    'Cells(row, category_column) = check_category
-    'Cells(row, subcategory_column) = check_subcategory
-    'Cells(row, text_column) = check_text
-    'Cells(row, description_column) = check_description
-    'Cells(row, severity_column) = check_severity
-    'Cells(row, guid_column) = check_guid
+    'Create array variable with the information of the provided JSON object
+    newrow(id_column) = check_id
     newrow(category_column) = check_category
     newrow(subcategory_column) = check_subcategory
     newrow(waf_column) = check_waf
@@ -584,45 +610,32 @@ On Error GoTo update_row_err
     'If the previous user input was saved, and we can successfully retrieve an entry for this guid, put it in the comments/status fields
     If user_input_saved Then
         If get_user_input_from_guid(check_guid, user_input_comments, user_input_status) Then
-            'Cells(row, status_column) = CStr(user_input_status)     'Some times around this line there is a dreadful 400 error :(
-            'Cells(row, comments_column) = CStr(user_input_comments)
             newrow(status_column) = CStr(user_input_status)     'Some times around this line there is a dreadful 400 error :(
             newrow(comments_column) = CStr(user_input_comments)
         Else
-            'Cells(row, status_column) = notverified '"notverified" is a variable containing the translation of "not verified"
-            'Cells(row, comments_column) = ""
             newrow(status_column) = notverified '"notverified" is a variable containing the translation of "not verified"
             newrow(comments_column) = ""
         End If
     'Otherwise, blank them
     Else
-        'Cells(row, status_column) = notverified '"notverified" is a variable containing the translation of "not verified"
-        'Cells(row, comments_column) = ""
         newrow(status_column) = notverified '"notverified" is a variable containing the translation of "not verified"
         newrow(comments_column) = ""
     End If
     'Graph queries can optionally be imported or not, since it impacts readability
     'Per default, they are only imported when using the English language
     If import_graph_queries Then
-        'Cells(row, graph_success_column) = check_graph_success
-        'Cells(row, graph_failure_column) = check_graph_failure
         newrow(graph_column) = check_graph_query
     Else
-        'Cells(row, graph_success_column) = ""
-        'Cells(row, graph_failure_column) = ""
         newrow(graph_column) = ""
     End If
-    'Design modifiers are optional too
+    'WAF Pillar modifiers are optional too
     If IsNumeric(check_sec_mod) Then
-        'Cells(row, sec_mod_column) = check_sec_mod
         newrow(sec_mod_column) = check_sec_mod
     End If
     If IsNumeric(check_cost_mod) Then
-        'Cells(row, cost_mod_column) = check_cost_mod
         newrow(cost_mod_column) = check_cost_mod
     End If
     If IsNumeric(check_scale_mod) Then
-        'Cells(row, scale_mod_column) = check_scale_mod
         newrow(scale_mod_column) = check_scale_mod
     End If
     If IsNumeric(check_simple_mod) Then
@@ -630,10 +643,9 @@ On Error GoTo update_row_err
         newrow(simple_mod_column) = check_simple_mod
     End If
     If IsNumeric(check_ha_mod) Then
-        'Cells(row, ha_mod_column) = check_ha_mod
         newrow(ha_mod_column) = check_ha_mod
     End If
-    'Update Excel row
+    'Update Excel full row with the array in one go
     Range(Cells(row, 1), Cells(row, num_columns)).Value = newrow
     'Training and MoreInfo link optional
     If Len(check_link) > 0 Then
@@ -751,31 +763,23 @@ import_graph_results_err:
     Exit Sub
 End Sub
 
-'Delete all from controls, so that the spreadsheet can be saved as macro-free
+'Clear all rows
 Sub clear_rows()
     Dim row As Integer
-    Dim emptyrow() As Variant
+    Dim emptyrow() As Variant, i As Integer
+    ReDim Preserve emptyrow(1 To num_columns)
     row = row1
-    emptyrow = Array("", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "")
+    For i = 1 To num_columns
+        emptyrow(i) = ""
+    Next i
     Do While row < row_limit And (Len(Cells(row, category_column)) + Len(Cells(row, subcategory_column)) + Len(Cells(row, text_column)) + Len(Cells(row, status_column)) + Len(Cells(row, comments_column))) > 0
-        'Cells(row, category_column) = ""
-        'Cells(row, subcategory_column) = ""
-        'Cells(row, text_column) = ""
-        'Cells(row, description_column) = ""
-        'Cells(row, severity_column) = ""
-        'Cells(row, link_column) = ""
-        'Cells(row, status_column) = ""
-        'Cells(row, comments_column) = ""
-        'Cells(row, training_column) = ""
-        'Cells(row, graph_success_column) = ""
-        'Cells(row, graph_failure_column) = ""
-        'Cells(row, guid_column) = ""
-        'Cells(row, sec_mod_column) = ""
-        'Cells(row, cost_mod_column) = ""
-        'Cells(row, scale_mod_column) = ""
-        'Cells(row, simple_mod_column) = ""
-        'Cells(row, ha_mod_column) = ""
         Range(Cells(row, 1), Cells(row, num_columns)).Value = emptyrow
+        row = row + 1
+    Loop
+    'Delete categories
+    row = 2
+    Do While row < row_limit And Len(Sheets(values_sheet).Cells(row, values_category_column)) > 0
+        Sheets(values_sheet).Cells(row, values_category_column) = ""
         row = row + 1
     Loop
     'Reset checklist title
@@ -788,7 +792,7 @@ Sub clear_rows()
     Cells(language_selection_row, language_selection_col) = Sheets(values_sheet).Cells(2, values_language_selection_column)
 End Sub
 
-'Clear all rows
+'Delete all from controls, so that the spreadsheet can be saved as macro-free
 Sub delete_controls()
     Dim item As Object
     'Browse all shapes
@@ -979,3 +983,4 @@ Sub test()
         End If
     End If
 End Sub
+
