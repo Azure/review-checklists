@@ -213,16 +213,16 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
     col_area = "B"
     col_subarea = "C"
     col_waf_pillar = "D"
-    col_check = "E"
-    col_desc = "F"
-    col_sev = "G"
-    col_status = "H"
-    col_comment = "I"
-    col_link = "J"
-    col_training = "K"
-    col_arg_success = "L"
-    col_arg_failure = "L"
-    col_guid = "M"
+    col_services = "E"
+    col_check = "F"
+    col_desc = "G"
+    col_sev = "H"
+    col_status = "I"
+    col_comment = "J"
+    col_link = "K"
+    col_training = "L"
+    col_arg = "M"
+    col_guid = "N"
     info_link_text = 'More info'
     training_link_text = 'Training'
     worksheet_values_name = 'Values'
@@ -286,18 +286,26 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
         link = item.get("link")
         training = item.get("training")
         status = default_status
-        graph_query_success = item.get("graph_success")
-        graph_query_failure = item.get("graph_failure")
+        graph_query = item.get("graph")
+        # Transform services array in a comma-separated string
+        services = ""
+        if "services" in item:
+            for service in item["services"]:
+                if len(services) > 0:
+                    services += ", "
+                services += service
         # Update Excel
         ws[col_checklist + str(row_counter)].value = checklist_name
         ws[col_area + str(row_counter)].value = category
         ws[col_subarea + str(row_counter)].value = subcategory
         ws[col_waf_pillar + str(row_counter)].value = waf_pillar
+        ws[col_services + str(row_counter)].value = services
         ws[col_check + str(row_counter)].value = text
         ws[col_desc + str(row_counter)].value = description
         ws[col_sev + str(row_counter)].value = severity
         ws[col_status + str(row_counter)].value = status
         ws[col_link + str(row_counter)].value = link
+        # The creation of the link fails with the message: AttributeError: 'Worksheet' object has no attribute 'api'
         # if link != None:
         #     link_elements = link.split('#')
         #     link_address = link_elements[0]
@@ -316,8 +324,7 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
         #         training_subaddress = ""
         #     ws.api.Hyperlinks.Add (Anchor=ws[col_training + str(row_counter)].api, Address=training_address, SubAddress=training_subaddress, ScreenTip="", TextToDisplay=training_link_text)
         # GUID and ARG queries
-        ws[col_arg_success + str(row_counter)].value = graph_query_success
-        ws[col_arg_failure + str(row_counter)].value = graph_query_failure
+        ws[col_arg + str(row_counter)].value = graph_query
         ws[col_guid + str(row_counter)].value = guid
         # Next row
         row_counter += 1
