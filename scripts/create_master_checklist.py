@@ -25,6 +25,8 @@ import glob
 import datetime
 from openpyxl import load_workbook
 from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.worksheet.table import Table
+from openpyxl.utils import get_column_letter
 
 # Get input arguments
 parser = argparse.ArgumentParser(description='Update a checklist spreadsheet with JSON-formatted Azure Resource Graph results')
@@ -231,6 +233,7 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
     col_values_status = "B"
     col_values_area = "C"
     col_values_description = "H"
+    last_column = col_guid
 
     # Load workbook
     try:
@@ -304,31 +307,24 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
         ws[col_desc + str(row_counter)].value = description
         ws[col_sev + str(row_counter)].value = severity
         ws[col_status + str(row_counter)].value = status
-        ws[col_link + str(row_counter)].value = link
-        # The creation of the link fails with the message: AttributeError: 'Worksheet' object has no attribute 'api'
-        # if link != None:
-        #     link_elements = link.split('#')
-        #     link_address = link_elements[0]
-        #     if len(link_elements) > 1:
-        #         link_subaddress = link_elements[1]
-        #     else:
-        #         link_subaddress = ""
-        #     ws.api.Hyperlinks.Add (Anchor=ws[col_link + str(row_counter)].api, Address=link_address, SubAddress=link_subaddress, ScreenTip="", TextToDisplay=info_link_text)
-        ws[col_training + str(row_counter)].value = training
-        # if training != None:
-        #     training_elements = training.split('#')
-        #     training_address = training_elements[0]
-        #     if len(training_elements) > 1:
-        #         training_subaddress = training_elements[1]
-        #     else:
-        #         training_subaddress = ""
-        #     ws.api.Hyperlinks.Add (Anchor=ws[col_training + str(row_counter)].api, Address=training_address, SubAddress=training_subaddress, ScreenTip="", TextToDisplay=training_link_text)
-        # GUID and ARG queries
+        if link:
+            ws[col_link + str(row_counter)].value = '=HYPERLINK("{}", "{}")'.format(link, info_link_text)
+        if training:
+            ws[col_training + str(row_counter)].value = '=HYPERLINK("{}", "{}")'.format(training, training_link_text)
         ws[col_arg + str(row_counter)].value = graph_query
         ws[col_guid + str(row_counter)].value = guid
         # Next row
         row_counter += 1
 
+    # Create table
+    # Corrupts file!!!!
+    # table_ref = "A" + str(row1 - 1) + ":" + last_column + str(row_counter - 1)
+    # if args.verbose:
+    #     print("DEBUG: creating table for range {0}...".format(table_ref))
+    # table = Table(displayName="Checklist", ref=table_ref)
+    # ws.add_table(table)
+
+    # Get number of checks
     number_of_checks = row_counter - row1
     
     # Display summary
@@ -369,6 +365,7 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
         print("DEBUG:", str(row_counter - values_row1), "severities addedd to Excel spreadsheet")
 
     # Data validation
+    # UserWarning: Data Validation extension is not supported and will be removed!!!!
     # dv = DataValidation(type="list", formula1='=Values!$B$2:$B$6', allow_blank=True, showDropDown=True)
     dv = DataValidation(type="list", formula1='=Values!$B$2:$B$6', allow_blank=True)
     rangevar = col_status + str(row1) +':' + col_status + str(row1 + number_of_checks)
