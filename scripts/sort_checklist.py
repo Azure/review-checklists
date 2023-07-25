@@ -28,6 +28,13 @@ args = parser.parse_args()
 if not args.input_file:
     print("ERROR: no input file specified, not doing anything")
 
+# Verifies that all dictionary items in the provided array have a non-empty "id" key
+def all_items_have_id(items):
+    for item in items:
+        if not item['id']:
+            return False
+    return True
+
 # Load the checklist
 try:
     with open(args.input_file) as f:
@@ -35,9 +42,12 @@ try:
 except Exception as e:
     print("ERROR: Error when processing JSON file, nothing changed", args.input_file, "-", str(e))
 
-# Sort the items per category and subcategory
+# Sort the items per ID, or per category/subcategory if ID is missing
 items = checklist['items']
-items = sorted(items, key=lambda k: (k['category'],k["subcategory"]))
+if all_items_have_id(checklist['items']):
+    items = sorted(items, key=lambda k: (k['id']))
+else:
+    items = sorted(items, key=lambda k: (k['category'],k["subcategory"]))
 checklist['items'] = items
 
 # If dry-run, show on screen
