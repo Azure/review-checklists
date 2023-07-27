@@ -31,7 +31,7 @@ if not args.input_file:
 # Verifies that all dictionary items in the provided array have a non-empty "id" key
 def all_items_have_id(items):
     for item in items:
-        if not item['id']:
+        if 'id' not in item:
             return False
     return True
 
