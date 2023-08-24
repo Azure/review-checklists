@@ -21,6 +21,7 @@ Summary of checklists supported and the respective responsible owners:
 | AVS | Preview | [@fskelly](https://github.com/fskelly) [@mgodfrey50](https://github.com/mgodfrey50) [@Kiwibayer](https://github.com/Kiwibayer) [@robinher](https://github.com/robinher) |
 | SAP | Preview | [@AlastairMorrison](https://github.com/AlastairMorrison) [@videshmukh](https://github.com/videshmukh) |
 | API Management | Preview | [@andredewes](https://github.com/andredewes) [@seenu433](https://github.com/seenu433) |
+| Stack HCI | Preview | [@mbrat2005](https://github.com/mbrat2005) [@steveswalwell](https://github.com/steveswalwell) |
 
 ## What is an Azure Design Review?
 
