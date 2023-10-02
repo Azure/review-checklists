@@ -3,6 +3,14 @@
 # This script reads the checklist items from the latest checklist file
 #   in Github (or from a local file) and populates an Excel spreadsheet
 #   with the contents.
+#
+# Example usage:
+# python3 ./scripts/update_excel_openpyxl.py \
+#   --checklist-file=./checklists/aks_checklist.en.json \
+#   --find-all \
+#   --excel-file="./spreadsheet/macrofree/review_checklist_empty.xlsx" \
+#   --output-name-is-input-name \
+#   --output-path="./spreadsheet/macrofree/"
 # 
 # Last updated: March 2022
 #
@@ -13,15 +21,18 @@ import argparse
 import sys
 import os
 import requests
+import glob
 from openpyxl import load_workbook
 from openpyxl.worksheet.datavalidation import DataValidation
 
 # Get input arguments
-parser = argparse.ArgumentParser(description='Update a checklist spreadsheet with JSON-formated Azure Resource Graph results')
+parser = argparse.ArgumentParser(description='Update a checklist spreadsheet with JSON-formatted Azure Resource Graph results')
 parser.add_argument('--checklist-file', dest='checklist_file', action='store',
                     help='You can optionally supply a JSON file containing the checklist you want to dump to the Excel spreadsheet. Otherwise it will take the latest file from Github')
 parser.add_argument('--only-english', dest='only_english', action='store_true', default=False,
                     help='if checklist files are specified, ignore the non-English ones and only generate a spreadsheet for the English version (default: False)')
+parser.add_argument('--find-all', dest='find_all', action='store_true', default=False,
+                    help='if checklist files are specified, find all the languages for the given checklists (default: False)')
 parser.add_argument('--technology', dest='technology', action='store',
                     help='If you do not supply a JSON file with the checklist, you need to specify the technology from which the latest checklist will be downloaded from Github')
 parser.add_argument('--excel-file', dest='excel_file', action='store',
@@ -232,10 +243,27 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
 # Download checklist
 if checklist_file:
     checklist_file_list = checklist_file.split(" ")
-    # If only-english parameter was supplied, take only the English version and remove duplicates
+    # If --only-english parameter was supplied, take only the English version and remove duplicates
     if args.only_english:
         checklist_file_list = [file[:-8] + '.en.json' for file in checklist_file_list]
         checklist_file_list = list(set(checklist_file_list))
+        if args.verbose:
+            print("DEBUG: new checklist file list:", str(checklist_file_list))
+    # If --find-all paramater was supplied, find all the languages for the checklist
+    if args.find_all:
+        new_file_list = []
+        for checklist_file in checklist_file_list:
+            filedir = os.path.dirname(checklist_file)
+            filebase = os.path.basename(checklist_file)
+            filebase_noext = filebase[:-8]   # Remove '.en.json'
+            file_match_list = glob.glob(os.path.join(filedir, filebase_noext + '.*.json'))
+            for checklist_match in file_match_list:
+                # new_file_list.append(os.path.join(filedir, checklist_match))
+                new_file_list.append(checklist_match)
+        checklist_file_list = list(set(new_file_list))
+        if args.verbose:
+            print("DEBUG: new checklist file list:", str(checklist_file_list))
+    # Go over the list
     for checklist_file in checklist_file_list:
         if args.verbose:
             print("DEBUG: Opening checklist file", checklist_file)
@@ -245,7 +273,7 @@ if checklist_file:
                 checklist_data = json.load(f)
         except Exception as e:
             print("ERROR: Error when processing JSON file", checklist_file, "-", str(e))
-            sys.exit(1)
+            sys.exit(0)
         # Set input and output files
         input_excel_file = excel_file
         if args.output_excel_file:
@@ -264,7 +292,7 @@ else:
     if technology:
         checklist_url = "https://raw.githubusercontent.com/Azure/review-checklists/main/checklists/" + technology + "_checklist.en.json"
     else:
-        checklist_url = "https://raw.githubusercontent.com/Azure/review-checklists/main/checklists/lz_checklist.en.json"
+        checklist_url = "https://raw.githubusercontent.com/Azure/review-checklists/main/checklists/alz_checklist.en.json"
     if args.verbose:
         print("DEBUG: Downloading checklist file from", checklist_url)
     response = requests.get(checklist_url)

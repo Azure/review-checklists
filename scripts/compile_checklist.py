@@ -13,9 +13,9 @@ import sys
 import requests
 
 # Get input arguments
-parser = argparse.ArgumentParser(description='Update a checklist spreadsheet with JSON-formated Azure Resource Graph results')
+parser = argparse.ArgumentParser(description='Update a checklist spreadsheet with JSON-formatted Azure Resource Graph results')
 parser.add_argument('--output-file', dest='output_file', action='store',
-                    help='You can optionally supply the name of the JSON file that will be created')
+                    help='You can optionally supply the name of the JSON file that will be created. Otherwise no output will be generated')
 parser.add_argument('--category', dest='category_filter', action='store',
                     help='You can optionally provide a category name as a filter')
 parser.add_argument('--checklist-name', dest='new_checklist_name', action='store',
@@ -99,8 +99,9 @@ if args.verbose:
 # Add the categories to the new checklist
 categories = []
 for item in new_checklist['items']:
-    if not item['category'] in categories:
-        categories.append(item['category'])
+    category_name=item['checklist'] + '/' + item['category']
+    if not category_name in categories:
+        categories.append(category_name)
 if args.verbose:
     print("DEBUG: {0} categories found".format(str(len(categories))))
 for category in categories:

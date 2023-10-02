@@ -20,16 +20,18 @@ Summary of checklists supported and the respective responsible owners:
 | Security | GA | [@mgodfrey50](https://github.com/mgodfrey50) [@rudneir2](https://github.com/rudneir2) |
 | AVS | Preview | [@fskelly](https://github.com/fskelly) [@mgodfrey50](https://github.com/mgodfrey50) [@Kiwibayer](https://github.com/Kiwibayer) [@robinher](https://github.com/robinher) |
 | SAP | Preview | [@AlastairMorrison](https://github.com/AlastairMorrison) [@videshmukh](https://github.com/videshmukh) |
+| API Management | Preview | [@andredewes](https://github.com/andredewes) [@seenu433](https://github.com/seenu433) |
+| Stack HCI | Preview | [@mbrat2005](https://github.com/mbrat2005) [@steveswalwell](https://github.com/steveswalwell) |
 
 ## What is an Azure Design Review?
 
-A common request of many organizations starting with public cloud is having their design double-checked to make sure that best practices are being followed. One of the teams in Microsoft providing this kind of design reviews and guidance is [FastTrack for Azure (FTA)](https://azure.microsoft.com/programs/azure-fasttrack/), part of Azure Engineering at Microsoft.
+A common request of many organizations starting with public cloud is having their design double-checked to make sure that best practices are being followed. The scope of this exercise could vary, from generic Azure Landing Zones to workload-specific deployments.
 
-When doing Azure design reviews (or any review for that matter), Microsoft employees (such as FastTrack for Azure engineers) and Microsoft partners often leverage Excel spreadsheets as the medium of choice to document findings and track design improvements and recommendations. A problem with Excel spreadsheets is that they are not easily made subject to revision control. Additionally, team collaboration with branching, issues, pull requests, reviews and others is difficult at best, impossible in most cases.
+When doing Azure design reviews (or any review for that matter), Microsoft employees and Microsoft partners often leverage Excel spreadsheets as the medium of choice to document findings and track design improvements and recommendations. A problem with Excel spreadsheets is that they are not easily made subject to revision control. Additionally, team collaboration with branching, issues, pull requests, reviews and others is difficult at best, impossible in most cases.
 
 ## Why this repository?
 
-This repo separates the actual review checklist content from the presentation layer, so that the JSON-formated checklist that can be subject to version control, and it can then be imported into an Excel spreadsheet by means of Visual Basic for Applications (VBA) macros for easier handling (not all of us like working natively with JSON). The provided [Checklist Review Spreadsheet](https://github.com/Azure/review-checklists/releases/latest/download/review_checklist.xlsm) leverages code to interpret JSON from the VBA module in [https://github.com/VBA-tools/VBA-JSON/](https://github.com/VBA-tools/VBA-JSON/), from which there is a copy in this repo to be self-contained (make sure you use the latest version though). The [Checklist Review Spreadsheet](https://github.com/Azure/review-checklists/releases/latest/download/review_checklist.xlsm) includes some macros (find the source code both in the spreadsheet as well as [here](./code/Sheet1.cls)), which are accessible from control buttons in the main sheet.
+This repo separates the actual review checklist content from the presentation layer, so that the JSON-formated checklist that can be subject to version control, and it can then be imported into an Excel spreadsheet by means of Visual Basic for Applications (VBA) macros for easier handling (not all of us like working natively with JSON). The provided [Checklist Review Spreadsheet](https://github.com/Azure/review-checklists/releases/latest/download/review_checklist.xlsm) leverages code to interpret JSON from the VBA module in [https://github.com/VBA-tools/VBA-JSON/](https://github.com/VBA-tools/VBA-JSON/), from which there is a copy in this repo to be self-contained (make sure you use the latest version though). The [Checklist Review Spreadsheet](https://github.com/Azure/review-checklists/releases/latest/download/review_checklist.xlsm) includes some macros (find the source code both in the spreadsheet as well as [here](./spreadsheet/Sheet1.cls)), which are accessible from control buttons in the main sheet.
 
 Note: the VBA code in the spreadsheet does not work on Excel for Mac, due to some critical missing libraries.
 
@@ -53,7 +55,7 @@ Please feel free to open an issue or create a PR if you find any error or missin
 
 5. Go row by row, and set the "Status" field to one of the available options, and write any remarks in the "Comments" field (such as why a recommendation is not relevant, or who will fix the open item)
 
-   1. Since there are many rows in a review, it is recommended procededing in chunks: either going area after area (first "Networking", then "Security", etc) or starting with the "High" priority elements and afterwards moving down to "Medium" and "Low"
+   1. Since there are many rows in a review, it is recommended proceeding in chunks: either going area after area (first "Networking", then "Security", etc) or starting with the "High" priority elements and afterwards moving down to "Medium" and "Low"
    1. If any recommendation is not clear, there is a "More Info" link with more context information.
    1. **IMPORTANT**: design decisions are not a checkbox exercise, but a series of compromises. It is OK deviating from certain recommendations, if the implications are clear (for example, sacrificing security with operational simplicity or lower cost for non-critical applications)
 
@@ -77,13 +79,12 @@ In other cases the file opens with the following message, which prevents you fro
 
 ![how to unblock a file to run macros](./pictures/unblock.png)
 
-2. Additionally, you might want to add the folder where you cloned this repo to the list of exceptions in Windows Security (in the Virus & Threat Protection section):
+2. Additionally, you might want to add the macro-enabled spreadsheet file to the list of exceptions in Windows Security (in the Virus & Threat Protection section):
 
 ![how to add an exception to windows security 1](./pictures/defender_settings_1.png)
 ![how to add an exception to windows security 2](./pictures/defender_settings_2.png)
 ![how to add an exception to windows security 3](./pictures/defender_settings_3.png)
 ![how to add an exception to windows security 4](./pictures/defender_settings_4.png)
-
 
 ## Using the spreadsheet to generate JSON checklist files (advanced)
 
@@ -96,7 +97,7 @@ If you wish to do contributions to the checklists, one option is the following:
 
 ## Using Azure Resource Graph to verify Azure environments (advanced)
 
-Some of the checks have associated [Azure Resource Graph](https://docs.microsoft.com/azure/governance/resource-graph/overview) queries, which return a list of related resources and a compliance status for each. Resource Graph queries enable objective verification of the associated checks and make filling out the spreadsheet easier by collecting some environment details for you. 
+Some of the checks have associated [Azure Resource Graph](https://learn.microsoft.com/azure/governance/resource-graph/overview) queries, which return a list of related resources and a compliance status for each. Resource Graph queries enable objective verification of the associated checks and make filling out the spreadsheet easier by collecting some environment details for you. 
 
 Along with the spreadsheet, this repo includes the script [checklist_graph.sh](./scripts/checklist_graph.sh). This script will run the graph queries stored in the JSON checklists and produce an output that can easily be copied and pasted into the spreadsheet, or alternatively generate a JSON file that can then be imported to the spreadsheet.
 
