@@ -48,6 +48,10 @@ parser.add_argument('--no-excel', dest='no_excel', action='store_true',
                     default=False, help='If a macrofree Excel spreadsheet should not be generated')
 parser.add_argument('--no-json', dest='no_json', action='store_true',
                     default=False, help='If a JSON file should not be generated')
+parser.add_argument('--no-data-validation', dest='no_data_validation', action='store_true',
+                    default=False, help='If data validation should be skipped when updating the Excel spreadsheet')
+parser.add_argument('--no-links', dest='no_links', action='store_true',
+                    default=False, help='If hyperlinks should be skipped when updating the Excel spreadsheet')
 parser.add_argument('--stats', dest='stats', action='store_true',
                     default=False, help='If statistics about the newly generated checklist should be displayed')
 parser.add_argument('--show-service', dest='show_service', action='store',
@@ -201,6 +205,14 @@ def dump_json_file(json_object, filename):
         f.write(json_string)
         f.close()
 
+# Format string so that it is compatible with Excel
+def format4excel(input_string):
+    # Remove equals sign at the beginning of the string
+    if input_string and input_string[0] == "=":
+        input_string = input_string[1:]
+    # Return formatted string
+    return input_string
+
 # Create macro-free Excel file with the checklist
 def update_excel_file(input_excel_file, output_excel_file, checklist_data):
     # Constants
@@ -278,18 +290,18 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
     row_counter = row1
     for item in checklist_data.get("items"):
         # Read variables from JSON
-        checklist_name = item.get("checklist")
-        guid = item.get("guid")
-        category = item.get("category")
-        subcategory = item.get("subcategory")
-        waf_pillar = item.get("waf")
-        text = item.get("text")
-        description = item.get("description")
-        severity = item.get("severity")
-        link = item.get("link")
-        training = item.get("training")
+        checklist_name = format4excel(item.get("checklist"))
+        guid = format4excel(item.get("guid"))
+        category = format4excel(item.get("category"))
+        subcategory = format4excel(item.get("subcategory"))
+        waf_pillar = format4excel(item.get("waf"))
+        text = format4excel(item.get("text"))
+        description = format4excel(item.get("description"))
+        severity = format4excel(item.get("severity"))
+        link = format4excel(item.get("link"))
+        training = format4excel(item.get("training"))
         status = default_status
-        graph_query = item.get("graph")
+        graph_query = format4excel(item.get("graph"))
         # Transform services array in a comma-separated string
         services = ""
         if "services" in item:
@@ -307,10 +319,17 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
         ws[col_desc + str(row_counter)].value = description
         ws[col_sev + str(row_counter)].value = severity
         ws[col_status + str(row_counter)].value = status
-        if link:
-            ws[col_link + str(row_counter)].value = '=HYPERLINK("{}", "{}")'.format(link, info_link_text)
-        if training:
-            ws[col_training + str(row_counter)].value = '=HYPERLINK("{}", "{}")'.format(training, training_link_text)
+        if not args.no_links:
+            if link:
+                ws[col_link + str(row_counter)].value = info_link_text
+                ws[col_link + str(row_counter)].hyperlink = link
+                ws[col_link + str(row_counter)].style = "Hyperlink"
+                # ws[col_link + str(row_counter)].value = '=HYPERLINK("{}", "{}")'.format(link, info_link_text)
+            if training:
+                ws[col_training + str(row_counter)].value = training_link_text
+                ws[col_training + str(row_counter)].value = training
+                ws[col_training + str(row_counter)].style = "Hyperlink"
+                # ws[col_training + str(row_counter)].value = '=HYPERLINK("{}", "{}")'.format(training, training_link_text)
         ws[col_arg + str(row_counter)].value = graph_query
         ws[col_guid + str(row_counter)].value = guid
         # Next row
@@ -367,12 +386,13 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
     # Data validation
     # UserWarning: Data Validation extension is not supported and will be removed!!!!
     # dv = DataValidation(type="list", formula1='=Values!$B$2:$B$6', allow_blank=True, showDropDown=True)
-    dv = DataValidation(type="list", formula1='=Values!$B$2:$B$6', allow_blank=True)
-    rangevar = col_status + str(row1) +':' + col_status + str(row1 + number_of_checks)
-    if args.verbose:
-        print("DEBUG: adding data validation to range", rangevar)
-    dv.add(rangevar)
-    ws.add_data_validation(dv)
+    if not args.no_data_validation:
+        dv = DataValidation(type="list", formula1='=Values!$B$2:$B$6', allow_blank=True)
+        rangevar = col_status + str(row1) +':' + col_status + str(row1 + number_of_checks)
+        if args.verbose:
+            print("DEBUG: adding data validation to range", rangevar)
+        dv.add(rangevar)
+        ws.add_data_validation(dv)
 
     # Close book
     if args.verbose:
