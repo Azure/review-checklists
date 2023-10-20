@@ -118,6 +118,9 @@ def get_services_from_string(input_string):
                 services.append(service)
     return list(set(services))
 
+# Returns True if the checklist file is valid, False otherwise
+# Used to skip certain checklists, such as the old
+
 # Consolidate all checklists into one big checklist object
 def get_consolidated_checklist(input_folder, language):
     # Initialize checklist object
@@ -141,14 +144,19 @@ def get_consolidated_checklist(input_folder, language):
                 checklist_data = json.load(f)
                 if args.verbose:
                     print("DEBUG: JSON file", checklist_file, "loaded successfully with {0} items".format(len(checklist_data["items"])))
-                for item in checklist_data["items"]:
-                    # Add field with the name of the checklist
-                    item["checklist"] = checklist_data["metadata"]["name"]
-                # Add items to the master checklist
-                checklist_master_data['items'] += checklist_data['items']
-                # Replace the master checklist severities and status sections (for a given language they should be all the same)
-                checklist_master_data['severities'] = checklist_data['severities']
-                checklist_master_data['status'] = checklist_data['status']
+                # Verify that the checklist is not deprecated
+                if "metadata" in checklist_data and "state" in checklist_data["metadata"] and "deprecated" in checklist_data["metadata"]["state"].lower():
+                    if args.verbose:
+                        print("DEBUG: skipping deprecated checklist", checklist_file)
+                else:
+                    for item in checklist_data["items"]:
+                        # Add field with the name of the checklist
+                        item["checklist"] = checklist_data["metadata"]["name"]
+                    # Add items to the master checklist
+                    checklist_master_data['items'] += checklist_data['items']
+                    # Replace the master checklist severities and status sections (for a given language they should be all the same)
+                    checklist_master_data['severities'] = checklist_data['severities']
+                    checklist_master_data['status'] = checklist_data['status']
         except Exception as e:
             print("ERROR: Error when processing JSON file", checklist_file, "-", str(e))
         # Optionally, browse the checklist items and add the services field
