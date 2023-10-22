@@ -93,7 +93,7 @@ If you wish to do contributions to the checklists, one option is the following:
 1. Load up the latest version of the checklist you want to modify
 2. Do the required modifications to the checklist items
 3. Push the button "Export checklist to JSON" in the **"Advanced"** section of controls in the checklist. Store your file in your local file system, and upload it to the [checklists folder](./checklists) of this Github repo (use the format `<technology>_checklist.en.json`, for example, `lz_checklist.en.json`)
-4. This will create a PR, and will be reviewed by the corresponding aprovers.
+4. This will create a PR, and will be reviewed by the corresponding approvers.
 
 ## Using Azure Resource Graph to verify Azure environments (advanced)
 
