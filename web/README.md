@@ -10,7 +10,7 @@ This is a Minimum Viable Product (MVP) for an architecture for web-based checkli
 - An Azure Container Instance that will launch 3 containers:
     - `filldb` (init container): creates the required database and tables in the MySQL server, and fills in the data imported from the latest checklist
     - `fillgraphdb` (init container): executes any Azure Resource Graph queries stored in the checklist, and stores the results in the MySQL database
-    - `flask` (main container): a flask-based web frontend that allows inspecting the MysQL checklist table, as well as updating the status and comments of each individual checklist item
+    - `flask` (main container): a flask-based web frontend that allows inspecting the MySQL checklist table, as well as updating the status and comments of each individual checklist item
 
 This screenshot shows the `flask` container web interface that can be used to frontend the MySQL database containing the review checklist items:
 
@@ -31,7 +31,7 @@ The web interface will be available in the public IP address of the ACI containe
 
 Since this is only a prototype, there are some aspects not being addressed for the sake of simplicity:
 
-- Figure out why the user-managed identities seem not be reachable from the init containers
+- Figure out why the user-managed identities seem not to be reachable from the init containers
 - No HTTPS (it could be easily achieved with an nginx sidecar in the ACI container group)
 - No authentication (an authentication proxy such as Ambassador could be leveraged for this)
 - The network firewall of the MySQL server is fully open (it could be closed down to the ACI egress IP address)
