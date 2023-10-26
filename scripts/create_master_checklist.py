@@ -378,7 +378,7 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
 
     # Display summary
     if args.verbose:
-        print("DEBUG:", str(row_counter - values_row1), "statuses addedd to Excel spreadsheet")
+        print("DEBUG:", str(row_counter - values_row1), "statuses added to Excel spreadsheet")
 
     # Update severities
     row_counter = values_row1
@@ -389,7 +389,7 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
 
     # Display summary
     if args.verbose:
-        print("DEBUG:", str(row_counter - values_row1), "severities addedd to Excel spreadsheet")
+        print("DEBUG:", str(row_counter - values_row1), "severities added to Excel spreadsheet")
 
     # Data validation
     # UserWarning: Data Validation extension is not supported and will be removed!!!!
