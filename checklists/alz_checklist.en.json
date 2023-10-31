@@ -518,21 +518,10 @@
         {
             "category": "Resource Organization",
             "subcategory": "Subscriptions",
-            "text": "Ensure required services and features are available within the chosen deployment regions",
-            "waf": "Security",
-            "guid": "4c27d42e-8bba-4c75-9155-9ab9153e8908",
-            "id": "C02.12",
-            "severity": "Medium",
-            "training": "https://learn.microsoft.com/learn/modules/azure-architecture-fundamentals/",
-            "link": "https://azure.microsoft.com/global-infrastructure/services/"
-        },
-        {
-            "category": "Resource Organization",
-            "subcategory": "Subscriptions",
             "text": "Enforce a process for cost management",
             "waf": "Security",
             "guid": "ae28c84c-33b6-4b78-88b9-fe5c41049d40",
-            "id": "C02.13",
+            "id": "C02.12",
             "ammp": true,
             "severity": "High",
             "training": "https://learn.microsoft.com/learn/paths/control-spending-manage-bills/",
@@ -544,7 +533,7 @@
             "text": "If AD on Windows Server, establish a dedicated identity subscription in the Indentity management group, to host Windows Server Active Directory domain controllers",
             "waf": "Security",
             "guid": "3a923c34-74d0-4001-aac6-a9e01e6a83de",
-            "id": "C02.14",
+            "id": "C02.13",
             "severity": "Medium",
             "training": "https://learn.microsoft.com/learn/paths/enterprise-scale-architecture/",
             "link": "https://learn.microsoft.com/azure/governance/management-groups/overview"
@@ -555,11 +544,55 @@
             "text": "Ensure tags are used for billing and cost management",
             "waf": "Security",
             "guid": "5de32c19-9248-4160-9d5d-1e4e614658d3",
-            "id": "C02.15",
+            "id": "C02.14",
             "severity": "Medium",
             "graph": "resources | extend compliant = isnotnull(['tags']) | project name, id, subscriptionId, resourceGroup, tags, compliant",
             "training": "https://learn.microsoft.com/learn/paths/implement-resource-mgmt-security/",
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/track-costs"
+        },
+        {
+            "category": "Resource Organization",
+            "subcategory": "Regions",
+            "text": "Select the right Azure region/s for your deployment. Azure is a global-scale cloud platform that provide global coverage through many regions and geographies. Different Azure regions have different characteristics, access and availability models, costs, capacity, and services offered, then it is important to consider all criteria and requirements",
+            "waf": "Reliability",
+            "guid": "250d81ce-8bbe-4f85-9051-6a18a8221e50",
+            "id": "C03.01",
+            "severity": "High",
+            "training": "https://learn.microsoft.com/learn/modules/azure-architecture-fundamentals/",
+            "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-setup-guide/regions"
+        },
+        {
+            "category": "Resource Organization",
+            "subcategory": "Regions",
+            "text": "Consider a multi-region deployment. Depending on customer size, locations, and users presence, operating in multiple regions can be a common choice to deliver services and run applications closer to them. Using a multi-region deployment is also important to provide geo disaster recovery capabilities, to eliminate the dependency from a single region capacity and diminish the risk of a temporary and localized resource capacity constraint",
+            "waf": "Reliability",
+            "guid": "19ca3f89-397d-44b1-b5b6-5e18661372ac",
+            "id": "C03.02",
+            "severity": "Medium",
+            "training": "https://learn.microsoft.com/learn/modules/azure-architecture-fundamentals/",
+            "link": "https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-setup-guide/regions#operate-in-multiple-geographic-regions"
+        },
+        {
+            "category": "Resource Organization",
+            "subcategory": "Regions",
+            "text": "Ensure required services and features are available within the chosen deployment regions",
+            "waf": "Reliability",
+            "guid": "4c27d42e-8bba-4c75-9155-9ab9153e8908",
+            "id": "C03.03",
+            "severity": "Medium",
+            "training": "https://learn.microsoft.com/learn/modules/azure-architecture-fundamentals/",
+            "link": "https://azure.microsoft.com/explore/global-infrastructure/products-by-region/"
+        },
+        {
+            "category": "Resource Organization",
+            "subcategory": "Regions",
+            "text": "Ensure resource quotas for every resource type, per subscription and per region, have been requested and approved time before a new deployment or migration. Back-office process can take time to be approved and could delay deployment execution",
+            "waf": "Reliability",
+            "guid": "f28cf0b2-9373-4089-bb62-d20cf481b5d8",
+            "id": "C03.04",
+            "severity": "Medium",
+            "training": "https://learn.microsoft.com/learn/modules/azure-architecture-fundamentals/",
+            "link": "https://learn.microsoft.com/azure/quotas/quotas-overview"
         },
         {
             "category": "Network Topology and Connectivity",
@@ -1348,6 +1381,17 @@
             "severity": "High",
             "graph": "resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetId=tostring(subnets.id), subnetName=tostring(subnets.name),subnetRT=subnets.properties.routeTable.id | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend hasRT = isnotnull(subnetRT) | distinct id, hasRT, subnetId | join kind=fullouter (resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | extend isVWAN=(tolower(split(properties_virtualNetworkPeerings.name, '_')[0]) == 'remotevnettohubpeering') | mv-expand properties.subnets | project id, isVWAN, name, subnetId=tostring(properties_subnets.id), subnetName=tostring(properties_subnets.name) | summarize PeeredToVWAN=max(isVWAN) by id, subnetId | project id, subnetId, isVWANpeer = (PeeredToVWAN == true)) on subnetId | project id=iff(isnotempty(id), id, id1), subnetId=iff(isnotempty(subnetId), subnetId, subnetId1), hasRT, isVWANpeer | extend compliant = (hasRT==true or isVWANpeer==true) | distinct id, subnetId, compliant",
             "link": "https://learn.microsoft.com/azure/virtual-network/virtual-networks-udr-overview"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Internet",
+            "text": "Assess and review network outbound traffic configuration and strategy before the upcoming breaking change. On September 30, 2025, default outbound access for new deployments will be retired and only explicit access configurations will be allowed",
+            "waf": "Reliability",
+            "guid": "b034c01e-110b-463a-b36e-e3346e57f225",
+            "id": "D06.15",
+            "ammp": true,
+            "severity": "High",
+            "link": "https://learn.microsoft.com/en-us/azure/virtual-network/ip-services/default-outbound-access"
         },
         {
             "category": "Network Topology and Connectivity",
