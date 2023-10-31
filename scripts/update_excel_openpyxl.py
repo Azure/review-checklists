@@ -172,7 +172,7 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
     # Display summary
     if args.verbose:
         number_of_checks = row_counter - row1
-        print("DEBUG:", str(number_of_checks), "checks addedd to Excel spreadsheet")
+        print("DEBUG:", str(number_of_checks), "checks added to Excel spreadsheet")
 
     # Get worksheet
     try:
@@ -192,7 +192,7 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
 
     # Display summary
     if args.verbose:
-        print("DEBUG:", str(row_counter - values_row1), "categories addedd to Excel spreadsheet")
+        print("DEBUG:", str(row_counter - values_row1), "categories added to Excel spreadsheet")
 
     # Update status
     row_counter = values_row1
@@ -205,7 +205,7 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
 
     # Display summary
     if args.verbose:
-        print("DEBUG:", str(row_counter - values_row1), "statuses addedd to Excel spreadsheet")
+        print("DEBUG:", str(row_counter - values_row1), "statuses added to Excel spreadsheet")
 
     # Update severities
     row_counter = values_row1
@@ -216,7 +216,7 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
 
     # Display summary
     if args.verbose:
-        print("DEBUG:", str(row_counter - values_row1), "severities addedd to Excel spreadsheet")
+        print("DEBUG:", str(row_counter - values_row1), "severities added to Excel spreadsheet")
 
     # Data validation
     # dv = DataValidation(type="list", formula1='=Values!$B$2:$B$6', allow_blank=True, showDropDown=True)
@@ -249,7 +249,7 @@ if checklist_file:
         checklist_file_list = list(set(checklist_file_list))
         if args.verbose:
             print("DEBUG: new checklist file list:", str(checklist_file_list))
-    # If --find-all paramater was supplied, find all the languages for the checklist
+    # If --find-all parameter was supplied, find all the languages for the checklist
     if args.find_all:
         new_file_list = []
         for checklist_file in checklist_file_list:
