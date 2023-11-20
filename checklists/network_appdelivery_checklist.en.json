@@ -52,7 +52,7 @@
             "guid": "dfc50f87-3800-424c-937b-ed5f186e7c15",
             "id": "A01.05",
             "severity": "Medium",
-            "graph": "resources | where type=='microsoft.network/applicationgateways' | extend subnetId = tostring(properties.gatewayIPConfigurations[0].properties.subnet.id) | project id, subnetId | join (resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetId = tostring(subnets.id), subnetPrefixLength = split(subnets.properties.addressPrefix, '/')[1]) on subnetId | extend compliant = (subnetPrefixLength <= 24) | distinct id,compliant",
+            "graph": "resources | where type=='microsoft.network/applicationgateways' | extend subnetId = tostring(properties.gatewayIPConfigurations[0].properties.subnet.id) | project id, subnetId | join (resources | where type=='microsoft.network/virtualnetworks' and resourceGroup=='appgw' | project id,subnets=properties.subnets | mv-expand subnets | mv-expand subnets.properties.addressPrefixes | project id, subnetId = tostring(subnets.id), prefix1 = subnets.properties.addressPrefix, prefix2 = subnets.properties.addressPrefixes | mv-expand prefix2 | extend prefix = iff(isnotnull(prefix1), prefix1, prefix2) | extend subnetPrefixLength = split(prefix, '/')[1])on subnetId | extend compliant = (subnetPrefixLength <= 24 or subnetPrefixLength == 64) | distinct id,compliant",
             "training": "https://learn.microsoft.com/learn/paths/secure-application-delivery/",
             "link": "https://learn.microsoft.com/azure/application-gateway/configuration-infrastructure#size-of-the-subnet"
         },
@@ -86,6 +86,7 @@
             "waf": "Reliability",
             "guid": "135bf4ac-f9db-461f-b76b-2ee9e30b12c0",
             "id": "A01.08",
+            "query": "resources | where type =~ 'microsoft.network/applicationGateways' | extend compliant = (isnotnull(properties.autoscaleConfiguration) and properties.autoscaleConfiguration.minCapacity >= 2) | distinct id,compliant",
             "severity": "Medium",
             "training": "https://learn.microsoft.com/learn/paths/secure-application-delivery/",
             "link": "https://learn.microsoft.com/azure/application-gateway/application-gateway-autoscaling-zone-redundant"
@@ -98,6 +99,7 @@
             "guid": "135bf4ac-f9db-461f-b76b-2ee9e30b12c0",
             "id": "A01.09",
             "severity": "Medium",
+            "query": "resources | where type =~ 'microsoft.network/applicationGateways' | extend compliant = (isnotnull(zones) and array_length(zones) > 1) | distinct id,compliant",
             "training": "https://learn.microsoft.com/learn/paths/secure-application-delivery/",
             "link": "https://learn.microsoft.com/azure/reliability/migrate-app-gateway-v2"
         },
