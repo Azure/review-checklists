@@ -70,7 +70,7 @@
                 "style": "tabs",
                 "links": [
                     {
-                        "id": "c74e73d7-5d8a-4ceb-882b-c4fab4c1a8af",
+                        "id": "aa013ab8-05e1-453b-a73c-8f3457465dd0",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Network Topology and Connectivity",
@@ -222,7 +222,7 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Your application gateways should be deployed in subnets with IP prefixes equal or larger than /26. Check [this link](https://learn.microsoft.com/azure/application-gateway/configuration-infrastructure#size-of-the-subnet) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-application-delivery/) can help to educate yourself on this."
+                            "json": "Your Application Gateways v2 should be deployed in subnets with IP prefixes equal or larger than /24. Check [this link](https://learn.microsoft.com/azure/application-gateway/configuration-infrastructure#size-of-the-subnet) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-application-delivery/) can help to educate yourself on this."
                         },
                         "name": "querytext2"
                     },
@@ -230,7 +230,7 @@
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/applicationgateways' | extend subnetId = tostring(properties.gatewayIPConfigurations[0].properties.subnet.id) | project id, subnetId | join (resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetId = tostring(subnets.id), subnetPrefixLength = split(subnets.properties.addressPrefix, '/')[1]) on subnetId | extend compliant = (subnetPrefixLength <= 26) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "query": "resources | where type=='microsoft.network/applicationgateways' | extend subnetId = tostring(properties.gatewayIPConfigurations[0].properties.subnet.id) | project id, subnetId | join (resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | mv-expand subnets.properties.addressPrefixes | project id, subnetId = tostring(subnets.id), prefix1 = subnets.properties.addressPrefix, prefix2 = subnets.properties.addressPrefixes | mv-expand prefix2 | extend prefix = iff(isnotnull(prefix1), prefix1, prefix2) | extend subnetPrefixLength = split(prefix, '/')[1])on subnetId | extend compliant = (subnetPrefixLength <= 24 or subnetPrefixLength == 64) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
                             "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
