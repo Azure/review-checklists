@@ -1,0 +1,454 @@
+{
+    "items": [
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "If you use customer-managed TLS certificates with Azure Front Door, use the 'Latest' certificate version. Reduce the risk of outages caused by manual certificate renewal.",
+            "waf": "Operations",
+            "guid": "f00a69de-7076-4734-a734-6e4552cad9e1",
+            "id": "A01.01",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-latest-version-for-customer-managed-certificates"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery",
+            "text": "Perform app delivery within landing zones for both internal-facing (corp) and external-facing apps (online).",
+            "waf": "Security",
+            "guid": "6138a720-0f1c-4e16-bd30-1d6e872e52e3",
+            "id": "A01.02",
+            "severity": "Medium",
+            "training": "https://learn.microsoft.com/learn/paths/secure-application-delivery/",
+            "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/resource-org-management-groups#management-groups-in-the-azure-landing-zone-accelerator"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - App Gateway",
+            "text": "Ensure you are using Application Gateway v2 SKU",
+            "waf": "Security",
+            "guid": "553585a6-abe0-11ed-afa1-0242ac120002",
+            "id": "A01.03",
+            "severity": "Medium",
+            "graph": "resources | where type == 'microsoft.network/applicationgateways' | project id, compliant = properties.sku.name in ('Standard_v2', 'WAF_v2') | project id,compliant",
+            "training": "https://learn.microsoft.com/learn/paths/secure-application-delivery/",
+            "link": "https://learn.microsoft.com/azure/application-gateway/overview-v2"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Load Balancer",
+            "text": "Ensure you are using the Standard SKU for your Azure Load Balancers",
+            "waf": "Security",
+            "guid": "4e35fbf5-0ae2-48b2-97ce-753353edbd1a",
+            "id": "A01.04",
+            "severity": "Medium",
+            "graph": "resources | where type == 'microsoft.network/loadbalancers' | project id, compliant=(tolower(sku.name) == 'standard')",
+            "link": "https://learn.microsoft.com/azure/load-balancer/load-balancer-overview"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - App Gateway",
+            "text": "Your Application Gateways v2 should be deployed in subnets with IP prefixes equal or larger than /24",
+            "waf": "Security",
+            "guid": "dfc50f87-3800-424c-937b-ed5f186e7c15",
+            "id": "A01.05",
+            "severity": "Medium",
+            "graph": "resources | where type=='microsoft.network/applicationgateways' | extend subnetId = tostring(properties.gatewayIPConfigurations[0].properties.subnet.id) | project id, subnetId | join (resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | mv-expand subnets.properties.addressPrefixes | project id, subnetId = tostring(subnets.id), prefix1 = subnets.properties.addressPrefix, prefix2 = subnets.properties.addressPrefixes | mv-expand prefix2 | extend prefix = iff(isnotnull(prefix1), prefix1, prefix2) | extend subnetPrefixLength = split(prefix, '/')[1])on subnetId | extend compliant = (subnetPrefixLength <= 24 or subnetPrefixLength == 64) | distinct id,compliant",
+            "training": "https://learn.microsoft.com/learn/paths/secure-application-delivery/",
+            "link": "https://learn.microsoft.com/azure/application-gateway/configuration-infrastructure#size-of-the-subnet"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - App Gateway",
+            "text": "Deploy Azure Application Gateway v2 or partner NVAs used for proxying inbound HTTP(S) connections within the landing-zone virtual network and with the apps that they're securing.",
+            "description": "Administration of reverse proxies in general and WAF in particular is closer to the application than to networking, so they belong in the same subscription as the app. Centralizing the Application Gateway and WAF in the connectivity subscription might be OK if it is managed by one single team.",
+            "waf": "Security",
+            "guid": "48b662d6-d15f-4512-a654-98f6dfe237de",
+            "id": "A01.06",
+            "severity": "Medium",
+            "training": "https://learn.microsoft.com/learn/paths/secure-application-delivery/",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/ag-overview"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - App Gateway",
+            "text": "Use a DDoS Network or IP protection plans for all Public IP addresses in application landing zones.",
+            "waf": "Security",
+            "guid": "143b16c3-1d7a-4a9b-9470-4489a8042d88",
+            "id": "A01.07",
+            "severity": "Medium",
+            "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/ag-overview"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - App Gateway",
+            "text": "Configure autoscaling with a minimum amount of instances of two.",
+            "waf": "Reliability",
+            "guid": "135bf4ac-f9db-461f-b76b-2ee9e30b12c0",
+            "id": "A01.08",
+            "query": "resources | where type =~ 'microsoft.network/applicationGateways' | extend compliant = (isnotnull(properties.autoscaleConfiguration) and properties.autoscaleConfiguration.minCapacity >= 2) | distinct id,compliant",
+            "severity": "Medium",
+            "training": "https://learn.microsoft.com/learn/paths/secure-application-delivery/",
+            "link": "https://learn.microsoft.com/azure/application-gateway/application-gateway-autoscaling-zone-redundant"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - App Gateway",
+            "text": "Deploy Application Gateway across Availability Zones",
+            "waf": "Reliability",
+            "guid": "060c6964-52b5-48db-af8b-83e4b2d85349",
+            "id": "A01.09",
+            "severity": "Medium",
+            "query": "resources | where type =~ 'microsoft.network/applicationGateways' | extend compliant = (isnotnull(zones) and array_length(zones) > 1) | distinct id,compliant",
+            "training": "https://learn.microsoft.com/learn/paths/secure-application-delivery/",
+            "link": "https://learn.microsoft.com/azure/reliability/migrate-app-gateway-v2"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Use Azure Front Door with WAF policies to deliver and help protect global HTTP/S apps that span multiple Azure regions.",
+            "waf": "Security",
+            "guid": "e79d17b7-3b22-4a5a-97e7-a8ed4b30e38c",
+            "id": "A01.10",
+            "severity": "Medium",
+            "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/ag-overview"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery",
+            "text": "When using Front Door and Application Gateway to help protect HTTP/S apps, use WAF policies in Front Door. Lock down Application Gateway to receive traffic only from Front Door.",
+            "waf": "Security",
+            "guid": "3f29812b-2363-4cef-b179-b599de0d5973",
+            "id": "A01.11",
+            "severity": "Medium",
+            "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
+            "link": "https://learn.microsoft.com/azure/ddos-protection/ddos-protection-overview"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Traffic Manager",
+            "text": "Use Traffic Manager to deliver global apps that span protocols other than HTTP/S.",
+            "waf": "Reliability",
+            "guid": "cd4cd21b-0881-437f-9e6c-4cfd3e504547",
+            "id": "A01.12",
+            "ammp": true,
+            "severity": "High",
+            "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/ag-overview"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery",
+            "text": "If users only need access to internal applications, has Microsoft Entra ID Application Proxy been considered as an alternative to Azure Virtual Desktop (AVD)?",
+            "waf": "Security",
+            "guid": "3b4b3e88-a459-4ed5-a22f-644dfbc58204",
+            "id": "A01.13",
+            "severity": "Low",
+            "training": "https://learn.microsoft.com/learn/modules/configure-azure-ad-application-proxy/",
+            "link": "https://learn.microsoft.com/azure/active-directory/app-proxy/application-proxy#how-application-proxy-works"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery",
+            "text": "To reduce the number of firewall ports open for incoming connections in your network, consider using Microsoft Entra ID Application Proxy to give remote users secure and authenticated access to internal applications.",
+            "waf": "Security",
+            "guid": "01ca7cf1-5754-442d-babb-8ba6772e5c30",
+            "id": "A01.14",
+            "severity": "Medium",
+            "training": "https://learn.microsoft.com/learn/paths/implement-applications-external-access-azure-ad/",
+            "link": "https://learn.microsoft.com/azure/active-directory/app-proxy/application-proxy#how-application-proxy-works"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Deploy your WAF profiles for Front Door in 'Prevention' mode.",
+            "waf": "Security",
+            "guid": "ae248989-b306-4591-9186-de482e3f0f0e",
+            "id": "A01.15",
+            "ammp": true,
+            "severity": "High",
+            "graph": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Avoid combining Azure Traffic Manager and Azure Front Door.",
+            "waf": "Security",
+            "guid": "062d5839-4d36-402f-bfa4-02811eb936e9",
+            "id": "A01.16",
+            "ammp": true,
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#avoid-combining-traffic-manager-and-front-door"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Use the same domain name on Azure Front Door and your origin. Mismatched host names can cause subtle bugs.",
+            "waf": "Security",
+            "guid": "5efeb96a-003f-4b18-8fcd-b4d84459c2b2",
+            "id": "A01.17",
+            "ammp": true,
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-the-same-domain-name-on-front-door-and-your-origin"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Disable health probes when there is only one origin in an Azure Front Door origin group.",
+            "waf": "Performance",
+            "guid": "0b5a380c-4bfb-47bc-b1d7-dcfef363a61b",
+            "id": "A01.18",
+            "severity": "Low",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Select good health probe endpoints for Azure Front Door. Consider building health endpoints that check all of your application's dependencies.",
+            "waf": "Reliability",
+            "guid": "5567048e-e5d7-4206-9c55-b5ed45d2cc0c",
+            "id": "A01.19",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#select-good-health-probe-endpoints"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Use HEAD health probes with Azure Front Door, to reduce the traffic that Front Door sends to your application.",
+            "waf": "Performance",
+            "guid": "a13f72f3-8f5c-4864-95e5-75bf37fbbeb1",
+            "id": "A01.20",
+            "severity": "Low",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-head-health-probes"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Load Balancer",
+            "text": "Use Azure NAT Gateway instead of Load Balancer outbound rules for better SNAT scalability",
+            "waf": "Reliability",
+            "guid": "97a2fd46-64b0-1dfa-b72d-9c8869496d75",
+            "id": "A01.21",
+            "ammp": true,
+            "severity": "High",
+            "graph": "resources | where type=='microsoft.network/loadbalancers' | extend countOutRules=array_length(properties.outboundRules) | extend compliant = (countOutRules == 0) | distinct id,compliant",
+            "link": "https://learn.microsoft.com/azure/nat-gateway/nat-overview#outbound-connectivity"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Use managed TLS certificates with Azure Front Door. Reduce operational cost and risk of outages due to certificate renewals.",
+            "waf": "Operations",
+            "guid": "af95c92d-d723-4f4a-98d7-8722324efd4d",
+            "id": "A01.22",
+            "ammp": true,
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-managed-tls-certificates"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Define your Azure Front Door WAF configuration as code. By using code, you can more easily adopt new ruleset versions and gain additional protection.",
+            "waf": "Operations",
+            "guid": "189ea962-3969-4863-8f5a-5ad808c2cf4b",
+            "id": "A01.23",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#define-your-waf-configuration-as-code"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Use end-to-end TLS with Azure Front Door. Use TLS for connections from your clients to Front Door, and from Front Door to your origin.",
+            "waf": "Security",
+            "guid": "2e30abab-5478-417c-81bf-bf1ad4ed1ed4",
+            "id": "A01.24",
+            "ammp": true,
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-end-to-end-tls"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Use HTTP to HTTPS redirection with Azure Front Door. Support older clients by redirecting them to an HTTPS request automatically.",
+            "waf": "Security",
+            "guid": "10aa45af-166f-44c4-9f36-b6d592dac2ca",
+            "id": "A01.25",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-http-to-https-redirection"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Enable the Azure Front Door WAF. Protect your application from a range of attacks.",
+            "waf": "Security",
+            "guid": "28b9ee82-b2c7-45aa-bc98-6de6f59a095d",
+            "id": "A01.26",
+            "ammp": true,
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#enable-the-waf"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Tune the Azure Front Door WAF for your workload. Reduce false positive detections.",
+            "waf": "Security",
+            "guid": "2902d8cc-1b0c-4495-afad-624ab70f7bd6",
+            "id": "A01.27",
+            "ammp": true,
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#tune-your-waf"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Use prevention mode with the Azure Front Door WAF. Prevention mode ensures that the WAF blocks malicious requests.",
+            "waf": "Security",
+            "guid": "17ba124b-127d-42b6-9322-388d5b2bbcfc",
+            "id": "A01.28",
+            "ammp": true,
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#use-prevention-mode"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Enable the Azure Front Door WAF default rule sets. The default rule sets detect and block common attacks.",
+            "waf": "Security",
+            "guid": "49a98f2b-ec22-4a87-9415-6a10b00d6555",
+            "id": "A01.29",
+            "ammp": true,
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#enable-default-rule-sets"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Enable the Azure Front Door WAF bot management rules. The bot rules detect good and bad bots.",
+            "waf": "Security",
+            "guid": "147a13d4-2a2f-4824-a524-f5855b52b946",
+            "id": "A01.30",
+            "ammp": true,
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#enable-bot-management-rules"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Use the latest Azure Front Door WAF ruleset versions. Ruleset updates are regularly updated to take account of the current threat landscape.",
+            "waf": "Security",
+            "guid": "d7dcdcb9-0d99-44b9-baab-ac7570ede79a",
+            "id": "A01.31",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#use-the-latest-ruleset-versions"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Add rate limiting to the Azure Front Door WAF. Rate limiting blocks clients accidentally or intentionally sending large amounts of traffic in a short period of time.",
+            "waf": "Security",
+            "guid": "b9620385-1cde-418f-914b-a84a06982ffc",
+            "id": "A01.32",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#add-rate-limiting"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Use a high threshold for Azure Front Door WAF rate limits. High rate limit thresholds avoid blocking legitimate traffic, while still providing protection against extremely high numbers of requests that might overwhelm your infrastructure. ",
+            "waf": "Security",
+            "guid": "6dc36c52-0124-4ffe-9eaf-23ec1282dedb",
+            "id": "A01.33",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#use-a-high-threshold-for-rate-limits"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Geo-filter traffic by using the Azure Front Door WAF. Allow traffic only from expected regions, and block traffic from other regions.",
+            "waf": "Security",
+            "guid": "388a3d0e-0a43-4367-90b2-3dd2aeece5ee",
+            "id": "A01.34",
+            "severity": "Low",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#geo-filter-traffic"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "App delivery - Front Door",
+            "text": "Specify the unknown (ZZ) location when geo-filtering traffic with the Azure Front Door WAF. Avoid accidentally blocking legitimate requests when IP addresses can't be geo-matched.",
+            "waf": "Security",
+            "guid": "00acd8a9-6975-414f-8491-2be6309893b8",
+            "id": "A01.35",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#specify-the-unknown-zz-location"
+        }
+    ],
+    "categories": [
+        {
+            "name": "Network Topology and Connectivity"
+        }
+    ],
+    "waf": [
+        {
+            "name": "Reliability"
+        },
+        {
+            "name": "Security"
+        },
+        {
+            "name": "Cost"
+        },
+        {
+            "name": "Operations"
+        },
+        {
+            "name": "Performance"
+        }
+    ],
+    "yesno": [
+        {
+            "name": "Yes"
+        },
+        {
+            "name": "No"
+        }
+    ],
+    "status": [
+        {
+            "name": "Not verified",
+            "description": "This check has not been looked at yet"
+        },
+        {
+            "name": "Open",
+            "description": "There is an action item associated to this check"
+        },
+        {
+            "name": "Fulfilled",
+            "description": "This check has been verified, and there are no further action items associated to it"
+        },
+        {
+            "name": "Not required",
+            "description": "Recommendation understood, but not needed by current requirements"
+        },
+        {
+            "name": "N/A",
+            "description": "Not applicable for current design"
+        }
+    ],
+    "severities": [
+        {
+            "name": "High"
+        },
+        {
+            "name": "Medium"
+        },
+        {
+            "name": "Low"
+        }
+    ],
+    "metadata": {
+        "name": "Azure Application Delivery Networking",
+        "state": "GA",
+        "timestamp": "November 21, 2023"
+    }
+}

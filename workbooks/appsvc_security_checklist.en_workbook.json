@@ -2,13 +2,6 @@
     "version": "Notebook/1.0",
     "items": [
         {
-            "type": 1,
-            "content": {
-                "json": "## Azure App Security Review\n---\n\nThis workbook has been automatically generated out of the checklists in the [Azure Review Checklists repo](https://github.com/Azure/review-checklists)."
-            },
-            "name": "Header"
-        },
-        {
             "type": 9,
             "content": {
                 "version": "KqlParameterItem/1.0",
@@ -34,13 +27,41 @@
                         "value": [
                             "value::all"
                         ]
+                    },
+                    {
+                        "id": "844e4f4e-df51-4e3c-8eaf-0dc78b92c721",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "OnlyFailed",
+                        "label": "Only show failed",
+                        "type": 2,
+                        "typeSettings": {
+                            "additionalResourceOptions": [],
+                            "showDefault": false
+                        },
+                        "jsonData": "[\r\n    { \"value\":true, \"label\":\"True\" },\r\n    { \"value\":false, \"label\":\"False\", \"selected\":true }\r\n]"
                     }
                 ],
                 "style": "pills",
                 "queryType": 0,
                 "resourceType": "microsoft.operationalinsights/workspaces"
             },
-            "name": "parameters - 5"
+            "name": "WorkbookSelectors"
+        },
+        {
+            "type": 1,
+            "content": {
+                "json": "If you set \"Only show failed\" to \"Yes\", the different queries will only show items that have failed their compliance checks.",
+                "style": "info"
+            },
+            "name": "InfoBox"
+        },
+        {
+            "type": 1,
+            "content": {
+                "json": "## Azure App Security Review\n\n---\n\nThis workbook has been automatically generated out of the checklists in the [Azure Review Checklists repo](https://github.com/Azure/review-checklists). This repo contains best practices and recommendations around generic Landing Zones as well as specific services such as Azure Virtual Desktop, Azure Kubernetes Service or Azure VMware Solution, to name a few. This repository of best practices is curated by Azure engineers, but open to anybody to contribute.\n\nIf you see a problem in the queries that are part of this workbook, please open a Github issue [here](https://github.com/Azure/review-checklists/issues/new)."
+            },
+            "customWidth": "100",
+            "name": "MarkdownHeader"
         },
         {
             "type": 11,
@@ -49,17 +70,17 @@
                 "style": "tabs",
                 "links": [
                     {
-                        "id": "fe31049c-21ce-4835-8811-ed6cba199743",
+                        "id": "3a41428c-6df8-4a65-88d4-314dbd2e16c7",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Security",
-                        "subTarget": "category1",
+                        "subTarget": "tab0",
                         "preText": "Security",
                         "style": "primary"
                     }
                 ]
             },
-            "name": "links - 4"
+            "name": "Tabs"
         },
         {
             "type": 12,
@@ -72,12 +93,74 @@
                         "content": {
                             "json": "## Security"
                         },
-                        "name": "category1title"
+                        "name": "tab0title"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Set minimum TLS policy to 1.2. Check [this link](https://learn.microsoft.com/azure/app-service/configure-ssl-bindings#enforce-tls-versions) for further information."
+                        },
+                        "name": "querytext0"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "appserviceresources | where type =~ 'microsoft.web/sites/config' | extend compliant = (properties.MinTlsVersion>=1.2) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query0"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Use HTTPS only. Check [this link](https://learn.microsoft.com/azure/app-service/configure-ssl-bindings#enforce-https) for further information."
                         },
                         "name": "querytext1"
                     },
@@ -85,8 +168,8 @@
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "appserviceresources | where type =~ 'microsoft.web/sites/config' | extend compliant = (properties.MinTlsVersion>=1.2) | distinct id,compliant",
-                            "size": 4,
+                            "query": "where (type=='microsoft.web/sites' and (kind == 'app' or kind == 'app,linux' )) | extend compliant = (properties.httpsOnly==true) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -139,7 +222,7 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Use HTTPS only. Check [this link](https://learn.microsoft.com/azure/app-service/configure-ssl-bindings#enforce-https) for further information."
+                            "json": "Turn off remote debugging. Check [this link](https://learn.microsoft.com/azure/app-service/configure-common#configure-general-settings) for further information."
                         },
                         "name": "querytext2"
                     },
@@ -147,8 +230,8 @@
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "where (type=='microsoft.web/sites' and (kind == 'app' or kind == 'app,linux' )) | extend compliant = (properties.httpsOnly==true) | distinct id,compliant",
-                            "size": 4,
+                            "query": "appserviceresources | where type =~ 'microsoft.web/sites/config' | extend compliant = (properties.RemoteDebuggingEnabled == false) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -197,77 +280,15 @@
                             }
                         },
                         "name": "query2"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Turn off remote debugging. Check [this link](https://learn.microsoft.com/azure/app-service/configure-common#configure-general-settings) for further information."
-                        },
-                        "name": "querytext3"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "appserviceresources | where type =~ 'microsoft.web/sites/config' | extend compliant = (properties.RemoteDebuggingEnabled == false) | distinct id,compliant",
-                            "size": 4,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query3"
                     }
                 ]
             },
             "conditionalVisibility": {
                 "parameterName": "VisibleTab",
                 "comparison": "isEqualTo",
-                "value": "category1"
+                "value": "tab0"
             },
-            "name": "category1"
+            "name": "tab0"
         }
     ],
     "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"

@@ -515,7 +515,7 @@ def generate_workbook(output_file, checklist_data):
                 tab_percent_tile_index = tab_item_index(workbook['items'][tab_id], 'TabPercentTile')
                 if args.verbose:
                     print("DEBUG: Adjusting tile (index in tab {3}) to use the percent parameter for Tab{0} {1} with index {2}...".format(tab_dict[tab], tab, tab_id, tab_percent_tile_index))
-                workbook['items'][tab_id]['content']['items'][tab_percent_tile_index]['content']['query'] = "{\"version\":\"1.0.0\",\"content\":\"{\\\"Column1\\\": \\\"{Tab" + str(tab_dict[tab]) + "Percent}\\\", \\\"Column2\\\": \\\"Percent of succesful checks\\\"}\",\"transformers\":null}"
+                workbook['items'][tab_id]['content']['items'][tab_percent_tile_index]['content']['query'] = "{\"version\":\"1.0.0\",\"content\":\"{\\\"Column1\\\": \\\"{Tab" + str(tab_dict[tab]) + "Percent}\\\", \\\"Column2\\\": \\\"Percent of successful checks\\\"}\",\"transformers\":null}"
         # After going through the tabs, if we still need to add the total parameters to the workbook header:
         if args.counters:
             # Total
@@ -669,7 +669,7 @@ def get_output_file(checklist_file_or_url, is_file=True):
 # First thing of all, load the building blocks
 load_building_blocks()
 if args.verbose:
-    print ("DEBUG: building blocks variables intialized:")
+    print ("DEBUG: building blocks variables initialized:")
     print ("DEBUG:    - Workbook: {0}".format(str(block_workbook)))
     print ("DEBUG:    -    Number of items: {0}".format(str(len(block_workbook['items']))))
     print ("DEBUG:    - Link: {0}".format(str(block_link)))
