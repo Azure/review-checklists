@@ -70,7 +70,7 @@
                 "style": "tabs",
                 "links": [
                     {
-                        "id": "840eb824-a29d-487c-a087-4adf8babbd33",
+                        "id": "7dc70e2c-2253-4b19-858b-39e4f3240ed3",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Network Topology and Connectivity",
@@ -79,7 +79,7 @@
                         "style": "primary"
                     },
                     {
-                        "id": "4e34d8be-3c5d-475b-b197-c9a9e2cd1366",
+                        "id": "5cf10519-9cfa-4343-8c1c-882e9186770d",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Security",
@@ -88,7 +88,7 @@
                         "style": "primary"
                     },
                     {
-                        "id": "2c547214-8169-4e9b-88cd-1353b5e056d2",
+                        "id": "3533df22-f9d4-4a36-acc4-9c2a1b3f2fdf",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Resource Organization",
@@ -674,9 +674,71 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Use IP addresses from the address allocation ranges for private internets (RFC 1918). Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
+                            "json": "If you are using a route table in the GatewaySubnet, make sure that gateway routes are propagated. Check [this link](https://learn.microsoft.com/azure/vpn-gateway/vpn-gateway-about-vpn-gateway-settings#gwsub) for further information."
                         },
                         "name": "querytext12"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,resourceGroup,name,subnetName=tostring(subnets.name),routeTableId=tostring(subnets.properties.routeTable.id) | where subnetName == 'GatewaySubnet' | join kind=leftouter (Resources | where type == 'microsoft.network/routetables' | project routeTableName=name,routeTableId=id, disableBgpRoutePropagation=properties.disableBgpRoutePropagation) on routeTableId | project id,compliant = (disableBgpRoutePropagation == False or isnull(disableBgpRoutePropagation)) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query12"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Use IP addresses from the address allocation ranges for private internets (RFC 1918). Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
+                        },
+                        "name": "querytext13"
                     },
                     {
                         "type": 3,
@@ -731,14 +793,14 @@
                                 ]
                             }
                         },
-                        "name": "query12"
+                        "name": "query13"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Ensure that IP address space isn't wasted, don't create unnecessarily large virtual networks (for example /16). Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
                         },
-                        "name": "querytext13"
+                        "name": "querytext14"
                     },
                     {
                         "type": 3,
@@ -793,14 +855,14 @@
                                 ]
                             }
                         },
-                        "name": "query13"
+                        "name": "query14"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Use Azure Bastion in a subnet /26 or larger. Check [this link](https://learn.microsoft.com/azure/bastion/bastion-faq#subnet) for further information."
                         },
-                        "name": "querytext14"
+                        "name": "querytext15"
                     },
                     {
                         "type": 3,
@@ -855,14 +917,14 @@
                                 ]
                             }
                         },
-                        "name": "query14"
+                        "name": "query15"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Use FQDN-based network rules and Azure Firewall with DNS proxy to filter egress traffic to the Internet over protocols not supported by application rules. Check [this link](https://learn.microsoft.com/azure/firewall/fqdn-filtering-network-rules) for further information."
                         },
-                        "name": "querytext15"
+                        "name": "querytext16"
                     },
                     {
                         "type": 3,
@@ -917,14 +979,14 @@
                                 ]
                             }
                         },
-                        "name": "query15"
+                        "name": "query16"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Use Azure Firewall Premium for additional security and protection. Check [this link](https://learn.microsoft.com/azure/firewall/premium-features) for further information."
                         },
-                        "name": "querytext16"
+                        "name": "querytext17"
                     },
                     {
                         "type": 3,
@@ -979,14 +1041,14 @@
                                 ]
                             }
                         },
-                        "name": "query16"
+                        "name": "query17"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Configure Azure Firewall Threat Intelligence mode to Alert and Deny for additional protection. Check [this link](https://learn.microsoft.com/azure/firewall/premium-features) for further information."
                         },
-                        "name": "querytext17"
+                        "name": "querytext18"
                     },
                     {
                         "type": 3,
@@ -1041,14 +1103,14 @@
                                 ]
                             }
                         },
-                        "name": "query17"
+                        "name": "query18"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Configure Azure Firewall IDPS mode to Deny for additional protection. Check [this link](https://learn.microsoft.com/azure/firewall/premium-features#idps) for further information."
                         },
-                        "name": "querytext18"
+                        "name": "querytext19"
                     },
                     {
                         "type": 3,
@@ -1103,14 +1165,14 @@
                                 ]
                             }
                         },
-                        "name": "query18"
+                        "name": "query19"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "For subnets in VNets not connected to Virtual WAN, attach a route table so that Internet traffic is redirected to Azure Firewall or a Network Virtual Appliance. Check [this link](https://learn.microsoft.com/azure/virtual-network/virtual-networks-udr-overview) for further information."
                         },
-                        "name": "querytext19"
+                        "name": "querytext20"
                     },
                     {
                         "type": 3,
@@ -1165,14 +1227,14 @@
                                 ]
                             }
                         },
-                        "name": "query19"
+                        "name": "query20"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Don't enable virtual network service endpoints by default on all subnets. Check [this link](https://learn.microsoft.com/azure/app-service/networking-features) for further information.. [This training](https://learn.microsoft.com/learn/paths/implement-network-security/?source=learn) can help to educate yourself on this."
                         },
-                        "name": "querytext20"
+                        "name": "querytext21"
                     },
                     {
                         "type": 3,
@@ -1227,14 +1289,14 @@
                                 ]
                             }
                         },
-                        "name": "query20"
+                        "name": "query21"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Use a /26 prefix for your Azure Firewall subnets. Check [this link](https://learn.microsoft.com/azure/firewall/firewall-faq#why-does-azure-firewall-need-a--26-subnet-size) for further information."
                         },
-                        "name": "querytext21"
+                        "name": "querytext22"
                     },
                     {
                         "type": 3,
@@ -1289,14 +1351,14 @@
                                 ]
                             }
                         },
-                        "name": "query21"
+                        "name": "query22"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Use at least a /27 prefix for your Gateway subnets. Check [this link](https://learn.microsoft.com/azure/expressroute/expressroute-howto-add-gateway-resource-manager#add-a-gateway) for further information."
                         },
-                        "name": "querytext22"
+                        "name": "querytext23"
                     },
                     {
                         "type": 3,
@@ -1351,14 +1413,14 @@
                                 ]
                             }
                         },
-                        "name": "query22"
+                        "name": "query23"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Don't rely on the NSG inbound default rules using the VirtualNetwork service tag to limit connectivity. Check [this link](https://learn.microsoft.com/azure/virtual-network/service-tags-overview#available-service-tags) for further information."
                         },
-                        "name": "querytext23"
+                        "name": "querytext24"
                     },
                     {
                         "type": 3,
@@ -1413,14 +1475,14 @@
                                 ]
                             }
                         },
-                        "name": "query23"
+                        "name": "query24"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "The application team should use application security groups at the subnet-level NSGs to help protect multi-tier VMs within the landing zone. [This training](https://learn.microsoft.com/learn/paths/implement-network-security/) can help to educate yourself on this."
                         },
-                        "name": "querytext24"
+                        "name": "querytext25"
                     },
                     {
                         "type": 3,
@@ -1475,14 +1537,14 @@
                                 ]
                             }
                         },
-                        "name": "query24"
+                        "name": "query25"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "For outbound Internet traffic protection and filtering, deploy Azure Firewall in secured hubs. Check [this link](https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/) can help to educate yourself on this."
                         },
-                        "name": "querytext25"
+                        "name": "querytext26"
                     },
                     {
                         "type": 3,
@@ -1537,7 +1599,7 @@
                                 ]
                             }
                         },
-                        "name": "query25"
+                        "name": "query26"
                     }
                 ]
             },
@@ -1566,7 +1628,7 @@
                         "content": {
                             "json": "Use different Azure Key Vaults for different applications and regions to avoid transaction scale limits and restrict access to secrets. Check [this link](https://learn.microsoft.com/azure/key-vault/general/overview-throttling) for further information."
                         },
-                        "name": "querytext26"
+                        "name": "querytext27"
                     },
                     {
                         "type": 3,
@@ -1621,7 +1683,7 @@
                                 ]
                             }
                         },
-                        "name": "query26"
+                        "name": "query27"
                     }
                 ]
             },
