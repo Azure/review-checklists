@@ -26,6 +26,8 @@ Summary of checklists supported and the respective responsible owners:
 | SAP | Preview | [@AlastairMorrison](https://github.com/AlastairMorrison) [@mottach](https://github.com/mottach) [@NaokiIgarashi](https://github.com/NaokiIgarashi) |
 | API Management | Preview | [@andredewes](https://github.com/andredewes) [@seenu433](https://github.com/seenu433) |
 | Stack HCI | Preview | [@mbrat2005](https://github.com/mbrat2005) [@steveswalwell](https://github.com/steveswalwell) [@igomaa](https://github.com/igomaa) |
+| Spring Apps | Preview | [@bappadityams](https://github.com/) [@vermegi](https://github.com/vermegi) [@fmustaf](https://github.com/fmustaf) |
+| Azure DevOps | Preview | [@roshair](https://github.com/roshair) |
 
 ## What is an Azure Design Review?
 
