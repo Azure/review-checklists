@@ -15,5 +15,5 @@ $duplicateGUIDs = $GUIDList | Group-Object -Property GUID | Where-Object { $_.Co
 # Print out the duplicate GUIDs
 Write-Host "Duplicate GUIDs found: $($duplicateGUIDs.Count)"
 foreach ($guid in $duplicateGUIDs) {
-    Write-Host "GUID: $($guid.Group.GUID) - Files: $($guid.Group.file)"
+    Write-Host "GUIDs: $($guid.Group.GUID) - Files: $($guid.Group.file)"
 }
