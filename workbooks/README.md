@@ -16,6 +16,9 @@ To quickly check these out you can import them via ARM into your Azure Monitor i
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Freview-checklists%2Fmain%2Fworkbooks%2Faks_checklist.en_workbook_template.json)
 
+- Network App Delivery workbook:
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Freview-checklists%2Fmain%2Fworkbooks%2Fappdelivery_checklist.en_network_tabcounters_template.json)
 
 The Github pipelines in this repo automatically generate Azure Monitor workbooks with those queries grouped in their corresponding categories, for easy consumption. In order to deploy these workbooks to your Azure Monitor instance, you can do a simple copy/paste operation from the corresponding JSON file (for example [alz_checklist.en_workbook.json](alz_checklist.en_workbook.json) or [aks_checklist.en_workbook.json](aks_checklist.en_workbook.json)), and copy them into the advanced editor mode of an Azure Monitor workbook. For example:
 

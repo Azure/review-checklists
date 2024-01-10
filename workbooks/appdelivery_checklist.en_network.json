@@ -58,7 +58,7 @@
         {
             "type": 1,
             "content": {
-                "json": "## Azure Application Delivery Networking\n\n---\n\nThis workbook has been automatically generated out of the checklists in the [Azure Review Checklists repo](https://github.com/Azure/review-checklists). This repo contains best practices and recommendations around generic Landing Zones as well as specific services such as Azure Virtual Desktop, Azure Kubernetes Service or Azure VMware Solution, to name a few. This repository of best practices is curated by Azure engineers, but open to anybody to contribute.\n\nIf you see a problem in the queries that are part of this workbook, please open a Github issue [here](https://github.com/Azure/review-checklists/issues/new)."
+                "json": "## Azure Application Delivery Networking - Network\n\n---\n\nThis workbook has been automatically generated out of the checklists in the [Azure Review Checklists repo](https://github.com/Azure/review-checklists). This repo contains best practices and recommendations around generic Landing Zones as well as specific services such as Azure Virtual Desktop, Azure Kubernetes Service or Azure VMware Solution, to name a few. This repository of best practices is curated by Azure engineers, but open to anybody to contribute.\n\nIf you see a problem in the queries that are part of this workbook, please open a Github issue [here](https://github.com/Azure/review-checklists/issues/new)."
             },
             "customWidth": "100",
             "name": "MarkdownHeader"
@@ -70,12 +70,30 @@
                 "style": "tabs",
                 "links": [
                     {
-                        "id": "2783bb1e-5110-4940-ad93-2aca862b756d",
+                        "id": "4651deef-f33c-4640-a4e4-d2d47beff4f1",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
-                        "linkLabel": "Network Topology and Connectivity",
+                        "linkLabel": "Load Balancer",
                         "subTarget": "tab0",
-                        "preText": "Network Topology and Connectivity",
+                        "preText": "Load Balancer",
+                        "style": "primary"
+                    },
+                    {
+                        "id": "000b9e25-3c73-4c76-84f1-3d5d73de32c0",
+                        "cellValue": "VisibleTab",
+                        "linkTarget": "parameter",
+                        "linkLabel": "Front Door",
+                        "subTarget": "tab1",
+                        "preText": "Front Door",
+                        "style": "primary"
+                    },
+                    {
+                        "id": "5fb8838c-f1ac-4c7b-a6ba-57b198248d76",
+                        "cellValue": "VisibleTab",
+                        "linkTarget": "parameter",
+                        "linkLabel": "App Gateway",
+                        "subTarget": "tab2",
+                        "preText": "App Gateway",
                         "style": "primary"
                     }
                 ]
@@ -91,71 +109,9 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "## Network Topology and Connectivity"
+                            "json": "## Load Balancer"
                         },
                         "name": "tab0title"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Ensure you are using Application Gateway v2 SKU. Check [this link](https://learn.microsoft.com/azure/application-gateway/overview-v2) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-application-delivery/) can help to educate yourself on this."
-                        },
-                        "name": "querytext0"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/applicationgateways' | project id, compliant = properties.sku.name in ('Standard_v2', 'WAF_v2') | project id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query0"
                     },
                     {
                         "type": 1,
@@ -169,7 +125,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resources | where type == 'microsoft.network/loadbalancers' | project id, compliant=(tolower(sku.name) == 'standard') | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
+                            "size": 4,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -222,16 +178,16 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Your Application Gateways v2 should be deployed in subnets with IP prefixes equal or larger than /24. Check [this link](https://learn.microsoft.com/azure/application-gateway/configuration-infrastructure#size-of-the-subnet) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-application-delivery/) can help to educate yourself on this."
+                            "json": "Use Azure NAT Gateway instead of Load Balancer outbound rules for better SNAT scalability. Check [this link](https://learn.microsoft.com/azure/nat-gateway/nat-overview#outbound-connectivity) for further information."
                         },
-                        "name": "querytext2"
+                        "name": "querytext8"
                     },
                     {
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/applicationgateways' | extend subnetId = tostring(properties.gatewayIPConfigurations[0].properties.subnet.id) | project id, subnetId | join (resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | mv-expand subnets.properties.addressPrefixes | project id, subnetId = tostring(subnets.id), prefix1 = subnets.properties.addressPrefix, prefix2 = subnets.properties.addressPrefixes | mv-expand prefix2 | extend prefix = iff(isnotnull(prefix1), prefix1, prefix2) | extend subnetPrefixLength = split(prefix, '/')[1])on subnetId | extend compliant = (subnetPrefixLength <= 24 or subnetPrefixLength == 64) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
+                            "query": "resources | where type=='microsoft.network/loadbalancers' | extend countOutRules=array_length(properties.outboundRules) | extend compliant = (countOutRules == 0) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 4,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -279,131 +235,29 @@
                                 ]
                             }
                         },
-                        "name": "query2"
-                    },
+                        "name": "query8"
+                    }
+                ]
+            },
+            "conditionalVisibility": {
+                "parameterName": "VisibleTab",
+                "comparison": "isEqualTo",
+                "value": "tab0"
+            },
+            "name": "tab0"
+        },
+        {
+            "type": 12,
+            "content": {
+                "version": "NotebookGroup/1.0",
+                "groupType": "editable",
+                "items": [
                     {
                         "type": 1,
                         "content": {
-                            "json": "Configure autoscaling with a minimum amount of instances of two. Check [this link](https://learn.microsoft.com/azure/application-gateway/application-gateway-autoscaling-zone-redundant) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-application-delivery/) can help to educate yourself on this."
+                            "json": "## Front Door"
                         },
-                        "name": "querytext3"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type =~ 'microsoft.network/applicationGateways' | extend compliant = (isnotnull(properties.autoscaleConfiguration) and properties.autoscaleConfiguration.minCapacity >= 2) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query3"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Deploy Application Gateway across Availability Zones. Check [this link](https://learn.microsoft.com/azure/reliability/migrate-app-gateway-v2) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-application-delivery/) can help to educate yourself on this."
-                        },
-                        "name": "querytext4"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type =~ 'microsoft.network/applicationGateways' | extend compliant = (isnotnull(zones) and array_length(zones) > 1) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query4"
+                        "name": "tab1title"
                     },
                     {
                         "type": 1,
@@ -417,7 +271,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
+                            "size": 4,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -479,7 +333,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend originGroupId = substring(id, 0, indexof(id, '/origins')) | join kind=inner (cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend originGroupName = name | extend hasHealthProbe = isnotnull(properties.healthProbeSettings)) on $left.originGroupId == $right.id | summarize numberOrigins = count() by originGroupId, subscriptionId, frontDoorId, hasHealthProbe, originGroupName | extend compliant = not(numberOrigins == 1 and hasHealthProbe) | project id = frontDoorId, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
+                            "size": 4,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -541,7 +395,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups/')) | extend compliant = (isnull(properties['healthProbeSettings']['probeRequestType']) or toupper(properties['healthProbeSettings']['probeRequestType']) == 'HEAD') | project compliant, id=frontDoorId | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
+                            "size": 4,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -594,68 +448,6 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Use Azure NAT Gateway instead of Load Balancer outbound rules for better SNAT scalability. Check [this link](https://learn.microsoft.com/azure/nat-gateway/nat-overview#outbound-connectivity) for further information."
-                        },
-                        "name": "querytext8"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/loadbalancers' | extend countOutRules=array_length(properties.outboundRules) | extend compliant = (countOutRules == 0) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query8"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
                             "json": "Use managed TLS certificates with Azure Front Door. Reduce operational cost and risk of outages due to certificate renewals. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-managed-tls-certificates) for further information."
                         },
                         "name": "querytext9"
@@ -665,7 +457,7 @@
                         "content": {
                             "version": "KqlItem/1.0",
                             "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/customdomains' | extend frontDoorId = substring(id, 0, indexof(id, '/customdomains')) | extend compliant = (isnull(properties['tlsSettings']['certificateType']) or tolower(properties['tlsSettings']['certificateType']) =~ 'customercertificate') | project compliant, id = frontDoorId | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
+                            "size": 4,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
                             "crossComponentResources": [
@@ -720,9 +512,279 @@
             "conditionalVisibility": {
                 "parameterName": "VisibleTab",
                 "comparison": "isEqualTo",
-                "value": "tab0"
+                "value": "tab1"
             },
-            "name": "tab0"
+            "name": "tab1"
+        },
+        {
+            "type": 12,
+            "content": {
+                "version": "NotebookGroup/1.0",
+                "groupType": "editable",
+                "items": [
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "## App Gateway"
+                        },
+                        "name": "tab2title"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Ensure you are using Application Gateway v2 SKU. Check [this link](https://learn.microsoft.com/azure/application-gateway/overview-v2) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-application-delivery/) can help to educate yourself on this."
+                        },
+                        "name": "querytext0"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type == 'microsoft.network/applicationgateways' | project id, compliant = properties.sku.name in ('Standard_v2', 'WAF_v2') | project id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 4,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query0"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Your Application Gateways v2 should be deployed in subnets with IP prefixes equal or larger than /24. Check [this link](https://learn.microsoft.com/azure/application-gateway/configuration-infrastructure#size-of-the-subnet) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-application-delivery/) can help to educate yourself on this."
+                        },
+                        "name": "querytext2"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type=='microsoft.network/applicationgateways' | extend subnetId = tostring(properties.gatewayIPConfigurations[0].properties.subnet.id) | project id, subnetId | join (resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | mv-expand subnets.properties.addressPrefixes | project id, subnetId = tostring(subnets.id), prefix1 = subnets.properties.addressPrefix, prefix2 = subnets.properties.addressPrefixes | mv-expand prefix2 | extend prefix = iff(isnotnull(prefix1), prefix1, prefix2) | extend subnetPrefixLength = split(prefix, '/')[1])on subnetId | extend compliant = (subnetPrefixLength <= 24 or subnetPrefixLength == 64) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 4,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query2"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Configure autoscaling with a minimum amount of instances of two. Check [this link](https://learn.microsoft.com/azure/application-gateway/application-gateway-autoscaling-zone-redundant) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-application-delivery/) can help to educate yourself on this."
+                        },
+                        "name": "querytext3"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type =~ 'microsoft.network/applicationGateways' | extend compliant = (isnotnull(properties.autoscaleConfiguration) and properties.autoscaleConfiguration.minCapacity >= 2) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 4,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query3"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Deploy Application Gateway across Availability Zones. Check [this link](https://learn.microsoft.com/azure/reliability/migrate-app-gateway-v2) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-application-delivery/) can help to educate yourself on this."
+                        },
+                        "name": "querytext4"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type =~ 'microsoft.network/applicationGateways' | extend compliant = (isnotnull(zones) and array_length(zones) > 1) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 4,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query4"
+                    }
+                ]
+            },
+            "conditionalVisibility": {
+                "parameterName": "VisibleTab",
+                "comparison": "isEqualTo",
+                "value": "tab2"
+            },
+            "name": "tab2"
         }
     ],
     "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
