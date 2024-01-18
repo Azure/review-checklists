@@ -131,7 +131,7 @@ fi
 if [[ "$list_technologies" == "yes" ]]
 then
     # Get list of checklists
-    checklist_list=$(curl -s "https://api.github.com/repos/Azure/review-checklists/git/trees/2ef1d5ca7dbdc4a3125901ab1364be0338f390a1?recursive=true" | jq -r '.tree[].path' | grep en.json | sed -e 's/_checklist.en.json//')
+    checklist_list=$(curl -s "https://api.github.com/repos/Azure/review-checklists/git/trees/31f9cd483a40767ac9bd7195214ece13bd36fecf?recursive=true" | jq -r '.tree[].path' | grep en.json | sed -e 's/_checklist.en.json//')
     while IFS= read -r checklist; do
         checklist_url="${base_url}${checklist}_checklist.en.json"
         if [[ "$debug" == "yes" ]]; then echo "DEBUG: Processing JSON content from URL $checklist_url..."; fi
