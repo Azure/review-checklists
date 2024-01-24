@@ -274,6 +274,7 @@ while IFS= read -r graph_query; do
                 echo "${blue}CHECKLIST ITEM: ${this_text} (${this_guid}):${normal}"
             fi
             rm $error_file 2>/dev/null; touch $error_file
+            graph_query=$(echo "$graph_query")  # Fix for backslashes
             if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running query \"$graph_query\"..."; fi
             # The query should return one line per result. Fields ID and Compliant and mandatory
             query_result=$(az graph query -q "$graph_query" ${(z)mg_option} -o tsv 2>$error_file --query 'data[].[id,compliant]' | sort -u)
