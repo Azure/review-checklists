@@ -27,7 +27,7 @@
 
 
 # Defaults
-base_url="https://raw.githubusercontent.com/Azure/review-checklists/main/checklists/"
+base_url="https://raw.githubusercontent.com/Azure/review-checklists/main/"
 technology="aks"
 category_id=""
 debug="no"
@@ -71,6 +71,10 @@ do
                ;;
           -c=*|--category=*)
                category_id="${i#*=}"
+               shift # past argument=value
+               ;;
+          -g=*|--guid=*)
+               check_guid="${i#*=}"
                shift # past argument=value
                ;;
           -f=*|--format=*)
@@ -131,9 +135,11 @@ fi
 if [[ "$list_technologies" == "yes" ]]
 then
     # Get list of checklists
-    checklist_list=$(curl -s "https://api.github.com/repos/Azure/review-checklists/git/trees/31f9cd483a40767ac9bd7195214ece13bd36fecf?recursive=true" | jq -r '.tree[].path' | grep en.json | sed -e 's/_checklist.en.json//')
+    git_tree_id=$(curl -s https://api.github.com/repos/Azure/review-checklists/commits | jq -r '.[0].commit.tree.sha')
+    if [[ "$debug" == "yes" ]]; then echo "DEBUG: Git tree ID is $git_tree_id"; fi
+    checklist_list=$(curl -s "https://api.github.com/repos/Azure/review-checklists/git/trees/${git_tree_id}?recursive=true" | jq -r '.tree[].path' | grep en.json | sed -e 's/_checklist.en.json//')
     while IFS= read -r checklist; do
-        checklist_url="${base_url}${checklist}_checklist.en.json"
+        checklist_url="${base_url}checklists/${checklist}_checklist.en.json"
         if [[ "$debug" == "yes" ]]; then echo "DEBUG: Processing JSON content from URL $checklist_url..."; fi
         graph_query_no=$(curl -s "$checklist_url" | jq -r '.items[].graph' | grep -v -e '^null$' | wc -l)
         echo "$checklist ($graph_query_no graph queries)"
@@ -154,7 +160,7 @@ then
     fi
 else
     # Set URL and download checklist from base URL
-    checklist_url="${base_url}${technology}_checklist.en.json"
+    checklist_url="${base_url}checklists/${technology}_checklist.en.json"
     if [[ "$debug" == "yes" ]]; then echo "DEBUG: Getting checklist from $checklist_url..."; fi
     checklist_json=$(curl -s "$checklist_url")
 fi
@@ -246,86 +252,81 @@ while IFS= read -r graph_query; do
     if [[ "$this_guid" == "null" ]] && [[ "$output" == "json" ]]; then
         if [[ "$debug" == "yes" ]]; then echo "ERROR: GUID not defined for check number $i"; fi
     fi
-    # Print header category if required
-    # if [[ "$this_category_name" != "$(echo $category_list | head -$i | tail -1)" ]]
-    # then
-    #     this_category_name=$(echo $category_list | head -$i | tail -1)
-    #     if [[ "$format" == "text" ]]; then
-    #         echo "${bold}${blue}CHECKLIST CATEGORY: ${this_category_name}${normal}"
-    #     fi
-    # fi
-    # Check if there is any query
-    if [[ "$graph_query" == "null" ]]; then
-        if [[ "$no_empty" != "yes" ]]; then
-            # Print title if required
-            if [[ "$check_text" == "yes" ]]; then
-                this_text=$(echo $text_list | head -$i | tail -1)
-                echo "${blue}CHECKLIST ITEM: ${this_text}:${normal}"
+    # If a GUID was specified, check if it matches the current one
+    if [[ -z "$check_guid" ]] || [[ $check_guid == $this_guid ]]; then
+        # Check if there is any query
+        if [[ "$graph_query" == "null" ]]; then
+            if [[ "$no_empty" != "yes" ]]; then
+                # Print title if required
+                if [[ "$check_text" == "yes" ]]; then
+                    this_text=$(echo $text_list | head -$i | tail -1)
+                    echo "${blue}CHECKLIST ITEM: ${this_text} (${this_guid}):${normal} "
+                fi
+                # Print output
+                echo "N/A"
             fi
-            # Print output
-            echo "N/A"
-        fi
-    else
-        # Increase counter
-        query_no=$(($query_no+1))
-        # Print title if text format
-        if [[ "$format" == "text" ]]; then
-            this_text=$(echo $text_list | head -$i | tail -1)
-            echo "${blue}CHECKLIST ITEM: ${this_text}:${normal}"
-        fi
-        rm $error_file 2>/dev/null; touch $error_file
-        if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running query \"$graph_query\"..."; fi
-        # The query should return one line per result. Fields ID and Compliant and mandatory
-        query_result=$(az graph query -q "$graph_query" ${(z)mg_option} -o tsv 2>$error_file --query 'data[].[id,compliant]' | sort -u)
-        rm $error_file 2>/dev/null; touch $error_file
-        while IFS= read -r result
-        do
-            if [[ -n "$result" ]]; then
-                # Extract the tab-separated fields (ID and compliant)
-                resource_id=$(echo $result | cut -f 1)
-                result_id_temp=$(echo $result | cut -f 2)
-                result_id=${result_id_temp:0:1}
-                # Print output in color if format is text
-                if [[ "$format" == "text" ]]; then
-                    if [[ "$result_id" == "1" ]]; then
-                        result_text="compliant"
-                        color=$green
-                    elif [[ "$result_id" == "0" ]]; then
-                        result_text="non-compliant"
-                        color=$red;
-                    else
-                        if [[ "$debug" == "yes" ]]; then echo "WARNING: unknown result code returned: $result_id..."; fi
-                        result_text="undefined"
-                        color=$blue;
-                    fi
-                    echo "${resource_id}: ${color}${result_text}${normal} "
-                # With JSON format, we append a line for each found compliant/non-compliant resource
-                elif [[ "$format" == "json" ]]; then
-                    if [[ "$result_id" == "1" ]]; then
-                        result_bool=true
-                    elif [[ "$result_id" == "0" ]]; then
-                        result_bool=false
-                    else
-                        if [[ "$debug" == "yes" ]]; then echo "WARNING: unknown result code returned \"$result_id\""; fi
-                        result_bool=undefined
-                    fi
-                    if [[ -n "$resource_id" ]]; then
-                        # First, add a comma if this wasnt the first element
-                        if [[ "$json_output_empty" == "yes" ]]; then
-                            json_output_empty="no"
+        else
+            # Increase counter
+            query_no=$(($query_no+1))
+            # Print title if text format
+            if [[ "$format" == "text" ]]; then
+                this_text=$(echo $text_list | head -$i | tail -1)
+                echo "${blue}CHECKLIST ITEM: ${this_text} (${this_guid}):${normal}"
+            fi
+            rm $error_file 2>/dev/null; touch $error_file
+            if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running query \"$graph_query\"..."; fi
+            # The query should return one line per result. Fields ID and Compliant and mandatory
+            query_result=$(az graph query -q "$graph_query" ${(z)mg_option} -o tsv 2>$error_file --query 'data[].[id,compliant]' | sort -u)
+            rm $error_file 2>/dev/null; touch $error_file
+            while IFS= read -r result
+            do
+                if [[ -n "$result" ]]; then
+                    # Extract the tab-separated fields (ID and compliant)
+                    resource_id=$(echo $result | cut -f 1)
+                    result_id_temp=$(echo $result | cut -f 2)
+                    result_id=${result_id_temp:0:1}
+                    # Print output in color if format is text
+                    if [[ "$format" == "text" ]]; then
+                        if [[ "$result_id" == "1" ]]; then
+                            result_text="compliant"
+                            color=$green
+                        elif [[ "$result_id" == "0" ]]; then
+                            result_text="non-compliant"
+                            color=$red;
                         else
-                            json_output+=", "
+                            if [[ "$debug" == "yes" ]]; then echo "WARNING: unknown result code returned: $result_id..."; fi
+                            result_text="undefined"
+                            color=$blue;
                         fi
-                        # Add an item per compliant resource
-                        json_output+="{\"guid\": \"$this_guid\", \"compliant\": \"$result_bool\", \"id\": \"$resource_id\"}"
+                        echo "${resource_id}: ${color}${result_text}${normal} "
+                    # With JSON format, we append a line for each found compliant/non-compliant resource
+                    elif [[ "$format" == "json" ]]; then
+                        if [[ "$result_id" == "1" ]]; then
+                            result_bool=true
+                        elif [[ "$result_id" == "0" ]]; then
+                            result_bool=false
+                        else
+                            if [[ "$debug" == "yes" ]]; then echo "WARNING: unknown result code returned \"$result_id\""; fi
+                            result_bool=undefined
+                        fi
+                        if [[ -n "$resource_id" ]]; then
+                            # First, add a comma if this wasnt the first element
+                            if [[ "$json_output_empty" == "yes" ]]; then
+                                json_output_empty="no"
+                            else
+                                json_output+=", "
+                            fi
+                            # Add an item per compliant resource
+                            json_output+="{\"guid\": \"$this_guid\", \"compliant\": \"$result_bool\", \"id\": \"$resource_id\"}"
+                        fi
+                    else
+                        echo "ERROR: format $format not recognized, only 'json' or 'text' are accepted formats"
                     fi
                 else
-                    echo "ERROR: format $format not recognized, only 'json' or 'text' are accepted formats"
+                    if [[ "$debug" == "yes" ]]; then echo "WARNING: Graph query returned an empty result"; fi
                 fi
-            else
-                if [[ "$debug" == "yes" ]]; then echo "WARNING: Graph query returned an empty result"; fi
-            fi
-        done < <(printf '%s\n' "$query_result")
+            done < <(printf '%s\n' "$query_result")
+        fi
     fi
 done <<< "$graph_query_list"
 
