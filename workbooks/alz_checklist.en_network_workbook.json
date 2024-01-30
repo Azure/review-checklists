@@ -70,66 +70,66 @@
                 "style": "tabs",
                 "links": [
                     {
-                        "id": "d96cf670-fb2c-4fa7-bfc3-7318c4a06bb0",
+                        "id": "4a2ba33e-3cdd-46f3-a205-2cd0410115cd",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
-                        "linkLabel": "Segmentation",
+                        "linkLabel": "IP plan",
                         "subTarget": "tab0",
-                        "preText": "Segmentation",
+                        "preText": "IP plan",
                         "style": "primary"
                     },
                     {
-                        "id": "353104a2-662d-4ac7-b652-b960bd97140a",
-                        "cellValue": "VisibleTab",
-                        "linkTarget": "parameter",
-                        "linkLabel": "Internet",
-                        "subTarget": "tab1",
-                        "preText": "Internet",
-                        "style": "primary"
-                    },
-                    {
-                        "id": "87fcc0ac-211e-4673-9052-8778e1bab1a9",
-                        "cellValue": "VisibleTab",
-                        "linkTarget": "parameter",
-                        "linkLabel": "Hybrid",
-                        "subTarget": "tab2",
-                        "preText": "Hybrid",
-                        "style": "primary"
-                    },
-                    {
-                        "id": "b0cd1d66-aac7-4c66-9854-87e8f8b7b4bc",
-                        "cellValue": "VisibleTab",
-                        "linkTarget": "parameter",
-                        "linkLabel": "PaaS",
-                        "subTarget": "tab3",
-                        "preText": "PaaS",
-                        "style": "primary"
-                    },
-                    {
-                        "id": "db3c1da2-b13b-43b8-b38d-597f793a1d95",
-                        "cellValue": "VisibleTab",
-                        "linkTarget": "parameter",
-                        "linkLabel": "Virtual WAN",
-                        "subTarget": "tab4",
-                        "preText": "Virtual WAN",
-                        "style": "primary"
-                    },
-                    {
-                        "id": "bcdda0a5-1b2e-420f-84ab-8622e2f80549",
+                        "id": "43de332d-7559-43b1-90d7-89c740caa906",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Hub and spoke",
-                        "subTarget": "tab5",
+                        "subTarget": "tab1",
                         "preText": "Hub and spoke",
                         "style": "primary"
                     },
                     {
-                        "id": "edef7e3a-76b3-4129-ad04-c7f71b36eb5b",
+                        "id": "e2dc3ea0-2c0d-4963-b4bd-457c260e151a",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
-                        "linkLabel": "IP plan",
+                        "linkLabel": "Internet",
+                        "subTarget": "tab2",
+                        "preText": "Internet",
+                        "style": "primary"
+                    },
+                    {
+                        "id": "dce8577f-cd4c-4207-a7e3-23765ff5b19d",
+                        "cellValue": "VisibleTab",
+                        "linkTarget": "parameter",
+                        "linkLabel": "Hybrid",
+                        "subTarget": "tab3",
+                        "preText": "Hybrid",
+                        "style": "primary"
+                    },
+                    {
+                        "id": "5768f372-d648-4f99-b4b4-55d805ec3e5a",
+                        "cellValue": "VisibleTab",
+                        "linkTarget": "parameter",
+                        "linkLabel": "PaaS",
+                        "subTarget": "tab4",
+                        "preText": "PaaS",
+                        "style": "primary"
+                    },
+                    {
+                        "id": "782c1581-8981-4908-8092-05a5d8b90436",
+                        "cellValue": "VisibleTab",
+                        "linkTarget": "parameter",
+                        "linkLabel": "Virtual WAN",
+                        "subTarget": "tab5",
+                        "preText": "Virtual WAN",
+                        "style": "primary"
+                    },
+                    {
+                        "id": "fb7b94d1-7355-4de5-b39a-371ce8b47db6",
+                        "cellValue": "VisibleTab",
+                        "linkTarget": "parameter",
+                        "linkLabel": "Segmentation",
                         "subTarget": "tab6",
-                        "preText": "IP plan",
+                        "preText": "Segmentation",
                         "style": "primary"
                     }
                 ]
@@ -145,22 +145,22 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "## Segmentation"
+                            "json": "## IP plan"
                         },
                         "name": "tab0title"
                     },
                     {
                         "type": 1,
                         "content": {
-                            "json": "Use a /26 prefix for your Azure Firewall subnets. Check [this link](https://learn.microsoft.com/azure/firewall/firewall-faq#why-does-azure-firewall-need-a--26-subnet-size) for further information."
+                            "json": "Use IP addresses from the address allocation ranges for private internets (RFC 1918). Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
                         },
-                        "name": "querytext19"
+                        "name": "querytext10"
                     },
                     {
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'AzureFirewallSubnet' | extend compliant = (subnetPrefixLength == 26) | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)')  | project id, compliant, cidr | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
                             "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
@@ -209,20 +209,20 @@
                                 ]
                             }
                         },
-                        "name": "query19"
+                        "name": "query10"
                     },
                     {
                         "type": 1,
                         "content": {
-                            "json": "Use at least a /27 prefix for your Gateway subnets. Check [this link](https://learn.microsoft.com/azure/expressroute/expressroute-howto-add-gateway-resource-manager#add-a-gateway) for further information."
+                            "json": "Ensure that IP address space isn't wasted, don't create unnecessarily large virtual networks (for example /16). Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
                         },
-                        "name": "querytext20"
+                        "name": "querytext11"
                     },
                     {
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'GatewaySubnet' | extend compliant = (subnetPrefixLength <= 27) | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend compliant = addressMask > 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
                             "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
@@ -271,131 +271,7 @@
                                 ]
                             }
                         },
-                        "name": "query20"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Don't rely on the NSG inbound default rules using the VirtualNetwork service tag to limit connectivity. Check [this link](https://learn.microsoft.com/azure/virtual-network/service-tags-overview#available-service-tags) for further information."
-                        },
-                        "name": "querytext21"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/networksecuritygroups' | mvexpand properties.securityRules | project id,name,ruleAction=properties_securityRules.properties.access,rulePriority=properties_securityRules.properties.priority,ruleDst=properties_securityRules.properties.destinationAddressPrefix,ruleSrc=properties_securityRules.properties.sourceAddressPrefix,ruleProt=properties_securityRules.properties.protocol,ruleDirection=properties_securityRules.properties.direction,rulePort=properties_securityRules.properties.destinationPortRange | summarize StarDenies=countif(ruleAction=='Deny' and ruleDst=='*' and ruleSrc=='*' and ruleProt=='*' and rulePort=='*') by id,tostring(ruleDirection) | where ruleDirection == 'Inbound' | project id,compliant=(StarDenies>0) | union (resources | where type=='microsoft.network/networksecuritygroups' | where array_length(properties.securityRules)==0 | extend compliant=false | project id,compliant) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query21"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "The application team should use application security groups at the subnet-level NSGs to help protect multi-tier VMs within the landing zone. [This training](https://learn.microsoft.com/learn/paths/implement-network-security/) can help to educate yourself on this."
-                        },
-                        "name": "querytext22"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "Resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetName=subnets.name,subnetNsg=subnets.properties.networkSecurityGroup | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend compliant = isnotnull(subnetNsg) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query22"
+                        "name": "query11"
                     }
                 ]
             },
@@ -415,9 +291,279 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "## Internet"
+                            "json": "## Hub and spoke"
                         },
                         "name": "tab1title"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "If using Route Server, use a /27 prefix for the Route Server subnet. Check [this link](https://learn.microsoft.com/azure/route-server/quickstart-configure-route-server-portal#create-a-route-server-1) for further information."
+                        },
+                        "name": "querytext0"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'RouteServerSubnet' | extend compliant = (subnetPrefixLength <= 27) | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query0"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "When connecting spoke virtual networks to the central hub virtual network, consider VNet peering limits (500), the maximum number of prefixes that can be advertised via ExpressRoute (1000). Check [this link](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits?toc=/azure/virtual-network/toc.json#azure-resource-manager-virtual-networking-limits) for further information."
+                        },
+                        "name": "querytext1"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | summarize peeringcount = count() by id | extend compliant = (peeringcount < 450) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query1"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Consider the limit of routes per route table (400). Check [this link](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits?toc=/azure/virtual-network/toc.json#azure-resource-manager-virtual-networking-limits) for further information."
+                        },
+                        "name": "querytext2"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type=='microsoft.network/routetables' | mvexpand properties.routes | summarize routeCount = count() by id | extend compliant = (routeCount < 360) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query2"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Use the setting 'Allow traffic to remote virtual network' when configuring VNet peerings. Check [this link](https://learn.microsoft.com/azure/virtual-network/virtual-network-manage-peering) for further information."
+                        },
+                        "name": "querytext3"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id, peeringName=properties_virtualNetworkPeerings.name, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess == True) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query3"
+                    }
+                ]
+            },
+            "conditionalVisibility": {
+                "parameterName": "VisibleTab",
+                "comparison": "isEqualTo",
+                "value": "tab1"
+            },
+            "name": "tab1"
+        },
+        {
+            "type": 12,
+            "content": {
+                "version": "NotebookGroup/1.0",
+                "groupType": "editable",
+                "items": [
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "## Internet"
+                        },
+                        "name": "tab2title"
                     },
                     {
                         "type": 1,
@@ -796,9 +942,9 @@
             "conditionalVisibility": {
                 "parameterName": "VisibleTab",
                 "comparison": "isEqualTo",
-                "value": "tab1"
+                "value": "tab2"
             },
-            "name": "tab1"
+            "name": "tab2"
         },
         {
             "type": 12,
@@ -811,7 +957,7 @@
                         "content": {
                             "json": "## Hybrid"
                         },
-                        "name": "tab2title"
+                        "name": "tab3title"
                     },
                     {
                         "type": 1,
@@ -1190,9 +1336,9 @@
             "conditionalVisibility": {
                 "parameterName": "VisibleTab",
                 "comparison": "isEqualTo",
-                "value": "tab2"
+                "value": "tab3"
             },
-            "name": "tab2"
+            "name": "tab3"
         },
         {
             "type": 12,
@@ -1205,7 +1351,7 @@
                         "content": {
                             "json": "## PaaS"
                         },
-                        "name": "tab3title"
+                        "name": "tab4title"
                     },
                     {
                         "type": 1,
@@ -1274,9 +1420,9 @@
             "conditionalVisibility": {
                 "parameterName": "VisibleTab",
                 "comparison": "isEqualTo",
-                "value": "tab3"
+                "value": "tab4"
             },
-            "name": "tab3"
+            "name": "tab4"
         },
         {
             "type": 12,
@@ -1289,7 +1435,7 @@
                         "content": {
                             "json": "## Virtual WAN"
                         },
-                        "name": "tab4title"
+                        "name": "tab5title"
                     },
                     {
                         "type": 1,
@@ -1358,276 +1504,6 @@
             "conditionalVisibility": {
                 "parameterName": "VisibleTab",
                 "comparison": "isEqualTo",
-                "value": "tab4"
-            },
-            "name": "tab4"
-        },
-        {
-            "type": 12,
-            "content": {
-                "version": "NotebookGroup/1.0",
-                "groupType": "editable",
-                "items": [
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "## Hub and spoke"
-                        },
-                        "name": "tab5title"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "If using Route Server, use a /27 prefix for the Route Server subnet. Check [this link](https://learn.microsoft.com/azure/route-server/quickstart-configure-route-server-portal#create-a-route-server-1) for further information."
-                        },
-                        "name": "querytext0"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'RouteServerSubnet' | extend compliant = (subnetPrefixLength <= 27) | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query0"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "When connecting spoke virtual networks to the central hub virtual network, consider VNet peering limits (500), the maximum number of prefixes that can be advertised via ExpressRoute (1000). Check [this link](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits?toc=/azure/virtual-network/toc.json#azure-resource-manager-virtual-networking-limits) for further information."
-                        },
-                        "name": "querytext1"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | summarize peeringcount = count() by id | extend compliant = (peeringcount < 450) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query1"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Consider the limit of routes per route table (400). Check [this link](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits?toc=/azure/virtual-network/toc.json#azure-resource-manager-virtual-networking-limits) for further information."
-                        },
-                        "name": "querytext2"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/routetables' | mvexpand properties.routes | summarize routeCount = count() by id | extend compliant = (routeCount < 360) | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query2"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Use the setting 'Allow traffic to remote virtual network' when configuring VNet peerings. Check [this link](https://learn.microsoft.com/azure/virtual-network/virtual-network-manage-peering) for further information."
-                        },
-                        "name": "querytext3"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id, peeringName=properties_virtualNetworkPeerings.name, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess == True) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 0,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query3"
-                    }
-                ]
-            },
-            "conditionalVisibility": {
-                "parameterName": "VisibleTab",
-                "comparison": "isEqualTo",
                 "value": "tab5"
             },
             "name": "tab5"
@@ -1641,22 +1517,22 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "## IP plan"
+                            "json": "## Segmentation"
                         },
                         "name": "tab6title"
                     },
                     {
                         "type": 1,
                         "content": {
-                            "json": "Use IP addresses from the address allocation ranges for private internets (RFC 1918). Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
+                            "json": "Use a /26 prefix for your Azure Firewall subnets. Check [this link](https://learn.microsoft.com/azure/firewall/firewall-faq#why-does-azure-firewall-need-a--26-subnet-size) for further information."
                         },
-                        "name": "querytext10"
+                        "name": "querytext19"
                     },
                     {
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)')  | project id, compliant, cidr | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "query": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'AzureFirewallSubnet' | extend compliant = (subnetPrefixLength == 26) | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
                             "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
@@ -1705,20 +1581,20 @@
                                 ]
                             }
                         },
-                        "name": "query10"
+                        "name": "query19"
                     },
                     {
                         "type": 1,
                         "content": {
-                            "json": "Ensure that IP address space isn't wasted, don't create unnecessarily large virtual networks (for example /16). Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
+                            "json": "Use at least a /27 prefix for your Gateway subnets. Check [this link](https://learn.microsoft.com/azure/expressroute/expressroute-howto-add-gateway-resource-manager#add-a-gateway) for further information."
                         },
-                        "name": "querytext11"
+                        "name": "querytext20"
                     },
                     {
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend compliant = addressMask > 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "query": "resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName == 'GatewaySubnet' | extend compliant = (subnetPrefixLength <= 27) | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
                             "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
@@ -1767,7 +1643,131 @@
                                 ]
                             }
                         },
-                        "name": "query11"
+                        "name": "query20"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Don't rely on the NSG inbound default rules using the VirtualNetwork service tag to limit connectivity. Check [this link](https://learn.microsoft.com/azure/virtual-network/service-tags-overview#available-service-tags) for further information."
+                        },
+                        "name": "querytext21"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type=='microsoft.network/networksecuritygroups' | mvexpand properties.securityRules | project id,name,ruleAction=properties_securityRules.properties.access,rulePriority=properties_securityRules.properties.priority,ruleDst=properties_securityRules.properties.destinationAddressPrefix,ruleSrc=properties_securityRules.properties.sourceAddressPrefix,ruleProt=properties_securityRules.properties.protocol,ruleDirection=properties_securityRules.properties.direction,rulePort=properties_securityRules.properties.destinationPortRange | summarize StarDenies=countif(ruleAction=='Deny' and ruleDst=='*' and ruleSrc=='*' and ruleProt=='*' and rulePort=='*') by id,tostring(ruleDirection) | where ruleDirection == 'Inbound' | project id,compliant=(StarDenies>0) | union (resources | where type=='microsoft.network/networksecuritygroups' | where array_length(properties.securityRules)==0 | extend compliant=false | project id,compliant) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query21"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "The application team should use application security groups at the subnet-level NSGs to help protect multi-tier VMs within the landing zone. [This training](https://learn.microsoft.com/learn/paths/implement-network-security/) can help to educate yourself on this."
+                        },
+                        "name": "querytext22"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "Resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets | mv-expand subnets | project id,name,subnetName=subnets.name,subnetNsg=subnets.properties.networkSecurityGroup | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet', 'AzureBastionSubnet')) | extend compliant = isnotnull(subnetNsg) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query22"
                     }
                 ]
             },
