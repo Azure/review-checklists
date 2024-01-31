@@ -796,7 +796,7 @@
                         "version": "KqlParameterItem/1.0",
                         "name": "Query26Stats",
                         "type": 1,
-                        "query": "resources | where type=='microsoft.network/virtualhubs' | extend compliant = isnotnull(properties.azureFirewall.id) | project id, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "query": "resources | where type == 'microsoft.network/networksecuritygroups' | project id, rules = array_length(properties.securityRules) | project id, compliant = (rules < 900)| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
                         "crossComponentResources": [
                             "{Subscription}"
                         ],
@@ -824,7 +824,7 @@
                         "version": "KqlParameterItem/1.0",
                         "name": "Query27Stats",
                         "type": 1,
-                        "query": "ResourceContainers | where type=='microsoft.resources/subscriptions'| parse id with '/subscriptions/' SubscriptionID| project subscriptionId, SubscriptionName = name| join kind=leftouter (Resources| where type == 'microsoft.keyvault/vaults'| project id, name, subscriptionId) on subscriptionId| join kind= leftouter (Resources| where type == 'microsoft.keyvault/vaults'| summarize ResourceCount = count() by subscriptionId) on subscriptionId| extend RCount = iff(isnull(ResourceCount), 0, ResourceCount)| project-away ResourceCount| extend compliant = (RCount <> 1)| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "query": "resources | where type=='microsoft.network/virtualhubs' | extend compliant = isnotnull(properties.azureFirewall.id) | project id, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
                         "crossComponentResources": [
                             "{Subscription}"
                         ],
@@ -850,6 +850,34 @@
                     {
                         "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
                         "version": "KqlParameterItem/1.0",
+                        "name": "Query28Stats",
+                        "type": 1,
+                        "query": "ResourceContainers | where type=='microsoft.resources/subscriptions'| parse id with '/subscriptions/' SubscriptionID| project subscriptionId, SubscriptionName = name| join kind=leftouter (Resources| where type == 'microsoft.keyvault/vaults'| project id, name, subscriptionId) on subscriptionId| join kind= leftouter (Resources| where type == 'microsoft.keyvault/vaults'| summarize ResourceCount = count() by subscriptionId) on subscriptionId| extend RCount = iff(isnull(ResourceCount), 0, ResourceCount)| project-away ResourceCount| extend compliant = (RCount <> 1)| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "crossComponentResources": [
+                            "{Subscription}"
+                        ],
+                        "isHiddenWhenLocked": true,
+                        "timeContext": {
+                            "durationMs": 86400000
+                        },
+                        "queryType": 1,
+                        "resourceType": "microsoft.resourcegraph/resources"
+                    },
+                    {
+                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "Query28FullyCompliant",
+                        "type": 1,
+                        "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query28Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                        "isHiddenWhenLocked": true,
+                        "timeContext": {
+                            "durationMs": 86400000
+                        },
+                        "queryType": 8
+                    },
+                    {
+                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                        "version": "KqlParameterItem/1.0",
                         "name": "Tab0Success",
                         "type": 1,
                         "isHiddenWhenLocked": true,
@@ -861,7 +889,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query3Stats:$.Success}+{Query4Stats:$.Success}+{Query5Stats:$.Success}+{Query6Stats:$.Success}+{Query7Stats:$.Success}+{Query8Stats:$.Success}+{Query9Stats:$.Success}+{Query10Stats:$.Success}+{Query11Stats:$.Success}+{Query12Stats:$.Success}+{Query13Stats:$.Success}+{Query14Stats:$.Success}+{Query15Stats:$.Success}+{Query16Stats:$.Success}+{Query17Stats:$.Success}+{Query18Stats:$.Success}+{Query19Stats:$.Success}+{Query20Stats:$.Success}+{Query21Stats:$.Success}+{Query22Stats:$.Success}+{Query23Stats:$.Success}+{Query24Stats:$.Success}+{Query25Stats:$.Success}+{Query26Stats:$.Success}"
+                                    "resultVal": "{Query3Stats:$.Success}+{Query4Stats:$.Success}+{Query5Stats:$.Success}+{Query6Stats:$.Success}+{Query7Stats:$.Success}+{Query8Stats:$.Success}+{Query9Stats:$.Success}+{Query10Stats:$.Success}+{Query11Stats:$.Success}+{Query12Stats:$.Success}+{Query13Stats:$.Success}+{Query14Stats:$.Success}+{Query15Stats:$.Success}+{Query16Stats:$.Success}+{Query17Stats:$.Success}+{Query18Stats:$.Success}+{Query19Stats:$.Success}+{Query20Stats:$.Success}+{Query21Stats:$.Success}+{Query22Stats:$.Success}+{Query23Stats:$.Success}+{Query24Stats:$.Success}+{Query25Stats:$.Success}+{Query26Stats:$.Success}+{Query27Stats:$.Success}"
                                 }
                             }
                         ]
@@ -880,7 +908,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query3Stats:$.Total}+{Query4Stats:$.Total}+{Query5Stats:$.Total}+{Query6Stats:$.Total}+{Query7Stats:$.Total}+{Query8Stats:$.Total}+{Query9Stats:$.Total}+{Query10Stats:$.Total}+{Query11Stats:$.Total}+{Query12Stats:$.Total}+{Query13Stats:$.Total}+{Query14Stats:$.Total}+{Query15Stats:$.Total}+{Query16Stats:$.Total}+{Query17Stats:$.Total}+{Query18Stats:$.Total}+{Query19Stats:$.Total}+{Query20Stats:$.Total}+{Query21Stats:$.Total}+{Query22Stats:$.Total}+{Query23Stats:$.Total}+{Query24Stats:$.Total}+{Query25Stats:$.Total}+{Query26Stats:$.Total}"
+                                    "resultVal": "{Query3Stats:$.Total}+{Query4Stats:$.Total}+{Query5Stats:$.Total}+{Query6Stats:$.Total}+{Query7Stats:$.Total}+{Query8Stats:$.Total}+{Query9Stats:$.Total}+{Query10Stats:$.Total}+{Query11Stats:$.Total}+{Query12Stats:$.Total}+{Query13Stats:$.Total}+{Query14Stats:$.Total}+{Query15Stats:$.Total}+{Query16Stats:$.Total}+{Query17Stats:$.Total}+{Query18Stats:$.Total}+{Query19Stats:$.Total}+{Query20Stats:$.Total}+{Query21Stats:$.Total}+{Query22Stats:$.Total}+{Query23Stats:$.Total}+{Query24Stats:$.Total}+{Query25Stats:$.Total}+{Query26Stats:$.Total}+{Query27Stats:$.Total}"
                                 }
                             }
                         ]
@@ -918,7 +946,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query27Stats:$.Success}"
+                                    "resultVal": "{Query28Stats:$.Success}"
                                 }
                             }
                         ]
@@ -937,7 +965,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query27Stats:$.Total}"
+                                    "resultVal": "{Query28Stats:$.Total}"
                                 }
                             }
                         ]
@@ -1032,7 +1060,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query3Stats:$.Total}+{Query4Stats:$.Total}+{Query5Stats:$.Total}+{Query6Stats:$.Total}+{Query7Stats:$.Total}+{Query8Stats:$.Total}+{Query9Stats:$.Total}+{Query10Stats:$.Total}+{Query11Stats:$.Total}+{Query12Stats:$.Total}+{Query13Stats:$.Total}+{Query14Stats:$.Total}+{Query15Stats:$.Total}+{Query16Stats:$.Total}+{Query17Stats:$.Total}+{Query18Stats:$.Total}+{Query19Stats:$.Total}+{Query20Stats:$.Total}+{Query21Stats:$.Total}+{Query22Stats:$.Total}+{Query23Stats:$.Total}+{Query24Stats:$.Total}+{Query25Stats:$.Total}+{Query26Stats:$.Total}+{Query27Stats:$.Total}+{Query0Stats:$.Total}+{Query1Stats:$.Total}+{Query2Stats:$.Total}"
+                                    "resultVal": "{Query3Stats:$.Total}+{Query4Stats:$.Total}+{Query5Stats:$.Total}+{Query6Stats:$.Total}+{Query7Stats:$.Total}+{Query8Stats:$.Total}+{Query9Stats:$.Total}+{Query10Stats:$.Total}+{Query11Stats:$.Total}+{Query12Stats:$.Total}+{Query13Stats:$.Total}+{Query14Stats:$.Total}+{Query15Stats:$.Total}+{Query16Stats:$.Total}+{Query17Stats:$.Total}+{Query18Stats:$.Total}+{Query19Stats:$.Total}+{Query20Stats:$.Total}+{Query21Stats:$.Total}+{Query22Stats:$.Total}+{Query23Stats:$.Total}+{Query24Stats:$.Total}+{Query25Stats:$.Total}+{Query26Stats:$.Total}+{Query27Stats:$.Total}+{Query28Stats:$.Total}+{Query0Stats:$.Total}+{Query1Stats:$.Total}+{Query2Stats:$.Total}"
                                 }
                             }
                         ]
@@ -1051,7 +1079,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query3Stats:$.Success}+{Query4Stats:$.Success}+{Query5Stats:$.Success}+{Query6Stats:$.Success}+{Query7Stats:$.Success}+{Query8Stats:$.Success}+{Query9Stats:$.Success}+{Query10Stats:$.Success}+{Query11Stats:$.Success}+{Query12Stats:$.Success}+{Query13Stats:$.Success}+{Query14Stats:$.Success}+{Query15Stats:$.Success}+{Query16Stats:$.Success}+{Query17Stats:$.Success}+{Query18Stats:$.Success}+{Query19Stats:$.Success}+{Query20Stats:$.Success}+{Query21Stats:$.Success}+{Query22Stats:$.Success}+{Query23Stats:$.Success}+{Query24Stats:$.Success}+{Query25Stats:$.Success}+{Query26Stats:$.Success}+{Query27Stats:$.Success}+{Query0Stats:$.Success}+{Query1Stats:$.Success}+{Query2Stats:$.Success}"
+                                    "resultVal": "{Query3Stats:$.Success}+{Query4Stats:$.Success}+{Query5Stats:$.Success}+{Query6Stats:$.Success}+{Query7Stats:$.Success}+{Query8Stats:$.Success}+{Query9Stats:$.Success}+{Query10Stats:$.Success}+{Query11Stats:$.Success}+{Query12Stats:$.Success}+{Query13Stats:$.Success}+{Query14Stats:$.Success}+{Query15Stats:$.Success}+{Query16Stats:$.Success}+{Query17Stats:$.Success}+{Query18Stats:$.Success}+{Query19Stats:$.Success}+{Query20Stats:$.Success}+{Query21Stats:$.Success}+{Query22Stats:$.Success}+{Query23Stats:$.Success}+{Query24Stats:$.Success}+{Query25Stats:$.Success}+{Query26Stats:$.Success}+{Query27Stats:$.Success}+{Query28Stats:$.Success}+{Query0Stats:$.Success}+{Query1Stats:$.Success}+{Query2Stats:$.Success}"
                                 }
                             }
                         ]
@@ -1125,7 +1153,7 @@
                 "style": "tabs",
                 "links": [
                     {
-                        "id": "86e5e4aa-49a5-47b6-8b94-f7258727c3e3",
+                        "id": "b144650b-bb2c-40d3-a4c6-a82e26bc70b4",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Network Topology and Connectivity ({Tab0Success:value}/{Tab0Total:value})",
@@ -1134,7 +1162,7 @@
                         "style": "primary"
                     },
                     {
-                        "id": "91f86073-1a0a-44b9-a96f-c3854db8e3bd",
+                        "id": "34e2a2ce-bdf4-4e04-beda-0e8f0140b26a",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Security ({Tab1Success:value}/{Tab1Total:value})",
@@ -1143,7 +1171,7 @@
                         "style": "primary"
                     },
                     {
-                        "id": "2e11cf81-3a3b-4074-bdae-19b75f540918",
+                        "id": "9469d5a0-26c7-40d4-aeb0-65a1d13d49a2",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Resource Organization ({Tab2Success:value}/{Tab2Total:value})",
@@ -2597,9 +2625,71 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "For outbound Internet traffic protection and filtering, deploy Azure Firewall in secured hubs. Check [this link](https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/) can help to educate yourself on this."
+                            "json": "Consider the limit of NSG rules per NSG (1000). Check [this link](https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/azure-subscription-service-limits) for further information.. [This training](https://learn.microsoft.com/en-us/azure/virtual-network/network-security-group-how-it-works) can help to educate yourself on this."
                         },
                         "name": "querytext26"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type == 'microsoft.network/networksecuritygroups' | project id, rules = array_length(properties.securityRules) | project id, compliant = (rules < 900) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query26"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "For outbound Internet traffic protection and filtering, deploy Azure Firewall in secured hubs. Check [this link](https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/) can help to educate yourself on this."
+                        },
+                        "name": "querytext27"
                     },
                     {
                         "type": 3,
@@ -2654,7 +2744,7 @@
                                 ]
                             }
                         },
-                        "name": "query26"
+                        "name": "query27"
                     }
                 ]
             },
@@ -2683,7 +2773,7 @@
                         "content": {
                             "json": "Use different Azure Key Vaults for different applications and regions to avoid transaction scale limits and restrict access to secrets. Check [this link](https://learn.microsoft.com/azure/key-vault/general/overview-throttling) for further information."
                         },
-                        "name": "querytext27"
+                        "name": "querytext28"
                     },
                     {
                         "type": 3,
@@ -2738,7 +2828,7 @@
                                 ]
                             }
                         },
-                        "name": "query27"
+                        "name": "query28"
                     }
                 ]
             },
