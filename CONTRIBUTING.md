@@ -28,6 +28,8 @@ Specific approvers (at least two individuals) for each checklist are defined in 
 - The query doesn't return either false positives or false negatives.
 - The output fields are `id` and `compliant` (case is important).
 
+After merging, the Microsoft approver should verify that the automatically generated Workbook (see the [Workbooks README](./workbooks/README.md)) operates correctly with the new query.
+
 ## 2. Modifications to checklists recommendations
 
 There are two ways in which you can modify the existing checklists:
