@@ -23,7 +23,7 @@ It is important for the query to return these two fields for the automation to w
 
 ### Microsoft approvers
 
-Microsoft approvers should verify the correct operation of the proposed ARG query before approving the Pull Request:
+Specific approvers (at least two individuals) for each checklist are defined in the [CODEOWNERS](./CODEOWNERS) file. Microsoft approvers should verify the correct operation of the proposed ARG query before approving the Pull Request:
 
 - The query doesn't return either false positives or false negatives.
 - The output fields are `id` and `compliant` (case is important).
