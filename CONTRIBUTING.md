@@ -4,6 +4,14 @@ The Azure review checklists are a curated repository of Azure best practices and
 
 The main reason why these checklists are in a public repo is so that anybody can contribute if they detect inaccuracies or missing recommendations or metadata (links, ARG queries). The power of the open source community has taken this project to a level that a single Microsoft group would probably not have been able to achieve, especially given the fast pace of change around Microsoft Azure. If you decide to help in this project you will be contributing to the success of so many other organizations that leverage Microsoft Azure for their workloads.
 
+# Project lifecycle
+
+This repo manages versioning as follows:
+
+ - The `main` branch always have the latest version of the assets, that is why every PR needs to be reviewed by a set of specialists that will make sure that the body of review recommendations is consistent.
+ - New checklists will start in "Preview" state. When checklists have undergone multiple revisions and have been battle tested, they will become "Generally available"
+ - Releases are tagged according to semantic versioning, and each release will contain a frozen set of the assets including the macro-enabled spreadsheet that many users leverage as frontend to the checklists. See the [Releases page](https://github.com/Azure/review-checklists/releases) for more details.
+
 # Who can contribute?
 
 Anybody is welcome to contribute, regardless if you are a Microsoft employee, a Microsoft partner, or just using Azure. If you find anything missing or inaccurate, such as for example recommendations without an Azure Resource Graph query or that don't reflect the latest Azure innovations, we would kindly ask you to do this:
