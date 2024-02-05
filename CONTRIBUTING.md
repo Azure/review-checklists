@@ -9,7 +9,7 @@ The main reason why these checklists are in a public repo is so that anybody can
 This repo manages versioning as follows:
 
  - The `main` branch always have the latest version of the assets, that is why every PR needs to be reviewed by a set of specialists that will make sure that the body of review recommendations is consistent.
- - New checklists will start in "Preview" state. When checklists have undergone multiple revisions and have been battle tested, they will become "Generally available"
+ - New checklists will start in "Preview" state. When checklists have undergone multiple revisions and have been battle tested, they will become "Generally available". The state of the checklist is described in the checklist metadata, which is reflected accordingly in the frontend (such as in the Excel spreadsheet).
  - Releases are tagged according to semantic versioning, and each release will contain a frozen set of the assets including the macro-enabled spreadsheet that many users leverage as frontend to the checklists. See the [Releases page](https://github.com/Azure/review-checklists/releases) for more details. Before publishing an official release, the project team will review the assets and make sure that they fulfill the minimum quality standards for the repository.
 
 # Who can contribute?
