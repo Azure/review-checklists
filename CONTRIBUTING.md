@@ -1,4 +1,17 @@
-# Contributing
+# Why contributing?
+
+The Azure review checklists are a curated repository of Azure best practices and related metadata, such as Azure Resource Graph (queries) to evaluate the compliance with those best practices at real time and hyperlinks to additional documentation and learning resources. These checklists are used in several motions by Microsoft employees, such as FastTrack engineers and Customer Solution Architects, as well as by many partners and customers to evaluate Azure their designs.
+
+The main reason why these checklists are in a public repo is so that anybody can contribute if they detect inaccuracies or missing recommendations or metadata (links, ARG queries). The power of the open source community has taken this project to a level that a single Microsoft group would probably not have been able to achieve, especially given the fast pace of change around Microsoft Azure. If you decide to help in this project you will be contributing to the success of so many other organizations that leverage Microsoft Azure for their workloads.
+
+# Who can contribute?
+
+Anybody is welcome to contribute, regardless if you are a Microsoft employee, a Microsoft partner, or just using Azure. If you find anything missing or inaccurate, such as for example recommendations without an Azure Resource Graph query or that don't reflect the latest Azure innovations, we would kindly ask you to do this:
+
+1. At the very least, we would be grateful if the problem is highlighted in a GitHub issue. You can open a new issue [here](https://github.com/Azure/review-checklists/issues/new).
+1. If additionally you want to suggest the modifications to be carried out, Pull Requests are of course very welcome (see the next section on how).
+
+# How to contribute?
 
 If you wish to make a contribution, please create the proposed changes in a forked repository and open a Pull Request against the main branch. Microsoft engineers will verify the proposed change, and either accept it, suggest modifications, or decline it. The following sections cover changes to different objects in this repository:
 
