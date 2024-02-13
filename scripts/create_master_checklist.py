@@ -5,6 +5,7 @@
 #
 # Example usage:
 # python3 ./scripts/create_master_checklist.py \
+#   --waf \
 #   --input-folder="./checklists" \
 #   --language="en" \
 #   --excel-file="./spreadsheet/macrofree/review_checklist_master_empty.xlsx" \
@@ -44,6 +45,8 @@ parser.add_argument('--output-name', dest='output_name', action='store',
                     help='File name (without extension) for the output files (.json and .xlsx extensions will be added automatically)')
 parser.add_argument('--add-services', dest='add_services', action='store_true',
                     default=False, help='If services field should be added to the checklist items (default: False)')
+parser.add_argument('--add-arm-services', dest='add_arm_services', action='store_true',
+                    default=False, help='If arm-service field should be added to the checklist items (default: False)')
 parser.add_argument('--no-excel', dest='no_excel', action='store_true',
                     default=False, help='If a macrofree Excel spreadsheet should not be generated')
 parser.add_argument('--no-json', dest='no_json', action='store_true',
@@ -58,10 +61,30 @@ parser.add_argument('--show-service', dest='show_service', action='store',
                     help='If you want to print on screen the checks corresponding to a given service (e.g. "VM", or "none")')
 parser.add_argument('--print-random', dest='print_random', action='store', default=0, type=int,
                     help='Print a random list of items on screen (default is 0)')
+parser.add_argument('--waf', dest='waf', action='store_true',
+                    default=False,
+                    help='Only include WAF recommendations (default: False)')
 parser.add_argument('--verbose', dest='verbose', action='store_true',
                     default=False,
-                    help='run in verbose mode (default: False)')
+                    help='Run in verbose mode (default: False)')
 args = parser.parse_args()
+
+# Get the ARM service name from the service name
+def get_arm_service_name(service_name):
+    service_name_dict = {
+        "App Service": "microsoft.web/sites",
+        "ExpressRoute": "microsoft.network/expressRouteCircuits",
+        "VPN": "microsoft.network/vpnGateways",
+        "AppGW": "microsoft.network/applicationGateways",
+        "AKS": "microsoft.containerservice/managedClusters",
+        "Traffic Manager": "microsoft.network/trafficManagerProfiles",
+        "VWAN": "microsoft.network/virtualWans",
+        "PrivateLink": "microsoft.network/privateEndpoints"
+    }
+    if service_name in service_name_dict:
+        return service_name_dict[service_name]
+    else:
+        return None
 
 # Inspect a string and return a list of the services to which that string is related to
 def get_services_from_string(input_string):
@@ -118,9 +141,6 @@ def get_services_from_string(input_string):
                 services.append(service)
     return list(set(services))
 
-# Returns True if the checklist file is valid, False otherwise
-# Used to skip certain checklists, such as the old
-
 # Consolidate all checklists into one big checklist object
 def get_consolidated_checklist(input_folder, language):
     # Initialize checklist object
@@ -131,6 +151,8 @@ def get_consolidated_checklist(input_folder, language):
             'timestamp': datetime.date.today().strftime("%B %d, %Y")
         }
     }
+    if args.waf:
+        checklist_master_data['metadata']['name'] = 'WAF checklist'
     # Find all files in the input folder matching the pattern "language*.json"
     if args.verbose:
         print("DEBUG: looking for JSON files in folder", input_folder, "with pattern *.", language + ".json...")
@@ -149,18 +171,33 @@ def get_consolidated_checklist(input_folder, language):
                     if args.verbose:
                         print("DEBUG: skipping deprecated checklist", checklist_file)
                 else:
-                    for item in checklist_data["items"]:
-                        # Add field with the name of the checklist
-                        item["checklist"] = checklist_data["metadata"]["name"]
-                    # Add items to the master checklist
-                    checklist_master_data['items'] += checklist_data['items']
-                    # Replace the master checklist severities and status sections (for a given language they should be all the same)
-                    checklist_master_data['severities'] = checklist_data['severities']
-                    checklist_master_data['status'] = checklist_data['status']
+                    # Additional check if we are only interested in WAF recommendations
+                    if not args.waf or "waf" in checklist_data["metadata"]:
+                        # Go over each checklist item
+                        for item in checklist_data["items"]:
+                            # Add field with the name of the checklist
+                            item["checklist"] = checklist_data["metadata"]["name"]
+                            # Cleanup some fields
+                            item.pop("id", None)
+                            item.pop("cost", None)
+                            item.pop("simple", None)
+                            item.pop("ha", None)
+                            item.pop("scale", None)
+                            item.pop("security", None)
+                            if args.waf:
+                                item.pop("category", None)
+                                item.pop("subcategory", None)
+                            # Additional check if we are only interested in WAF recommendations: only items with WAF pillar and service will be added
+                            if not args.waf or ("waf" in item and "service" in item):
+                                # Add items to the master checklist
+                                checklist_master_data['items'] += [item]
+                        # Replace the master checklist severities and status sections (for a given language they should be all the same)
+                        checklist_master_data['severities'] = checklist_data['severities']
+                        checklist_master_data['status'] = checklist_data['status']
         except Exception as e:
             print("ERROR: Error when processing JSON file", checklist_file, "-", str(e))
         # Optionally, browse the checklist items and add the services field
-        if args.add_services:
+        if args.add_services and not args.waf:
             for item in checklist_master_data["items"]:
                 # Get service from the checklist name
                 services = []
@@ -171,6 +208,12 @@ def get_consolidated_checklist(input_folder, language):
                 if "description" in item:
                     services += get_services_from_string(item["description"])
                 item["services"] = list(set(services))
+        # Optionally, browse the checklist items and add the ARM service field
+        if args.add_arm_services and args.waf:
+            for item in checklist_master_data["items"]:
+                arm_service = get_arm_service_name(item["service"])
+                if arm_service:
+                    item["arm-service"] = arm_service
     if args.verbose:
         print("DEBUG: master checklist contains", len(checklist_master_data["items"]), "items")
     return checklist_master_data
@@ -231,20 +274,35 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
     guid_column_index = "M"
     comment_column_index = "I"
     sample_cell_index = 'A4'
-    col_checklist="A"
-    col_area = "B"
-    col_subarea = "C"
-    col_waf_pillar = "D"
-    col_services = "E"
-    col_check = "F"
-    col_desc = "G"
-    col_sev = "H"
-    col_status = "I"
-    col_comment = "J"
-    col_link = "K"
-    col_training = "L"
-    col_arg = "M"
-    col_guid = "N"
+    # WAF checklists do not have category and subcategory
+    if args.waf:
+        col_checklist="A"
+        col_waf_pillar = "B"
+        col_services = "C"
+        col_check = "D"
+        col_desc = "E"
+        col_sev = "F"
+        col_status = "G"
+        col_comment = "H"
+        col_link = "I"
+        col_training = "J"
+        col_arg = "K"
+        col_guid = "L"
+    else:
+        col_checklist="A"
+        col_area = "B"
+        col_subarea = "C"
+        col_waf_pillar = "D"
+        col_services = "E"
+        col_check = "F"
+        col_desc = "G"
+        col_sev = "H"
+        col_status = "I"
+        col_comment = "J"
+        col_link = "K"
+        col_training = "L"
+        col_arg = "M"
+        col_guid = "N"
     info_link_text = 'More info'
     training_link_text = 'Training'
     worksheet_values_name = 'Values'
@@ -300,8 +358,9 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
         # Read variables from JSON
         checklist_name = format4excel(item.get("checklist"))
         guid = format4excel(item.get("guid"))
-        category = format4excel(item.get("category"))
-        subcategory = format4excel(item.get("subcategory"))
+        if not args.waf:
+            category = format4excel(item.get("category"))
+            subcategory = format4excel(item.get("subcategory"))
         waf_pillar = format4excel(item.get("waf"))
         text = format4excel(item.get("text"))
         description = format4excel(item.get("description"))
@@ -310,17 +369,21 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
         training = format4excel(item.get("training"))
         status = default_status
         graph_query = format4excel(item.get("graph"))
-        # Transform services array in a comma-separated string
-        services = ""
-        if "services" in item:
-            for service in item["services"]:
-                if len(services) > 0:
-                    services += ", "
-                services += service
+        if args.waf:
+            services = format4excel(item.get("service"))
+        else:
+            # Transform services array in a comma-separated string
+            services = ""
+            if "services" in item:
+                for service in item["services"]:
+                    if len(services) > 0:
+                        services += ", "
+                    services += service
         # Update Excel
         ws[col_checklist + str(row_counter)].value = checklist_name
-        ws[col_area + str(row_counter)].value = category
-        ws[col_subarea + str(row_counter)].value = subcategory
+        if not args.waf:
+            ws[col_area + str(row_counter)].value = category
+            ws[col_subarea + str(row_counter)].value = subcategory
         ws[col_waf_pillar + str(row_counter)].value = waf_pillar
         ws[col_services + str(row_counter)].value = services
         ws[col_check + str(row_counter)].value = text
