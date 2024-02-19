@@ -201,10 +201,14 @@ def get_consolidated_checklist(input_folder, language):
             for item in checklist_master_data["items"]:
                 # Get service from the checklist name
                 services = []
-                services += get_services_from_string(item["checklist"])
-                services += get_services_from_string(item["text"])
-                services += get_services_from_string(item["category"])
-                services += get_services_from_string(item["subcategory"])
+                if "checklist" in item:
+                    services += get_services_from_string(item["checklist"])
+                if "text" in item:
+                    services += get_services_from_string(item["text"])
+                if "category" in item:
+                    services += get_services_from_string(item["category"])
+                if "subcategory" in item:
+                    services += get_services_from_string(item["subcategory"])
                 if "description" in item:
                     services += get_services_from_string(item["description"])
                 item["services"] = list(set(services))
