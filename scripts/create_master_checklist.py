@@ -69,6 +69,18 @@ parser.add_argument('--verbose', dest='verbose', action='store_true',
                     help='Run in verbose mode (default: False)')
 args = parser.parse_args()
 
+# Function to exclude certain checklists from being merged
+def checklist_is_valid(checklist_name, language):
+    invalid_checklists = ["waf." + language + ".json"]
+    for invalid_checklist in invalid_checklists:
+        try:
+            # Check the ending of the checklist_name (might include file path) and ignore casing
+            if checklist_name[len(invalid_checklist):].lower() == invalid_checklist.lower():
+                return False
+        except:
+            pass
+    return True
+
 # Get the ARM service name from the service name
 def get_arm_service_name(service_name):
     service_name_dict = {
@@ -160,64 +172,65 @@ def get_consolidated_checklist(input_folder, language):
     if args.verbose:
         print("DEBUG: found", len(checklist_files), "JSON files")
     for checklist_file in checklist_files:
-        # Get JSON
-        try:
-            with open(checklist_file) as f:
-                checklist_data = json.load(f)
-                if args.verbose:
-                    print("DEBUG: JSON file", checklist_file, "loaded successfully with {0} items".format(len(checklist_data["items"])))
-                # Verify that the checklist is not deprecated
-                if "metadata" in checklist_data and "state" in checklist_data["metadata"] and "deprecated" in checklist_data["metadata"]["state"].lower():
+        if checklist_is_valid(checklist_file, language):
+            # Get JSON
+            try:
+                with open(checklist_file) as f:
+                    checklist_data = json.load(f)
                     if args.verbose:
-                        print("DEBUG: skipping deprecated checklist", checklist_file)
-                else:
-                    # Additional check if we are only interested in WAF recommendations
-                    if not args.waf or "waf" in checklist_data["metadata"]:
-                        # Go over each checklist item
-                        for item in checklist_data["items"]:
-                            # Add field with the name of the checklist
-                            item["checklist"] = checklist_data["metadata"]["name"]
-                            # Cleanup some fields
-                            item.pop("id", None)
-                            item.pop("cost", None)
-                            item.pop("simple", None)
-                            item.pop("ha", None)
-                            item.pop("scale", None)
-                            item.pop("security", None)
-                            if args.waf:
-                                item.pop("category", None)
-                                item.pop("subcategory", None)
-                            # Additional check if we are only interested in WAF recommendations: only items with WAF pillar and service will be added
-                            if not args.waf or ("waf" in item and "service" in item):
-                                # Add items to the master checklist
-                                checklist_master_data['items'] += [item]
-                        # Replace the master checklist severities and status sections (for a given language they should be all the same)
-                        checklist_master_data['severities'] = checklist_data['severities']
-                        checklist_master_data['status'] = checklist_data['status']
-        except Exception as e:
-            print("ERROR: Error when processing JSON file", checklist_file, "-", str(e))
-        # Optionally, browse the checklist items and add the services field
-        if args.add_services and not args.waf:
-            for item in checklist_master_data["items"]:
-                # Get service from the checklist name
-                services = []
-                if "checklist" in item:
-                    services += get_services_from_string(item["checklist"])
-                if "text" in item:
-                    services += get_services_from_string(item["text"])
-                if "category" in item:
-                    services += get_services_from_string(item["category"])
-                if "subcategory" in item:
-                    services += get_services_from_string(item["subcategory"])
-                if "description" in item:
-                    services += get_services_from_string(item["description"])
-                item["services"] = list(set(services))
-        # Optionally, browse the checklist items and add the ARM service field
-        if args.add_arm_services and args.waf:
-            for item in checklist_master_data["items"]:
-                arm_service = get_arm_service_name(item["service"])
-                if arm_service:
-                    item["arm-service"] = arm_service
+                        print("DEBUG: JSON file", checklist_file, "loaded successfully with {0} items".format(len(checklist_data["items"])))
+                    # Verify that the checklist is not deprecated
+                    if "metadata" in checklist_data and "state" in checklist_data["metadata"] and "deprecated" in checklist_data["metadata"]["state"].lower():
+                        if args.verbose:
+                            print("DEBUG: skipping deprecated checklist", checklist_file)
+                    else:
+                        # Additional check if we are only interested in WAF recommendations
+                        if not args.waf or "waf" in checklist_data["metadata"]:
+                            # Go over each checklist item
+                            for item in checklist_data["items"]:
+                                # Add field with the name of the checklist
+                                item["checklist"] = checklist_data["metadata"]["name"]
+                                # Cleanup some fields
+                                item.pop("id", None)
+                                item.pop("cost", None)
+                                item.pop("simple", None)
+                                item.pop("ha", None)
+                                item.pop("scale", None)
+                                item.pop("security", None)
+                                if args.waf:
+                                    item.pop("category", None)
+                                    item.pop("subcategory", None)
+                                # Additional check if we are only interested in WAF recommendations: only items with WAF pillar and service will be added
+                                if not args.waf or ("waf" in item and "service" in item):
+                                    # Add items to the master checklist
+                                    checklist_master_data['items'] += [item]
+                            # Replace the master checklist severities and status sections (for a given language they should be all the same)
+                            checklist_master_data['severities'] = checklist_data['severities']
+                            checklist_master_data['status'] = checklist_data['status']
+            except Exception as e:
+                print("ERROR: Error when processing JSON file", checklist_file, "-", str(e))
+            # Optionally, browse the checklist items and add the services field
+            if args.add_services and not args.waf:
+                for item in checklist_master_data["items"]:
+                    # Get service from the checklist name
+                    services = []
+                    if "checklist" in item:
+                        services += get_services_from_string(item["checklist"])
+                    if "text" in item:
+                        services += get_services_from_string(item["text"])
+                    if "category" in item:
+                        services += get_services_from_string(item["category"])
+                    if "subcategory" in item:
+                        services += get_services_from_string(item["subcategory"])
+                    if "description" in item:
+                        services += get_services_from_string(item["description"])
+                    item["services"] = list(set(services))
+            # Optionally, browse the checklist items and add the ARM service field
+            if args.add_arm_services and args.waf:
+                for item in checklist_master_data["items"]:
+                    arm_service = get_arm_service_name(item["service"])
+                    if arm_service:
+                        item["arm-service"] = arm_service
     if args.verbose:
         print("DEBUG: master checklist contains", len(checklist_master_data["items"]), "items")
     return checklist_master_data
