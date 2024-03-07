@@ -35,6 +35,13 @@ def all_items_have_id(items):
             return False
     return True
 
+# Verifies that all dictionary items in the provided array have a non-empty "id" key
+def all_items_have_categories(items):
+    for item in items:
+        if ('category' not in item) or ('subcategory' not in item):
+            return False
+    return True
+
 # Load the checklist
 try:
     with open(args.input_file) as f:
@@ -45,10 +52,18 @@ except Exception as e:
 # Sort the items per ID, or per category/subcategory if ID is missing
 items = checklist['items']
 if all_items_have_id(checklist['items']):
+    if args.verbose:
+        print("DEBUG: Ordering list by ID")
     items = sorted(items, key=lambda k: (k['id']))
-else:
+    checklist['items'] = items
+elif all_items_have_categories(checklist['items']):
+    if args.verbose:
+        print("DEBUG: Ordering list by category and subcategory, as some items do not have an ID")
     items = sorted(items, key=lambda k: (k['category'],k["subcategory"]))
-checklist['items'] = items
+    checklist['items'] = items
+else:
+    if args.verbose:
+        print("DEBUG: Some items in the checklist do not have a valid ID or category/subcategory, nothing changed")
 
 # If dry-run, show on screen
 if args.dry_run:
