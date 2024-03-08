@@ -70,25 +70,25 @@
                 "style": "tabs",
                 "links": [
                     {
-                        "id": "7a436600-659f-481f-9b53-962b91397ee5",
-                        "cellValue": "VisibleTab",
-                        "linkTarget": "parameter",
-                        "linkLabel": "App Gateway",
-                        "subTarget": "tab0",
-                        "preText": "App Gateway",
-                        "style": "primary"
-                    },
-                    {
-                        "id": "ace6ea81-3acf-45ac-a9ed-fc40126086c1",
+                        "id": "7d06cbbb-2b98-4336-bc81-914103f9f33f",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Front Door",
-                        "subTarget": "tab1",
+                        "subTarget": "tab0",
                         "preText": "Front Door",
                         "style": "primary"
                     },
                     {
-                        "id": "a8cb18ab-a81f-48a9-9ed2-d9cce9b1fb91",
+                        "id": "aa6532df-a3ee-4376-8e16-ea46415f4882",
+                        "cellValue": "VisibleTab",
+                        "linkTarget": "parameter",
+                        "linkLabel": "App Gateway",
+                        "subTarget": "tab1",
+                        "preText": "App Gateway",
+                        "style": "primary"
+                    },
+                    {
+                        "id": "68251c33-cd3e-45de-b13b-e02e1258ab7c",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Load Balancer",
@@ -109,9 +109,279 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "## App Gateway"
+                            "json": "## Front Door"
                         },
                         "name": "tab0title"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Deploy your WAF policy for Front Door in 'Prevention' mode. Check [this link](https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings) for further information."
+                        },
+                        "name": "querytext5"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 4,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query5"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Disable health probes when there is only one origin in an Azure Front Door origin group. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group) for further information."
+                        },
+                        "name": "querytext6"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend originGroupId = substring(id, 0, indexof(id, '/origins')) | join kind=inner (cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend originGroupName = name | extend hasHealthProbe = isnotnull(properties.healthProbeSettings)) on $left.originGroupId == $right.id | summarize numberOrigins = count() by originGroupId, subscriptionId, frontDoorId, hasHealthProbe, originGroupName | extend compliant = not(numberOrigins == 1 and hasHealthProbe) | project id = frontDoorId, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 4,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query6"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Use HEAD health probes with Azure Front Door, to reduce the traffic that Front Door sends to your application. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-head-health-probes) for further information."
+                        },
+                        "name": "querytext7"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups/')) | extend compliant = (isnull(properties['healthProbeSettings']['probeRequestType']) or toupper(properties['healthProbeSettings']['probeRequestType']) == 'HEAD') | project compliant, id=frontDoorId | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 4,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query7"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Use managed TLS certificates with Azure Front Door. Reduce operational cost and risk of outages due to certificate renewals. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-managed-tls-certificates) for further information."
+                        },
+                        "name": "querytext9"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/customdomains' | extend frontDoorId = substring(id, 0, indexof(id, '/customdomains')) | extend compliant = (isnull(properties['tlsSettings']['certificateType']) or tolower(properties['tlsSettings']['certificateType']) =~ 'customercertificate') | project compliant, id = frontDoorId | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 4,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query9"
+                    }
+                ]
+            },
+            "conditionalVisibility": {
+                "parameterName": "VisibleTab",
+                "comparison": "isEqualTo",
+                "value": "tab0"
+            },
+            "name": "tab0"
+        },
+        {
+            "type": 12,
+            "content": {
+                "version": "NotebookGroup/1.0",
+                "groupType": "editable",
+                "items": [
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "## App Gateway"
+                        },
+                        "name": "tab1title"
                     },
                     {
                         "type": 1,
@@ -422,276 +692,6 @@
                             }
                         },
                         "name": "query10"
-                    }
-                ]
-            },
-            "conditionalVisibility": {
-                "parameterName": "VisibleTab",
-                "comparison": "isEqualTo",
-                "value": "tab0"
-            },
-            "name": "tab0"
-        },
-        {
-            "type": 12,
-            "content": {
-                "version": "NotebookGroup/1.0",
-                "groupType": "editable",
-                "items": [
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "## Front Door"
-                        },
-                        "name": "tab1title"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Deploy your WAF policy for Front Door in 'Prevention' mode. Check [this link](https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings) for further information."
-                        },
-                        "name": "querytext5"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query5"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Disable health probes when there is only one origin in an Azure Front Door origin group. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group) for further information."
-                        },
-                        "name": "querytext6"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend originGroupId = substring(id, 0, indexof(id, '/origins')) | join kind=inner (cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend originGroupName = name | extend hasHealthProbe = isnotnull(properties.healthProbeSettings)) on $left.originGroupId == $right.id | summarize numberOrigins = count() by originGroupId, subscriptionId, frontDoorId, hasHealthProbe, originGroupName | extend compliant = not(numberOrigins == 1 and hasHealthProbe) | project id = frontDoorId, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query6"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Use HEAD health probes with Azure Front Door, to reduce the traffic that Front Door sends to your application. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-head-health-probes) for further information."
-                        },
-                        "name": "querytext7"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups/')) | extend compliant = (isnull(properties['healthProbeSettings']['probeRequestType']) or toupper(properties['healthProbeSettings']['probeRequestType']) == 'HEAD') | project compliant, id=frontDoorId | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query7"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Use managed TLS certificates with Azure Front Door. Reduce operational cost and risk of outages due to certificate renewals. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-managed-tls-certificates) for further information."
-                        },
-                        "name": "querytext9"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/customdomains' | extend frontDoorId = substring(id, 0, indexof(id, '/customdomains')) | extend compliant = (isnull(properties['tlsSettings']['certificateType']) or tolower(properties['tlsSettings']['certificateType']) =~ 'customercertificate') | project compliant, id = frontDoorId | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query9"
                     }
                 ]
             },
