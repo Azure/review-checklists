@@ -10,7 +10,7 @@ To quickly check these out you can import them via ARM into your Azure Monitor i
 
 - Networking - Landing Zone review workbook:
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Freview-checklists%2Fmain%2Fworkbooks%2Falz_checklist.en_network_workbook_template.json)
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Freview-checklists%2Fmain%2Fworkbooks%2Falz_checklist.en_network_counters_template.json)
 
 - AKS review workbook:
 
