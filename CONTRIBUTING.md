@@ -19,6 +19,14 @@ Anybody is welcome to contribute, regardless if you are a Microsoft employee, a 
 1. At the very least, we would be grateful if the problem is highlighted in a GitHub issue. You can open a new issue [here](https://github.com/Azure/review-checklists/issues/new).
 1. If additionally you want to suggest the modifications to be carried out, Pull Requests are of course very welcome (see the next section on how).
 
+# What to contribute?
+
+Checklists are intended to be used to review designs or existing solutions, to understand the alignment to best practices and what can be done to improve the resources under review.  To that end, individual checklist items should follow these guidelines:
+
+1. **Actionable, not informational.**  The checklist items need to be things that the reviewer can actual action and check for.  Things like "Consider service X" or "Be aware of Y" are not good checklist items, but "Verify that setting X is enabled" or "Use service Y if..." are more appropriate
+1. **Verifiable.**  The user of the checklist should be able to verify the setting itself by referencing something.  Ideally this is in an Azure itself, either through a Graph query or referencingsomething in the portal.  However, some items will verify the presence of a document (like a BCDR plan) or an external policy (like the association of supernets to regions).  If it can't be explicitly verified, then it might not be a good checklist item.
+1. **Specific.**  The checklist items should be as specific as possible.  For example, saying "Plan your hub network to have sufficient size" isn't specific enough, but "Assign your hub at least a /22 network space" is appropriately specific.
+
 # How to contribute?
 
 If you wish to make a contribution, please create the proposed changes in a forked repository and open a Pull Request against the main branch. Microsoft engineers will verify the proposed change, and either accept it, suggest modifications, or decline it. The following sections cover changes to different objects in this repository:
