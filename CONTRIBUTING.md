@@ -34,6 +34,7 @@ If you wish to make a contribution, please create the proposed changes in a fork
 1. Adding Resource Graph Queries
 1. Modifying recommendations (modifying the JSON directly, or generating new JSON from the macro-enabled spreadsheet)
 1. Modifying the spreadsheet assets
+1. Adding a new Checklist
 
 ## 1. Adding or modifying Resource Graph queries
 
@@ -65,7 +66,7 @@ There are two ways in which you can modify the existing checklists:
 
 ### Option 2a: Modifying the JSON file directly
 
-To make changes to existing checklists, modify the relevant `.en.json` file in the `checklists` directory, either in the Github portal or in your own clone using your favorite text editor, and then submit  a Pull Request to the main branch. Each checklist (LZ, AKS, AVD) has a predefined set of owners that will review the individual PRs (see [CODEOWNERS](./CODEOWNERS)).
+To make changes to existing checklists, modify the relevant `.en.json` file in the `checklists` directory, either in the Github portal or in your own clone using your favorite text editor, and then submit  a Pull Request to the main branch. Each checklist (LZ, AKS, AVD) has a predefined set of owners that will review the individual PRs (see [CODEOWNERS](CODEOWNERS)).
 
 > **Warning**
 > Do not modify the non-English versions of the checklists, as they are dynamically generated
@@ -85,6 +86,13 @@ Optionally, you can use the provided Excel spreadsheet to make changes to the ex
 ## 3. Changes to the spreadsheet
 
 Modify the file [spreadsheet/review_checklist.xlsm](./spreadsheet/review_checklist.xlsm) in your own fork, and send a Pull Request to the main branch. Make sure not to check in temporary files (by closing the Excel spreadsheet before git-adding the files).
+
+## 4. Adding a new Checklist
+
+1. Start by cloning the repository and creating a new branch for your new checklist.
+1. Create a copy of the [template.json](checklists/template.json) and name it **_\<service>.en.json_**. For example, for AKS it would be aks.en.json.
+1. In the template you will notice there is a sample item and the supporting objects and metadata. There is also a referenced schema file. Please ensure you follow the schema to make sure your checklist opens correctly and doesn't break the UI.
+1. Commit your branch and create a pull request to have it merged to master.
 
 ## Forking the Repository
 
