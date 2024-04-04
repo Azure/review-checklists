@@ -66,7 +66,7 @@ There are two ways in which you can modify the existing checklists:
 
 ### Option 2a: Modifying the JSON file directly
 
-To make changes to existing checklists, modify the relevant `.en.json` file in the `checklists` directory, either in the Github portal or in your own clone using your favorite text editor, and then submit  a Pull Request to the main branch. Each checklist (LZ, AKS, AVD) has a predefined set of owners that will review the individual PRs (see [CODEOWNERS](CODEOWNERS)).
+To make changes to existing checklists, modify the relevant `.en.json` file in the `checklists` directory, either in the Github portal or in your own clone using your favorite text editor, and then submit  a Pull Request to the main branch. Each checklist (LZ, AKS, AVD) has a predefined set of owners that will review the individual PRs (see [CODEOWNERS](./CODEOWNERS)).
 
 > **Warning**
 > Do not modify the non-English versions of the checklists, as they are dynamically generated
