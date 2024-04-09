@@ -56,7 +56,7 @@ def verify_file(input_file):
     # Verify the required keys are present
     if args.verbose:
         print("DEBUG: Verifying the required keys are present...")
-    required_keys = ['items', 'metadata', 'categories', 'status', 'severities', ]
+    required_keys = ['items', 'metadata', 'categories', 'status', 'severities', 'yesno']
     for key in required_keys:
         if key not in checklist:
             print("ERROR: Required key missing from JSON file", input_file, ":", key)
@@ -123,7 +123,6 @@ def verify_file(input_file):
             print("ERROR: Items with missing link in JSON file", input_file, ":", inconsistencies['missing_link'])
         if inconsistencies['missing_sev'] > 0:
             print("ERROR: Items with missing severity in JSON file", input_file, ":", inconsistencies['missing_sev'])
-
 
 # We need an input file
 if args.input_file:
