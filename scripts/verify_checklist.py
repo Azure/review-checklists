@@ -88,7 +88,9 @@ def verify_file(input_file):
     }
     # Load categories to verify whether the items have the correct category
     if 'categories' in checklist:
-        categories = checklist['categories']
+        categories = [x['name'] for x in checklist['categories']]
+        if args.verbose:
+            print("DEBUG: Categories found in JSON file", input_file, ":", str(categories))
     else:
         categories = []
     if 'items' in checklist:
