@@ -184,8 +184,9 @@ def get_consolidated_checklist(input_folder, language):
                         if args.verbose:
                             print("DEBUG: skipping deprecated checklist", checklist_file)
                     else:
-                        # Additional check if we are only interested in WAF recommendations
-                        if not args.waf or "waf" in checklist_data["metadata"]:
+                        # Additional check if we are only interested in WAF recommendations:
+                        #   If the WAF argument was provided, only checklists with WAF attribute containing a valid value will be processed
+                        if not args.waf or ("waf" in checklist_data["metadata"] and checklist_data["metadata"]["waf"].lower() not in ['all', 'reliability', 'security', 'performance', 'cost', 'operations']):
                             # Go over each checklist item
                             for item in checklist_data["items"]:
                                 # Add field with the name of the checklist
