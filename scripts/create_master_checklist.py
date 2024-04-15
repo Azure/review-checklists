@@ -153,6 +153,17 @@ def get_services_from_string(input_string):
                 services.append(service)
     return list(set(services))
 
+# If metadata does not contain 'waf' key, return false
+# If metadata does contain 'waf' key and its value is valid, return true
+# Otherwise, return false
+def contains_waf(checklist_metadata):
+    if "waf" not in checklist_metadata:
+        return False
+    elif checklist_metadata["waf"].lower() in ['all', 'reliability', 'security', 'performance', 'cost', 'operations']:
+        return True
+    else:
+        return False
+
 # Consolidate all checklists into one big checklist object
 def get_consolidated_checklist(input_folder, language):
     # Initialize checklist object
@@ -186,7 +197,7 @@ def get_consolidated_checklist(input_folder, language):
                     else:
                         # Additional check if we are only interested in WAF recommendations:
                         #   If the WAF argument was provided, only checklists with WAF attribute containing a valid value will be processed
-                        if not args.waf or ("waf" in checklist_data["metadata"] and checklist_data["metadata"]["waf"].lower() not in ['all', 'reliability', 'security', 'performance', 'cost', 'operations']):
+                        if not args.waf or contains_waf(checklist_data["metadata"]):
                             # Go over each checklist item
                             for item in checklist_data["items"]:
                                 # Add field with the name of the checklist
