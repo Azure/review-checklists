@@ -87,11 +87,13 @@ def verify_file(input_file):
     if args.verbose:
         print("DEBUG: Verifying the items have all required keys...")
     # Counter dictionary for inconsistencies
+    item_count = 0
     inconsistencies = {
         'wrong_cat': 0,
         'missing_cat': 0,
         'missing_subcat': 0,
         'missing_waf': 0,
+        'wrong_waf': 0,
         'missing_svc': 0,
         'missing_link': 0,
         'missing_sev': 0,
@@ -107,6 +109,7 @@ def verify_file(input_file):
         categories = []
     if 'items' in checklist:
         for item in checklist['items']:
+            item_count += 1
             if 'category' not in item:
                 inconsistencies['missing_cat'] += 1
             elif item['category'] not in categories:
@@ -115,6 +118,8 @@ def verify_file(input_file):
                 inconsistencies['missing_subcat'] += 1
             if 'waf' not in item:
                 inconsistencies['missing_waf'] += 1
+            elif item['waf'].lower() not in ['reliability', 'security', 'performance', 'cost', 'operations']:
+                inconsistencies['wrong_waf'] += 1
             if 'service' not in item:
                 inconsistencies['missing_svc'] += 1
             if 'guid' not in item:
@@ -130,21 +135,23 @@ def verify_file(input_file):
             if 'severity' not in item:
                 inconsistencies['missing_sev'] += 1
         if inconsistencies['missing_cat'] > 0:
-            print("ERROR: Items with missing category in JSON file", input_file, ":", inconsistencies['missing_cat'])
+            print("ERROR: Items with missing category in JSON file {0}: {1} ({2}%)".format(input_file, inconsistencies['missing_cat'], round(inconsistencies['missing_cat'] / item_count * 100, 2)))
         if inconsistencies['wrong_cat'] > 0:
-            print("WARNING: Items with wrong category in JSON file", input_file, ":", inconsistencies['wrong_cat'])
+            print("WARNING: Items with wrong category in JSON file {0}: {1} ({2}%)".format(input_file, inconsistencies['wrong_cat'], round(inconsistencies['wrong_cat'] / item_count * 100, 2)))
         if inconsistencies['missing_subcat'] > 0:
-            print("ERROR: Items with missing subcategory in JSON file", input_file, ":", inconsistencies['missing_subcat'])
+            print("ERROR: Items with missing subcategory in JSON file {0}: {1} ({2}%)".format(input_file, inconsistencies['missing_subcat'], round(inconsistencies['missing_subcat'] / item_count * 100, 2)))
         if inconsistencies['missing_waf'] > 0:
-            print("ERROR: Items with missing WAF in JSON file", input_file, ":", inconsistencies['missing_waf'])
+            print("WARNING: Items with missing WAF in JSON file {0}: {1} ({2}%)".format(input_file, inconsistencies['missing_waf'], round(inconsistencies['missing_waf'] / item_count * 100, 2)))
+        if inconsistencies['wrong_waf'] > 0:
+            print("ERROR: Items with wrong WAF in JSON file {0}: {1} ({2}%)".format(input_file, inconsistencies['wrong_waf'], round(inconsistencies['wrong_waf'] / item_count * 100, 2)))
         if inconsistencies['missing_svc'] > 0:
-            print("ERROR: Items with missing service in JSON file", input_file, ":", inconsistencies['missing_svc'])
+            print("WARNING: Items with missing service in JSON file {0}: {1} ({2}%)".format(input_file, inconsistencies['missing_svc'], round(inconsistencies['missing_svc'] / item_count * 100, 2)))
         if inconsistencies['missing_link'] > 0:
-            print("ERROR: Items with missing link in JSON file", input_file, ":", inconsistencies['missing_link'])
+            print("WARNING: Items with missing link in JSON file {0}: {1} ({2}%)".format(input_file, inconsistencies['missing_link'], round(inconsistencies['missing_link'] / item_count * 100, 2)))
         if inconsistencies['missing_sev'] > 0:
-            print("ERROR: Items with missing severity in JSON file", input_file, ":", inconsistencies['missing_sev'])
+            print("ERROR: Items with missing severity in JSON file {0}: {1} ({2}%)".format(input_file, inconsistencies['missing_sev'], round(inconsistencies['missing_sev'] / item_count * 100, 2)))
         if inconsistencies['localized_link'] > 0:
-            print("WARNING: Items with localized links in JSON file", input_file, ":", inconsistencies['localized_link'])
+            print("WARNING: Items with localized link in JSON file {0}: {1} ({2}%)".format(input_file, inconsistencies['localized_link'], round(inconsistencies['localized_link'] / item_count * 100, 2)))
 
 # We need an input file
 if args.input_file:
