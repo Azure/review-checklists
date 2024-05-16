@@ -7,6 +7,7 @@ import argparse
 import json
 import re
 import sys
+import os
 
 # Arguments
 parser = argparse.ArgumentParser(description='Retrieve recommendations in Azure Well-Architected Framework service guides')
@@ -41,6 +42,8 @@ parser.add_argument('--load-from-file', dest='load_filename', action='store',
                     help='Load the recommendations from a local file (default: None)')
 parser.add_argument('--checklist-file', dest='checklist_filename', action='store',
                     help='Filename with the review recommendations (default: None)')
+parser.add_argument('--output-checklist-folder', dest='output_checklist_folder', action='store',
+                    help='Filename with the output files in checklist format (default: None)')
 parser.add_argument('--verbose', dest='verbose', action='store_true',
                     default=False,
                     help='Run in verbose mode (default: False)')
@@ -146,7 +149,7 @@ def parse_markdown(markdown, service, verbose=False):
             line_table_items = line.split('|')
             if (len(line_table_items) == 4):
                 if (len(line_table_items[1]) > 20) and (len(line_table_items[2]) > 20):     # We assume that long enough text and descriptions are valid
-                    recos.append({'waf': processing_pillar, 'service': service, 'text': remove_markdown(line_table_items[1]), 'description': remove_markdown(line_table_items[2]), 'type': 'recommendation'})
+                    recos.append({'waf': processing_pillar.title(), 'service': service, 'text': remove_markdown(line_table_items[1]), 'description': remove_markdown(line_table_items[2]), 'type': 'recommendation'})
     if (verbose): print("DEBUG: {0} recommendations found in {1} lines".format(len(recos), line_count))
     return recos
 
@@ -298,3 +301,31 @@ if (args.print_json) and (len(waf_recos) > 0):
 if (args.save_filename):
     store_json({'svcguide_recos': waf_recos, 'checklist_recos': checklist_recos}, args.save_filename)
     print("INFO: Recommendations stored in file {0}".format(args.save_filename))
+
+# If output_checklist_folder is set, store the recommendations in files, one per service
+if (args.output_checklist_folder):
+    # First, create a list with all the services
+    services = list(set([x['service'] for x in waf_recos]))
+    for service in services:
+        # Only export recommendations!
+        service_recos = [x for x in waf_recos if x['service'] == service and x['type'] == 'recommendation']
+        # Create a dictionary with checklist format
+        service_checklist = {
+            'items': service_recos,
+            'categories': (),
+            'waf': ({'name': 'resiliency'}, {'name': 'cost'}, {'name': 'performance'}, {'name': 'operations'}, {'name': 'security'}),
+            'yesno': ({'name': 'yes'}, {'name': 'no'}),
+            'metadata': {
+                'title': f'{service} Service Guide',
+                'waf': 'all',
+                'state': 'preview'
+            }
+        }
+        # Derive a valid file name from the service in lower case replacing blanks with underscores
+        service_filename = service.lower().replace(' ', '_') + '_svcguide.en.json'
+        # Concatenate the folder with the filename using the os module
+        service_filename = os.path.join(args.output_checklist_folder, service_filename)
+        # Store the service checklist in the output folder
+        store_json(service_checklist, service_filename)
+        # Print a message
+        if (args.verbose): print("DEBUG: Exported {0} recos to filename {1}".format(len(service_recos), service_filename))
