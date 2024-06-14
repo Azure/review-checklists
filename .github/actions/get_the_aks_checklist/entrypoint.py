@@ -121,6 +121,7 @@ if (checklist_file):
         'categories': checklist_recos['categories'],
         'waf': checklist_recos['waf'],
         'yesno': checklist_recos['yesno'],
+        'status': checklist_recos['status'],
         'metadata': {
             'name': 'The AKS Checklist',
             'waf': 'none',
@@ -135,6 +136,7 @@ else:
         'categories': [],
         'waf': [],
         'yesno': [],
+        'status': [],
         'metadata': {
             'name': 'The AKS Checklist',
             'waf': 'none',
