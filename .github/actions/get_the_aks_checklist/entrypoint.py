@@ -108,6 +108,8 @@ if (checklist_file):
                     reco['waf'] = checklist_recos['items'][i]['waf']
                     if 'service' in checklist_recos['items'][i]['waf']:
                         reco['service'] = checklist_recos['items'][i]['service']
+                    if 'graph' in checklist_recos['items'][i]['waf']:
+                        reco['graph'] = checklist_recos['items'][i]['graph']
             if not found and verbose:
                 print("DEBUG: Recommendation with guid {0} from the-aks-checklist not found in the existing checklist".format(guid))
         else:
