@@ -119,6 +119,7 @@ if (checklist_file):
     theaks_checklist = {
         'items': checklist_recos['items'],
         'categories': checklist_recos['categories'],
+        'severities': checklist_recos['severities'],
         'waf': checklist_recos['waf'],
         'yesno': checklist_recos['yesno'],
         'status': checklist_recos['status'],
@@ -134,6 +135,7 @@ else:
     theaks_checklist = {
         'items': theaks_recos,
         'categories': [],
+        'severities': [],
         'waf': [],
         'yesno': [],
         'status': [],
