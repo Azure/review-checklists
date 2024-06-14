@@ -120,7 +120,7 @@ if (checklist_file):
         'waf': checklist_recos['waf'],
         'yesno': checklist_recos['yesno'],
         'metadata': {
-            'title': 'The AKS Checklist',
+            'name': 'The AKS Checklist',
             'waf': 'none',
             'state': 'preview',
             'timestamp': datetime.date.today().strftime("%B %d, %Y")
@@ -134,7 +134,7 @@ else:
         'waf': [],
         'yesno': [],
         'metadata': {
-            'title': 'The AKS Checklist',
+            'name': 'The AKS Checklist',
             'waf': 'none',
             'state': 'preview',
             'timestamp': datetime.date.today().strftime("%B %d, %Y")
