@@ -221,6 +221,9 @@ def get_consolidated_checklist(input_folder, language):
                             checklist_master_data['status'] = checklist_data['status']
             except Exception as e:
                 print("ERROR: Error when processing JSON file", checklist_file, "-", str(e))
+            # For every item add the source file with the name of the file that the checks are coming from
+            for item in checklist_master_data['items']:
+                item['source'] = checklist_file
             # Optionally, browse the checklist items and add the services field
             if args.add_services and not args.waf:
                 for item in checklist_master_data["items"]:
