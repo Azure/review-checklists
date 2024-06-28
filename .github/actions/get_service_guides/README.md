@@ -4,13 +4,13 @@ This action retrieves the recommendations described in [Well-Architected Service
 
 ## Inputs
 
-## `service`
+## `services`
 
-**Optional** Service whose service guide will be downloaded (leave blank for all service guides). Default `""`.
+**Optional** Service(s) whose service guide will be downloaded (leave blank for all service guides). You can specify multiple comma-separated values. Default `""`.
 
 ## `output_folder`
 
-**Optional** File where the new checklist will be stored. Default `"./checklists"`.
+**Optional** Folder where the new checklists will be stored. Default `"./checklists-ext"`.
 
 ## `verbose`
 

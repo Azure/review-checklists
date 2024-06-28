@@ -56,10 +56,14 @@ import datetime
 
 # The script has been modified to be run from a github action with positional parameters
 # 1. Output folder
-# 2. Service
+# 2. Service (CSV supported)
 # 3. Verbose
 try:
-    args_service = sys.argv[1]
+    args_service = sys.argv[1].lower()
+    if len(args_service) > 0:
+        args_service_list = args_service.split(',')
+        # Remove leading and trailing spaces
+        args_service_list = [x.split() for x in args_service_list]
 except:
     args_service = ''
 try:
@@ -216,7 +220,7 @@ def get_waf_service_guide_recos():
                     service = service.replace('.md', '')
                     service = service.replace('-', ' ')
                     service = service.title()
-                    if (len(args_service) == 0) or (args_service.lower() == service.lower()):
+                    if (len(args_service) == 0) or (service.lower() in args_service_list):
                         if (args_verbose): print("DEBUG: Service {0} in service guide '{1}' matching input service {2}...".format(service, file_path, args_service))
                         svcguide_url = f'https://raw.githubusercontent.com/{github_org}/{github_repo}/main/' + file_path
                         if (args_verbose): print("DEBUG: Found service guide '{0}' for service '{1}'".format(file_path, service))
@@ -342,8 +346,9 @@ if (args_save_filename):
 if (len(args_output_checklist_folder) > 0):
     # Check that the output folder is a valid directory
     if os.path.isdir(args_output_checklist_folder):
-        # First, create a list with all the services
+        # First, create a list with all the services in the recommendations
         services = list(set([x['service'] for x in waf_recos]))
+        waf_pillars = list(set([{'name': x['waf']} for x in waf_recos]))
         for service in services:
             # Only export recommendations!
             service_recos = [x for x in waf_recos if x['service'] == service and x['type'] == 'recommendation']
@@ -351,8 +356,8 @@ if (len(args_output_checklist_folder) > 0):
             service_checklist = {
                 'items': service_recos,
                 'categories': (),
-                'waf': ({'name': 'resiliency'}, {'name': 'cost'}, {'name': 'performance'}, {'name': 'operations'}, {'name': 'security'}),
-                'yesno': ({'name': 'yes'}, {'name': 'no'}),
+                'waf': waf_pillars,
+                'yesno': ({'name': 'Yes'}, {'name': 'No'}),
                 'metadata': {
                     'name': f'{service} Service Guide',
                     'waf': 'all',
@@ -369,6 +374,24 @@ if (len(args_output_checklist_folder) > 0):
             store_json(service_checklist, service_filename)
             # Print a message
             if (args_verbose): print("DEBUG: Exported {0} recos (only recommendations and not design checks are exported) to filename {1}".format(len(service_recos), service_filename))
+        # Finally, export the full file
+        full_checklist = {
+            'items': waf_recos,
+            'categories': (),
+            'waf': waf_pillars,
+            'yesno': ({'name': 'Yes'}, {'name': 'No'}),
+            'metadata': {
+                'name': f'{service} Service Guide',
+                'waf': 'all',
+                'state': 'preview',
+                'timestamp': datetime.date.today().strftime("%B %d, %Y")
+
+            }
+        }
+        full_checklist_filename = os.path.join(args_output_checklist_folder, 'wafsg_checklist.en.json')
+        store_json(service_checklist, full_checklist_filename)
+        if (args_verbose): print("DEBUG: Exported {0} recos (only recommendations and not design checks are exported) to filename {1}".format(len(waf_recos), full_checklist_filename))
+
     else:
         print("ERROR: Output folder {0} is not a valid directory".format(args_output_checklist_folder))
 else:
