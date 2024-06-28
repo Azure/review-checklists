@@ -14,7 +14,7 @@ import sys
 import os
 
 # Arguments
-parser = argparse.ArgumentParser(description='Retrieve recommendations in Azure Well-Architected Framework service guides')
+parser = argparse.ArgumentParser(description='Retrieve recommendations in Azure Well-Architected Framework service guides', exit_on_error=False)
 parser.add_argument('--service', dest='service', action='store',
                     help='Optional service name to retrieve recommendations for (default: None)')
 parser.add_argument('--print-json', dest='print_json', action='store_true',
@@ -54,18 +54,19 @@ parser.add_argument('--verbose', dest='verbose', action='store_true',
 args = parser.parse_args()
 
 # If no arguments are provided, it is probably that the script is being run from a github action with positional parameters
-try:
-    args.output_folder = sys.argv[1]
-except:
-    args.output_folder = './checklists'
-try:
-    args.service = sys.argv[2]
-except:
-    args.service = ''
-try:
-    args.verbose = (sys.argv[3].lower() == 'true')
-except:
-    args.verbose = True
+# try:
+#     args_output_folder = sys.argv[1]
+# except:
+#     args_output_folder = './checklists'
+# try:
+#     args_service = sys.argv[2]
+# except:
+#     args_service = ''
+# try:
+#     args_verbose = (sys.argv[3].lower() == 'true')
+# except:
+#     args_verbose = True
+
 
 # Function to store an object in a JSON file
 def store_json(obj, filename):
