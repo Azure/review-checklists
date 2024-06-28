@@ -12,6 +12,7 @@ import json
 import re
 import sys
 import os
+import datetime
 
 # # Arguments
 # parser = argparse.ArgumentParser(description='Retrieve recommendations in Azure Well-Architected Framework service guides')
@@ -353,9 +354,11 @@ if (len(args_output_checklist_folder) > 0):
                 'waf': ({'name': 'resiliency'}, {'name': 'cost'}, {'name': 'performance'}, {'name': 'operations'}, {'name': 'security'}),
                 'yesno': ({'name': 'yes'}, {'name': 'no'}),
                 'metadata': {
-                    'title': f'{service} Service Guide',
+                    'name': f'{service} Service Guide',
                     'waf': 'all',
-                    'state': 'preview'
+                    'state': 'preview',
+                    'timestamp': datetime.date.today().strftime("%B %d, %Y")
+
                 }
             }
             # Derive a valid file name from the service in lower case replacing blanks with underscores
