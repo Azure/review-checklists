@@ -7,65 +7,80 @@
 #   python ./scripts/entrypoint.py --service 'Azure Kubernetes Service' --output-checklist-folder ./checklists
 
 import requests
-import argparse
+# import argparse
 import json
 import re
 import sys
 import os
 
-# Arguments
-parser = argparse.ArgumentParser(description='Retrieve recommendations in Azure Well-Architected Framework service guides')
-parser.add_argument('--service', dest='service', action='store',
-                    help='Optional service name to retrieve recommendations for (default: None)')
-parser.add_argument('--print-json', dest='print_json', action='store_true',
-                    default=False,
-                    help='Print the full JSON (default: False)')
-parser.add_argument('--extract-key-phrases-for-checklist', dest='extract_key_phrases_checklist', action='store_true',
-                    default=False,
-                    help='Extract key phrases for each recommendation found in the WAF review checklist (default: False)')
-parser.add_argument('--extract-key-phrases-for-svcguide', dest='extract_key_phrases_svcguide', action='store_true',
-                    default=False,
-                    help='Extract key phrases for each recommendation found in service guides (default: False)')
-parser.add_argument('--update-svcguide-recos', dest='update_svcguide_recos', action='store_true',
-                    default=False,
-                    help='Update the service guide recos in the input and output files (default: False)')
-parser.add_argument('--compare-recos', dest='compare_recos', action='store_true',
-                    default=False,
-                    help='Try to match checklist recos to each WAF service guide reco (default: False)')
-parser.add_argument('--key-phrases-only-if-empty', dest='key_phrases_only_if_empty', action='store_true',
-                    default=True,
-                    help='Only extract key phrases if there were none stored (default: True)')
-parser.add_argument('--text-analytics-endpoint', dest='text_analytics_endpoint', action='store',
-                    default='https://product-feedback.cognitiveservices.azure.com/',
-                    help='Optional endpoint of text analytics (default: https://product-feedback.cognitiveservices.azure.com/)')
-parser.add_argument('--text-analytics-key', dest='text_analytics_key', action='store',
-                    help='Key for text analytics endpoint (default: None)')
-parser.add_argument('--save-to-file', dest='save_filename', action='store',
-                    help='Save the recommendations in a local file (default: None)')
-parser.add_argument('--load-from-file', dest='load_filename', action='store',
-                    help='Load the recommendations from a local file (default: None)')
-parser.add_argument('--checklist-file', dest='checklist_filename', action='store',
-                    help='Filename with the review recommendations (default: None)')
-parser.add_argument('--output-checklist-folder', dest='output_checklist_folder', action='store',
-                    help='Path where output files in checklist format will be stored (default: None)')
-parser.add_argument('--verbose', dest='verbose', action='store_true',
-                    default=False,
-                    help='Run in verbose mode (default: False)')
-args = parser.parse_args()
+# # Arguments
+# parser = argparse.ArgumentParser(description='Retrieve recommendations in Azure Well-Architected Framework service guides')
+# parser.add_argument('--service', dest='service', action='store',
+#                     help='Optional service name to retrieve recommendations for (default: None)')
+# parser.add_argument('--print-json', dest='print_json', action='store_true',
+#                     default=False,
+#                     help='Print the full JSON (default: False)')
+# parser.add_argument('--extract-key-phrases-for-checklist', dest='extract_key_phrases_checklist', action='store_true',
+#                     default=False,
+#                     help='Extract key phrases for each recommendation found in the WAF review checklist (default: False)')
+# parser.add_argument('--extract-key-phrases-for-svcguide', dest='extract_key_phrases_svcguide', action='store_true',
+#                     default=False,
+#                     help='Extract key phrases for each recommendation found in service guides (default: False)')
+# parser.add_argument('--update-svcguide-recos', dest='update_svcguide_recos', action='store_true',
+#                     default=False,
+#                     help='Update the service guide recos in the input and output files (default: False)')
+# parser.add_argument('--compare-recos', dest='compare_recos', action='store_true',
+#                     default=False,
+#                     help='Try to match checklist recos to each WAF service guide reco (default: False)')
+# parser.add_argument('--key-phrases-only-if-empty', dest='key_phrases_only_if_empty', action='store_true',
+#                     default=True,
+#                     help='Only extract key phrases if there were none stored (default: True)')
+# parser.add_argument('--text-analytics-endpoint', dest='text_analytics_endpoint', action='store',
+#                     default='https://product-feedback.cognitiveservices.azure.com/',
+#                     help='Optional endpoint of text analytics (default: https://product-feedback.cognitiveservices.azure.com/)')
+# parser.add_argument('--text-analytics-key', dest='text_analytics_key', action='store',
+#                     help='Key for text analytics endpoint (default: None)')
+# parser.add_argument('--save-to-file', dest='save_filename', action='store',
+#                     help='Save the recommendations in a local file (default: None)')
+# parser.add_argument('--load-from-file', dest='load_filename', action='store',
+#                     help='Load the recommendations from a local file (default: None)')
+# parser.add_argument('--checklist-file', dest='checklist_filename', action='store',
+#                     help='Filename with the review recommendations (default: None)')
+# parser.add_argument('--output-checklist-folder', dest='output_checklist_folder', action='store',
+#                     help='Path where output files in checklist format will be stored (default: None)')
+# parser.add_argument('--verbose', dest='verbose', action='store_true',
+#                     default=False,
+#                     help='Run in verbose mode (default: False)')
+# args = parser.parse_args()
 
-# If no arguments are provided, it is probably that the script is being run from a github action with positional parameters
-# try:
-#     args_output_folder = sys.argv[1]
-# except:
-#     args_output_folder = './checklists'
-# try:
-#     args_service = sys.argv[2]
-# except:
-#     args_service = ''
-# try:
-#     args_verbose = (sys.argv[3].lower() == 'true')
-# except:
-#     args_verbose = True
+# The script has been modified to be run from a github action with positional parameters
+# 1. Output folder
+# 2. Service
+# 3. Verbose
+try:
+    args_service = sys.argv[1]
+except:
+    args_service = ''
+try:
+    args_output_checklist_folder = sys.argv[2]
+except:
+    args_output_checklist_folder = './checklists'
+try:
+    args_verbose = (sys.argv[3].lower() == 'true')
+except:
+    args_verbose = True
+# These parameters haven't been implemented in the github action
+args_print_json = False
+args_extract_key_phrases_checklist = False
+args_extract_key_phrases_svcguide = False
+args_update_svcguide_recos = False
+args_compare_recos = False
+args_key_phrases_only_if_empty = True
+args_text_analytics_endpoint = 'https://product-feedback.cognitiveservices.azure.com/'
+args_text_analytics_key = None
+args_save_filename = None
+args_load_filename = None
+args_checklist_filename = None
 
 
 # Function to store an object in a JSON file
@@ -105,21 +120,21 @@ def extract_all_key_phrases(recos, text_analytics_endpoint, text_analytics_key):
     reco_counter=0
     for reco in recos:
         reco_counter += 1
-        if (args.verbose):
+        if (args_verbose):
             print("DEBUG: Extracting key phrases for recommendation '{0}'".format(reco['text']))
         else:
             sys.stdout.write('\rINFO: Extracting key phrases from recommendation %d of %d' % (reco_counter, len(recos)))
-        if (args.key_phrases_only_if_empty and ('key_phrases' in reco) and (len(reco['key_phrases']) > 0)):
-            if (args.verbose): print("DEBUG: Recommendation '{0}' already has key phrases".format(reco['text']))
+        if (args_key_phrases_only_if_empty and ('key_phrases' in reco) and (len(reco['key_phrases']) > 0)):
+            if (args_verbose): print("DEBUG: Recommendation '{0}' already has key phrases".format(reco['text']))
         else:
             key_phrases = extract_key_phrases(reco['text'], text_analytics_endpoint, text_analytics_key)
             if key_phrases:
-                # if (args.verbose): print("DEBUG: Key phrases extracted: {0}".format(str(key_phrases)))
+                # if (args_verbose): print("DEBUG: Key phrases extracted: {0}".format(str(key_phrases)))
                 if 'results' in key_phrases:
                     reco['key_phrases'] = key_phrases['results']['documents'][0]['keyPhrases']
                 else:
                     print("ERROR: Unable to extract key phrases from recommendation '{0}'. Text analytics answer: {1}".format(reco['text'], str(key_phrases)))
-    if not args.verbose:
+    if not args_verbose:
         print('')   # Otherwise the next print will be on the same line
     return recos
 
@@ -184,7 +199,7 @@ def get_waf_service_guide_recos():
     if (r.status_code == 200):
         commits = r.json()
         git_tree_id = commits[0]['commit']['tree']['sha']
-        if (args.verbose): print("DEBUG: Git tree ID is", git_tree_id)
+        if (args_verbose): print("DEBUG: Git tree ID is", git_tree_id)
         r = requests.get(f'https://api.github.com/repos/{github_org}/{github_repo}/git/trees/{git_tree_id}?recursive=true')
         if r.status_code == 200:
             files_processed = 0
@@ -200,18 +215,19 @@ def get_waf_service_guide_recos():
                     service = service.replace('.md', '')
                     service = service.replace('-', ' ')
                     service = service.title()
-                    if (args.service is None) or (args.service == service):
+                    if (len(args_service) == 0) or (args_service.lower() == service.lower()):
+                        if (args_verbose): print("DEBUG: Service {0} in service guide '{1}' matching input service {2}...".format(service, file_path, args_service))
                         svcguide_url = f'https://raw.githubusercontent.com/{github_org}/{github_repo}/main/' + file_path
-                        if (args.verbose): print("DEBUG: Found service guide '{0}' for service '{1}'".format(file_path, service))
-                        if (args.verbose): print("DEBUG: Retrieving service guide from URL '{0}'...".format(svcguide_url))
+                        if (args_verbose): print("DEBUG: Found service guide '{0}' for service '{1}'".format(file_path, service))
+                        if (args_verbose): print("DEBUG: Retrieving service guide from URL '{0}'...".format(svcguide_url))
                         r = requests.get(svcguide_url)
                         if r.status_code == 200:
                             svcguide = r.text
-                            if args.verbose: print("DEBUG: Parsing service guide '{0}', {1} characters retrieved...".format(file_path, len(svcguide)))
+                            if (args_verbose): print("DEBUG: Parsing service guide '{0}', {1} characters retrieved...".format(file_path, len(svcguide)))
                             svc_recos = parse_markdown(svcguide, service, verbose=False)
                             if (len(svc_recos) > 0):
                                 retrieved_recos += svc_recos
-                                if args.verbose: print("DEBUG: {0} recommendations found for service '{1}'".format(len(svc_recos), service))
+                                if args_verbose: print("DEBUG: {0} recommendations found for service '{1}'".format(len(svc_recos), service))
                         else:
                             print("ERROR: Unable to retrieve service guide from URL {0}".format(svcguide_url))
             return retrieved_recos
@@ -229,7 +245,7 @@ def compare_recos(waf_recos, checklist_recos, minimum_similarity=0.5):
     match_count = 0
     for waf_reco in waf_recos:
         reco_counter += 1
-        if (args.verbose): print("DEBUG: Comparing recommendation number {1}: '{0}'".format(waf_reco['text'], reco_counter))
+        if (args_verbose): print("DEBUG: Comparing recommendation number {1}: '{0}'".format(waf_reco['text'], reco_counter))
         best_match = None
         best_match_score = 0
         for checklist_reco in checklist_recos:
@@ -250,14 +266,14 @@ def compare_recos(waf_recos, checklist_recos, minimum_similarity=0.5):
                 match_count += 1
                 waf_reco['checklist_match'] = best_match
                 waf_reco['checklist_match_score'] = best_match_score
-                if (args.verbose): print("DEBUG:   BEST MATCH FOUND! '{0}' (score {1})".format(best_match['text'], best_match_score))
+                if (args_verbose): print("DEBUG:   BEST MATCH FOUND! '{0}' (score {1})".format(best_match['text'], best_match_score))
             else:
-                if (args.verbose): print("DEBUG:   Best match found but score is too low: '{0}' (score {1})".format(best_match['text'], best_match_score))
+                if (args_verbose): print("DEBUG:   Best match found but score is too low: '{0}' (score {1})".format(best_match['text'], best_match_score))
                 if 'checklist_match' in waf_reco: waf_reco.pop('checklist_match')
                 if 'checklist_match_score' in waf_reco: waf_reco.pop('checklist_match_score')
         else:
-            if (args.verbose): print("DEBUG:   No match found for recommendation '{0}'".format(waf_reco['text']))
-    if (args.verbose): print("DEBUG: Recommendations compared and {1} matches found. Maximum score found was {0}".format(max_score, match_count))
+            if (args_verbose): print("DEBUG:   No match found for recommendation '{0}'".format(waf_reco['text']))
+    if (args_verbose): print("DEBUG: Recommendations compared and {1} matches found. Maximum score found was {0}".format(max_score, match_count))
     return waf_recos
 
 #######################
@@ -265,86 +281,92 @@ def compare_recos(waf_recos, checklist_recos, minimum_similarity=0.5):
 #######################
 
 # If load_filename is set, load the recommendations from a file. Otherwise retrieve them from the WAF service guides
-if (args.load_filename):
-    recos = load_json(args.load_filename)
+if (args_load_filename):
+    recos = load_json(args_load_filename)
     if 'svcguide_recos' in recos:
         waf_recos = recos['svcguide_recos']
-        print("INFO: {1} service guide recommendations loaded from file {0}".format(args.load_filename, len(waf_recos)))
+        print("INFO: {1} service guide recommendations loaded from file {0}".format(args_load_filename, len(waf_recos)))
     else:
         waf_recos = []
-        print("INFO: No service guide recommendations found in file {0}".format(args.load_filename))
+        print("INFO: No service guide recommendations found in file {0}".format(args_load_filename))
     if 'checklist_recos' in recos:
         checklist_recos = recos['checklist_recos']
-        print("INFO: {1} review checklist recommendations loaded from file {0}".format(args.load_filename, len(checklist_recos)))
+        print("INFO: {1} review checklist recommendations loaded from file {0}".format(args_load_filename, len(checklist_recos)))
     else:
         checklist_recos = []
-        print("INFO: No review checklist recommendations found in file {0}".format(args.load_filename))
+        print("INFO: No review checklist recommendations found in file {0}".format(args_load_filename))
 else:
     waf_recos = []
     checklist_recos = []
 
 # Browse the WAF service guides if there were no recommendations loaded from the file, or if the user explicitly requested to update the recommendations
-if (len(waf_recos) == 0) or (args.update_svcguide_recos):
+if (len(waf_recos) == 0) or (args_update_svcguide_recos):
     waf_recos = get_waf_service_guide_recos()
     print("INFO: {0} recommendations retrieved from WAF service guides".format(len(waf_recos)))
 
 # Load the checklist recommendations from the checklist file if they were not in the loaded file
-if (args.checklist_filename) and (len(checklist_recos) == 0):
-    review = load_json(args.checklist_filename)
+if (args_checklist_filename) and (len(checklist_recos) == 0):
+    review = load_json(args_checklist_filename)
     if 'items' in review:
         checklist_recos = review['items']
-        print("INFO: {1} recommendations loaded from checklist file {0}".format(args.checklist_filename, len(checklist_recos)))
+        print("INFO: {1} recommendations loaded from checklist file {0}".format(args_checklist_filename, len(checklist_recos)))
     else:
         checklist_recos = []
-        print("ERROR: No recommendations found in checklist file {0}".format(args.checklist_filename))
-elif (args.checklist_filename):
+        print("ERROR: No recommendations found in checklist file {0}".format(args_checklist_filename))
+elif (args_checklist_filename):
     print("INFO: Skipping checklist loading from file since {0} recommendations were already loaded.".format(len(checklist_recos)))
 
 # If extract_key_phrases is on, extract key phrases for each recommendation
-if (args.extract_key_phrases_svcguide):
-    if (args.verbose): print("DEBUG: Extracting key phrases for {0} service guide recommendations...".format(len(waf_recos)))
-    waf_recos = extract_all_key_phrases(waf_recos, args.text_analytics_endpoint, args.text_analytics_key)
-if (args.extract_key_phrases_checklist):
-    if (args.verbose): print("DEBUG: Extracting key phrases for {0} review checklist recommendations...".format(len(waf_recos)))
-    checklist_recos = extract_all_key_phrases(checklist_recos, args.text_analytics_endpoint, args.text_analytics_key)
+if (args_extract_key_phrases_svcguide):
+    if (args_verbose): print("DEBUG: Extracting key phrases for {0} service guide recommendations...".format(len(waf_recos)))
+    waf_recos = extract_all_key_phrases(waf_recos, args_text_analytics_endpoint, args_text_analytics_key)
+if (args_extract_key_phrases_checklist):
+    if (args_verbose): print("DEBUG: Extracting key phrases for {0} review checklist recommendations...".format(len(waf_recos)))
+    checklist_recos = extract_all_key_phrases(checklist_recos, args_text_analytics_endpoint, args_text_analytics_key)
 
 # Proceed to compare the svcguide recos and try to find the checklist reco that matches the svcguide reco most closely
-if (args.compare_recos):
+if (args_compare_recos):
     waf_recos = compare_recos(waf_recos, checklist_recos, minimum_similarity=0.3)
 
 # Print recommendations if print_json is on
-if (args.print_json) and (len(waf_recos) > 0):
+if (args_print_json) and (len(waf_recos) > 0):
     print(json.dumps({'svcguide_recos': waf_recos, 'checklist_recos': checklist_recos}, indent=4))
 
 # If save_filename is set, store the recommendations in a file
-if (args.save_filename):
-    store_json({'svcguide_recos': waf_recos, 'checklist_recos': checklist_recos}, args.save_filename)
-    print("INFO: Recommendations stored in file {0}".format(args.save_filename))
+if (args_save_filename):
+    store_json({'svcguide_recos': waf_recos, 'checklist_recos': checklist_recos}, args_save_filename)
+    print("INFO: Recommendations stored in file {0}".format(args_save_filename))
 
 # If output_checklist_folder is set, store the recommendations in files, one per service
-if (args.output_checklist_folder):
-    # First, create a list with all the services
-    services = list(set([x['service'] for x in waf_recos]))
-    for service in services:
-        # Only export recommendations!
-        service_recos = [x for x in waf_recos if x['service'] == service and x['type'] == 'recommendation']
-        # Create a dictionary with checklist format
-        service_checklist = {
-            'items': service_recos,
-            'categories': (),
-            'waf': ({'name': 'resiliency'}, {'name': 'cost'}, {'name': 'performance'}, {'name': 'operations'}, {'name': 'security'}),
-            'yesno': ({'name': 'yes'}, {'name': 'no'}),
-            'metadata': {
-                'title': f'{service} Service Guide',
-                'waf': 'all',
-                'state': 'preview'
+if (len(args_output_checklist_folder) > 0):
+    # Check that the output folder is a valid directory
+    if os.path.isdir(args_output_checklist_folder):
+        # First, create a list with all the services
+        services = list(set([x['service'] for x in waf_recos]))
+        for service in services:
+            # Only export recommendations!
+            service_recos = [x for x in waf_recos if x['service'] == service and x['type'] == 'recommendation']
+            # Create a dictionary with checklist format
+            service_checklist = {
+                'items': service_recos,
+                'categories': (),
+                'waf': ({'name': 'resiliency'}, {'name': 'cost'}, {'name': 'performance'}, {'name': 'operations'}, {'name': 'security'}),
+                'yesno': ({'name': 'yes'}, {'name': 'no'}),
+                'metadata': {
+                    'title': f'{service} Service Guide',
+                    'waf': 'all',
+                    'state': 'preview'
+                }
             }
-        }
-        # Derive a valid file name from the service in lower case replacing blanks with underscores
-        service_filename = service.lower().replace(' ', '') + '_sg_checklist.en.json'
-        # Concatenate the folder with the filename using the os module
-        service_filename = os.path.join(args.output_checklist_folder, service_filename)
-        # Store the service checklist in the output folder
-        store_json(service_checklist, service_filename)
-        # Print a message
-        if (args.verbose): print("DEBUG: Exported {0} recos (only recommendations and not design checks are exported) to filename {1}".format(len(service_recos), service_filename))
+            # Derive a valid file name from the service in lower case replacing blanks with underscores
+            service_filename = service.lower().replace(' ', '') + '_sg_checklist.en.json'
+            # Concatenate the folder with the filename using the os module
+            service_filename = os.path.join(args_output_checklist_folder, service_filename)
+            # Store the service checklist in the output folder
+            store_json(service_checklist, service_filename)
+            # Print a message
+            if (args_verbose): print("DEBUG: Exported {0} recos (only recommendations and not design checks are exported) to filename {1}".format(len(service_recos), service_filename))
+    else:
+        print("ERROR: Output folder {0} is not a valid directory".format(args_output_checklist_folder))
+else:
+    if (args_verbose): print("DEBUG: Skipping export to output folder since no folder was provided")
