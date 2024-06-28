@@ -126,7 +126,7 @@ def get_aprl_kql(aprl_recos):
                     r = requests.get(file_url)
                     if r.status_code == 200:
                         kql = r.text
-                        guid = os.path.base(file_path).replace(github_file_extension, '').lower()
+                        guid = os.path.basename(file_path).replace(github_file_extension, '').lower()
                         # Find the reco in the list and update the graph property
                         reco_found = False
                         for reco in aprl_recos:
