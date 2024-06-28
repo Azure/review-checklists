@@ -101,6 +101,7 @@ def get_aprl_kql(aprl_recos):
     github_repo = 'Azure-Proactive-Resiliency-Library-v2'
     github_folder = 'azure-resources/'
     github_file_extension = '.kql'
+    github_branch = 'master'
     files_processed = 0
     kql_matches = 0
     # Get last commit
