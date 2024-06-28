@@ -310,7 +310,7 @@ else:
 if (len(waf_recos) == 0) or (args_update_svcguide_recos):
     if (args_verbose): print("DEBUG: Retrieving recommendations from WAF service guides for {0} services ({1})...".format(len(args_service_list), str(args_service_list)))
     waf_recos = get_waf_service_guide_recos()
-    print("INFO: {0} recommendations retrieved from WAF service guides".format(len(waf_recos)))
+    print("INFO: {0} recommendations retrieved from {1} WAF service guides".format(len(waf_recos), len(args_service_list)))
 
 # Load the checklist recommendations from the checklist file if they were not in the loaded file
 if (args_checklist_filename) and (len(checklist_recos) == 0):
