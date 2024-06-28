@@ -53,6 +53,20 @@ parser.add_argument('--verbose', dest='verbose', action='store_true',
                     help='Run in verbose mode (default: False)')
 args = parser.parse_args()
 
+# If no arguments are provided, it is probably that the script is being run from a github action with positional parameters
+try:
+    args.output_folder = sys.argv[1]
+except:
+    args.output_folder = './checklists'
+try:
+    args.service = sys.argv[2]
+except:
+    args.service = ''
+try:
+    args.verbose = (sys.argv[3].lower() == 'true')
+except:
+    args.verbose = True
+
 # Function to store an object in a JSON file
 def store_json(obj, filename):
     with open(filename, 'w') as f:
