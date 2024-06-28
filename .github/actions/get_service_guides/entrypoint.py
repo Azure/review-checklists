@@ -381,7 +381,7 @@ if (len(args_output_checklist_folder) > 0):
             'waf': waf_pillars,
             'yesno': ({'name': 'Yes'}, {'name': 'No'}),
             'metadata': {
-                'name': f'{service} Service Guide',
+                'name': f'WAF Service Guides',
                 'waf': 'all',
                 'state': 'preview',
                 'timestamp': datetime.date.today().strftime("%B %d, %Y")
