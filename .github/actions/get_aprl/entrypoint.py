@@ -7,7 +7,6 @@ import datetime
 import sys
 import os
 import yaml
-import uuid
 
 # Parameters
 try:
@@ -58,14 +57,14 @@ def get_aprl_recos():
             files_processed = 0
             for path in r.json()['tree']:
                 file_path = path['path']
-                # Only process markdown files in the containing folder folder
+                # Only process files in the containing folder folder
                 if (github_folder in file_path) and (github_file_extension in file_path):
                     files_processed += 1
                     if (max_files > 0) and (files_processed > max_files):
                         print("INFO: Maximum number of files processed reached: {0}".format(max_files))
                         break
                     file_url = f'https://raw.githubusercontent.com/{github_org}/{github_repo}/{github_branch}/' + file_path
-                    if (verbose): print("DEBUG: Found file '{0}'".format(file_path))
+                    # if (verbose): print("DEBUG: Found file '{0}'".format(file_path))
                     if (verbose): print("DEBUG: Retrieving recos from URL '{0}'...".format(file_url))
                     r = requests.get(file_url)
                     if r.status_code == 200:
@@ -82,7 +81,7 @@ def get_aprl_recos():
                                         item['link'] = item['learnMoreLink']['url']
                                 item['severity'] = item['recommendationImpact']
                                 item['category'] = item['recommendationControl']
-                                item['guid'] = str(uuid.uuid4())    # Generate a random GUID
+                                item['guid'] = item['aprlGuid']
                                 item['source'] = file_path
                             retrieved_recos += aprl_recos
                             if verbose: print("DEBUG: {0} recommendations found in file {1}".format(len(aprl_recos), file_path))
@@ -96,6 +95,58 @@ def get_aprl_recos():
         print("ERROR: Unable to retrieve list of commits from GitHub API: {0}. Message: {1}".format(r.status_code, r.text))
         return None
 
+def get_aprl_kql(aprl_recos):
+    # Variables
+    github_org = 'Azure'
+    github_repo = 'Azure-Proactive-Resiliency-Library-v2'
+    github_folder = 'azure-resources/'
+    github_file_extension = '.kql'
+    files_processed = 0
+    kql_matches = 0
+    # Get last commit
+    r = requests.get(f'https://api.github.com/repos/{github_org}/{github_repo}/commits')
+    if (r.status_code == 200):
+        commits = r.json()
+        git_tree_id = commits[0]['commit']['tree']['sha']
+        if (verbose): print("DEBUG: Git tree ID is", git_tree_id)
+        r = requests.get(f'https://api.github.com/repos/{github_org}/{github_repo}/git/trees/{git_tree_id}?recursive=true')
+        if r.status_code == 200:
+            if (verbose): print("DEBUG: {0} files in repository.".format(len(r.json()['tree'])))
+            # Browse all found files
+            for path in r.json()['tree']:
+                file_path = path['path']
+                # Only process files in the containing folder folder
+                if (github_folder in file_path) and (github_file_extension in file_path):
+                    files_processed += 1
+                    if (max_files > 0) and (files_processed > max_files):
+                        print("INFO: Maximum number of files processed reached: {0}".format(max_files))
+                        break
+                    file_url = f'https://raw.githubusercontent.com/{github_org}/{github_repo}/{github_branch}/' + file_path
+                    r = requests.get(file_url)
+                    if r.status_code == 200:
+                        kql = r.text
+                        guid = os.path.base(file_path).replace(github_file_extension, '').lower()
+                        # Find the reco in the list and update the graph property
+                        reco_found = False
+                        for reco in aprl_recos:
+                            if reco['guid'].lower() == guid:
+                                reco_found = True
+                                kql_matches += 1
+                                reco['graph'] = kql
+                                break
+                        if not reco_found:
+                            print("ERROR: Unable to find recommendation with GUID {0}".format(guid))
+                    else:
+                        print("ERROR: Unable to retrieve KQL from URL {0}".format(file_url))
+        else:
+            print("ERROR: Unable to retrieve list of files from GitHub API")
+            return None
+    else:
+        print("ERROR: Unable to retrieve list of commits from GitHub API: {0}. Message: {1}".format(r.status_code, r.text))
+    # The modified list of recos is returned
+    if (verbose): print("DEBUG: {0} KQL files processed, {1} matched to reccommendations...".format(files_processed, kql_matches))
+    return aprl_recos
+
 #######################
 #       Main          #
 #######################
@@ -103,6 +154,8 @@ def get_aprl_recos():
 # Browse the APRL repo
 aprl_recos = get_aprl_recos()
 print("INFO: {0} recommendations retrieved from APRL.".format(len(aprl_recos)))
+# Enrich with queries
+aprl_recos = get_aprl_kql(aprl_recos)
 
 # Get the category JSON from the reco items
 aprl_categories = list(set([reco['category'] for reco in aprl_recos]))
