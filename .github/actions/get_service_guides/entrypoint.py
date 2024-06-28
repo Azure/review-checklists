@@ -63,7 +63,7 @@ try:
     if len(args_service) > 0:
         args_service_list = args_service.split(',')
         # Remove leading and trailing spaces
-        args_service_list = [x.split() for x in args_service_list]
+        args_service_list = [x.strip() for x in args_service_list]
 except:
     args_service = ''
 try:
