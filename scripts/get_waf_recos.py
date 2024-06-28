@@ -1,6 +1,10 @@
 # This scripts parses the WAF service guides and extracts the recommendations
 #   for each service. The recommendations are stored in a dictionary and
 #   can be compared to the recommendations in the WAF review checklist.
+# Optionally a file is saved with the recommendations from the WAF svc guides 
+#   in JSON format.
+# Examples:
+#   python ./scripts/get_waf_recos.py --service 'Azure Kubernetes Service' --output-checklist-folder ./checklists
 
 import requests
 import argparse
@@ -43,7 +47,7 @@ parser.add_argument('--load-from-file', dest='load_filename', action='store',
 parser.add_argument('--checklist-file', dest='checklist_filename', action='store',
                     help='Filename with the review recommendations (default: None)')
 parser.add_argument('--output-checklist-folder', dest='output_checklist_folder', action='store',
-                    help='Filename with the output files in checklist format (default: None)')
+                    help='Path where output files in checklist format will be stored (default: None)')
 parser.add_argument('--verbose', dest='verbose', action='store_true',
                     default=False,
                     help='Run in verbose mode (default: False)')
@@ -322,7 +326,7 @@ if (args.output_checklist_folder):
             }
         }
         # Derive a valid file name from the service in lower case replacing blanks with underscores
-        service_filename = service.lower().replace(' ', '_') + '_svcguide.en.json'
+        service_filename = service.lower().replace(' ', '') + '_sg_checklist.en.json'
         # Concatenate the folder with the filename using the os module
         service_filename = os.path.join(args.output_checklist_folder, service_filename)
         # Store the service checklist in the output folder
