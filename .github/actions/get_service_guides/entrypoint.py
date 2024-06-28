@@ -4,7 +4,7 @@
 # Optionally a file is saved with the recommendations from the WAF svc guides 
 #   in JSON format.
 # Examples:
-#   python ./scripts/get_waf_recos.py --service 'Azure Kubernetes Service' --output-checklist-folder ./checklists
+#   python ./scripts/entrypoint.py --service 'Azure Kubernetes Service' --output-checklist-folder ./checklists
 
 import requests
 import argparse
