@@ -14,7 +14,7 @@ import sys
 import os
 
 # Arguments
-parser = argparse.ArgumentParser(description='Retrieve recommendations in Azure Well-Architected Framework service guides', exit_on_error=False)
+parser = argparse.ArgumentParser(description='Retrieve recommendations in Azure Well-Architected Framework service guides')
 parser.add_argument('--service', dest='service', action='store',
                     help='Optional service name to retrieve recommendations for (default: None)')
 parser.add_argument('--print-json', dest='print_json', action='store_true',
