@@ -351,7 +351,8 @@ if (len(args_output_checklist_folder) > 0):
     if os.path.isdir(args_output_checklist_folder):
         # First, create a list with all the services in the recommendations
         services = list(set([x['service'] for x in waf_recos]))
-        waf_pillars = list(set([{'name': x['waf']} for x in waf_recos]))
+        waf_pillars = list(set([x['waf'] for x in waf_recos]))
+        waf_pillars_object = [{'name': x} for x in waf_pillars]
         for service in services:
             # Only export recommendations!
             service_recos = [x for x in waf_recos if x['service'] == service and x['type'] == 'recommendation']
@@ -359,7 +360,7 @@ if (len(args_output_checklist_folder) > 0):
             service_checklist = {
                 'items': service_recos,
                 'categories': (),
-                'waf': waf_pillars,
+                'waf': waf_pillars_object,
                 'yesno': ({'name': 'Yes'}, {'name': 'No'}),
                 'metadata': {
                     'name': f'{service} Service Guide',
@@ -381,7 +382,7 @@ if (len(args_output_checklist_folder) > 0):
         full_checklist = {
             'items': waf_recos,
             'categories': (),
-            'waf': waf_pillars,
+            'waf': waf_pillars_object,
             'yesno': ({'name': 'Yes'}, {'name': 'No'}),
             'metadata': {
                 'name': f'WAF Service Guides',
