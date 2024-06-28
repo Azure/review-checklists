@@ -120,7 +120,7 @@ if (checklist_file):
     print("INFO: {0}/{1} recommendations matched with the existing checklist".format(match_count, len(theaks_recos)))
     # Add metadata and other info
     theaks_checklist = {
-        'items': theaks_recos['items'],
+        'items': theaks_recos,
         'categories': checklist_recos['categories'],
         'severities': checklist_recos['severities'],
         'waf': checklist_recos['waf'],
