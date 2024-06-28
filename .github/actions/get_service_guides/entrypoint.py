@@ -224,7 +224,7 @@ def get_waf_service_guide_recos():
                         if (args_verbose): print("DEBUG: Service {0} in service guide '{1}' matching input services '{2}'...".format(service, file_path, args_service))
                         svcguide_url = f'https://raw.githubusercontent.com/{github_org}/{github_repo}/main/' + file_path
                         if (args_verbose): print("DEBUG: Found service guide '{0}' for service '{1}'".format(file_path, service))
-                        if (args_verbose): print("DEBUG: Retrieving service guide from URL '{0}'...".format(svcguide_url))
+                        # if (args_verbose): print("DEBUG: Retrieving service guide from URL '{0}'...".format(svcguide_url))
                         r = requests.get(svcguide_url)
                         if r.status_code == 200:
                             svcguide = r.text
@@ -235,6 +235,8 @@ def get_waf_service_guide_recos():
                                 if args_verbose: print("DEBUG: {0} recommendations found for service '{1}'".format(len(svc_recos), service))
                         else:
                             print("ERROR: Unable to retrieve service guide from URL {0}".format(svcguide_url))
+                    else:
+                        if (args_verbose): print("DEBUG: Service {0} in service guide '{1}' does not match input services '{2}'...".format(service, file_path, args_service))
             return retrieved_recos
         else:
             print("ERROR: Unable to retrieve list of files from GitHub API")
@@ -306,6 +308,7 @@ else:
 
 # Browse the WAF service guides if there were no recommendations loaded from the file, or if the user explicitly requested to update the recommendations
 if (len(waf_recos) == 0) or (args_update_svcguide_recos):
+    if (args_verbose): print("DEBUG: Retrieving recommendations from WAF service guides for {0} services ({1})...".format(len(args_service_list), str(args_service_list)))
     waf_recos = get_waf_service_guide_recos()
     print("INFO: {0} recommendations retrieved from WAF service guides".format(len(waf_recos)))
 
@@ -389,7 +392,7 @@ if (len(args_output_checklist_folder) > 0):
             }
         }
         full_checklist_filename = os.path.join(args_output_checklist_folder, 'wafsg_checklist.en.json')
-        store_json(service_checklist, full_checklist_filename)
+        store_json(full_checklist, full_checklist_filename)
         if (args_verbose): print("DEBUG: Exported {0} recos (only recommendations and not design checks are exported) to filename {1}".format(len(waf_recos), full_checklist_filename))
 
     else:
