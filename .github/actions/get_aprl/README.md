@@ -6,16 +6,11 @@ This action retrieves the recommendations stored in [the-aks-checklist repo](htt
 
 ## `output_file`
 
-**Optional** File where the new checklist will be stored. Default `"./checklists/theaks_checklist.en.json"`.
-
-## `checklist_file`
-
-**Optional** File where the existing checklist is located. Default `"./checklists/aks_checklist.en.json"`.
+**Optional** File where the new checklist will be stored. Default `"./checklists/aprl_checklist.en.json"`.
 
 ## `verbose`
 
 **Optional** Whether verbose output is generated. Default `"true"`.
-
 
 ## Example usage
 
