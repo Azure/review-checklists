@@ -102,13 +102,16 @@ if (checklist_file):
                 if checklist_recos['items'][i]['guid'] == guid:
                     found = True
                     match_count += 1
-                    # Update the new reco with values from the existing one
-                    reco['category'] = checklist_recos['items'][i]['category']
-                    reco['subcategory'] = checklist_recos['items'][i]['subcategory']
-                    reco['waf'] = checklist_recos['items'][i]['waf']
-                    if 'service' in checklist_recos['items'][i]['waf']:
+                    # Update missing values in the new reco with values from the existing checklist
+                    if 'category'not in reco:
+                        reco['category'] = checklist_recos['items'][i]['category']
+                    if 'subcategory' not in reco:
+                        reco['subcategory'] = checklist_recos['items'][i]['subcategory']
+                    if 'waf' not in reco and 'waf' in checklist_recos['items'][i]:
+                        reco['waf'] = checklist_recos['items'][i]['waf']
+                    if 'service' not in reco and 'service' in checklist_recos['items'][i]:
                         reco['service'] = checklist_recos['items'][i]['service']
-                    if 'graph' in checklist_recos['items'][i]['waf']:
+                    if 'graph' in checklist_recos['items'][i] and 'graph' in checklist_recos['items'][i]:
                         reco['graph'] = checklist_recos['items'][i]['graph']
             if not found and verbose:
                 print("DEBUG: Recommendation with guid {0} from the-aks-checklist not found in the existing checklist".format(guid))
@@ -117,7 +120,7 @@ if (checklist_file):
     print("INFO: {0}/{1} recommendations matched with the existing checklist".format(match_count, len(theaks_recos)))
     # Add metadata and other info
     theaks_checklist = {
-        'items': checklist_recos['items'],
+        'items': theaks_recos['items'],
         'categories': checklist_recos['categories'],
         'severities': checklist_recos['severities'],
         'waf': checklist_recos['waf'],
