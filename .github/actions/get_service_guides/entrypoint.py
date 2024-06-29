@@ -221,7 +221,7 @@ def get_waf_service_guide_recos():
                     service = service.replace('-', ' ')
                     service = service.title()
                     if (len(args_service) == 0) or (service.lower() in args_service_list):
-                        if (args_verbose): print("DEBUG: Service {0} in service guide '{1}' matching input services '{2}'...".format(service, file_path, args_service))
+                        if (args_verbose): print("DEBUG: Service {0} in service guide '{1}' matching input services.".format(service))
                         svcguide_url = f'https://raw.githubusercontent.com/{github_org}/{github_repo}/main/' + file_path
                         if (args_verbose): print("DEBUG: Found service guide '{0}' for service '{1}'".format(file_path, service))
                         # if (args_verbose): print("DEBUG: Retrieving service guide from URL '{0}'...".format(svcguide_url))
@@ -236,7 +236,7 @@ def get_waf_service_guide_recos():
                         else:
                             print("ERROR: Unable to retrieve service guide from URL {0}".format(svcguide_url))
                     else:
-                        if (args_verbose): print("DEBUG: Service {0} in service guide '{1}' does not match input services '{2}'...".format(service, file_path, args_service))
+                        if (args_verbose): print("DEBUG: Service {0} in service guide '{1}' does not match input services.".format(service, file_path))
             return retrieved_recos
         else:
             print("ERROR: Unable to retrieve list of files from GitHub API")
