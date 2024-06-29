@@ -87,6 +87,34 @@ args_save_filename = None
 args_load_filename = None
 args_checklist_filename = None
 
+# Constants to create a compliant checklist
+statuses_object = [
+    {
+      "name": "Not verified",
+      "description": "This check has not been looked at yet"
+    },
+    {
+      "name": "Open",
+      "description": "There is an action item associated to this check"
+    },
+    {
+      "name": "Fulfilled",
+      "description": "This check has been verified, and there are no further action items associated to it"
+    },
+    {
+      "name": "N/A",
+      "description": "Not applicable for current design"
+    },
+    {
+      "name": "Not required",
+      "description": "Not required"
+    }
+]
+yesno_object = (
+    {'name': 'Yes'}, 
+    {'name': 'No'}
+)
+schema_url = 'https://raw.githubusercontent.com/Azure/review-checklists/main/checklists/checklist.schema.json'
 
 # Function to store an object in a JSON file
 def store_json(obj, filename):
@@ -358,10 +386,12 @@ if (len(args_output_checklist_folder) > 0):
             service_recos = [x for x in waf_recos if x['service'] == service and x['type'] == 'recommendation']
             # Create a dictionary with checklist format
             service_checklist = {
+                '$schema': schema_url,
                 'items': service_recos,
                 'categories': (),
                 'waf': waf_pillars_object,
-                'yesno': ({'name': 'Yes'}, {'name': 'No'}),
+                'yesno': yesno_object,
+                'status': statuses_object,
                 'metadata': {
                     'name': f'{service} Service Guide',
                     'waf': 'all',
@@ -380,10 +410,12 @@ if (len(args_output_checklist_folder) > 0):
             if (args_verbose): print("DEBUG: Exported {0} recos (only recommendations and not design checks are exported) to filename {1}".format(len(service_recos), service_filename))
         # Finally, export the full file
         full_checklist = {
+            '$schema': schema_url,
             'items': waf_recos,
             'categories': (),
             'waf': waf_pillars_object,
-            'yesno': ({'name': 'Yes'}, {'name': 'No'}),
+            'yesno': yesno_object,
+            'status': statuses_object,
             'metadata': {
                 'name': f'WAF Service Guides',
                 'waf': 'all',

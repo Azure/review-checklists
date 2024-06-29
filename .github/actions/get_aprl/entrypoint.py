@@ -21,6 +21,52 @@ except:
 # Other control variables (which probably should be turned into parameters)
 max_files = 0   # Maximum number of files to process. Set to 0 to process all files.
 
+# Constants to create a compliant checklist
+statuses_object = [
+    {
+      "name": "Not verified",
+      "description": "This check has not been looked at yet"
+    },
+    {
+      "name": "Open",
+      "description": "There is an action item associated to this check"
+    },
+    {
+      "name": "Fulfilled",
+      "description": "This check has been verified, and there are no further action items associated to it"
+    },
+    {
+      "name": "N/A",
+      "description": "Not applicable for current design"
+    },
+    {
+      "name": "Not required",
+      "description": "Not required"
+    }
+]
+yesno_object = [
+    {'name': 'Yes'}, 
+    {'name': 'No'}
+]
+waf_object = [
+    {
+      "name": "Reliability"
+    },
+    {
+      "name": "Security"
+    },
+    {
+      "name": "Cost"
+    },
+    {
+      "name": "Operations"
+    },
+    {
+      "name": "Performance"
+    }
+  ]
+schema_url = 'https://raw.githubusercontent.com/Azure/review-checklists/main/checklists/checklist.schema.json'
+
 # Function to store an object in a JSON file
 def store_json(obj, filename):
     with open(filename, 'w') as f:
@@ -166,12 +212,13 @@ aprl_severities_object = [{'name': x} for x in aprl_severities]
 
 # Add metadata and other info
 aprl_checklist = {
+    '$schema': schema_url,
     'items': aprl_recos,
     'categories': aprl_categories_object,
     'severities': aprl_severities_object,
-    'waf': [{'name': 'Security'}, {'name': 'Resiliency'}, {'name': 'Operational Excellence'}, {'name': 'Performance'}, {'name': 'Cost'}],
-    'yesno': [{'name': 'Yes'}, {'name': 'No'}],
-    'status': [{'name': 'Not verified'}, {'name': 'Open'}, {'name': 'Fulfilled'}, {'name': 'Not required'}, {'name': 'N/A'}],
+    'waf': waf_object,
+    'yesno': yesno_object,
+    'status': statuses_object,
     'metadata': {
         'name': 'APRL Checklist',
         'waf': 'none',
