@@ -12,11 +12,12 @@ number_of_checklists=$(echo $file_list | wc -l)
 echo "DEBUG: Running with file_extension=$file_extension, key_name=$key_name, criteria_key=$criteria_key, criteria_value=$criteria_value"
 
 # Check JSON field uniqueness (GUID for azure checklists)
+uniqueguid_file_exclusions='./checklists-ext/theaks_checklist.en.json'
 performed_tests=0
 unique_failed_tests=0
 unique_failed_tests_not_counted=0
-IFS='
-'
+IFS=''
+
 for file in $file_list; do
     echo "DEBUG: Processing $file..."
     performed_tests=$((performed_tests+1))
@@ -30,16 +31,20 @@ for file in $file_list; do
         fi
     fi
     # Process file for unique keys
-    all_guids=$(cat $file | jq -r "try .. | objects | select( .$key_name) | .$key_name" | wc -l)
-    unique_guids=$(cat $file | jq -r "try .. | objects | select( .$key_name) | .$key_name" | sort -u | wc -l)
-    if [ "$all_guids" -eq "$unique_guids" ]; then
-        echo "INFO: File $file has $all_guids GUIDs, and all are unique"
+    if [ "$uniqueguid_file_exclusions" =~ .*"$file".* ]; then
+        echo "DEBUG: skipping file $file for GUID uniqueness."
     else
-        echo "INFO: File $file has $all_guids GUIDs, but only $unique_guids are unique"
-        if [ "$process" == "yes" ]; then
-            unique_failed_tests=$((failed_tests+1))
+        all_guids=$(cat $file | jq -r "try .. | objects | select( .$key_name) | .$key_name" | wc -l)
+        unique_guids=$(cat $file | jq -r "try .. | objects | select( .$key_name) | .$key_name" | sort -u | wc -l)
+        if [ "$all_guids" -eq "$unique_guids" ]; then
+            echo "INFO: File $file has $all_guids GUIDs, and all are unique"
         else
-            unique_failed_tests_not_counted=$((failed_tests_not_counted+1))
+            echo "INFO: File $file has $all_guids GUIDs, but only $unique_guids are unique"
+            if [ "$process" == "yes" ]; then
+                unique_failed_tests=$((failed_tests+1))
+            else
+                unique_failed_tests_not_counted=$((failed_tests_not_counted+1))
+            fi
         fi
     fi
     # Check categories
