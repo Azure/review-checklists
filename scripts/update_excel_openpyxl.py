@@ -201,13 +201,16 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
         print("DEBUG:", str(row_counter - values_row1), "categories added to Excel spreadsheet")
 
     # Update status
-    row_counter = values_row1
-    for item in checklist_data.get("status"):
-        status = item.get("name")
-        description = item.get("description")
-        wsv[col_values_status + str(row_counter)].value = status
-        wsv[col_values_description + str(row_counter)].value = description
-        row_counter += 1
+    if 'status' in checklist_data:
+        row_counter = values_row1
+        for item in checklist_data.get("status"):
+            status = item.get("name")
+            description = item.get("description")
+            wsv[col_values_status + str(row_counter)].value = status
+            wsv[col_values_description + str(row_counter)].value = description
+            row_counter += 1
+    else:
+        print('ERROR: no "status" information in the checklist.')
 
     # Display summary
     if args.verbose:
