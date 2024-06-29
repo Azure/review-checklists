@@ -131,7 +131,7 @@ if (checklist_file):
     print("INFO: {0}/{1} recommendations matched with the existing checklist".format(match_count, len(theaks_recos)))
     # Get the category JSON from the reco items
     theaks_categories = list(set([reco['category'] for reco in theaks_recos]))
-    theaks_categories_object = [{'name': x} for x in the theaks_categories]
+    theaks_categories_object = [{'name': x} for x in theaks_categories]
     # Add metadata and other info
     theaks_checklist = {
         'items': theaks_recos,
