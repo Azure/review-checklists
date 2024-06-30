@@ -14,11 +14,11 @@ from sentence_transformers import SentenceTransformer
 
 # Get input arguments
 parser = argparse.ArgumentParser(description='Merge different WAF checklists and removes duplicates')
-parser.add_argument('--review_checklist-file', dest='review_checklist_file', action='store',
+parser.add_argument('--review-checklist-file', dest='review_checklist_file', action='store',
                     help='You need to supply the name of the JSON file with the review checklist to be merged')
-parser.add_argument('--aprl_checklist-file', dest='aprl_checklist_file', action='store',
+parser.add_argument('--aprl-checklist-file', dest='aprl_checklist_file', action='store',
                     help='You need to supply the name of the JSON file with the APRL checklist to be merged')
-parser.add_argument('--sg_checklist-file', dest='sg_checklist_file', action='store',
+parser.add_argument('--sg-checklist-file', dest='sg_checklist_file', action='store',
                     help='You need to supply the name of the JSON file with the Service Guide checklist to be merged')
 parser.add_argument('--max-recos', dest='max_recos', action='store',
                     default=0,
@@ -63,7 +63,7 @@ def calculate_embeddings(checklist, model):
             if 'text' in reco:
                 embeddings = model.encode(reco['text'])
                 reco['embeddings'] = embeddings
-                if args.verbose: print('DEBUG: calculated embeddings for {0}: {1}'.format(reco['text'], str(embeddings))) 
+                # if args.verbose: print('DEBUG: calculated embeddings for {0}: {1}'.format(reco['text'], str(embeddings))) 
 
     # texts = [x['text'] for x in checklist['items']]
     # text_embeddings = model.encode(texts)
