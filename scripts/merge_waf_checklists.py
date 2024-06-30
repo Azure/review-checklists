@@ -58,8 +58,12 @@ def dump_json_file(json_object, filename):
 # Function to calculate text embeddings
 # See https://stackoverflow.com/questions/65199011/is-there-a-way-to-check-similarity-between-two-full-sentences-in-python
 def calculate_embeddings(checklist, model):
+    counter = 0
     for reco in checklist['items']:
+        counter += 1
         if not ('embeddings' in reco):
+            if (counter % 10 == 0):
+                if (args.verbose): print('DEBUG: {0} recos processed'.format(counter))
             if 'text' in reco:
                 embeddings = model.encode(reco['text'])
                 reco['embeddings'] = embeddings
