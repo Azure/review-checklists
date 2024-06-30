@@ -126,50 +126,50 @@ def load_json(filename):
     with open(filename, 'r') as f:
         return json.load(f)
 
-# Function to extract key phrases from recommendation
-def extract_key_phrases(text, text_analytics_endpoint, text_analytics_key):
-    try:
-        # Set skeleton for text analytics request
-        document_list = '[{"id": "1", "language": "en", "text": "' + text + '"}]'
-        text_analytics_body_string = '{ "kind": "KeyPhraseExtraction", "parameters": { "modelVersion": "latest" }, "analysisInput": { "documents": ' + document_list + ' } }'
-        # Send Text Analytics request
-        text_analytics_url = f'{text_analytics_endpoint}language/:analyze-text?api-version=2023-04-01'
-        text_analytics_headers = {
-            'Ocp-Apim-Subscription-Key': text_analytics_key,
-            'Content-Type': 'application/json'
-            }
-        r = requests.post(text_analytics_url, headers=text_analytics_headers, json=json.loads(text_analytics_body_string))
-        if r.status_code == 200:
-            return r.json()
-        else:
-            print("ERROR: Unable to retrieve key phrases from text analytics: {0}. Message: {1}".format(r.status_code, r.text))
-            return None
-    except Exception as e:
-        print("ERROR: Exception in extract_key_phrases: {0}".format(str(e)))
-        return None
+# # Function to extract key phrases from recommendation
+# def extract_key_phrases(text, text_analytics_endpoint, text_analytics_key):
+#     try:
+#         # Set skeleton for text analytics request
+#         document_list = '[{"id": "1", "language": "en", "text": "' + text + '"}]'
+#         text_analytics_body_string = '{ "kind": "KeyPhraseExtraction", "parameters": { "modelVersion": "latest" }, "analysisInput": { "documents": ' + document_list + ' } }'
+#         # Send Text Analytics request
+#         text_analytics_url = f'{text_analytics_endpoint}language/:analyze-text?api-version=2023-04-01'
+#         text_analytics_headers = {
+#             'Ocp-Apim-Subscription-Key': text_analytics_key,
+#             'Content-Type': 'application/json'
+#             }
+#         r = requests.post(text_analytics_url, headers=text_analytics_headers, json=json.loads(text_analytics_body_string))
+#         if r.status_code == 200:
+#             return r.json()
+#         else:
+#             print("ERROR: Unable to retrieve key phrases from text analytics: {0}. Message: {1}".format(r.status_code, r.text))
+#             return None
+#     except Exception as e:
+#         print("ERROR: Exception in extract_key_phrases: {0}".format(str(e)))
+#         return None
 
-# Function to extract key phrases for all recommendations
-def extract_all_key_phrases(recos, text_analytics_endpoint, text_analytics_key):
-    reco_counter=0
-    for reco in recos:
-        reco_counter += 1
-        if (args_verbose):
-            print("DEBUG: Extracting key phrases for recommendation '{0}'".format(reco['text']))
-        else:
-            sys.stdout.write('\rINFO: Extracting key phrases from recommendation %d of %d' % (reco_counter, len(recos)))
-        if (args_key_phrases_only_if_empty and ('key_phrases' in reco) and (len(reco['key_phrases']) > 0)):
-            if (args_verbose): print("DEBUG: Recommendation '{0}' already has key phrases".format(reco['text']))
-        else:
-            key_phrases = extract_key_phrases(reco['text'], text_analytics_endpoint, text_analytics_key)
-            if key_phrases:
-                # if (args_verbose): print("DEBUG: Key phrases extracted: {0}".format(str(key_phrases)))
-                if 'results' in key_phrases:
-                    reco['key_phrases'] = key_phrases['results']['documents'][0]['keyPhrases']
-                else:
-                    print("ERROR: Unable to extract key phrases from recommendation '{0}'. Text analytics answer: {1}".format(reco['text'], str(key_phrases)))
-    if not args_verbose:
-        print('')   # Otherwise the next print will be on the same line
-    return recos
+# # Function to extract key phrases for all recommendations
+# def extract_all_key_phrases(recos, text_analytics_endpoint, text_analytics_key):
+#     reco_counter=0
+#     for reco in recos:
+#         reco_counter += 1
+#         if (args_verbose):
+#             print("DEBUG: Extracting key phrases for recommendation '{0}'".format(reco['text']))
+#         else:
+#             sys.stdout.write('\rINFO: Extracting key phrases from recommendation %d of %d' % (reco_counter, len(recos)))
+#         if (args_key_phrases_only_if_empty and ('key_phrases' in reco) and (len(reco['key_phrases']) > 0)):
+#             if (args_verbose): print("DEBUG: Recommendation '{0}' already has key phrases".format(reco['text']))
+#         else:
+#             key_phrases = extract_key_phrases(reco['text'], text_analytics_endpoint, text_analytics_key)
+#             if key_phrases:
+#                 # if (args_verbose): print("DEBUG: Key phrases extracted: {0}".format(str(key_phrases)))
+#                 if 'results' in key_phrases:
+#                     reco['key_phrases'] = key_phrases['results']['documents'][0]['keyPhrases']
+#                 else:
+#                     print("ERROR: Unable to extract key phrases from recommendation '{0}'. Text analytics answer: {1}".format(reco['text'], str(key_phrases)))
+#     if not args_verbose:
+#         print('')   # Otherwise the next print will be on the same line
+#     return recos
 
 
 # Function to remove markdown formatting
@@ -273,105 +273,106 @@ def get_waf_service_guide_recos():
         print("ERROR: Unable to retrieve list of commits from GitHub API: {0}. Message: {1}".format(r.status_code, r.text))
         return None
 
-# Find the checklist reco that matches the most closely for each WAF reco
-def compare_recos(waf_recos, checklist_recos, minimum_similarity=0.5):
-    reco_counter = 0
-    max_score = 0
-    match_count = 0
-    for waf_reco in waf_recos:
-        reco_counter += 1
-        if (args_verbose): print("DEBUG: Comparing recommendation number {1}: '{0}'".format(waf_reco['text'], reco_counter))
-        best_match = None
-        best_match_score = 0
-        for checklist_reco in checklist_recos:
-            # Calculate the similarity between the two recommendations
-            similarity = 0
-            if ('key_phrases' in waf_reco) and ('key_phrases' in checklist_reco):
-                similarity = len(set(waf_reco['key_phrases']).intersection(checklist_reco['key_phrases'])) / len(set(waf_reco['key_phrases']).union(checklist_reco['key_phrases']))
-            # If the similarity is higher than the best match, update the best match
-            if (similarity > best_match_score):
-                best_match = checklist_reco
-                best_match_score = similarity
-            # Record the maximum score found
-            if (similarity > max_score):
-                max_score = similarity
-        # If a best match was found, store it in the WAF reco
-        if best_match:
-            if best_match_score >= minimum_similarity:
-                match_count += 1
-                waf_reco['checklist_match'] = best_match
-                waf_reco['checklist_match_score'] = best_match_score
-                if (args_verbose): print("DEBUG:   BEST MATCH FOUND! '{0}' (score {1})".format(best_match['text'], best_match_score))
-            else:
-                if (args_verbose): print("DEBUG:   Best match found but score is too low: '{0}' (score {1})".format(best_match['text'], best_match_score))
-                if 'checklist_match' in waf_reco: waf_reco.pop('checklist_match')
-                if 'checklist_match_score' in waf_reco: waf_reco.pop('checklist_match_score')
-        else:
-            if (args_verbose): print("DEBUG:   No match found for recommendation '{0}'".format(waf_reco['text']))
-    if (args_verbose): print("DEBUG: Recommendations compared and {1} matches found. Maximum score found was {0}".format(max_score, match_count))
-    return waf_recos
+# # Find the checklist reco that matches the most closely for each WAF reco
+# def compare_recos(waf_recos, checklist_recos, minimum_similarity=0.5):
+#     reco_counter = 0
+#     max_score = 0
+#     match_count = 0
+#     for waf_reco in waf_recos:
+#         reco_counter += 1
+#         if (args_verbose): print("DEBUG: Comparing recommendation number {1}: '{0}'".format(waf_reco['text'], reco_counter))
+#         best_match = None
+#         best_match_score = 0
+#         for checklist_reco in checklist_recos:
+#             # Calculate the similarity between the two recommendations
+#             similarity = 0
+#             if ('key_phrases' in waf_reco) and ('key_phrases' in checklist_reco):
+#                 similarity = len(set(waf_reco['key_phrases']).intersection(checklist_reco['key_phrases'])) / len(set(waf_reco['key_phrases']).union(checklist_reco['key_phrases']))
+#             # If the similarity is higher than the best match, update the best match
+#             if (similarity > best_match_score):
+#                 best_match = checklist_reco
+#                 best_match_score = similarity
+#             # Record the maximum score found
+#             if (similarity > max_score):
+#                 max_score = similarity
+#         # If a best match was found, store it in the WAF reco
+#         if best_match:
+#             if best_match_score >= minimum_similarity:
+#                 match_count += 1
+#                 waf_reco['checklist_match'] = best_match
+#                 waf_reco['checklist_match_score'] = best_match_score
+#                 if (args_verbose): print("DEBUG:   BEST MATCH FOUND! '{0}' (score {1})".format(best_match['text'], best_match_score))
+#             else:
+#                 if (args_verbose): print("DEBUG:   Best match found but score is too low: '{0}' (score {1})".format(best_match['text'], best_match_score))
+#                 if 'checklist_match' in waf_reco: waf_reco.pop('checklist_match')
+#                 if 'checklist_match_score' in waf_reco: waf_reco.pop('checklist_match_score')
+#         else:
+#             if (args_verbose): print("DEBUG:   No match found for recommendation '{0}'".format(waf_reco['text']))
+#     if (args_verbose): print("DEBUG: Recommendations compared and {1} matches found. Maximum score found was {0}".format(max_score, match_count))
+#     return waf_recos
 
 #######################
 #       Main          #
 #######################
 
-# If load_filename is set, load the recommendations from a file. Otherwise retrieve them from the WAF service guides
-if (args_load_filename):
-    recos = load_json(args_load_filename)
-    if 'svcguide_recos' in recos:
-        waf_recos = recos['svcguide_recos']
-        print("INFO: {1} service guide recommendations loaded from file {0}".format(args_load_filename, len(waf_recos)))
-    else:
-        waf_recos = []
-        print("INFO: No service guide recommendations found in file {0}".format(args_load_filename))
-    if 'checklist_recos' in recos:
-        checklist_recos = recos['checklist_recos']
-        print("INFO: {1} review checklist recommendations loaded from file {0}".format(args_load_filename, len(checklist_recos)))
-    else:
-        checklist_recos = []
-        print("INFO: No review checklist recommendations found in file {0}".format(args_load_filename))
-else:
-    waf_recos = []
-    checklist_recos = []
+# # If load_filename is set, load the recommendations from a file. Otherwise retrieve them from the WAF service guides
+# if (args_load_filename):
+#     recos = load_json(args_load_filename)
+#     if 'svcguide_recos' in recos:
+#         waf_recos = recos['svcguide_recos']
+#         print("INFO: {1} service guide recommendations loaded from file {0}".format(args_load_filename, len(waf_recos)))
+#     else:
+#         waf_recos = []
+#         print("INFO: No service guide recommendations found in file {0}".format(args_load_filename))
+#     if 'checklist_recos' in recos:
+#         checklist_recos = recos['checklist_recos']
+#         print("INFO: {1} review checklist recommendations loaded from file {0}".format(args_load_filename, len(checklist_recos)))
+#     else:
+#         checklist_recos = []
+#         print("INFO: No review checklist recommendations found in file {0}".format(args_load_filename))
+# else:
+#     waf_recos = []
+#     checklist_recos = []
 
 # Browse the WAF service guides if there were no recommendations loaded from the file, or if the user explicitly requested to update the recommendations
-if (len(waf_recos) == 0) or (args_update_svcguide_recos):
+# if (len(waf_recos) == 0) or (args_update_svcguide_recos):
+if True:
     if (args_verbose): print("DEBUG: Retrieving recommendations from WAF service guides for {0} services ({1})...".format(len(args_service_list), str(args_service_list)))
     waf_recos = get_waf_service_guide_recos()
     print("INFO: {0} recommendations retrieved from {1} WAF service guides".format(len(waf_recos), len(args_service_list)))
 
-# Load the checklist recommendations from the checklist file if they were not in the loaded file
-if (args_checklist_filename) and (len(checklist_recos) == 0):
-    review = load_json(args_checklist_filename)
-    if 'items' in review:
-        checklist_recos = review['items']
-        print("INFO: {1} recommendations loaded from checklist file {0}".format(args_checklist_filename, len(checklist_recos)))
-    else:
-        checklist_recos = []
-        print("ERROR: No recommendations found in checklist file {0}".format(args_checklist_filename))
-elif (args_checklist_filename):
-    print("INFO: Skipping checklist loading from file since {0} recommendations were already loaded.".format(len(checklist_recos)))
+# # Load the checklist recommendations from the checklist file if they were not in the loaded file
+# if (args_checklist_filename) and (len(checklist_recos) == 0):
+#     review = load_json(args_checklist_filename)
+#     if 'items' in review:
+#         checklist_recos = review['items']
+#         print("INFO: {1} recommendations loaded from checklist file {0}".format(args_checklist_filename, len(checklist_recos)))
+#     else:
+#         checklist_recos = []
+#         print("ERROR: No recommendations found in checklist file {0}".format(args_checklist_filename))
+# elif (args_checklist_filename):
+#     print("INFO: Skipping checklist loading from file since {0} recommendations were already loaded.".format(len(checklist_recos)))
 
-# If extract_key_phrases is on, extract key phrases for each recommendation
-if (args_extract_key_phrases_svcguide):
-    if (args_verbose): print("DEBUG: Extracting key phrases for {0} service guide recommendations...".format(len(waf_recos)))
-    waf_recos = extract_all_key_phrases(waf_recos, args_text_analytics_endpoint, args_text_analytics_key)
-if (args_extract_key_phrases_checklist):
-    if (args_verbose): print("DEBUG: Extracting key phrases for {0} review checklist recommendations...".format(len(waf_recos)))
-    checklist_recos = extract_all_key_phrases(checklist_recos, args_text_analytics_endpoint, args_text_analytics_key)
+# # If extract_key_phrases is on, extract key phrases for each recommendation
+# if (args_extract_key_phrases_svcguide):
+#     if (args_verbose): print("DEBUG: Extracting key phrases for {0} service guide recommendations...".format(len(waf_recos)))
+#     waf_recos = extract_all_key_phrases(waf_recos, args_text_analytics_endpoint, args_text_analytics_key)
+# if (args_extract_key_phrases_checklist):
+#     if (args_verbose): print("DEBUG: Extracting key phrases for {0} review checklist recommendations...".format(len(waf_recos)))
+#     checklist_recos = extract_all_key_phrases(checklist_recos, args_text_analytics_endpoint, args_text_analytics_key)
 
-# Proceed to compare the svcguide recos and try to find the checklist reco that matches the svcguide reco most closely
-if (args_compare_recos):
-    waf_recos = compare_recos(waf_recos, checklist_recos, minimum_similarity=0.3)
+# # Proceed to compare the svcguide recos and try to find the checklist reco that matches the svcguide reco most closely
+# if (args_compare_recos):
+#     waf_recos = compare_recos(waf_recos, checklist_recos, minimum_similarity=0.3)
 
-# Print recommendations if print_json is on
-if (args_print_json) and (len(waf_recos) > 0):
-    print(json.dumps({'svcguide_recos': waf_recos, 'checklist_recos': checklist_recos}, indent=4))
+# # Print recommendations if print_json is on
+# if (args_print_json) and (len(waf_recos) > 0):
+#     print(json.dumps({'svcguide_recos': waf_recos, 'checklist_recos': checklist_recos}, indent=4))
 
-# If save_filename is set, store the recommendations in a file
-if (args_save_filename):
-    store_json({'svcguide_recos': waf_recos, 'checklist_recos': checklist_recos}, args_save_filename)
-    print("INFO: Recommendations stored in file {0}".format(args_save_filename))
+# # If save_filename is set, store the recommendations in a file
+# if (args_save_filename):
+#     store_json({'svcguide_recos': waf_recos, 'checklist_recos': checklist_recos}, args_save_filename)
+#     print("INFO: Recommendations stored in file {0}".format(args_save_filename))
 
 # If output_checklist_folder is set, store the recommendations in files, one per service
 if (len(args_output_checklist_folder) > 0):
