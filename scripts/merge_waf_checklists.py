@@ -68,6 +68,10 @@ def calculate_embeddings(checklist, model):
     # texts = [x['text'] for x in checklist['items']]
     # text_embeddings = model.encode(texts)
 
+###############
+#    Begin    #
+###############
+
 # Load the checklists
 review_checklist = load_json_file(args.review_checklist_file)
 aprl_checklist = load_json_file(args.aprl_checklist_file)
@@ -75,6 +79,7 @@ aprl_checklist = load_json_file(args.aprl_checklist_file)
 
 # Calculate the embeddings for each reco
 model = SentenceTransformer('distilbert-base-nli-mean-tokens')
+# model = SentenceTransformer("all-MiniLM-L6-v2")
 if (args.verbose): print('Calculating embeddings for review checklist...')
 review_checklist = calculate_embeddings(review_checklist, model)
 if (args.verbose): print('Calculating embeddings for APRL checklist...')
