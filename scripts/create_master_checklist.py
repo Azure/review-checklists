@@ -47,6 +47,8 @@ parser.add_argument('--add-services', dest='add_services', action='store_true',
                     default=False, help='If services field should be added to the checklist items (default: False)')
 parser.add_argument('--add-arm-services', dest='add_arm_services', action='store_true',
                     default=False, help='If arm-service field should be added to the checklist items (default: False)')
+parser.add_argument('--service-dictionary', dest='service_dictionary', action='store',
+                    help='JSON file with dictionary to map services to ARM services')
 parser.add_argument('--no-excel', dest='no_excel', action='store_true',
                     default=False, help='If a macrofree Excel spreadsheet should not be generated')
 parser.add_argument('--no-json', dest='no_json', action='store_true',
@@ -82,21 +84,15 @@ def checklist_is_valid(checklist_name, language):
     return True
 
 # Get the ARM service name from the service name
-def get_arm_service_name(service_name):
-    service_name_dict = {
-        "App Service": "microsoft.web/sites",
-        "ExpressRoute": "microsoft.network/expressRouteCircuits",
-        "VPN": "microsoft.network/vpnGateways",
-        "AppGW": "microsoft.network/applicationGateways",
-        "AKS": "microsoft.containerservice/managedClusters",
-        "Traffic Manager": "microsoft.network/trafficManagerProfiles",
-        "VWAN": "microsoft.network/virtualWans",
-        "PrivateLink": "microsoft.network/privateEndpoints"
-    }
-    if service_name in service_name_dict:
-        return service_name_dict[service_name]
-    else:
+def get_standard_service_name(service_name, service_dictionary=None):
+    svc_match_found = False
+    for svc in service_dictionary:
+        if service_name in svc['names']:
+            svc_match_found = True
+            return svc['arm']
+    if not svc_match_found:
         return None
+
 
 # Inspect a string and return a list of the services to which that string is related to
 def get_services_from_string(input_string):
@@ -165,7 +161,7 @@ def contains_waf(checklist_metadata):
         return False
 
 # Consolidate all checklists into one big checklist object
-def get_consolidated_checklist(input_folder, language):
+def get_consolidated_checklist(input_folder, language, service_dictionary=None):
     # Initialize checklist object
     checklist_master_data = {
         'items': [],
@@ -238,9 +234,9 @@ def get_consolidated_checklist(input_folder, language):
                         services += get_services_from_string(item["description"])
                     item["services"] = list(set(services))
             # Optionally, browse the checklist items and add the ARM service field
-            if args.add_arm_services and args.waf:
+            if args.add_arm_services and args.waf and service_dictionary:
                 for item in checklist_master_data["items"]:
-                    arm_service = get_arm_service_name(item["service"])
+                    arm_service = get_arm_service_name(item["service"], service_dictionary=service_dictionary)
                     if arm_service:
                         item["arm-service"] = arm_service
     if args.verbose:
@@ -507,10 +503,22 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
 # Main #
 ########
 
+# Load service dictionary, if specified:
+service_dictionary = None
+if args.service_dictionary:
+    try:
+        with open(args.service_dictionary) as f:
+            service_dictionary = json.load(f)
+            if args.verbose:
+                print("DEBUG: service dictionary loaded successfully")
+    except Exception as e:
+        print("ERROR: Error when loading service dictionary from", args.service_dictionary, "-", str(e))
+        sys.exit(1)
+
 # Download checklist
 if args.input_folder:
     # Get consolidated checklist
-    checklist_master_data = get_consolidated_checklist(args.input_folder, args.language)
+    checklist_master_data = get_consolidated_checklist(args.input_folder, args.language, service_dictionary=service_dictionary)
     # Dump master checklist to JSON file
     if not args.no_json:
         json_output_file = os.path.join(args.json_output_folder, args.output_name + ".json")

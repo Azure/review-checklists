@@ -22,7 +22,7 @@ jobs:
     steps:
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       # Get list of files that have been changed in the push
       - id: files
@@ -99,8 +99,9 @@ jobs:
         if: ${{ steps.translate.outputs.done_something == 'yes' }}
         run: |
           for lan in "en" "es" "ja" "ko" "pt" "zh-Hant"; do
-            python3 ./scripts/create_master_checklist.py --waf --add-arm-services --language $lan --input-folder './checklists/' --excel-file="./spreadsheet/macrofree/review_checklist_waf_empty.xlsx" --output-name="waf_checklist.${lan}" --json-output-folder="./checklists/" --xlsx-output-folder="./spreadsheet/macrofree/" --verbose
+            python3 ./scripts/create_master_checklist.py --waf --add-arm-services --service-dictionary ./scripts/service_dictionary.json --language $lan --input-folder './checklists/' --excel-file="./spreadsheet/macrofree/review_checklist_waf_empty.xlsx" --output-name="waf_checklist.${lan}" --json-output-folder="./checklists/" --xlsx-output-folder="./spreadsheet/macrofree/" --verbose
           done
+          python3 ./scripts/merge_waf_checklists.py --review-checklist-file ./checklists/waf_checklist.en.json --aprl-checklist-file ./checklists-ext/aprl_checklist.en.json --sg-checklist-file ./checklists-ext/wafsg_checklist.en.json --output-file ./checklists-ext/fullwaf_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --verbose
 
       # Create Azure Monitor workbooks
       - name: Execute workbook python script # run file
@@ -119,11 +120,10 @@ jobs:
 
       # Create the PR if any change was made
       - name: Create pull request
-        uses: peter-evans/create-pull-request@v3.10.1
+        uses: peter-evans/create-pull-request@v6
         if: ${{ steps.translate.outputs.done_something == 'yes' }}
         with:
-          # title: '${{ steps.translator.outputs.summary-title }}'
-          # body: '${{ steps.translator.outputs.summary-details }}'
           title: 'Automatic translation of ${{ steps.files.outputs.all }}'
           body: 'Processed changed files ${{ steps.files.outputs.all }}'
+          labels: 'automated'
           token: ${{ secrets.WORKFLOW_PAT }}

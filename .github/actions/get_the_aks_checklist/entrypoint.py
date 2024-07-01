@@ -5,6 +5,7 @@ import requests
 import json
 import datetime
 import sys
+import os
 
 try:
     output_file = sys.argv[1]
@@ -68,6 +69,16 @@ def get_theaks_recos():
                     if r.status_code == 200:
                         theaks_recos = r.json()
                         if (len(theaks_recos) > 0):
+                            for item in theaks_recos:
+                                # Fill in the category from the file name
+                                item['category'] = os.path.basename(file_path).replace(github_file_extension, '').title()
+                                item['service'] = 'AKS'
+                                if 'security' in item['category'].lower() or 'identity' in item['category'].lower():
+                                    item['waf'] = 'Security'
+                                elif 'bc_dr' in item['category'].lower():
+                                    item['waf'] = 'Resiliency'
+                                elif 'operations' in item['category'].lower() or 'management' in item['category'].lower():
+                                    item['waf'] = 'Operational Excellence'
                             retrieved_recos += theaks_recos
                             if verbose: print("DEBUG: {0} recommendations found in file {1}".format(len(theaks_recos), file_path))
                     else:
@@ -102,23 +113,29 @@ if (checklist_file):
                 if checklist_recos['items'][i]['guid'] == guid:
                     found = True
                     match_count += 1
-                    # Update the new reco with values from the existing one
-                    reco['category'] = checklist_recos['items'][i]['category']
-                    reco['subcategory'] = checklist_recos['items'][i]['subcategory']
-                    reco['waf'] = checklist_recos['items'][i]['waf']
-                    if 'service' in checklist_recos['items'][i]['waf']:
+                    # Update missing values in the new reco with values from the existing checklist
+                    if 'category'not in reco:
+                        reco['category'] = checklist_recos['items'][i]['category']
+                    if 'subcategory' not in reco:
+                        reco['subcategory'] = checklist_recos['items'][i]['subcategory']
+                    if 'waf' not in reco and 'waf' in checklist_recos['items'][i]:
+                        reco['waf'] = checklist_recos['items'][i]['waf']
+                    if 'service' not in reco and 'service' in checklist_recos['items'][i]:
                         reco['service'] = checklist_recos['items'][i]['service']
-                    if 'graph' in checklist_recos['items'][i]['waf']:
+                    if 'graph' in checklist_recos['items'][i] and 'graph' in checklist_recos['items'][i]:
                         reco['graph'] = checklist_recos['items'][i]['graph']
             if not found and verbose:
                 print("DEBUG: Recommendation with guid {0} from the-aks-checklist not found in the existing checklist".format(guid))
         else:
             print("WARNING: Recommendation without guid found in the-aks-checklist")
     print("INFO: {0}/{1} recommendations matched with the existing checklist".format(match_count, len(theaks_recos)))
+    # Get the category JSON from the reco items
+    theaks_categories = list(set([reco['category'] for reco in theaks_recos]))
+    theaks_categories_object = [{'name': x} for x in theaks_categories]
     # Add metadata and other info
     theaks_checklist = {
-        'items': checklist_recos['items'],
-        'categories': checklist_recos['categories'],
+        'items': theaks_recos,
+        'categories': theaks_categories_object,
         'severities': checklist_recos['severities'],
         'waf': checklist_recos['waf'],
         'yesno': checklist_recos['yesno'],
