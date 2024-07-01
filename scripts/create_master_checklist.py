@@ -86,7 +86,7 @@ def checklist_is_valid(checklist_name, language):
 # Get the ARM service name from the service name
 def get_arm_service_name(service_name, service_dictionary=None):
     if service_name in service_dictionary:
-        return service_dictionary[service_name]
+        return service_dictionary[service_name]['arm']
     else:
         return None
 
