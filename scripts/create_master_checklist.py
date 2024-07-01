@@ -84,11 +84,15 @@ def checklist_is_valid(checklist_name, language):
     return True
 
 # Get the ARM service name from the service name
-def get_arm_service_name(service_name, service_dictionary=None):
-    if service_name in service_dictionary:
-        return service_dictionary[service_name]['arm']
-    else:
+def get_standard_service_name(service_name, service_dictionary=None):
+    svc_match_found = False
+    for svc in service_dictionary:
+        if service_name in svc['names']:
+            svc_match_found = True
+            return svc['arm']
+    if not svc_match_found:
         return None
+
 
 # Inspect a string and return a list of the services to which that string is related to
 def get_services_from_string(input_string):

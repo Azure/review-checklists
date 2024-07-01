@@ -60,7 +60,7 @@ def load_json_file(filename):
 # Dump JSON object to file
 def dump_json_file(json_object, filename):
     if args.verbose:
-        print("DEBUG: dumping JSON object to file", filename)
+        print("DEBUG: Dumping JSON object to file", filename)
     json_string = json.dumps(json_object, sort_keys=True, ensure_ascii=False, indent=4, separators=(',', ': '))
     with open(filename, 'w', encoding='utf-8') as f:
         f.write(json_string)
@@ -96,9 +96,14 @@ def verify_checklist(checklist):
 
 # Get the standard service name from the service dictionary
 def get_standard_service_name(service_name, service_dictionary=None):
-    if service_name in service_dictionary:
-        return service_dictionary[service_name]['service']
-    else:
+    svc_match_found = False
+    for svc in service_dictionary:
+        if service_name in svc['names']:
+            svc_match_found = True
+            return svc['service']
+    if not svc_match_found:
+        # if args.verbose:
+        #     print('DEBUG: Service not found in service dictionary:', service_name)
         return service_name
 
 # Get the standard WAF pillar name (Title case)
@@ -177,10 +182,10 @@ full_checklist['items'] += sg_checklist['items']
 if args.service_dictionary:
     service_dictionary = None
     try:
+        if args.verbose: print("DEBUG: Loading service dictionary from", args.service_dictionary)
         with open(args.service_dictionary) as f:
             service_dictionary = json.load(f)
-            if args.verbose:
-                print("DEBUG: service dictionary loaded successfully")
+            if args.verbose: print("DEBUG: service dictionary loaded successfully with {0} elements".format(len(service_dictionary.keys())))
     except Exception as e:
         print("ERROR: Error when loading service dictionary from", args.service_dictionary, "-", str(e))
     if service_dictionary:
