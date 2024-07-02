@@ -53,6 +53,9 @@ def verify_file(input_file):
     try:
         with open(input_file) as f:
             checklist = json.load(f)
+        if 'items' in checklist:
+            if args.verbose:
+                print("DEBUG: {0} items found in JSON file {1}".format(len(checklist['items']), input_file))
     except Exception as e:
         print("ERROR: Error when processing JSON file, nothing changed", input_file, ":", str(e))
         sys.exit(1)
