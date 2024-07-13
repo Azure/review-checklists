@@ -139,10 +139,16 @@ then
     if [[ "$debug" == "yes" ]]; then echo "DEBUG: Git tree ID is $git_tree_id"; fi
     checklist_list=$(curl -s "https://api.github.com/repos/Azure/review-checklists/git/trees/${git_tree_id}?recursive=true" | jq -r '.tree[].path' | grep en.json | sed -e 's/_checklist.en.json//')
     while IFS= read -r checklist; do
-        checklist_url="${base_url}checklists/${checklist}_checklist.en.json"
-        if [[ "$debug" == "yes" ]]; then echo "DEBUG: Processing JSON content from URL $checklist_url..."; fi
-        graph_query_no=$(curl -s "$checklist_url" | jq -r '.items[].graph' | grep -v -e '^null$' | wc -l)
-        echo "$checklist ($graph_query_no graph queries)"
+        checklist_url="${base_url}${checklist}_checklist.en.json"
+        if [[ "$checklist_url" =~ "/checklists-ext/" ]]; then
+            if [[ "$debug" == "yes" ]]; then echo "DEBUG: Skipping external checklist $checklist_url..."; fi
+        else
+            if [[ "$debug" == "yes" ]]; then echo "DEBUG: Processing JSON content from URL $checklist_url..."; fi
+            graph_query_no=$(curl -s "$checklist_url" | jq -r '.items[].graph' 2>/dev/null | grep -v -e '^null$' | wc -l)
+        fi
+        if [[ "$graph_query_no" -gt 0 ]]; then
+            echo "$checklist ($graph_query_no graph queries)"
+        fi
     done <<< "$checklist_list"
     exit 0
 fi
