@@ -147,7 +147,8 @@ then
             graph_query_no=$(curl -s "$checklist_url" | jq -r '.items[].graph' 2>/dev/null | grep -v -e '^null$' | wc -l)
         fi
         if [[ "$graph_query_no" -gt 0 ]]; then
-            echo "$checklist ($graph_query_no graph queries)"
+            technology=$(echo $checklist | cut -f 2 -d '/')
+            echo "$technology ($graph_query_no graph queries)"
         fi
     done <<< "$checklist_list"
     exit 0
