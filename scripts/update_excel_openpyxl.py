@@ -103,11 +103,17 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
 
     # Set checklist name
     try:
-        ws[col_checklist_name + row_checklist_name] = checklist_data["metadata"]["name"]
+        if 'metadata' in checklist_data:
+            if 'name' in checklist_data['metadata']:
+                ws[col_checklist_name + row_checklist_name] = checklist_data["metadata"]["name"]
+            else:
+                ws[col_checklist_name + row_checklist_name] = "Azure Review Checklist"
+        else:
+            ws[col_checklist_name + row_checklist_name] = "Azure Review Checklist"
         if args.verbose:
             print("DEBUG: starting filling the Excel spreadsheet with the values of checklist '{0}'".format(checklist_data["metadata"]["name"]))
     except Exception as e:
-        print("ERROR: Error when selecting worksheet", worksheet_checklist_name, "-", str(e))
+        print("ERROR: Error when filling in worksheet", worksheet_checklist_name, "-", str(e))
         sys.exit(1)
 
     # Get default status from the JSON, default to "Not verified"
@@ -195,24 +201,28 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
         print("DEBUG:", str(row_counter - values_row1), "categories added to Excel spreadsheet")
 
     # Update status
-    row_counter = values_row1
-    for item in checklist_data.get("status"):
-        status = item.get("name")
-        description = item.get("description")
-        wsv[col_values_status + str(row_counter)].value = status
-        wsv[col_values_description + str(row_counter)].value = description
-        row_counter += 1
+    if 'status' in checklist_data:
+        row_counter = values_row1
+        for item in checklist_data.get("status"):
+            status = item.get("name")
+            description = item.get("description")
+            wsv[col_values_status + str(row_counter)].value = status
+            wsv[col_values_description + str(row_counter)].value = description
+            row_counter += 1
+    else:
+        print('ERROR: no "status" information in the checklist.')
 
     # Display summary
     if args.verbose:
         print("DEBUG:", str(row_counter - values_row1), "statuses added to Excel spreadsheet")
 
     # Update severities
-    row_counter = values_row1
-    for item in checklist_data.get("severities"):
-        severity = item.get("name")
-        wsv[col_values_severity + str(row_counter)].value = severity
-        row_counter += 1
+    if 'severities' in checklist_data:
+        row_counter = values_row1
+        for item in checklist_data.get("severities"):
+            severity = item.get("name")
+            wsv[col_values_severity + str(row_counter)].value = severity
+            row_counter += 1
 
     # Display summary
     if args.verbose:

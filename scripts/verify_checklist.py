@@ -10,12 +10,14 @@ import json
 import argparse
 import sys
 import glob
-
+import os
 
 # Get input arguments
 parser = argparse.ArgumentParser(description='Verify a JSON checklist for correctness')
 parser.add_argument('--input-file', dest='input_file', action='store',
                     help='You need to supply the name of the JSON file with the checklist to be filtered')
+parser.add_argument('--compare-file', dest='compare_file', action='store',
+                    help='You can optionally supply the name of the JSON file with a second checklist to be compared against the first one')
 parser.add_argument('--input-folder', dest='input_folder', action='store',
                     help='If no input file has been specified, input folder where the checklists to verify are stored')
 parser.add_argument('--verbose', dest='verbose', action='store_true',
@@ -51,6 +53,9 @@ def verify_file(input_file):
     try:
         with open(input_file) as f:
             checklist = json.load(f)
+        if 'items' in checklist:
+            if args.verbose:
+                print("DEBUG: {0} items found in JSON file {1}".format(len(checklist['items']), input_file))
     except Exception as e:
         print("ERROR: Error when processing JSON file, nothing changed", input_file, ":", str(e))
         sys.exit(1)
@@ -89,6 +94,8 @@ def verify_file(input_file):
     # Counter dictionary for inconsistencies
     item_count = 0
     inconsistencies = {
+        'missing_graph': 0,
+        'missing_description': 0,
         'wrong_cat': 0,
         'missing_cat': 0,
         'missing_subcat': 0,
@@ -134,6 +141,10 @@ def verify_file(input_file):
                 inconsistencies['localized_link'] += 1
             if 'severity' not in item:
                 inconsistencies['missing_sev'] += 1
+            if 'graph' not in item:
+                inconsistencies['missing_graph'] += 1
+            if 'description' not in item:
+                inconsistencies['missing_description'] += 1
         if inconsistencies['missing_cat'] > 0:
             print("ERROR: Items with missing category in JSON file {0}: {1} ({2}%)".format(input_file, inconsistencies['missing_cat'], round(inconsistencies['missing_cat'] / item_count * 100, 2)))
         if inconsistencies['wrong_cat'] > 0:
@@ -152,10 +163,23 @@ def verify_file(input_file):
             print("ERROR: Items with missing severity in JSON file {0}: {1} ({2}%)".format(input_file, inconsistencies['missing_sev'], round(inconsistencies['missing_sev'] / item_count * 100, 2)))
         if inconsistencies['localized_link'] > 0:
             print("WARNING: Items with localized link in JSON file {0}: {1} ({2}%)".format(input_file, inconsistencies['localized_link'], round(inconsistencies['localized_link'] / item_count * 100, 2)))
+    return {
+        'item_count': item_count,
+        'inconsistencies': inconsistencies
+    }
 
 # We need an input file
 if args.input_file:
-    verify_file(args.input_file)
+    file_stats = verify_file(args.input_file)
+    if args.compare_file:
+        compare_stats = verify_file(args.compare_file)
+        # Print the differences between the two checklists stats in a table format
+        print("INFO: Comparing the two checklists...")
+        print("INFO: {0: <40} {1: <40} {2: <40}".format("Item", os.path.basename(args.input_file), os.path.basename(args.compare_file)))
+        print("INFO: {0: <40} {1: <40} {2: <40}".format("----", "-" * len(os.path.basename(args.input_file)), "-" * len(os.path.basename(args.compare_file))))
+        print("INFO: {0: <40} {1: <40} {2: <40}".format("Total items", file_stats['item_count'], compare_stats['item_count']))
+        for key in file_stats['inconsistencies']:
+            print("INFO: {0: <40} {1: <40} {2: <40}".format(key, file_stats['inconsistencies'][key], compare_stats['inconsistencies'][key]))
 else:
     if args.input_folder:
         language = "en"  # This could be changed to a parameter
@@ -167,7 +191,7 @@ else:
                 print("DEBUG: found", len(checklist_files), "JSON files, analyzing correctness...")
             for file in checklist_files:
                 if file:
-                    verify_file(file)
+                    file_stats = verify_file(file)
         else:
             print("ERROR: no input file found, not doing anything")
     else:

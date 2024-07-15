@@ -1,0 +1,26 @@
+name: Get WAF service guides
+on:
+    schedule:
+        - cron: '0 23 * * 0'  # every Sunday at 11pm
+    workflow_dispatch:
+jobs:
+  get-waf-service-guides:
+    runs-on: ubuntu-latest
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v4
+    # Get service guide recos
+    - name: Retrieve the WAF service guides
+      uses: ./.github/actions/get_service_guides
+      with:
+        services: 'Azure Kubernetes Service, Azure Firewall, Azure ExpressRoute, Azure Application Gateway, Azure Front Door, App Service Web Apps, Azure Blob Storage, Azure Cosmos DB, Azure Files, Azure Machine Learning, Azure OpenAI, Virtual Machines'
+        output_folder: './checklists-ext'
+        verbose: 'true'
+    # Create a PR
+    - name: Create pull request
+      uses: peter-evans/create-pull-request@v6
+      with:
+        title: 'Latest version of the WAF service guides retrieved'
+        labels: 'automated'
+        body: 'This PR contains the latest changes in the WAF service guide recommendations.'
+        token: ${{ secrets.WORKFLOW_PAT }}

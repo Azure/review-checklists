@@ -81,18 +81,20 @@ def translate_text(text_to_translate, languages):
 
 # Go over all keys and translate them if required
 def translate_object(checklist_object, language):
-    translated_object = checklist_object.copy()
-    for (k, v) in translated_object.items():
-        if isinstance(v, list):
-            translated_items = []
-            for list_item in v:
-                translated_items.append(translate_object(list_item, language))
-            translated_object[k] = translated_items
-        else:
-            if k in translate_keys:
-                # print("Found key", k, "and scalar value", v)
-                translated_object[k] = translate_text(v, language)
-    return translated_object
+    # Only process if dictionary is provided as argument, to avoid errors when strings are provided
+    if str(type(checklist_object)) == "<class 'dict'>":
+        translated_object = checklist_object.copy()
+        for (k, v) in translated_object.items():
+            if isinstance(v, list):
+                translated_items = []
+                for list_item in v:
+                    translated_items.append(translate_object(list_item, language))
+                translated_object[k] = translated_items
+            else:
+                if k in translate_keys:
+                    # print("Found key", k, "and scalar value", v)
+                    translated_object[k] = translate_text(v, language)
+        return translated_object
 
 ################
 #     Main     #
