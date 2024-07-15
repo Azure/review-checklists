@@ -17,6 +17,7 @@ import glob
 import os
 from modules import cl_analyze
 from modules import cl_v1tov2
+from modules import cl_analyze_v2
 
 # Get input arguments
 parser = argparse.ArgumentParser(description='Checklists CLI', prog='checklists')
@@ -26,30 +27,41 @@ base_subparser = argparse.ArgumentParser(add_help=False)
 base_subparser.add_argument('--verbose', dest='verbose', action='store_true',
                     default=False,
                     help='run in verbose mode (default: False)')
-# Create the 'analyze' command
-analyze_parser = subparsers.add_parser('analyze', help='Analyze a checklist', parents=[base_subparser])
-analyze_parser.add_argument('--input-file', dest='analyze_input_file', action='store',
+# Create the 'analyze-v1' command
+analyze_parser = subparsers.add_parser('analyze-v1', help='Analyze a v1 checklist', parents=[base_subparser])
+analyze_parser.add_argument('--input-file', dest='analyze_input_file', metavar= 'INPUT_FILE', action='store',
                     help='name of the JSON file with the checklist to be analyzed')
-analyze_parser.add_argument('--compare-file', dest='analyze_compare_file', action='store',
+analyze_parser.add_argument('--compare-file', dest='analyze_compare_file', metavar='COMPARE_FILE', action='store',
                     help='you can optionally supply the name of the JSON file with a second checklist to be compared against the first one')
-analyze_parser.add_argument('--input-folder', dest='analyze_input_folder', action='store',
+analyze_parser.add_argument('--input-folder', dest='analyze_input_folder', metavar='INPUT_FOLDER', action='store',
                     help='if no input file has been specified, input folder where the checklists to verify are stored')
+# Create the 'analyze-v2' command
+analyzev2_parser = subparsers.add_parser('analyze-v2', help='Analyze a folder structure containing v2 recos', parents=[base_subparser])
+analyzev2_parser.add_argument('--input-folder', dest='analyzev2_input_folder', metavar='INPUT_FOLDER', action='store',
+                    help='if no input file has been specified, input folder where the checklists to verify are stored')
+analyzev2_parser.add_argument('--format', dest='analyzev2_format', metavar='FORMAT', action='store',
+                    default='yaml',
+                    help='format of the v2 checklist items (default: yaml)')
 # Create the 'v1tov2' command
-v12_parser = subparsers.add_parser('v12', help='Convert v1 to v2', parents=[base_subparser])
-v12_parser.add_argument('--input-file', dest='v12_input_file', action='store',
-                    help='name of the JSON file with the v1 checklist to be converted to v2')
-v12_parser.add_argument('--output-folder', dest='v12_output_folder', action='store',
+v12_parser = subparsers.add_parser('v1tov2', help='Convert v1 to v2', parents=[base_subparser])
+v12_parser.add_argument('--input-file', dest='v12_input_file', metavar='INPUT_FILE', action='store',
+                    help='name of the JSON file with the v1 checklist to be converted to v2'),
+v12_parser.add_argument('--service-dictionary', dest='v12_service_dictionary', metavar='SERVICE_DICTIONARY', action='store',
+                    help='JSON file with dictionary to map services to standard names and to ARM services')
+v12_parser.add_argument('--output-folder', dest='v12_output_folder', metavar='OUTPUT_FOLDER', action='store',
                     help='output folder where the v2 checklist items will be stored')
-v12_parser.add_argument('--output-format', dest='v12_output_format', action='store',
+v12_parser.add_argument('--output-format', dest='v12_output_format', metavar='OUTPUT_FORMAT', action='store',
                     default='yaml',
                     help='output format of the v12 checklist items (default: yaml)')
+v12_parser.add_argument('--labels', dest='v12_labels', metavar='LABELS', action='store',
+                    help='additional labels to add to the itmes, for example [{"mykey1": "myvalue1"}, {"mykey2": "myvalue2"}]')
 
 
 # Parse the command-line arguments
 args = parser.parse_args()
 
 # Handle the parsed arguments based on the command and sub-command
-if args.command == 'analyze':
+if args.command == 'analyze-v1':
     guids = []
     # We need an input file or an input folder
     if args.analyze_input_file:
@@ -80,12 +92,51 @@ if args.command == 'analyze':
     # If no input file or folder has been specified, show an error message
     else:
         print("ERROR: you need to use the parameters `--input-file` or `--input-folder` to specify the file or folder to analyze")
-elif args.command == 'v12':
+elif args.command == 'v1tov2':
     # We need an input file and an output folder
     if args.v12_input_file and args.v12_output_folder:
-        v2recos = cl_v1tov2.generate_v2(args.v12_input_file, verbose=args.verbose)
-        cl_v1tov2.store_v2(args.v12_output_folder, v2recos, args.v12_output_format, verbose=args.verbose)
+        # Load service dictionary if provided
+        if args.v12_service_dictionary:
+            try:
+                if args.verbose: print("DEBUG: Loading service dictionary from", args.v12_service_dictionary)
+                with open(args.v12_service_dictionary) as f:
+                    service_dictionary = json.load(f)
+                    if args.verbose: print("DEBUG: service dictionary loaded successfully with {0} elements".format(len(service_dictionary.keys())))
+            except Exception as e:
+                service_dictionary = None
+                print("ERROR: Error when loading service dictionary from", args.v12_service_dictionary, "-", str(e))
+        else:
+            service_dictionary = None
+        # Convert labels argument to object if specified
+        if args.v12_labels:
+            try:
+                labels = json.loads(args.v12_labels)
+            except Exception as e:
+                print("ERROR: Error when loading labels from", args.v12_labels, "-", str(e))
+                labels = None
+        else:
+            labels = None
+        # Generate v2 objects and store them in the output folder
+        v2recos = cl_v1tov2.generate_v2(args.v12_input_file, service_dictionary=service_dictionary, labels=labels, verbose=args.verbose)
+        if v2recos:
+            if args.verbose: print("DEBUG: Storing {0} v2 objects in folder {1}...".format(len(v2recos), args.v12_output_folder))
+            cl_v1tov2.store_v2(args.v12_output_folder, v2recos, output_format=args.v12_output_format, verbose=args.verbose)
+        else:
+            print("ERROR: No v2 objects generated, not storing anything.")
     else:
         print("ERROR: you need to use the parameters `--input-file` and `--output-folder` to specify the file to convert and the output folder")
+elif args.command == 'analyze-v2':
+    # We need an input folder
+    if args.analyzev2_input_folder:
+        v2_stats = cl_analyze_v2.v2_stats_from_folder(args.analyzev2_input_folder, format=args.analyzev2_format, verbose=args.verbose)
+        print("INFO: Total items found:", v2_stats['total_items'])
+        print("INFO: Items per severity:")
+        for key in v2_stats['severity']:
+            print("INFO: - {0}: {1}".format(key, v2_stats['severity'][key]))
+        print("INFO: Items per label:")
+        for key in v2_stats['labels']:
+            print("INFO: - {0}: {1}".format(key, v2_stats['labels'][key]))
+    else:
+        print("ERROR: you need to use the parameter `--input-folder` to specify the folder to analyze")
 else:
     print("ERROR: unknown command, please verify the command syntax with {0} --help".format(sys.argv[0]))
