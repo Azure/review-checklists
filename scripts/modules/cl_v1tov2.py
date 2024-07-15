@@ -52,11 +52,11 @@ def generate_v2(input_file, service_dictionary=None, labels=None, verbose=False)
                     v2reco['severity'] = 1
                 elif item['severity'].lower() == 'low':
                     v2reco['severity'] = 2
-                v2reco['labels'] = []
+                v2reco['labels'] = {}
                 if 'category' in item:
-                    v2reco['labels'].append({'area': item['category']})
+                    v2reco['labels']['area'] = item['category']
                 if 'subcategory' in item:
-                    v2reco['labels'].append({'subarea': item['subcategory']})
+                    v2reco['labels']['subarea'] = item['subcategory']
                 v2reco['queries'] = []
                 if 'graph' in item:
                     v2reco['queries'].append({'arg': item['graph']})
@@ -65,8 +65,8 @@ def generate_v2(input_file, service_dictionary=None, labels=None, verbose=False)
                     v2reco['links'].append(item['link'])
                 if 'source' in item:
                     if '.yaml' in item['source']:   # If it was imported from YAML it is coming from APRL
-                        v2reco['labels'].append({'sourceType': 'aprl'})
-                    v2reco['labels'].append({'source': item['source']})
+                        v2reco['labels']['sourceType'] = 'aprl'
+                    v2reco['labels']['source'] = item['source']
                 if 'service' in item:
                     v2reco['service'] = get_standard_service_name(item['service'], service_dictionary=service_dictionary)
                 v2reco['resourceTypes'] = []
@@ -74,8 +74,8 @@ def generate_v2(input_file, service_dictionary=None, labels=None, verbose=False)
                     v2reco['resourceTypes'].append(item['recommendationResourceType'])
                 # If additional labels were specified as parameter, add them to the object
                 if labels:
-                    for label in labels:
-                        v2reco['labels'].append(label)
+                    for key in labels.keys():
+                        v2reco['labels'][key] = labels[key]
                 # Add to the list of v2 objects
                 v2recos.append(v2reco)
             return v2recos

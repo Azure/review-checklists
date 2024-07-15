@@ -42,6 +42,21 @@ analyzev2_parser.add_argument('--input-folder', dest='analyzev2_input_folder', m
 analyzev2_parser.add_argument('--format', dest='analyzev2_format', metavar='FORMAT', action='store',
                     default='yaml',
                     help='format of the v2 checklist items (default: yaml)')
+# Create the 'get-recos' command
+getrecos_parser = subparsers.add_parser('get-recos', help='Get recommendations from a folder structure containing v2 recos', parents=[base_subparser])
+getrecos_parser.add_argument('--input-folder', dest='getrecos_input_folder', metavar='INPUT_FOLDER', action='store',
+                    help='if no input file has been specified, input folder where the checklists to verify are stored')
+getrecos_parser.add_argument('--format', dest='getrecos_format', metavar='FORMAT', action='store',
+                    default='yaml',
+                    help='format of the v2 checklist items (default: yaml)')
+getrecos_parser.add_argument('--labels', dest='getrecos_labels', metavar='LABELS', action='store',
+                    help='label selector for the items to retrieve, for example {"mykey1": "myvalue1", "mykey2": "myvalue2"}')
+getrecos_parser.add_argument('--services', dest='getrecos_services', metavar='SERVICES', action='store',
+                    help='comma-separated services for the items to retrieve, for example "AKS,firewall"')
+getrecos_parser.add_argument('--waf-pillars', dest='getrecos_waf_pillars', metavar='WAF_PILLARS', action='store',
+                    help='comma-separated WAF pillars for the items to retrieve, for example "cost,reliability"')
+getrecos_parser.add_argument('--show-labels', dest='getrecos_show_labels', action='store_true',
+                    default=False, help='show labels (default: False)')
 # Create the 'v1tov2' command
 v12_parser = subparsers.add_parser('v1tov2', help='Convert v1 to v2', parents=[base_subparser])
 v12_parser.add_argument('--input-file', dest='v12_input_file', metavar='INPUT_FILE', action='store',
@@ -54,7 +69,7 @@ v12_parser.add_argument('--output-format', dest='v12_output_format', metavar='OU
                     default='yaml',
                     help='output format of the v12 checklist items (default: yaml)')
 v12_parser.add_argument('--labels', dest='v12_labels', metavar='LABELS', action='store',
-                    help='additional labels to add to the itmes, for example [{"mykey1": "myvalue1"}, {"mykey2": "myvalue2"}]')
+                    help='additional labels to add to the items, for example {"mykey1": "myvalue1", "mykey2": "myvalue2"}')
 
 
 # Parse the command-line arguments
@@ -129,13 +144,40 @@ elif args.command == 'analyze-v2':
     # We need an input folder
     if args.analyzev2_input_folder:
         v2_stats = cl_analyze_v2.v2_stats_from_folder(args.analyzev2_input_folder, format=args.analyzev2_format, verbose=args.verbose)
-        print("INFO: Total items found:", v2_stats['total_items'])
+        print("INFO: Total items found =", v2_stats['total_items'])
         print("INFO: Items per severity:")
         for key in v2_stats['severity']:
-            print("INFO: - {0}: {1}".format(key, v2_stats['severity'][key]))
+            print("INFO: - {0} = {1}".format(key, v2_stats['severity'][key]))
         print("INFO: Items per label:")
         for key in v2_stats['labels']:
-            print("INFO: - {0}: {1}".format(key, v2_stats['labels'][key]))
+            print("INFO: - {0} = {1}".format(key, v2_stats['labels'][key]))
+    else:
+        print("ERROR: you need to use the parameter `--input-folder` to specify the folder to analyze")
+elif args.command == 'get-recos':
+    # We need an input folder
+    if args.getrecos_input_folder:
+        # Convert label selectors argument to an object if specified
+        if args.getrecos_labels:
+            try:
+                labels = json.loads(args.getrecos_labels)
+            except Exception as e:
+                print("ERROR: Error when loading labels from", args.getrecos_labels, "-", str(e))
+                labels = None
+        else:
+            labels = None
+        if args.getrecos_services:
+            services = args.getrecos_services.lower().split(",")
+        else:
+            services = None
+        if args.getrecos_waf_pillars:
+            waf_pillars = args.getrecos_waf_pillars.lower().split(",")
+        else:
+            waf_pillars = None
+        v2recos = cl_analyze_v2.get_recos(args.getrecos_input_folder, labels=labels, services=services, waf_pillars=waf_pillars, format=args.getrecos_format, verbose=args.verbose)
+        if v2recos:
+            cl_analyze_v2.print_recos(v2recos, show_labels=args.getrecos_show_labels)
+        else:
+            print("ERROR: No v2 objects found.")
     else:
         print("ERROR: you need to use the parameter `--input-folder` to specify the folder to analyze")
 else:
