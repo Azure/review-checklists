@@ -59,12 +59,19 @@ def v2_stats_from_object(v2recos, verbose=False):
     stats['total_items'] = len(v2recos)
     stats['severity'] = {}
     stats['labels'] = {}
+    stats['services'] = {}
     for reco in v2recos:
         # Count the number of items per severity
-        if reco['severity'] in stats['severity']:
-            stats['severity'][reco['severity']] += 1
+        if 'severity' in reco:
+            if reco['severity'] in stats['severity']:
+                stats['severity'][reco['severity']] += 1
+            else:
+                stats['severity'][reco['severity']] = 1
         else:
-            stats['severity'][reco['severity']] = 1
+            if 'undefined' in stats['severity']:
+                stats['severity']['undefined'] += 1
+            else:
+                stats['severity']['undefined'] = 1
         # Count the number of items per area
         if 'labels' in reco:
                 for thislabelkey in reco['labels'].keys():
@@ -73,6 +80,17 @@ def v2_stats_from_object(v2recos, verbose=False):
                         stats['labels'][labeltext] += 1
                     else:
                         stats['labels'][labeltext] = 1
+        # Count the number of items per service
+        if 'service' in reco:
+            if reco['service'] in stats['services']:
+                stats['services'][reco['service']] += 1
+            else:
+                stats['services'][reco['service']] = 1
+        else:
+            if 'undefined' in stats['services']:
+                stats['services']['undefined'] += 1
+            else:
+                stats['services']['undefined'] = 1
     # Return the stats object
     return stats
 

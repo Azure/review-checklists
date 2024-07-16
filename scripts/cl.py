@@ -42,6 +42,15 @@ analyzev2_parser.add_argument('--input-folder', dest='analyzev2_input_folder', m
 analyzev2_parser.add_argument('--format', dest='analyzev2_format', metavar='FORMAT', action='store',
                     default='yaml',
                     help='format of the v2 checklist items (default: yaml)')
+analyzev2_parser.add_argument('--show-labels', dest='analyzev2_labels', action='store_true',
+                    default=False,
+                    help='show all labels and its number of items (default: False)')
+analyzev2_parser.add_argument('--show-services', dest='analyzev2_services', action='store_true',
+                    default=False,
+                    help='show all services and its number of items (default: False)')
+analyzev2_parser.add_argument('--show-severities', dest='analyzev2_severities', action='store_true',
+                    default=False,
+                    help='show all severities and its number of items (default: False)')
 # Create the 'get-recos' command
 getrecos_parser = subparsers.add_parser('get-recos', help='Get recommendations from a folder structure containing v2 recos', parents=[base_subparser])
 getrecos_parser.add_argument('--input-folder', dest='getrecos_input_folder', metavar='INPUT_FOLDER', action='store',
@@ -148,12 +157,18 @@ elif args.command == 'analyze-v2':
     if args.analyzev2_input_folder:
         v2_stats = cl_analyze_v2.v2_stats_from_folder(args.analyzev2_input_folder, format=args.analyzev2_format, verbose=args.verbose)
         print("INFO: Total items found =", v2_stats['total_items'])
-        print("INFO: Items per severity:")
-        for key in v2_stats['severity']:
-            print("INFO: - {0} = {1}".format(key, v2_stats['severity'][key]))
-        print("INFO: Items per label:")
-        for key in v2_stats['labels']:
-            print("INFO: - {0} = {1}".format(key, v2_stats['labels'][key]))
+        if args.analyzev2_severities:
+            print("INFO: Items per severity:")
+            for key in v2_stats['severity']:
+                print("INFO: - {0} = {1}".format(key, v2_stats['severity'][key]))
+        if args.analyzev2_labels:
+            print("INFO: Items per label:")
+            for key in v2_stats['labels']:
+                print("INFO: - {0} = {1}".format(key, v2_stats['labels'][key]))
+        if args.analyzev2_services:
+            print("INFO: Items per service:")
+            for key in v2_stats['services']:
+                print("INFO: - {0} = {1}".format(key, v2_stats['services'][key]))
     else:
         print("ERROR: you need to use the parameter `--input-folder` to specify the folder to analyze")
 elif args.command == 'get-recos':
