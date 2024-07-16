@@ -1,0 +1,17 @@
+guid: ae248989-b306-4591-9186-de482e3f0f0e
+labels: {}
+links:
+- https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings
+queries:
+- arg: resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies'
+    | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks,
+    enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode
+    | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy,
+    '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3),
+    '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')),
+    enabledState, mode
+resourceTypes: []
+service: Front Door
+severity: 0
+text: Deploy your WAF policy for Front Door in 'Prevention' mode.
+waf: Security

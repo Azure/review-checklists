@@ -1,0 +1,19 @@
+guid: 33aad5e8-c68e-41d7-9667-313b4f5664b5
+labels:
+  area: Network Topology and Connectivity
+  checklist: alz
+  subarea: IP plan
+links:
+- https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing
+queries:
+- arg: resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace
+    = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes)
+    | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1]
+    | extend compliant = addressMask > 16 | project name, id, subscriptionId, resourceGroup,
+    addressPrefix, compliant
+resourceTypes: []
+service: VNet
+severity: 0
+text: Ensure that IP address space isn't wasted, don't create unnecessarily large
+  virtual networks (for example /16)
+waf: Performance

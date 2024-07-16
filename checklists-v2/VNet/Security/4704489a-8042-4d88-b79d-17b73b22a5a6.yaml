@@ -1,0 +1,18 @@
+guid: 4704489a-8042-4d88-b79d-17b73b22a5a6
+labels:
+  area: Network Topology and Connectivity
+  checklist: alz
+  subarea: PaaS
+links:
+- https://learn.microsoft.com/azure/app-service/networking-features
+queries:
+- arg: resources | where type =~ 'microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets
+    = properties.subnets | mv-expand subnets | project id = subnets.id, resourceGroup,
+    VNet = name, serviceEndpoints = subnets.properties.serviceEndpoints, compliant
+    = (isnull(subnets.properties.serviceEndpoints) or array_length(subnets.properties.serviceEndpoints)
+    == 0) | order by compliant asc
+resourceTypes: []
+service: VNet
+severity: 1
+text: Don't enable virtual network service endpoints by default on all subnets.
+waf: Security

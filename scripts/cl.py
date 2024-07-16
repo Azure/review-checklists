@@ -49,11 +49,11 @@ getrecos_parser.add_argument('--input-folder', dest='getrecos_input_folder', met
 getrecos_parser.add_argument('--format', dest='getrecos_format', metavar='FORMAT', action='store',
                     default='yaml',
                     help='format of the v2 checklist items (default: yaml)')
-getrecos_parser.add_argument('--labels', dest='getrecos_labels', metavar='LABELS', action='store',
+getrecos_parser.add_argument('--label-selector', dest='getrecos_labels', metavar='LABELS', action='store',
                     help='label selector for the items to retrieve, for example {"mykey1": "myvalue1", "mykey2": "myvalue2"}')
-getrecos_parser.add_argument('--services', dest='getrecos_services', metavar='SERVICES', action='store',
+getrecos_parser.add_argument('--service-selector', dest='getrecos_services', metavar='SERVICES', action='store',
                     help='comma-separated services for the items to retrieve, for example "AKS,firewall"')
-getrecos_parser.add_argument('--waf-pillars', dest='getrecos_waf_pillars', metavar='WAF_PILLARS', action='store',
+getrecos_parser.add_argument('--waf-selector', dest='getrecos_waf_pillars', metavar='WAF_PILLARS', action='store',
                     help='comma-separated WAF pillars for the items to retrieve, for example "cost,reliability"')
 getrecos_parser.add_argument('--show-labels', dest='getrecos_show_labels', action='store_true',
                     default=False, help='show labels (default: False)')
@@ -70,6 +70,9 @@ v12_parser.add_argument('--output-format', dest='v12_output_format', metavar='OU
                     help='output format of the v12 checklist items (default: yaml)')
 v12_parser.add_argument('--labels', dest='v12_labels', metavar='LABELS', action='store',
                     help='additional labels to add to the items, for example {"mykey1": "myvalue1", "mykey2": "myvalue2"}')
+v12_parser.add_argument('--overwrite', dest='v12_overwrite', action='store_true',
+                    default=False,
+                    help='overwrite existing reco files with the same GUID (default: False)')
 
 
 # Parse the command-line arguments
@@ -135,7 +138,7 @@ elif args.command == 'v1tov2':
         v2recos = cl_v1tov2.generate_v2(args.v12_input_file, service_dictionary=service_dictionary, labels=labels, verbose=args.verbose)
         if v2recos:
             if args.verbose: print("DEBUG: Storing {0} v2 objects in folder {1}...".format(len(v2recos), args.v12_output_folder))
-            cl_v1tov2.store_v2(args.v12_output_folder, v2recos, output_format=args.v12_output_format, verbose=args.verbose)
+            cl_v1tov2.store_v2(args.v12_output_folder, v2recos, output_format=args.v12_output_format, overwrite=args.v12_overwrite, verbose=args.verbose)
         else:
             print("ERROR: No v2 objects generated, not storing anything.")
     else:
