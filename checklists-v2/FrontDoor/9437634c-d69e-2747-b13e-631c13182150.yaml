@@ -1,0 +1,32 @@
+description: 'For most solutions, choose either Azure Front Door for content caching,
+  CDN, TLS termination, and WAF, or Traffic Manager for simple global load balancing.
+
+  '
+guid: 9437634c-d69e-2747-b13e-631c13182150
+labels:
+  area: Business Continuity
+  source: azure-resources/Cdn/profiles/recommendations.yaml
+  sourceType: aprl
+links: []
+queries:
+- arg: "// Azure Resource Graph Query\n// Avoid combining Traffic Manager and Front\
+    \ Door\nresources\n| where type == \"microsoft.network/trafficmanagerprofiles\"\
+    \n| mvexpand(properties.endpoints)\n| extend endpoint=tostring(properties_endpoints.properties.target)\n\
+    | project name, trafficmanager=id, matchname=endpoint, tags\n| join (\n    resources\n\
+    \    | where type =~ \"microsoft.cdn/profiles/afdendpoints\"\n    | extend matchname=\
+    \ tostring(properties.hostName)\n    | extend splitid=split(id, \"/\")\n    |\
+    \ extend frontdoorid=tolower(strcat_array(array_slice(splitid, 0, 8), \"/\"))\n\
+    \    | project name, id, matchname, frontdoorid, type\n    | union\n        (cdnresources\n\
+    \        | where type =~ \"Microsoft.Cdn/Profiles/CustomDomains\"\n        | extend\
+    \ matchname= tostring(properties.hostName)\n        | extend splitid=split(id,\
+    \ \"/\")\n        | extend frontdoorid=tolower(strcat_array(array_slice(splitid,\
+    \ 0, 8), \"/\"))\n        | project name, id, matchname, frontdoorid, type)\n\
+    \    )\n    on matchname\n| project\n    recommendationId = \"9437634c-d69e-2747-b13e-631c13182150\"\
+    ,\n    name=split(trafficmanager, \"/\")[-1],\n    id=trafficmanager,\n    tags,\n\
+    \    param1=strcat(\"hostname:\", matchname),\n    param2=strcat(\"frontdoorid:\"\
+    , frontdoorid)\n\n"
+resourceTypes:
+- Microsoft.Cdn/profiles
+service: Front Door
+severity: 0
+text: Avoid combining Traffic Manager and Front Door

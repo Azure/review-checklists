@@ -1,0 +1,40 @@
+description: 'Classic alerts for Recovery Services vaults in Azure Backup will be
+  retired on 31 March 2026.
+
+  '
+guid: 2912472d-0198-4bdc-aa90-37f145790edc
+labels:
+  area: Monitoring and Alerting
+  source: azure-resources/RecoveryServices/vaults/recommendations.yaml
+  sourceType: aprl
+links: []
+queries:
+- arg: '// Azure Resource Graph Query
+
+    // This Resource Graph query will return all Recovery services vault with Classic
+    alerts enabled.
+
+    resources
+
+    | where type in~ (''microsoft.recoveryservices/vaults'')
+
+    | extend monitoringSettings = parse_json(properties).monitoringSettings
+
+    | extend isUsingClassicAlerts = case(isnull(monitoringSettings),''Enabled'',monitoringSettings.classicAlertSettings.alertsForCriticalOperations)
+
+    | extend isUsingJobsAlerts = case(isnull(monitoringSettings), ''Enabled'', monitoringSettings.azureMonitorAlertSettings.alertsForAllJobFailures)
+
+    | where isUsingClassicAlerts == ''Enabled''
+
+    | project recommendationId = "2912472d-0198-4bdc-aa90-37f145790edc", name, id,
+    tags, param1=strcat("isUsingClassicAlerts: ", isUsingClassicAlerts), param2=strcat("isUsingJobsAlerts:
+    ", isUsingJobsAlerts)
+
+
+    '
+resourceTypes:
+- Microsoft.RecoveryServices/vaults
+service: Site Recovery
+severity: 1
+text: Migrate from classic alerts to built-in Azure Monitor alerts for Azure Recovery
+  Services Vaults

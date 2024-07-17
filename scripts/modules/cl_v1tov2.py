@@ -26,7 +26,7 @@ def get_standard_service_name(service_name, service_dictionary=None):
         return service_name
 
 # Function that returns a data structure with the objects in v1 format
-def generate_v2(input_file, service_dictionary=None, labels=None, verbose=False):
+def generate_v2(input_file, service_dictionary=None, labels=None, id_label=False, verbose=False):
     # Banner
     if verbose: print("DEBUG: Converting file", input_file)
     try:
@@ -45,7 +45,8 @@ def generate_v2(input_file, service_dictionary=None, labels=None, verbose=False)
                     v2reco['text'] = item['text']
                 if 'description' in item:
                     v2reco['description'] = item['description']
-                v2reco['waf'] = item['waf']
+                if 'waf' in item:
+                    v2reco['waf'] = item['waf']
                 if 'severity' in item:
                     if item['severity'].lower() == 'high':
                         v2reco['severity'] = 0
@@ -58,6 +59,8 @@ def generate_v2(input_file, service_dictionary=None, labels=None, verbose=False)
                     v2reco['labels']['area'] = item['category']
                 if 'subcategory' in item:
                     v2reco['labels']['subarea'] = item['subcategory']
+                if id_label and 'id' in item:
+                    v2reco['labels'][id_label] = item['id']
                 v2reco['queries'] = []
                 if 'graph' in item:
                     v2reco['queries'].append({'arg': item['graph']})

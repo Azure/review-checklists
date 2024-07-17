@@ -1,0 +1,34 @@
+description: 'Monitor Azure Firewall for overall health, processed throughput, and
+  outbound SNAT port usage. Get alerted before limits impact services. Consider NAT
+  gateway integration with zonal deployments; note limitations with zone redundant
+  firewalls and secure virtual hub networks.
+
+  '
+guid: 3c8fa7c6-6b78-a24a-a63f-348a7c71acb9
+labels:
+  area: Monitoring and Alerting
+  source: azure-resources/Network/azureFirewalls/recommendations.yaml
+  sourceType: aprl
+links: []
+queries:
+- arg: "// Azure Resource Graph Query\n// List all Azure Firewalls resources in-scope,\
+    \ along with any metrics associated to Azure Monitor alert rules, that are not\
+    \ fully configured.\nresources\n| where type == \"microsoft.network/azurefirewalls\"\
+    \n| project firewallId = tolower(id), name, tags\n| join kind = leftouter (\n\
+    \    resources\n    | where type == \"microsoft.insights/metricalerts\"\n    |\
+    \ mv-expand properties.scopes\n    | mv-expand properties.criteria.allOf\n   \
+    \ | where properties_scopes contains \"azureFirewalls\"\n    | project metricId\
+    \ = tolower(properties_scopes), monitoredMetric = properties_criteria_allOf.metricName,\
+    \ tags\n    | summarize monitoredMetrics = make_list(monitoredMetric) by tostring(metricId)\n\
+    \    | project\n        metricId,\n        monitoredMetrics,\n        allAlertsConfigured\
+    \ = monitoredMetrics contains(\"FirewallHealth\") and monitoredMetrics contains\
+    \ (\"Throughput\") and monitoredMetrics contains (\"SNATPortUtilization\")\n)\
+    \ on $left.firewallId == $right.metricId\n| extend alertsNotFullyConfigured =\
+    \ isnull(allAlertsConfigured) or not(allAlertsConfigured)\n| where alertsNotFullyConfigured\n\
+    | project recommendationId = \"c8fa7c6-6b78-a24a-a63f-348a7c71acb9\", name, id\
+    \ = firewallId, tags, param1 = strcat(\"MetricsAlerts:\", monitoredMetrics)\n\n"
+resourceTypes:
+- Microsoft.Network/azureFirewalls
+service: Firewall
+severity: 0
+text: Monitor Azure Firewall metrics

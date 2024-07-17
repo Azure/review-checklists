@@ -1,0 +1,28 @@
+description: 'Front Door health probes help detect unavailable or unhealthy origins,
+  directing traffic to alternate origins if needed.
+
+  '
+guid: 38f3d542-6de6-a44b-86c6-97e3be690281
+labels:
+  area: High Availability
+  source: azure-resources/Cdn/profiles/recommendations.yaml
+  sourceType: aprl
+links: []
+queries:
+- arg: "// Azure Resource Graph Query\n// Disable health probes when there is only\
+    \ one origin in an origin group\ncdnresources\n| where type =~ \"microsoft.cdn/profiles/origingroups\"\
+    \n| extend healthprobe=tostring(properties.healthProbeSettings)\n| project origingroupname=name,\
+    \ id, tags, resourceGroup, subscriptionId, healthprobe\n| join (\n    cdnresources\n\
+    \    | where type =~ \"microsoft.cdn/profiles/origingroups/Origins\"\n    | extend\
+    \ origingroupname = tostring(properties.originGroupName)\n    )\n    on origingroupname\n\
+    | summarize origincount=count(), enabledhealthprobecount=countif(healthprobe !=\
+    \ \"\") by origingroupname, id, tostring(tags), resourceGroup, subscriptionId\n\
+    | where origincount == 1 and enabledhealthprobecount != 0\n| project\n    recommendationId\
+    \ = \"38f3d542-6de6-a44b-86c6-97e3be690281\",\n    name=origingroupname,\n   \
+    \ id,\n    todynamic(tags),\n    param1 = strcat(\"origincount:\", origincount),\n\
+    \    param2 = strcat(\"enabledhealthprobecount:\", enabledhealthprobecount)\n\n"
+resourceTypes:
+- Microsoft.Cdn/profiles
+service: Front Door
+severity: 2
+text: Disable health probes when there is only one origin in an origin group

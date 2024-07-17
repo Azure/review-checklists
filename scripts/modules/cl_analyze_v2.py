@@ -12,8 +12,48 @@ import json
 import os
 from pathlib import Path
 
+# Function that returns true if a given reco matches the criteria specified by a label selector, a service selector and a WAF selector
+def reco_matches_criteria(reco, labels=None, services=None, waf_pillars=None, guid=None):
+    # Check if the reco fulfills the criteria
+    if guid:
+        guid_match = False
+        if 'guid' in reco:
+            if reco['guid'].lower() == guid.lower():
+                return True
+    else:
+        guid_match = True
+    if labels:
+        label_match = False
+        if 'labels' in reco:
+            for key in labels.keys():
+                if key in reco['labels']:
+                    if labels[key] == reco['labels'][key]:
+                        label_match = True
+    else:
+        label_match = True
+    if services:
+        service_match = False
+        if 'none' in services:
+            service_match = ('service' not in reco)
+        if 'service' in reco:
+            if reco['service'].lower() in services:
+                service_match = True
+    else:
+        service_match = True
+    if waf_pillars:
+        waf_match = False
+        if 'none' in waf_pillars:
+            waf_match = ('waf' not in reco)
+        if 'waf' in reco:
+            if reco['waf'].lower() in waf_pillars:
+                waf_match = True
+    else:
+        waf_match = True
+    # If no selector was provided, add all recos to the list
+    return (guid_match and label_match and service_match and waf_match)
+
 # Function that loads all of the found v2 YAML/JSON files into a single object
-def load_v2_files(input_folder, format='yaml', verbose=False):
+def load_v2_files(input_folder, format='yaml', labels=None, services=None, waf_pillars=None, guid=None, verbose=False):
     # Banner
     if verbose:
         print("DEBUG: ======================================================================")
@@ -30,7 +70,8 @@ def load_v2_files(input_folder, format='yaml', verbose=False):
                     try:
                         with open(file.resolve()) as f:
                             v2reco = json.safe_load(f)
-                            v2recos.append(v2reco)
+                            if reco_matches_criteria(v2reco, labels=labels, services=services, waf_pillars=waf_pillars, guid=guid):
+                                v2recos.append(v2reco)
                     except Exception as e:
                         print("ERROR: Error when loading file {0} - {1}". format(file, str(e)))
             if format == 'yaml' or format == 'yml':
@@ -39,7 +80,8 @@ def load_v2_files(input_folder, format='yaml', verbose=False):
                     try:
                         with open(file.resolve()) as f:
                             v2reco = yaml.safe_load(f)
-                            v2recos.append(v2reco)
+                            if reco_matches_criteria(v2reco, labels=labels, services=services, waf_pillars=waf_pillars, guid=guid):
+                                v2recos.append(v2reco)
                     except Exception as e:
                         print("ERROR: Error when loading file {0} - {1}". format(file, str(e)))
         # Return the object with all the v2 objects
@@ -60,6 +102,7 @@ def v2_stats_from_object(v2recos, verbose=False):
     stats['severity'] = {}
     stats['labels'] = {}
     stats['services'] = {}
+    stats['waf'] = {}
     for reco in v2recos:
         # Count the number of items per severity
         if 'severity' in reco:
@@ -91,13 +134,24 @@ def v2_stats_from_object(v2recos, verbose=False):
                 stats['services']['undefined'] += 1
             else:
                 stats['services']['undefined'] = 1
+        # Count the number of items per WAF pillar
+        if 'waf' in reco:
+            if reco['waf'] in stats['waf']:
+                stats['waf'][reco['waf']] += 1
+            else:
+                stats['waf'][reco['waf']] = 1
+        else:
+            if 'undefined' in stats['waf']:
+                stats['waf']['undefined'] += 1
+            else:
+                stats['waf']['undefined'] = 1
     # Return the stats object
     return stats
 
 # Return an object with some statistics about the v2 objects in a folder
-def v2_stats_from_folder(input_folder, format='yaml', verbose=False):
+def v2_stats_from_folder(input_folder, format='yaml', labels=None, services=None, waf_pillars=None, verbose=False):
     # Load the v2 objects from the folder
-    v2recos = load_v2_files(input_folder, format=format, verbose=verbose)
+    v2recos = load_v2_files(input_folder, format=format, labels=labels, services=services, waf_pillars=waf_pillars, verbose=verbose)
     # Get the stats from the v2 objects
     stats = v2_stats_from_object(v2recos, verbose=verbose)
     # Return the stats object
@@ -111,37 +165,25 @@ def get_recos(input_folder, labels=None, services=None, waf_pillars=None, format
         # Create a list of recos that fulfill the criteria
         recos = []
         for reco in v2recos:
-            # Check if the reco fulfills the criteria
-            if labels:
-                label_match = False
-                if 'labels' in reco:
-                    for key in labels.keys():
-                        if key in reco['labels']:
-                            if labels[key] == reco['labels'][key]:
-                                label_match = True
-            else:
-                label_match = True
-            if services:
-                service_match = False
-                if 'service' in reco:
-                    if reco['service'].lower() in services:
-                        service_match = True
-            else:
-                service_match = True
-            if waf_pillars:
-                waf_match = False
-                if 'waf' in reco:
-                    if reco['waf'].lower() in waf_pillars:
-                        waf_match = True
-            else:
-                waf_match = True
-            # If no selector was provided, add all recos to the list
-            if label_match and service_match and waf_match:
+            if reco_matches_criteria(reco, labels=labels, services=services, waf_pillars=waf_pillars):
                 recos.append(reco)
         # Return the recos object
         return recos
     else:
         print("ERROR: no recos could be loaded from folder", input_folder)
+
+# Return a single reco per GUID from a list of recos. The file can be identified by the file name
+# We could look for a file with the GUID in the name, but Linux file systems are case sensitive, plus
+#   errors where the file name is incorrect would be hard to debug
+def get_reco(input_folder, guid, verbose=False):
+    # Load the v2 objects from the folder
+    v2recos = load_v2_files(input_folder, guid=guid, format='yaml', verbose=verbose)
+    if v2recos:
+        # Return the reco object
+        return v2recos
+    else:
+        print("ERROR: no reco could be loaded from folder", input_folder)
+    return None
 
 # Print in screen a v2 recommendation in one line with fixed width columns
 def print_recos(recos, show_labels=False):
@@ -163,3 +205,4 @@ def print_recos(recos, show_labels=False):
             if 'labels' in reco:
                 print("{0:<40}".format(str(reco['labels'])), end="")
         print()
+    print("   {0} recommendations listed".format(len(recos)))

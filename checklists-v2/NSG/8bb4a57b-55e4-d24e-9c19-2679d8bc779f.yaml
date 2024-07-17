@@ -1,0 +1,33 @@
+description: 'Create Alerts with Azure Monitor for operations like creating or updating
+  Network Security Group rules to catch unauthorized/undesired changes to resources
+  and spot attempts to bypass firewalls or access resources from the outside.
+
+  '
+guid: 8bb4a57b-55e4-d24e-9c19-2679d8bc779f
+labels:
+  area: Monitoring and Alerting
+  source: azure-resources/Network/networkSecurityGroups/recommendations.yaml
+  sourceType: aprl
+links: []
+queries:
+- arg: "// Azure Resource Graph Query\n// Find all Network Security Groups without\
+    \ alerts for modification configured.\nresources\n| where type =~ \"Microsoft.Network/networkSecurityGroups\"\
+    \n| project name, id, tags, lowerCaseNsgId = tolower(id)\n| join kind = leftouter\
+    \ (\n    resources\n    | where type =~ \"Microsoft.Insights/activityLogAlerts\"\
+    \ and properties.enabled == true\n    | mv-expand scope = properties.scopes\n\
+    \    | where scope has \"Microsoft.Network/networkSecurityGroups\"\n    | project\
+    \ alertName = name, conditionJson = dynamic_to_json(properties.condition.allOf),\
+    \ scope\n    | where conditionJson has '\"Administrative\"' and (\n        //\
+    \ Create or Update Network Security Group\n        (conditionJson has '\"Microsoft.Network/networkSecurityGroups/write\"\
+    ') or\n        // All administrative operations\n        (conditionJson !has '\"\
+    Microsoft.Network/networkSecurityGroups/write\"' and conditionJson !has '\"Microsoft.Network/networkSecurityGroups/delete\"\
+    ' and conditionJson !has '\"Microsoft.Network/networkSecurityGroups/join/action\"\
+    ')\n        )\n    | project lowerCaseNsgIdOfScope = tolower(scope)\n    )\n \
+    \   on $left.lowerCaseNsgId == $right.lowerCaseNsgIdOfScope\n| where isempty(lowerCaseNsgIdOfScope)\n\
+    | project recommendationId = \"8bb4a57b-55e4-d24e-9c19-2679d8bc779f\", name, id,\
+    \ tags, param1 = \"ModificationAlert: Not configured/Disabled\"\n\n"
+resourceTypes:
+- Microsoft.Network/networkSecurityGroups
+service: NSG
+severity: 2
+text: Monitor changes in Network Security Groups with Azure Monitor

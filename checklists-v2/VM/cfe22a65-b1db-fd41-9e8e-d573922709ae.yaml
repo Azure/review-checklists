@@ -1,0 +1,29 @@
+description: 'Replicating Azure VMs via Site Recovery entails continuous, asynchronous
+  disk replication to a target region. Recovery points are generated every few minutes,
+  ensuring a Recovery Point Objective (RPO) in minutes.
+
+  '
+guid: cfe22a65-b1db-fd41-9e8e-d573922709ae
+labels:
+  area: Disaster Recovery
+  source: azure-resources/Compute/virtualMachines/recommendations.yaml
+  sourceType: aprl
+links: []
+queries:
+- arg: "// Azure Resource Graph Query\n// Find all VMs that do NOT have replication\
+    \ with ASR enabled\nresources\n| where type =~ \"Microsoft.Compute/virtualMachines\"\
+    \n| extend securityType = iif(isnull(properties.securityProfile.securityType),\
+    \ \"Standard\", properties.securityProfile.securityType)\n| where securityType\
+    \ !in~ (\"TrustedLaunch\", \"ConfidentialVM\")\n| project id, vmIdForJoin = tolower(id),\
+    \ name, tags\n| join kind = leftouter (\n    recoveryservicesresources\n    |\
+    \ where type =~ \"Microsoft.RecoveryServices/vaults/replicationFabrics/replicationProtectionContainers/replicationProtectedItems\"\
+    \n        and properties.providerSpecificDetails.dataSourceInfo.datasourceType\
+    \ =~ \"AzureVm\"\n    | project vmResourceId = tolower(properties.providerSpecificDetails.dataSourceInfo.resourceId)\n\
+    \    )\n    on $left.vmIdForJoin == $right.vmResourceId\n| where isempty(vmResourceId)\n\
+    | project recommendationId = \"cfe22a65-b1db-fd41-9e8e-d573922709ae\", name, id,\
+    \ tags\n"
+resourceTypes:
+- Microsoft.Compute/virtualMachines
+service: VM
+severity: 1
+text: Replicate VMs using Azure Site Recovery

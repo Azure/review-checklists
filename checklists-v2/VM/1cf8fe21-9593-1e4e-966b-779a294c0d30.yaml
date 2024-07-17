@@ -1,0 +1,26 @@
+description: 'Configure the DNS Server at the Virtual Network level to prevent any
+  inconsistency across the environment.
+
+  '
+guid: 1cf8fe21-9593-1e4e-966b-779a294c0d30
+labels:
+  area: Other Best Practices
+  source: azure-resources/Compute/virtualMachines/recommendations.yaml
+  sourceType: aprl
+links: []
+queries:
+- arg: "// Azure Resource Graph Query\n// Find all VM NICs that have DNS Server settings\
+    \ configured in any of the NICs\nResources\n| where type =~ 'Microsoft.Compute/virtualMachines'\n\
+    | where isnotnull(properties.networkProfile.networkInterfaces)\n| mv-expand nic=properties.networkProfile.networkInterfaces\n\
+    | project name, id, tags, nicId = nic.id\n| extend nicId = tostring(nicId)\n|\
+    \ join kind=inner (\n    Resources\n    | where type =~ 'Microsoft.Network/networkInterfaces'\n\
+    \    | project name, id, dnsServers = properties.dnsSettings.dnsServers\n    |\
+    \ extend hasDns = array_length(dnsServers) >= 1\n    | where hasDns != 0\n   \
+    \ | project name, nicId = tostring(id)\n) on nicId\n| project recommendationId\
+    \ = \"1cf8fe21-9593-1e4e-966b-779a294c0d30\", name, id, tags\n| order by id asc\n\
+    \n"
+resourceTypes:
+- Microsoft.Compute/virtualMachines
+service: VM
+severity: 2
+text: Customer DNS Servers should be configured in the Virtual Network level

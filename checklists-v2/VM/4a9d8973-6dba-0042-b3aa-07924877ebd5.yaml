@@ -1,0 +1,53 @@
+description: 'Azure Monitor Metrics automatically receives platform metrics, but platform
+  logs, which offer detailed diagnostics and auditing for resources and their Azure
+  platform, need to be manually routed for collection.
+
+  '
+guid: 4a9d8973-6dba-0042-b3aa-07924877ebd5
+labels:
+  area: Monitoring and Alerting
+  source: azure-resources/Compute/virtualMachines/recommendations.yaml
+  sourceType: aprl
+links: []
+queries:
+- arg: "// Azure Resource Graph Query\n// Find all Virtual Machines without diagnostic\
+    \ settings enabled/with diagnostic settings enabled but not configured both performance\
+    \ counters and event logs/syslogs.\nresources\n| where type =~ \"microsoft.compute/virtualmachines\"\
+    \n| project name, id, tags, lowerCaseVmId = tolower(id)\n| join kind = leftouter\
+    \ (\n    resources\n    | where type =~ \"Microsoft.Compute/virtualMachines/extensions\"\
+    \ and properties.publisher =~ \"Microsoft.Azure.Diagnostics\"\n    | project\n\
+    \        lowerCaseVmIdOfExtension = tolower(substring(id, 0, indexof(id, \"/extensions/\"\
+    ))),\n        extensionType = properties.type,\n        provisioningState = properties.provisioningState,\n\
+    \        storageAccount = properties.settings.StorageAccount,\n        // Windows\n\
+    \        wadPerfCounters = properties.settings.WadCfg.DiagnosticMonitorConfiguration.PerformanceCounters.PerformanceCounterConfiguration,\n\
+    \        wadEventLogs = properties.settings.WadCfg.DiagnosticMonitorConfiguration.WindowsEventLog,\n\
+    \        // Linux\n        ladPerfCounters = properties.settings.ladCfg.diagnosticMonitorConfiguration.performanceCounters.performanceCounterConfiguration,\n\
+    \        ladSyslog = properties.settings.ladCfg.diagnosticMonitorConfiguration.syslogEvents\n\
+    \    | extend\n        // Windows\n        isWadPerfCountersConfigured = iif(array_length(wadPerfCounters)\
+    \ > 0, true, false),\n        isWadEventLogsConfigured = iif(isnotnull(wadEventLogs)\
+    \ and array_length(wadEventLogs.DataSource) > 0, true, false),\n        // Linux\n\
+    \        isLadPerfCountersConfigured = iif(array_length(ladPerfCounters) > 0,\
+    \ true, false),\n        isLadSyslogConfigured = isnotnull(ladSyslog)\n    | project\n\
+    \        lowerCaseVmIdOfExtension,\n        extensionType,\n        provisioningState,\n\
+    \        storageAccount,\n        isPerfCountersConfigured = case(extensionType\
+    \ =~ \"IaaSDiagnostics\", isWadPerfCountersConfigured, extensionType =~ \"LinuxDiagnostic\"\
+    , isLadPerfCountersConfigured, false),\n        isEventLogsConfigured = case(extensionType\
+    \ =~ \"IaaSDiagnostics\", isWadEventLogsConfigured, extensionType =~ \"LinuxDiagnostic\"\
+    , isLadSyslogConfigured, false)\n    )\n    on $left.lowerCaseVmId == $right.lowerCaseVmIdOfExtension\n\
+    | where isempty(lowerCaseVmIdOfExtension) or provisioningState !~ \"Succeeded\"\
+    \ or not(isPerfCountersConfigured and isEventLogsConfigured)\n| extend\n    param1\
+    \ = strcat(\"DiagnosticSetting: \", iif(isnotnull(extensionType), strcat(\"Enabled,\
+    \ partially configured (\", extensionType, \")\"), \"Not enabled\")),\n    param2\
+    \ = strcat(\"ProvisioningState: \", iif(isnotnull(provisioningState), provisioningState,\
+    \ \"n/a\")),\n    param3 = strcat(\"storageAccount: \", iif(isnotnull(storageAccount),\
+    \ storageAccount, \"n/a\")),\n    param4 = strcat(\"PerformanceCounters: \", case(isnull(isPerfCountersConfigured),\
+    \ \"n/a\", isPerfCountersConfigured, \"Configured\", \"Not configured\")),\n \
+    \   param5 = strcat(\"EventLogs/Syslogs: \", case(isnull(isEventLogsConfigured),\
+    \ \"n/a\", isEventLogsConfigured, \"Configured\", \"Not configured\"))\n| project\
+    \ recommendationId = \"4a9d8973-6dba-0042-b3aa-07924877ebd5\", name, id, tags,\
+    \ param1, param2, param3, param4, param5\n\n"
+resourceTypes:
+- Microsoft.Compute/virtualMachines
+service: VM
+severity: 2
+text: Configure monitoring for all Azure Virtual Machines

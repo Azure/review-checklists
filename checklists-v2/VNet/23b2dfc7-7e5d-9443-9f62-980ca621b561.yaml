@@ -1,0 +1,35 @@
+description: 'Create Alerts with Azure Monitor for operations like Create or Update
+  Route Table to spot unauthorized/undesired changes in production resources. This
+  setup aids in identifying improper routing changes, including efforts to evade firewalls
+  or access resources from outside.
+
+  '
+guid: 23b2dfc7-7e5d-9443-9f62-980ca621b561
+labels:
+  area: Monitoring and Alerting
+  source: azure-resources/Network/routeTables/recommendations.yaml
+  sourceType: aprl
+links: []
+queries:
+- arg: "// Azure Resource Graph Query\n// Find all Route Tables without alerts for\
+    \ modification configured.\nresources\n| where type =~ \"Microsoft.Network/routeTables\"\
+    \n| project name, id, tags, lowerCaseRouteTableId = tolower(id)\n| join kind =\
+    \ leftouter (\n    resources\n    | where type =~ \"Microsoft.Insights/activityLogAlerts\"\
+    \ and properties.enabled == true\n    | mv-expand scope = properties.scopes\n\
+    \    | where scope has \"Microsoft.Network/routeTables\"\n    | project alertName\
+    \ = name, conditionJson = dynamic_to_json(properties.condition.allOf), scope\n\
+    \    | where conditionJson has '\"Administrative\"' and (\n        // Create or\
+    \ Update Route Table\n        (conditionJson has '\"Microsoft.Network/routeTables/write\"\
+    ') or\n        // All Administrative operations\n        (conditionJson !has '\"\
+    Microsoft.Network/routeTables/write\"' and conditionJson !has '\"Microsoft.Network/routeTables/delete\"\
+    ' and conditionJson !has '\"Microsoft.Network/routeTables/join/action\"')\n  \
+    \      )\n    | project lowerCaseRouteTableIdOfScope = tolower(scope)\n    )\n\
+    \    on $left.lowerCaseRouteTableId == $right.lowerCaseRouteTableIdOfScope\n|\
+    \ where isempty(lowerCaseRouteTableIdOfScope)\n| project recommendationId = \"\
+    23b2dfc7-7e5d-9443-9f62-980ca621b561\", name, id, tags, param1 = \"ModificationAlert:\
+    \ Not configured/Disabled\"\n\n"
+resourceTypes:
+- Microsoft.Network/routeTables
+service: VNet
+severity: 0
+text: Monitor changes in Route Tables with Azure Monitor

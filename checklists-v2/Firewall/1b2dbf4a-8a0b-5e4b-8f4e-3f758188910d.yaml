@@ -1,0 +1,30 @@
+description: 'Associate a DDoS protection plan with the virtual network hosting Azure
+  Firewall to provide enhanced mitigation against DDoS attacks. Azure Firewall Manager
+  integrates the creation of firewall infrastructure and DDoS protection plans.
+
+  '
+guid: 1b2dbf4a-8a0b-5e4b-8f4e-3f758188910d
+labels:
+  area: Security
+  source: azure-resources/Network/azureFirewalls/recommendations.yaml
+  sourceType: aprl
+links: []
+queries:
+- arg: "// Azure Resource Graph Query\n// List all in-scope Azure Firewall resources,\
+    \ where the VNet is not associated to a DDoS Protection Plan\nresources\n| where\
+    \ type =~ \"Microsoft.Network/azureFirewalls\"\n| where isempty(properties.virtualHub.id)\
+    \ or isnull(properties.virtualHub.id)\n| mv-expand ipConfig = properties.ipConfigurations\n\
+    | project\n    name,\n    firewallId = id,\n    tags,\n    vNetName = split(ipConfig.properties.subnet.id,\
+    \ \"/\", 8)[0],\n    vNetId = tolower(substring(ipConfig.properties.subnet.id,\
+    \ 0, indexof(ipConfig.properties.subnet.id, \"/subnet\")))\n| join kind=fullouter\
+    \ (\n    resources\n    | where type =~ \"Microsoft.Network/ddosProtectionPlans\"\
+    \n    | mv-expand vNet = properties.virtualNetworks\n    | project ddosProtectionPlanId\
+    \ = id, vNetId = tolower(vNet.id)\n    )\n    on vNetId\n| where isempty(ddosProtectionPlanId)\n\
+    | project recommendationId = \"1b2dbf4a-8a0b-5e4b-8f4e-3f758188910d\", name, id\
+    \ = firewallId, tags, param1 = strcat(\"vNet: \", vNetName), param2 = \"ddosProtection:\
+    \ Disabled\"\n"
+resourceTypes:
+- Microsoft.Network/azureFirewalls
+service: Firewall
+severity: 0
+text: Configure DDoS Protection on the Azure Firewall VNet

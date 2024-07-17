@@ -1,0 +1,50 @@
+description: 'Create a deployment slot for staging to deploy updates, verify them,
+  and ensure all instances are warmed up before production swap, reducing bad update
+  chances. An LKG slot allows easy rollback to a previous good deployment if issues
+  arise later, enhancing reliability.
+
+  '
+guid: a1d91661-32d4-430b-b3b6-5adeb0975df7
+labels:
+  area: Governance
+  source: azure-resources/Web/sites/recommendations.yaml
+  sourceType: aprl
+links: []
+queries:
+- arg: '// Azure Resource Graph Query
+
+    // Display App Service with the count of deployment slots for Apps under eligible
+    App service plans and it shows if deployment slot is enabled or not
+
+
+    resources
+
+    | where type =~ ''microsoft.web/sites'' or type =~ ''microsoft.web/sites/slots''
+
+    | extend isSlot = iff(type =~ ''microsoft.web/sites/slots'', 1, 0)
+
+    | extend AspName = iff(isSlot == 1, split(name, ''/'')[0], name)
+
+    | extend Sku = tostring(properties.sku)
+
+    | where tolower(Sku) contains "standard" or tolower(Sku) contains "premium" or
+    tolower(Sku) contains "isolatedv2"
+
+    | project id, name, AspName, isSlot, Sku
+
+    | summarize Slots = countif(isSlot == 1) by id, name, AspName, Sku
+
+    | extend DeploymentSlotEnabled = iff(Slots > 1, true, false)
+
+    | where DeploymentSlotEnabled = false
+
+    | project recommendationId="a1d91661-32d4-430b-b3b6-5adeb0975df7", name, id, tags="",
+    param1=Sku, param2=Slots, param3="DeploymentSlotEnabled=false"
+
+
+    '
+resourceTypes:
+- Microsoft.Web/sites
+service: App Service
+severity: 2
+text: Deploy to a staging slot

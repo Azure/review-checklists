@@ -1,0 +1,27 @@
+description: 'AKS, popular for stateful apps needing backups, can now use Azure Backup
+  to secure clusters and attached volumes through an installed Backup Extension, enabling
+  backup and restore operations via a Backup Vault.
+
+  '
+guid: 269a9f1a-6675-460a-831e-b05a887a8c4b
+labels:
+  area: Disaster Recovery
+  source: azure-resources/ContainerService/managedClusters/recommendations.yaml
+  sourceType: aprl
+links: []
+queries:
+- arg: "// Azure Resource Graph Query\n// Find AKS clusters that do not have backup\
+    \ enabled\n\nresources\n| where type =~ 'Microsoft.ContainerService/managedClusters'\n\
+    | extend lname = tolower(name)\n| join kind=leftouter(recoveryservicesresources\n\
+    \    | where type =~ 'microsoft.dataprotection/backupvaults/backupinstances'\n\
+    \    | extend lname = tolower(tostring(split(properties.dataSourceInfo.resourceID,\
+    \ '/')[8]))\n    | extend protectionState = properties.currentProtectionState\n\
+    \    | project lname, protectionState) on lname\n| where protectionState != 'ProtectionConfigured'\n\
+    | extend param1 = iif(isnull(protectionState), 'Protection Not Configured', strcat('Protection\
+    \ State: ', protectionState))\n| project recommendationId = \"269a9f1a-6675-460a-831e-b05a887a8c4b\"\
+    , name, id, tags, param1\n\n"
+resourceTypes:
+- Microsoft.ContainerService/managedClusters
+service: AKS
+severity: 2
+text: Back up Azure Kubernetes Service

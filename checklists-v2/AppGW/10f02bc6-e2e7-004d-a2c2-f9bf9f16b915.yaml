@@ -1,0 +1,39 @@
+description: 'Using connection draining for backend maintenance ensures graceful removal
+  of backend pool members during updates or health issues. It''s enabled via Backend
+  Setting and applies to all members during rule creation.
+
+  '
+guid: 10f02bc6-e2e7-004d-a2c2-f9bf9f16b915
+labels:
+  area: High Availability
+  source: azure-resources/Network/applicationGateways/recommendations.yaml
+  sourceType: aprl
+links: []
+queries:
+- arg: '// Azure Resource Graph Query
+
+    // This query will check if connection draining is enabled
+
+    resources
+
+    | where type =~ "microsoft.network/applicationGateways"
+
+    | mv-expand backendHttpSettings = properties.backendHttpSettingsCollection
+
+    | extend connectionDrainingEnabled = backendHttpSettings.properties.connectionDraining.enabled
+
+    | where connectionDrainingEnabled != true
+
+    | extend backendPoolName = backendHttpSettings.name
+
+    | project recommendationId = "10f02bc6-e2e7-004d-a2c2-f9bf9f16b915", name, id,
+    tags, param1 = "connectionDraining: Disabled", param2 = strcat("backendSettingsName:
+    ", backendPoolName)
+
+
+    '
+resourceTypes:
+- Microsoft.Network/applicationGateways
+service: AppGW
+severity: 1
+text: Plan for backend maintenance by using connection draining

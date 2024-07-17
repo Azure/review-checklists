@@ -1,0 +1,26 @@
+description: 'Use Azure Container Registry''s geo-replication for multi-region deployments
+  to simplify registry management and minimize latency. It enables serving global
+  customers from local data centers and supports distributed development teams. Regional
+  webhooks can notify of events in replicas.
+
+  '
+guid: 36ea6c09-ef6e-d743-9cfb-bd0c928a430b
+labels:
+  area: Disaster Recovery
+  source: azure-resources/ContainerRegistry/registries/recommendations.yaml
+  sourceType: aprl
+links: []
+queries:
+- arg: "// Azure Resource Graph Query\n// Find all Container Registries that do not\
+    \ have geo-replication enabled\nresources\n| where type =~ \"microsoft.containerregistry/registries\"\
+    \n| project registryName = name, registryId = id, tags, primaryRegion = location\n\
+    | join kind=leftouter (\n    Resources\n    | where type =~ \"microsoft.containerregistry/registries/replications\"\
+    \n    | project replicationRegion=name, replicationId = id\n    | extend registryId=strcat_array(array_slice(split(replicationId,\
+    \ '/'), 0, -3), '/')\n    ) on registryId\n| project-away registryId1, replicationId\n\
+    | where isempty(replicationRegion)\n| project recommendationId = \"36ea6c09-ef6e-d743-9cfb-bd0c928a430b\"\
+    , name=registryName, id=registryId, tags\n| order by id asc\n\n"
+resourceTypes:
+- Microsoft.ContainerRegistry/registries
+service: ACR
+severity: 0
+text: Enable geo-replication
