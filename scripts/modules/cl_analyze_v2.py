@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 
 # Function that returns true if a given reco matches the criteria specified by a label selector, a service selector and a WAF selector
-def reco_matches_criteria(reco, labels=None, services=None, waf_pillars=None, guid=None):
+def reco_matches_criteria(reco, labels=None, services=None, waf_pillars=None, arg=False, guid=None):
     # Check if the reco fulfills the criteria
     if guid:
         guid_match = False
@@ -49,11 +49,12 @@ def reco_matches_criteria(reco, labels=None, services=None, waf_pillars=None, gu
                 waf_match = True
     else:
         waf_match = True
+    arg_match = ((not arg) or ('queries' in reco and 'arg' in reco['queries']))
     # If no selector was provided, add all recos to the list
-    return (guid_match and label_match and service_match and waf_match)
+    return (guid_match and label_match and service_match and waf_match and arg_match)
 
 # Function that loads all of the found v2 YAML/JSON files into a single object
-def load_v2_files(input_folder, format='yaml', labels=None, services=None, waf_pillars=None, guid=None, verbose=False):
+def load_v2_files(input_folder, format='yaml', labels=None, services=None, waf_pillars=None, guid=None, arg=False, verbose=False):
     # Banner
     if verbose:
         print("DEBUG: ======================================================================")
@@ -80,7 +81,7 @@ def load_v2_files(input_folder, format='yaml', labels=None, services=None, waf_p
                     try:
                         with open(file.resolve()) as f:
                             v2reco = yaml.safe_load(f)
-                            if reco_matches_criteria(v2reco, labels=labels, services=services, waf_pillars=waf_pillars, guid=guid):
+                            if reco_matches_criteria(v2reco, labels=labels, services=services, waf_pillars=waf_pillars, guid=guid, arg=arg):
                                 v2recos.append(v2reco)
                     except Exception as e:
                         print("ERROR: Error when loading file {0} - {1}". format(file, str(e)))
@@ -158,14 +159,14 @@ def v2_stats_from_folder(input_folder, format='yaml', labels=None, services=None
     return stats
 
 # Return an object with the recos fulfilling the specified criteria
-def get_recos(input_folder, labels=None, services=None, waf_pillars=None, format='yaml', verbose=False):
+def get_recos(input_folder, labels=None, services=None, waf_pillars=None, arg=False, format='yaml', verbose=False):
     # Load the v2 objects from the folder
     v2recos = load_v2_files(input_folder, format=format, verbose=verbose)
     if v2recos:
         # Create a list of recos that fulfill the criteria
         recos = []
         for reco in v2recos:
-            if reco_matches_criteria(reco, labels=labels, services=services, waf_pillars=waf_pillars):
+            if reco_matches_criteria(reco, labels=labels, services=services, waf_pillars=waf_pillars, arg=arg):
                 recos.append(reco)
         # Return the recos object
         return recos
@@ -186,14 +187,18 @@ def get_reco(input_folder, guid, verbose=False):
     return None
 
 # Print in screen a v2 recommendation in one line with fixed width columns
-def print_recos(recos, show_labels=False):
+def print_recos(recos, show_labels=False, show_arg=False):
     print("{0:<37} {1:<80} {2:<30} {3:<15}".format('GUID', 'TEXT', 'SERVICE', 'WAF'), end="")
     if show_labels:
         print("{0:<40}".format("LABELS"), end="")
+    if show_arg:
+        print("{0:<40}".format("AZURE RESOURCE GRAPH QUERY"), end="")
     print()
     print("{0:<37} {1:<80} {2:<30} {3:<15}".format('====', '====', '=======', '==='), end="")
     if show_labels:
         print("{0:<40}".format("======"), end="")
+    if show_arg:
+        print("{0:<40}".format("=========================="), end="")
     print()
     for reco in recos:
         guid=reco['guid'] if 'guid' in reco else ''
@@ -204,5 +209,8 @@ def print_recos(recos, show_labels=False):
         if show_labels:
             if 'labels' in reco:
                 print("{0:<40}".format(str(reco['labels'])), end="")
+        if show_arg:
+            if 'queries' in reco and 'arg' in reco['queries']:
+                print("{0:<40}".format(reco['queries']['arg'][:39]), end="")
         print()
     print("   {0} recommendations listed".format(len(recos)))

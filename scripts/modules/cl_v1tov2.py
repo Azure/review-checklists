@@ -26,9 +26,12 @@ def get_standard_service_name(service_name, service_dictionary=None):
         return service_name
 
 # Function that returns a data structure with the objects in v1 format
-def generate_v2(input_file, service_dictionary=None, labels=None, id_label=False, verbose=False):
-    # Banner
+def generate_v2(input_file, service_dictionary=None, labels=None, id_label=None, cat_label=None, subcat_label=None, verbose=False):
     if verbose: print("DEBUG: Converting file", input_file)
+    # Default values for non-mandatory labels
+    if not id_label: id_label = 'id'
+    if not cat_label: cat_label = 'area'
+    if not subcat_label: subcat_label = 'subarea'
     try:
         with open(input_file) as f:
             checklist = json.load(f)
@@ -54,19 +57,25 @@ def generate_v2(input_file, service_dictionary=None, labels=None, id_label=False
                         v2reco['severity'] = 1
                     elif item['severity'].lower() == 'low':
                         v2reco['severity'] = 2
+                # Labels
                 v2reco['labels'] = {}
                 if 'category' in item:
-                    v2reco['labels']['area'] = item['category']
+                    v2reco['labels'][cat_label] = item['category']
                 if 'subcategory' in item:
-                    v2reco['labels']['subarea'] = item['subcategory']
-                if id_label and 'id' in item:
+                    v2reco['labels'][subcat_label] = item['subcategory']
+                if 'id' in item:
                     v2reco['labels'][id_label] = item['id']
                 v2reco['queries'] = []
                 if 'graph' in item:
-                    v2reco['queries'].append({'arg': item['graph']})
+                    v2reco['queries'] = {}
+                    v2reco['queries']['arg'] = item['graph']
+                # Links
                 v2reco['links'] = []
                 if 'link' in item:
                     v2reco['links'].append(item['link'])
+                if 'training' in item:
+                    v2reco['links'].append(item['training'])
+                # Source
                 if 'source' in item:
                     if '.yaml' in item['source']:   # If it was imported from YAML it is coming from APRL
                         v2reco['labels']['sourceType'] = 'aprl'

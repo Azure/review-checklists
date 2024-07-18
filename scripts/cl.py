@@ -19,6 +19,7 @@ import os
 from modules import cl_analyze
 from modules import cl_v1tov2
 from modules import cl_analyze_v2
+from modules import cl_arg
 
 # Get input arguments
 parser = argparse.ArgumentParser(description='Checklists CLI', prog='checklists')
@@ -39,7 +40,7 @@ analyze_parser.add_argument('--input-folder', dest='analyze_input_folder', metav
 # Create the 'analyze-v2' command
 analyzev2_parser = subparsers.add_parser('analyze-v2', help='Analyze a folder structure containing v2 recos', parents=[base_subparser])
 analyzev2_parser.add_argument('--input-folder', dest='analyzev2_input_folder', metavar='INPUT_FOLDER', action='store',
-                    help='if no input file has been specified, input folder where the checklists to verify are stored')
+                    help='folder where the recommendations to verify are stored')
 analyzev2_parser.add_argument('--format', dest='analyzev2_format', metavar='FORMAT', action='store',
                     default='yaml',
                     help='format of the v2 checklist items (default: yaml)')
@@ -64,7 +65,7 @@ analyzev2_parser.add_argument('--waf-selector', dest='analyzev2_waf_pillars', me
 # Create the 'list-recos' command
 getrecos_parser = subparsers.add_parser('list-recos', help='List recommendations from a folder structure containing v2 recos', parents=[base_subparser])
 getrecos_parser.add_argument('--input-folder', dest='getrecos_input_folder', metavar='INPUT_FOLDER', action='store',
-                    help='if no input file has been specified, input folder where the checklists to verify are stored')
+                    help='folder where the recommendations to verify are stored')
 getrecos_parser.add_argument('--format', dest='getrecos_format', metavar='FORMAT', action='store',
                     default='yaml',
                     help='format of the v2 checklist items (default: yaml)')
@@ -76,10 +77,14 @@ getrecos_parser.add_argument('--waf-selector', dest='getrecos_waf_pillars', meta
                     help='comma-separated WAF pillars for the items to retrieve, for example "cost,reliability"')
 getrecos_parser.add_argument('--show-labels', dest='getrecos_show_labels', action='store_true',
                     default=False, help='show labels (default: False)')
+getrecos_parser.add_argument('--show-arg', dest='getrecos_show_arg', action='store_true',
+                    default=False, help='show Azure Resource Graph queries (default: False)')
+getrecos_parser.add_argument('--with-arg', dest='getrecos_arg', action='store_true',
+                    default=False, help='only return queries with ARG queries (default: False)')
 # Create the 'show-reco' command
 showreco_parser = subparsers.add_parser('show-reco', help='Show a specific recommendation', parents=[base_subparser])
 showreco_parser.add_argument('--input-folder', dest='showreco_input_folder', metavar='INPUT_FOLDER', action='store',
-                    help='input folder where the checklists to verify are stored')
+                    help='input folder where the recommendations to verify are stored')
 showreco_parser.add_argument('--guid', dest='showreco_guid', metavar='GUID', action='store',
                     help='GUID of the recommendation to show')
 # Create the 'v1tov2' command
@@ -96,10 +101,30 @@ v12_parser.add_argument('--output-format', dest='v12_output_format', metavar='OU
 v12_parser.add_argument('--labels', dest='v12_labels', metavar='LABELS', action='store',
                     help='additional labels to add to the items, for example {"mykey1": "myvalue1", "mykey2": "myvalue2"}')
 v12_parser.add_argument('--id-label', dest='v12_id_label', metavar='ID_LABEL', action='store',
-                    help='label to use for the checklist ID, for example "alzid".')
+                    help='label to use for the checklist ID, for example "alzId".')
+v12_parser.add_argument('--category-label', dest='v12_cat_label', metavar='CATEGORY_LABEL', action='store',
+                    help='label to use for the checklist categories, for example "alzArea".')
+v12_parser.add_argument('--subcategory-label', dest='v12_subcat_label', metavar='SUBCATEGORY_LABEL', action='store',
+                    help='label to use for the checklist subcategories, for example "alzSubarea".')
 v12_parser.add_argument('--overwrite', dest='v12_overwrite', action='store_true',
                     default=False,
                     help='overwrite existing reco files with the same GUID (default: False)')
+# Create the 'run-arg' command
+runarg_parser = subparsers.add_parser('run-arg', help='Run Azure Resource Graph queries stored in v2 recommendations', parents=[base_subparser])
+runarg_parser.add_argument('--input-folder', dest='runarg_input_folder', metavar='INPUT_FOLDER', action='store',
+                    help='input folder where the checks to run are stored')
+runarg_parser.add_argument('--format', dest='runarg_format', metavar='FORMAT', action='store',
+                    default='yaml',
+                    help='format of the v2 checklist items (default: yaml)')
+runarg_parser.add_argument('--label-selector', dest='runarg_labels', metavar='LABELS', action='store',
+                    help='label selector for the items to retrieve, for example {"mykey1": "myvalue1", "mykey2": "myvalue2"}')
+runarg_parser.add_argument('--service-selector', dest='runarg_services', metavar='SERVICES', action='store',
+                    help='comma-separated services for the items to retrieve, for example "AKS,firewall"')
+runarg_parser.add_argument('--waf-selector', dest='runarg_waf_pillars', metavar='WAF_PILLARS', action='store',
+                    help='comma-separated WAF pillars for the items to retrieve, for example "cost,reliability"')
+runarg_parser.add_argument('--guid', dest='runarg_guid', metavar='GUID', action='store',
+                    help='GUID of the recommendation to show')
+
 
 # Parse the command-line arguments
 args = parser.parse_args()
@@ -166,7 +191,9 @@ elif args.command == 'v1tov2':
         else:
             labels = None
         # Generate v2 objects and store them in the output folder
-        v2recos = cl_v1tov2.generate_v2(args.v12_input_file, service_dictionary=service_dictionary, labels=labels, id_label=args.v12_id_label, verbose=args.verbose)
+        v2recos = cl_v1tov2.generate_v2(args.v12_input_file, service_dictionary=service_dictionary, 
+                                        labels=labels, id_label=args.v12_id_label, cat_label=args.v12_cat_label, subcat_label=args.v12_subcat_label,
+                                        verbose=args.verbose)
         if v2recos:
             if args.verbose: print("DEBUG: Storing {0} v2 objects in folder {1}...".format(len(v2recos), args.v12_output_folder))
             cl_v1tov2.store_v2(args.v12_output_folder, v2recos, output_format=args.v12_output_format, overwrite=args.v12_overwrite, verbose=args.verbose)
@@ -219,11 +246,13 @@ elif args.command == 'list-recos':
             waf_pillars = args.getrecos_waf_pillars.lower().split(",")
         else:
             waf_pillars = None
-        v2recos = cl_analyze_v2.get_recos(args.getrecos_input_folder, labels=labels, services=services, waf_pillars=waf_pillars, format=args.getrecos_format, verbose=args.verbose)
+        v2recos = cl_analyze_v2.get_recos(args.getrecos_input_folder, 
+                                          labels=labels, services=services, waf_pillars=waf_pillars, format=args.getrecos_format, 
+                                          arg=args.getrecos_arg, verbose=args.verbose)
         if v2recos:
-            cl_analyze_v2.print_recos(v2recos, show_labels=args.getrecos_show_labels)
+            cl_analyze_v2.print_recos(v2recos, show_labels=args.getrecos_show_labels, show_arg=args.getrecos_show_arg)
         else:
-            print("ERROR: No v2 objects found.")
+            print("ERROR: No v2 objects found satisfying the criteria.")
     else:
         print("ERROR: you need to use the parameter `--input-folder` to specify the folder to analyze")
 elif args.command == 'show-reco':
@@ -241,5 +270,33 @@ elif args.command == 'show-reco':
             print("ERROR: No reco found with GUID", args.showreco_guid)
     else:
         print("ERROR: you need to use the parameters `--input-folder` and `--guid` to specify the folder and GUID to analyze")
+elif args.command == 'run-arg':
+    if args.runarg_input_folder:
+        # Convert label selectors argument to an object if specified
+        if args.runarg_labels:
+            try:
+                labels = json.loads(args.runarg_labels)
+            except Exception as e:
+                print("ERROR: Error when loading labels from", args.runarg_labels, "-", str(e))
+                labels = None
+        else:
+            labels = None
+        if args.runarg_services:
+            services = args.runarg_services.lower().split(",")
+        else:
+            services = None
+        if args.runarg_waf_pillars:
+            waf_pillars = args.runarg_waf_pillars.lower().split(",")
+        else:
+            waf_pillars = None
+        v2recos = cl_analyze_v2.get_recos(args.runarg_input_folder, labels=labels, services=services, waf_pillars=waf_pillars, guid=args.runarg_guid, format=args.runarg_format, verbose=args.verbose)
+        if v2recos:
+            arg_results = cl_arg.run_arg_queries(v2recos, show_labels=args.runarg_show_labels)
+            for result in arg_results:
+                print("INFO: ARG query result for reco with GUID", result['guid'])
+                print("INFO: - {0}".format(result['argResult']))
+        else:
+            print("ERROR: No v2 objects found.")
+
 else:
     print("ERROR: unknown command, please verify the command syntax with {0} --help".format(sys.argv[0]))
