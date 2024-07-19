@@ -75,6 +75,11 @@ try:
     args_verbose = (sys.argv[3].lower() == 'true')
 except:
     args_verbose = True
+try:
+    args_overwrite = (sys.argv[4].lower() == 'true')
+except:
+    args_overwrite = False
+
 # These parameters haven't been implemented in the github action
 args_print_json = False
 args_extract_key_phrases_checklist = False
@@ -197,10 +202,11 @@ def short_pillar(pillar):
     else: return pillar
 
 # Function to parse markdown
-def parse_markdown(markdown, service, verbose=False):
+def parse_markdown(markdown, service, source=None, verbose=False):
     recos = []
     waf_pillars = ['cost optimization', 'operational excellence', 'performance efficiency', 'reliability', 'security']
     processing_pillar = ''
+    timestamp = datetime.date.today().strftime("%B %d, %Y")
     if (verbose): print("DEBUG: Processing markdown file...")
     line_count = 0
     for line in markdown.split('\n'):
@@ -211,7 +217,9 @@ def parse_markdown(markdown, service, verbose=False):
             if (verbose): print("DEBUG: Processing pillar '{0}'".format(processing_pillar))
         if (line[0:4] == '> - ') and (processing_pillar != ''):
             reco = line[4:]
-            recos.append({'waf': processing_pillar, 'service': service, 'text': remove_markdown(reco), 'description': '', 'type': 'checklist'})
+            recos.append({'waf': processing_pillar, 'service': service, 'text': remove_markdown(reco), 'description': '', 'type': 'checklist', 'source': 'wafsg', 'timestamp': timestamp})
+            if source:
+                recos['sourceFile'] = source
         # If line matches a pattern that starts with "|" then comes a text, then "|" and a description and a closing "|"
         if (line[0:1] == '|'):
             line_table_items = line.split('|')
@@ -258,7 +266,7 @@ def get_waf_service_guide_recos():
                         if r.status_code == 200:
                             svcguide = r.text
                             if (args_verbose): print("DEBUG: Parsing service guide '{0}', {1} characters retrieved...".format(file_path, len(svcguide)))
-                            svc_recos = parse_markdown(svcguide, service, verbose=False)
+                            svc_recos = parse_markdown(svcguide, service, source=file_path, verbose=False)
                             if (len(svc_recos) > 0):
                                 retrieved_recos += svc_recos
                                 if args_verbose: print("DEBUG: {0} recommendations found for service '{1}'".format(len(svc_recos), service))
@@ -315,24 +323,33 @@ def get_waf_service_guide_recos():
 # If file exists, try to match the recos in the file by the text field and update the GUIDs
 # If file doesn't exist, generate random GUIDs for each reco
 def update_guids(checklist, filename):
-    # If file exists
+    # If file exists, we can either overwrite it and generate new GUIDs or try to match the recos by text
+    # Note that if matching the recos by GUID, the old recos that do not exactly match the text of the new ones will be lost
     if os.path.isfile(filename):
-        if (args_verbose): print("DEBUG: Retrieving checklist GUIDs from file {0}...".format(filename))
-        existing_checklist = load_json(filename)
-        for reco in checklist['items']:
-            # Find a reco in the existing checklist that matches the text
-            existing_reco = [x for x in existing_checklist['items'] if x['text'] == reco['text']]
-            if len(existing_reco) > 0:
-                # Verify that the existing reco has a GUID
-                if 'guid' in existing_reco[0]:
-                    reco['guid'] = existing_reco[0]['guid']
-                else:
-                    if (args_verbose): print("DEBUG: reco {0} not found in file {1}, generating new GUID...".format(reco['text'], filename))
-                    reco['guid'] = str(uuid.uuid4())
-            # If no reco was found, generate a new GUID
-            else:
+        if args_overwrite:
+            if (args_verbose): print("DEBUG: File {0} not found, generating new GUIDs...".format(filename))
+            for reco in checklist['items']:
                 reco['guid'] = str(uuid.uuid4())
-        return checklist
+                if 'checklist_match' in reco:
+                    reco['checklist_match_guid'] = str(uuid.uuid4())
+            return checklist
+        else:
+            if (args_verbose): print("DEBUG: Retrieving checklist GUIDs from file {0}...".format(filename))
+            existing_checklist = load_json(filename)
+            for reco in checklist['items']:
+                # Find a reco in the existing checklist that matches the text
+                existing_reco = [x for x in existing_checklist['items'] if x['text'] == reco['text']]
+                if len(existing_reco) > 0:
+                    # Verify that the existing reco has a GUID
+                    if 'guid' in existing_reco[0]:
+                        reco['guid'] = existing_reco[0]['guid']
+                    else:
+                        if (args_verbose): print("DEBUG: reco {0} not found in file {1}, generating new GUID...".format(reco['text'], filename))
+                        reco['guid'] = str(uuid.uuid4())
+                # If no reco was found, generate a new GUID
+                else:
+                    reco['guid'] = str(uuid.uuid4())
+            return checklist
     # If file doesn't exist, generate GUIDs for each reco
     else:
         if (args_verbose): print("DEBUG: File {0} not found, generating new GUIDs...".format(filename))

@@ -93,6 +93,7 @@ def get_aprl_recos():
     github_file_extension = '.yaml'
     github_branch = 'master'
     retrieved_recos = []
+    timestamp = datetime.date.today().strftime("%B %d, %Y")
     # Get last commit to APRL reco
     if (verbose): print("DEBUG: Scanning GitHub repository {0} for {1} files...".format(github_repo, github_file_extension))
     r = requests.get(f'https://api.github.com/repos/{github_org}/{github_repo}/commits')
@@ -131,7 +132,9 @@ def get_aprl_recos():
                                 item['severity'] = item['recommendationImpact']
                                 item['category'] = item['recommendationControl']
                                 item['guid'] = item['aprlGuid']
-                                item['source'] = file_path
+                                item['sourceFile'] = file_path
+                                item['source'] = 'aprl'
+                                item['timestamp'] = timestamp
                             retrieved_recos += aprl_recos
                             if verbose: print("DEBUG: {0} recommendations found in file {1}".format(len(aprl_recos), file_path))
                     else:

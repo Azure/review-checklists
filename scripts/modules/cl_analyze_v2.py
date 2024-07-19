@@ -54,6 +54,7 @@ def reco_matches_criteria(reco, labels=None, services=None, waf_pillars=None, ar
     return (guid_match and label_match and service_match and waf_match and arg_match)
 
 # Function that loads all of the found v2 YAML/JSON files into a single object
+# labels, services and waf_pillars are selectors with object structure
 def load_v2_files(input_folder, format='yaml', labels=None, services=None, waf_pillars=None, guid=None, arg=False, verbose=False):
     # Banner
     if verbose:
@@ -65,6 +66,7 @@ def load_v2_files(input_folder, format='yaml', labels=None, services=None, waf_p
     if os.path.exists(input_folder):
         files = list(Path(input_folder).rglob( '*.*' ))
         for file in files:
+            # JSON
             if format == 'json':
                 if file.suffix == '.json':
                     if verbose: print("DEBUG: Loading file", file)
@@ -75,6 +77,7 @@ def load_v2_files(input_folder, format='yaml', labels=None, services=None, waf_p
                                 v2recos.append(v2reco)
                     except Exception as e:
                         print("ERROR: Error when loading file {0} - {1}". format(file, str(e)))
+            # YAML
             if format == 'yaml' or format == 'yml':
                 if (file.suffix == '.yaml') or (file.suffix == '.yml'):
                     if verbose: print("DEBUG: Loading file", file)
@@ -159,14 +162,14 @@ def v2_stats_from_folder(input_folder, format='yaml', labels=None, services=None
     return stats
 
 # Return an object with the recos fulfilling the specified criteria
-def get_recos(input_folder, labels=None, services=None, waf_pillars=None, arg=False, format='yaml', verbose=False):
+def get_recos(input_folder, labels=None, services=None, waf_pillars=None, guid=None, arg=False, format='yaml', verbose=False):
     # Load the v2 objects from the folder
     v2recos = load_v2_files(input_folder, format=format, verbose=verbose)
     if v2recos:
         # Create a list of recos that fulfill the criteria
         recos = []
         for reco in v2recos:
-            if reco_matches_criteria(reco, labels=labels, services=services, waf_pillars=waf_pillars, arg=arg):
+            if reco_matches_criteria(reco, labels=labels, services=services, waf_pillars=waf_pillars, guid=guid, arg=arg):
                 recos.append(reco)
         # Return the recos object
         return recos
@@ -188,13 +191,13 @@ def get_reco(input_folder, guid, verbose=False):
 
 # Print in screen a v2 recommendation in one line with fixed width columns
 def print_recos(recos, show_labels=False, show_arg=False):
-    print("{0:<37} {1:<80} {2:<30} {3:<15}".format('GUID', 'TEXT', 'SERVICE', 'WAF'), end="")
+    print("{0:<37} {1:<80} {2:<30} {3:<15}".format('GUID', 'TITLE', 'SERVICE', 'WAF'), end="")
     if show_labels:
         print("{0:<40}".format("LABELS"), end="")
     if show_arg:
         print("{0:<40}".format("AZURE RESOURCE GRAPH QUERY"), end="")
     print()
-    print("{0:<37} {1:<80} {2:<30} {3:<15}".format('====', '====', '=======', '==='), end="")
+    print("{0:<37} {1:<80} {2:<30} {3:<15}".format('====', '=====', '=======', '==='), end="")
     if show_labels:
         print("{0:<40}".format("======"), end="")
     if show_arg:
@@ -202,10 +205,10 @@ def print_recos(recos, show_labels=False, show_arg=False):
     print()
     for reco in recos:
         guid=reco['guid'] if 'guid' in reco else ''
-        text=reco['text'] if 'text' in reco else ''
+        title=reco['title'] if 'title' in reco else ''
         service=reco['service'] if 'service' in reco else ''
         waf=reco['waf'] if 'waf' in reco else ''
-        print("{0:<37} {1:<80} {2:<30} {3:<15}".format(guid, text[:79], service[:29], waf), end="")
+        print("{0:<37} {1:<80} {2:<30} {3:<15}".format(guid, title[:79], service[:29], waf), end="")
         if show_labels:
             if 'labels' in reco:
                 print("{0:<40}".format(str(reco['labels'])), end="")
@@ -214,3 +217,35 @@ def print_recos(recos, show_labels=False, show_arg=False):
                 print("{0:<40}".format(reco['queries']['arg'][:39]), end="")
         print()
     print("   {0} recommendations listed".format(len(recos)))
+
+# Get selectors from a checklist file in YAML format
+# Returns the label, service and WAF selectors, in this order
+def get_checklist_selectors(checklist_file, verbose=False):
+    # Load the checklist file
+    try:
+        with open(checklist_file) as f:
+            checklist = yaml.safe_load(f)
+    except Exception as e:
+        print("ERROR: Error when loading file {0} - {1}". format(checklist_file, str(e)))
+        return None, None, None
+    # Get the selectors
+    if 'labelSelector' in checklist:
+        labelSelector = checklist['labelSelector']
+        for key in labelSelector.keys():
+            print ("DEBUG: Label selector found:", key + ":" + labelSelector[key])
+    else:
+        labelSelector = None
+    if 'serviceSelector' in checklist:
+        serviceSelector = checklist['serviceSelector']
+        for service in serviceSelector:
+            print ("DEBUG: Service selector found:", service)
+    else:
+        serviceSelector = None
+    if 'wafSelector' in checklist:
+        wafSelector = checklist['wafSelector']
+        for waf in wafSelector:
+            print ("DEBUG: WAF selector found:", waf)
+    else:
+        wafSelector = None
+    # Return the selectors
+    return labelSelector, serviceSelector, wafSelector
