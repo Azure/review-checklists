@@ -133,7 +133,7 @@ def get_aprl_recos():
                                 item['category'] = item['recommendationControl']
                                 item['guid'] = item['aprlGuid']
                                 item['sourceFile'] = file_path
-                                item['source'] = 'aprl'
+                                item['sourceType'] = 'aprl'
                                 item['timestamp'] = timestamp
                             retrieved_recos += aprl_recos
                             if verbose: print("DEBUG: {0} recommendations found in file {1}".format(len(aprl_recos), file_path))

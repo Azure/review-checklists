@@ -19,6 +19,11 @@
 #
 # Usage examples for v2 analysis:
 # python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --format yaml --show-services
+# python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --format yaml --checklist-file .\checklists-v2\alz.yaml
+#
+# Usage examples for v2 reco listing:
+# python3 ./scripts/cl.py list-recos --input-folder ./recos-v2 --format yaml --label-selector '{"checklist": "alz"}' --show-labels
+# python3 ./scripts/cl.py list-recos --input-folder ./recos-v2 --format yaml --label-selector '{"source": "aprl"}' --show-labels
 #
 # Last updated: July 2024
 #

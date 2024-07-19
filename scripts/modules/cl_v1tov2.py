@@ -77,9 +77,14 @@ def generate_v2(input_file, service_dictionary=None, labels=None, id_label=None,
                     v2reco['links'].append(item['training'])
                 # Source
                 if 'source' in item:
-                    if '.yaml' in item['source']:   # If it was imported from YAML it is coming from APRL
+                    if item['source'].lower() == 'aprl' or item['source'].lower() == 'wafsg':
+                        v2reco['labels']['sourceType'] = item['source'].lower()
+                    elif '.yaml' in item['source']:   # If it was imported from YAML it is coming from APRL
                         v2reco['labels']['sourceType'] = 'aprl'
-                    v2reco['labels']['source'] = item['source']
+                if 'sourceType' in v2reco['labels']:
+                    v2reco['labels']['sourceFile'] = item['sourceType']
+                if 'sourceFile' in v2reco['labels']:
+                    v2reco['labels']['sourceFile'] = item['sourceFile']
                 if 'service' in item:
                     v2reco['service'] = get_standard_service_name(item['service'], service_dictionary=service_dictionary)
                 v2reco['resourceTypes'] = []
