@@ -35,10 +35,11 @@ import argparse
 import sys
 import glob
 import os
-from modules import cl_analyze
+from modules import cl_analyze_v1
 from modules import cl_v1tov2
 from modules import cl_analyze_v2
 from modules import cl_arg
+from modules import cl_v2tov1
 
 # Get input arguments
 parser = argparse.ArgumentParser(description='Checklists CLI', prog='checklists')
@@ -149,6 +150,15 @@ runarg_parser.add_argument('--guid', dest='runarg_guid', metavar='GUID', action=
                     help='GUID of the recommendation to run the queries from')
 runarg_parser.add_argument('--subscription-id', dest='runarg_subscription_id', metavar='SUBSCRIPTION_ID', action='store',
                     help='Azure subscription ID where to run the queries')
+# Create the 'export-checklist' command
+export_parser = subparsers.add_parser('export-checklist', help='Show a specific recommendation', parents=[base_subparser])
+export_parser.add_argument('--checklist-file', dest='export_checklist_file', metavar='CHECKLIST_FILE', action='store',
+                    help='YAML file with a checklist definition that can include label-selectors, service-selectors and WAF-selectors as well as other metadata')
+export_parser.add_argument('--input-folder', dest='export_input_folder', metavar='INPUT_FOLDER', action='store',
+                    help='input folder where the recommendations are stored')
+export_parser.add_argument('--output-file', dest='export_output_file', metavar='OUTPUT_FILE', action='store',
+                    help='output file where the v1 checklist will be stored')
+
 
 # Parse the command-line arguments
 args = parser.parse_args()
@@ -158,9 +168,9 @@ if args.command == 'analyze-v1':
     guids = []
     # We need an input file or an input folder
     if args.analyze_input_file:
-        file_stats, guids = cl_analyze.verify_file(args.analyze_input_file, guids=[], verbose=args.verbose)
+        file_stats, guids = cl_analyze_v1.verify_file(args.analyze_input_file, guids=[], verbose=args.verbose)
         if args.analyze_compare_file:
-            compare_stats, guids = cl_analyze.verify_file(args.analyze_compare_file, guids=[], verbose=args.verbose)
+            compare_stats, guids = cl_analyze_v1.verify_file(args.analyze_compare_file, guids=[], verbose=args.verbose)
             # Print the differences between the two checklists stats in a table format
             print("INFO: Comparing the two checklists...")
             print("INFO: {0: <40} {1: <40} {2: <40}".format("Item", os.path.basename(args.analyze_input_file), os.path.basename(args.analyze_compare_file)))
@@ -179,7 +189,7 @@ if args.command == 'analyze-v1':
                 print("DEBUG: found", len(checklist_files), "JSON files, analyzing correctness...")
             for file in checklist_files:
                 if file:
-                    file_stats, guids = cl_analyze.verify_file(file, guids=[], verbose=args.verbose)
+                    file_stats, guids = cl_analyze_v1.verify_file(file, guids=[], verbose=args.verbose)
         else:
             print("ERROR: no input file found, not doing anything")
     # If no input file or folder has been specified, show an error message
@@ -297,7 +307,7 @@ elif args.command == 'list-recos':
             waf_pillars = None
         if args.getrecos_checklist_file:
             if (not (labels or services or waf_pillars)):
-                labels, services, waf_pillars = cl_analyze_v2.get_checklist_selectors(args.analyzev2_checklist_file)
+                labels, services, waf_pillars, variables = cl_analyze_v2.get_checklist_selectors(args.analyzev2_checklist_file)
             else:
                 print("ERROR: You should either specify a checklist file or individual selectors, but not both.")
                 sys.exit(1)
@@ -354,6 +364,10 @@ elif args.command == 'run-arg':
                 print("INFO: - {0}".format(result['argResult']))
         else:
             print("ERROR: No v2 objects found.")
-
+elif args.command == "export-checklist":
+    if args.export_checklist_file and args.export_input_folder:
+        cl_v2tov1.generate_v1(args.export_checklist_file, args.export_input_folder, args.export_output_file, verbose=args.verbose)
+    else:
+        print("ERROR: you need to use the parameters `--checklist-file` and `--input-folder` to specify the checklist file and the input folder")
 else:
     print("ERROR: unknown command, please verify the command syntax with {0} --help".format(sys.argv[0]))

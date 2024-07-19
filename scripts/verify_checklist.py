@@ -11,7 +11,7 @@ import argparse
 import sys
 import glob
 import os
-from modules import cl_analyze
+from scripts.modules import cl_analyze_v1
 
 # Get input arguments
 parser = argparse.ArgumentParser(description='Verify a JSON checklist for correctness')
@@ -29,9 +29,9 @@ args = parser.parse_args()
 # We need an input file
 if args.input_file:
     guids = []
-    file_stats, guids = cl_analyze.verify_file(args.input_file, guids=guids, verbose=args.verbose)
+    file_stats, guids = cl_analyze_v1.verify_file(args.input_file, guids=guids, verbose=args.verbose)
     if args.compare_file:
-        compare_stats, guids = cl_analyze.verify_file(args.compare_file, guids=guids, verbose=args.verbose)
+        compare_stats, guids = cl_analyze_v1.verify_file(args.compare_file, guids=guids, verbose=args.verbose)
         # Print the differences between the two checklists stats in a table format
         print("INFO: Comparing the two checklists...")
         print("INFO: {0: <40} {1: <40} {2: <40}".format("Item", os.path.basename(args.input_file), os.path.basename(args.compare_file)))
@@ -51,7 +51,7 @@ else:
                 print("DEBUG: found", len(checklist_files), "JSON files, analyzing correctness...")
             for file in checklist_files:
                 if file:
-                    file_stats, guids = cl_analyze.verify_file(file, guids=guids, verbose=args.verbose)
+                    file_stats, guids = cl_analyze_v1.verify_file(file, guids=guids, verbose=args.verbose)
         else:
             print("ERROR: no input file found, not doing anything")
     else:

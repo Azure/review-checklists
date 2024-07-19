@@ -219,7 +219,7 @@ def print_recos(recos, show_labels=False, show_arg=False):
     print("   {0} recommendations listed".format(len(recos)))
 
 # Get selectors from a checklist file in YAML format
-# Returns the label, service and WAF selectors, in this order
+# Returns the label, service and WAF selectors, and the variables, in this order
 def get_checklist_selectors(checklist_file, verbose=False):
     # Load the checklist file
     try:
@@ -247,5 +247,22 @@ def get_checklist_selectors(checklist_file, verbose=False):
             print ("DEBUG: WAF selector found:", waf)
     else:
         wafSelector = None
+    if 'variables' in checklist:
+        variables = checklist['variables']
+        for variable_key in variables.keys():
+            print ("DEBUG: Variable found:", variable_key + ":" + variables[variable_key])
+    else:
+        variables = None
     # Return the selectors
-    return labelSelector, serviceSelector, wafSelector
+    return labelSelector, serviceSelector, wafSelector, variables
+
+
+def get_checklist_object(checklist_file, verbose=False):
+    # Load the checklist file
+    try:
+        with open(checklist_file) as f:
+            checklist = yaml.safe_load(f)
+            return checklist
+    except Exception as e:
+        print("ERROR: Error when loading file {0} - {1}". format(checklist_file, str(e)))
+        return None
