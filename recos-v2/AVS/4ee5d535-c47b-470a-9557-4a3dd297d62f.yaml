@@ -1,64 +1,37 @@
-description: 'Ensure sufficient compute resources to avoid host resource exhaustion
-  in Azure VMware Solution, which utilizes vSphere DRS and HA for dynamic workload
-  resource management. However, sustained CPU utilization over 95% may increase CPU
-  Ready times, impacting workloads.
-
-  '
+description: |-
+  Ensure sufficient compute resources to avoid host resource exhaustion in Azure VMware Solution, which utilizes vSphere DRS and HA for dynamic workload resource management. However, sustained CPU utilization over 95% may increase CPU Ready times, impacting workloads.
 guid: 4ee5d535-c47b-470a-9557-4a3dd297d62f
 labels:
   area: Monitoring and Alerting
-  source: azure-resources/AVS/privateClouds/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: '// Azure Resource Graph Query
-
-    // Provides a list of Azure VMware Solution resources that don''t have a Cluster
-    CPU capacity critical alert with a threshold of 95%.
-
+  arg: |
+    // Azure Resource Graph Query
+    // Provides a list of Azure VMware Solution resources that don't have a Cluster CPU capacity critical alert with a threshold of 95%.
     resources
-
-    | where [''type''] == "microsoft.avs/privateclouds"
-
+    | where ['type'] == "microsoft.avs/privateclouds"
     | extend scopeId = tolower(tostring(id))
-
-    | project [''scopeId''], name, id, tags
-
+    | project ['scopeId'], name, id, tags
     | join kind=leftouter (
-
     resources
-
     | where type == "microsoft.insights/metricalerts"
-
     | extend alertProperties = todynamic(properties)
-
     | mv-expand alertProperties.scopes
-
     | mv-expand alertProperties.criteria.allOf
-
     | extend scopeId = tolower(tostring(alertProperties_scopes))
-
     | extend metric = alertProperties_criteria_allOf.metricName
-
     | extend threshold = alertProperties_criteria_allOf.threshold
-
-    | project scopeId, tostring(metric), toint([''threshold''])
-
+    | project scopeId, tostring(metric), toint(['threshold'])
     | where metric == "EffectiveCpuAverage"
-
     | where threshold == 95
-
     ) on scopeId
-
-    | where isnull([''threshold''])
-
-    | project recommendationId = "4ee5d535-c47b-470a-9557-4a3dd297d62f", name, id,
-    tags, param1 = "hostCpuCriticalAlert: isNull or threshold != 95"
-
-
-    '
+    | where isnull(['threshold'])
+    | project recommendationId = "4ee5d535-c47b-470a-9557-4a3dd297d62f", name, id, tags, param1 = "hostCpuCriticalAlert: isNull or threshold != 95"
 resourceTypes:
 - Microsoft.AVS/privateClouds
 service: AVS
 severity: 1
-text: Monitor CPU Utilization to ensure sufficient resources for workloads
+source:
+  file: azure-resources/AVS/privateClouds/recommendations.yaml
+  type: aprl
+title: Monitor CPU Utilization to ensure sufficient resources for workloads

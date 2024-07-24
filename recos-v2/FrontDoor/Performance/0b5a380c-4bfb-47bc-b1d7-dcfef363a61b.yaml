@@ -3,7 +3,7 @@ labels: {}
 links:
 - https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group
 queries:
-- arg: cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins'
+  arg: cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins'
     | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend
     originGroupId = substring(id, 0, indexof(id, '/origins')) | join kind=inner (cdnresources
     | where type =~ 'microsoft.cdn/profiles/origingroups' | extend originGroupName
@@ -11,9 +11,13 @@ queries:
     $left.originGroupId == $right.id | summarize numberOrigins = count() by originGroupId,
     subscriptionId, frontDoorId, hasHealthProbe, originGroupName | extend compliant
     = not(numberOrigins == 1 and hasHealthProbe) | project id = frontDoorId, compliant
-resourceTypes: []
+resourceTypes:
+- microsoft.network/frontdoors
 service: Front Door
 severity: 2
-text: Disable health probes when there is only one origin in an Azure Front Door origin
-  group.
+source:
+  file: ./checklists/waf_checklist.en.json
+  type: local
+title: Disable health probes when there is only one origin in an Azure Front Door
+  origin group.
 waf: Performance

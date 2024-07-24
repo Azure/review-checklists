@@ -1,27 +1,35 @@
-description: 'For outbound internet connectivity of Virtual Machines, using NAT Gateway
-  or Azure Firewall is recommended to enhance security and service resilience, thanks
-  to their higher availability and SNAT ports.
-
-  '
+description: |-
+  For outbound internet connectivity of Virtual Machines, using NAT Gateway or Azure Firewall is recommended to enhance security and service resilience, thanks to their higher availability and SNAT ports.
 guid: 1f629a30-c9d0-d241-82ee-6f2eb9d42cb4
 labels:
   area: Security
-  source: azure-resources/Compute/virtualMachines/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: "// Azure Resource Graph Query\n// Find all VMs with PublicIPs directly associated\
-    \ with them\nResources\n| where type =~ 'Microsoft.Compute/virtualMachines'\n\
-    | where isnotnull(properties.networkProfile.networkInterfaces)\n| mv-expand nic=properties.networkProfile.networkInterfaces\n\
-    | project name, id, tags, nicId = nic.id\n| extend nicId = tostring(nicId)\n|\
-    \ join kind=inner (\n    Resources\n    | where type =~ 'Microsoft.Network/networkInterfaces'\n\
-    \    | where isnotnull(properties.ipConfigurations)\n    | mv-expand ipconfig=properties.ipConfigurations\n\
-    \    | extend publicIp = tostring(ipconfig.properties.publicIPAddress.id)\n  \
-    \  | where publicIp != \"\"\n    | project name, nicId = tostring(id), publicIp\n\
-    ) on nicId\n| project recommendationId = \"1f629a30-c9d0-d241-82ee-6f2eb9d42cb4\"\
-    , name, id, tags\n| order by id asc\n\n"
+  arg: |
+    // Azure Resource Graph Query
+    // Find all VMs with PublicIPs directly associated with them
+    Resources
+    | where type =~ 'Microsoft.Compute/virtualMachines'
+    | where isnotnull(properties.networkProfile.networkInterfaces)
+    | mv-expand nic=properties.networkProfile.networkInterfaces
+    | project name, id, tags, nicId = nic.id
+    | extend nicId = tostring(nicId)
+    | join kind=inner (
+        Resources
+        | where type =~ 'Microsoft.Network/networkInterfaces'
+        | where isnotnull(properties.ipConfigurations)
+        | mv-expand ipconfig=properties.ipConfigurations
+        | extend publicIp = tostring(ipconfig.properties.publicIPAddress.id)
+        | where publicIp != ""
+        | project name, nicId = tostring(id), publicIp
+    ) on nicId
+    | project recommendationId = "1f629a30-c9d0-d241-82ee-6f2eb9d42cb4", name, id, tags
+    | order by id asc
 resourceTypes:
 - Microsoft.Compute/virtualMachines
 service: VM
 severity: 1
-text: VMs should not have a Public IP directly associated
+source:
+  file: azure-resources/Compute/virtualMachines/recommendations.yaml
+  type: aprl
+title: VMs should not have a Public IP directly associated

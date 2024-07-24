@@ -1,36 +1,49 @@
-description: 'In regions with Availability Zones, assigning a zone-redundant frontend
-  IP to a Standard Load Balancer ensures continuous traffic distribution even if one
-  availability zone fails, provided other healthy zones and backend instances are
-  available to receive the traffic.
-
-  '
+description: |-
+  In regions with Availability Zones, assigning a zone-redundant frontend IP to a Standard Load Balancer ensures continuous traffic distribution even if one availability zone fails, provided other healthy zones and backend instances are available to receive the traffic.
 guid: 621dbc78-3745-4d32-8eac-9e65b27b7512
 labels:
   area: High Availability
-  source: azure-resources/Network/loadBalancers/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: "// Azure Resource Graph Query\n// Find all LoadBalancers with with regional\
-    \ or zonal public IP Addresses\nresources\n| where type == \"microsoft.network/loadbalancers\"\
-    \n| where tolower(sku.name) != 'basic'\n| mv-expand feIPconfigs = properties.frontendIPConfigurations\n\
-    | extend\n    feConfigName = (feIPconfigs.name),\n    PrivateSubnetId = toupper(feIPconfigs.properties.subnet.id),\n\
-    \    PrivateIPZones = feIPconfigs.zones,\n    PIPid = toupper(feIPconfigs.properties.publicIPAddress.id),\n\
-    \    JoinID = toupper(id)\n| where isnotempty(PrivateSubnetId)\n| where isnull(PrivateIPZones)\
-    \ or array_length(PrivateIPZones) < 2\n| project name, feConfigName, id\n| union\
-    \ (resources\n    | where type == \"microsoft.network/loadbalancers\"\n    | where\
-    \ tolower(sku.name) != 'basic'\n    | mv-expand feIPconfigs = properties.frontendIPConfigurations\n\
-    \    | extend\n        feConfigName = (feIPconfigs.name),\n        PIPid = toupper(feIPconfigs.properties.publicIPAddress.id),\n\
-    \        JoinID = toupper(id)\n    | where isnotempty(PIPid)\n    | join kind=innerunique\
-    \ (\n        resources\n        | where type == \"microsoft.network/publicipaddresses\"\
-    \n        | where isnull(zones) or array_length(zones) < 2\n        | extend\n\
-    \            LBid = toupper(substring(properties.ipConfiguration.id, 0, indexof(properties.ipConfiguration.id,\
-    \ '/frontendIPConfigurations'))),\n            InnerID = toupper(id)\n    ) on\
-    \ $left.PIPid == $right.InnerID)\n| project recommendationId = \"621dbc78-3745-4d32-8eac-9e65b27b7512\"\
-    , name, id, tags, param1=\"Zones: No Zone or Zonal\", param2=strcat(\"Frontend\
-    \ IP Configuration:\", \" \", feConfigName)\n\n"
+  arg: |
+    // Azure Resource Graph Query
+    // Find all LoadBalancers with with regional or zonal public IP Addresses
+    resources
+    | where type == "microsoft.network/loadbalancers"
+    | where tolower(sku.name) != 'basic'
+    | mv-expand feIPconfigs = properties.frontendIPConfigurations
+    | extend
+        feConfigName = (feIPconfigs.name),
+        PrivateSubnetId = toupper(feIPconfigs.properties.subnet.id),
+        PrivateIPZones = feIPconfigs.zones,
+        PIPid = toupper(feIPconfigs.properties.publicIPAddress.id),
+        JoinID = toupper(id)
+    | where isnotempty(PrivateSubnetId)
+    | where isnull(PrivateIPZones) or array_length(PrivateIPZones) < 2
+    | project name, feConfigName, id
+    | union (resources
+        | where type == "microsoft.network/loadbalancers"
+        | where tolower(sku.name) != 'basic'
+        | mv-expand feIPconfigs = properties.frontendIPConfigurations
+        | extend
+            feConfigName = (feIPconfigs.name),
+            PIPid = toupper(feIPconfigs.properties.publicIPAddress.id),
+            JoinID = toupper(id)
+        | where isnotempty(PIPid)
+        | join kind=innerunique (
+            resources
+            | where type == "microsoft.network/publicipaddresses"
+            | where isnull(zones) or array_length(zones) < 2
+            | extend
+                LBid = toupper(substring(properties.ipConfiguration.id, 0, indexof(properties.ipConfiguration.id, '/frontendIPConfigurations'))),
+                InnerID = toupper(id)
+        ) on $left.PIPid == $right.InnerID)
+    | project recommendationId = "621dbc78-3745-4d32-8eac-9e65b27b7512", name, id, tags, param1="Zones: No Zone or Zonal", param2=strcat("Frontend IP Configuration:", " ", feConfigName)
 resourceTypes:
 - Microsoft.Network/loadBalancers
 service: Load Balancer
 severity: 0
-text: Ensure Standard Load Balancer is zone-redundant
+source:
+  file: azure-resources/Network/loadBalancers/recommendations.yaml
+  type: aprl
+title: Ensure Standard Load Balancer is zone-redundant

@@ -1,29 +1,34 @@
-description: 'AKS assigns the kubernetes.azure.com/mode: system label to nodes in
-  system node pools signaling the preference for system pods should be scheduled there.
-  The CriticalAddonsOnly=true:NoSchedule taint can be added to your system nodes to
-  prohibit application pods from being scheduled on them.
-
-  '
+description: |-
+  AKS assigns the kubernetes.azure.com/mode: system label to nodes in system node pools signaling the preference for system pods should be scheduled there. The CriticalAddonsOnly=true:NoSchedule taint can be added to your system nodes to prohibit application pods from being scheduled on them.
 guid: 5ee083cd-6ac3-4a83-8913-9549dd36cf56
 labels:
   area: High Availability
-  source: azure-resources/ContainerService/managedClusters/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: "// Azure Resource Graph Query\n// Returns each AKS cluster with nodepools\
-    \ that do not have system pods labelled with CriticalAddonsOnly\nresources\n|\
-    \ where type == \"microsoft.containerservice/managedclusters\"\n| mv-expand agentPoolProfile\
-    \ = properties.agentPoolProfiles\n| where agentPoolProfile.mode =~ 'System' //\
-    \ system node pools\n| extend taint = tostring(parse_json(agentPoolProfile.nodeTaints))\n\
-    | extend hasCriticalAddonsTaint = agentPoolProfile.kubeletConfig has 'CriticalAddonsOnly'\n\
-    | extend hasNodeLabel = agentPoolProfile.customNodeLabels has 'CriticalAddonsOnly'\n\
-    | extend hasCriticalAddonsOnly = hasCriticalAddonsTaint or hasNodeLabel or isempty(taint)\n\
-    | extend nodePool = tostring(parse_json(agentPoolProfile.name))\n| where hasCriticalAddonsOnly\n\
-    | project\n    recommendationId=\"5ee083cd-6ac3-4a83-8913-9549dd36cf56\",\n  \
-    \  id,\n    name,\n    tags,\n    param1=strcat(\"nodepoolName: \", nodePool)\n"
+  arg: |-
+    // Azure Resource Graph Query
+    // Returns each AKS cluster with nodepools that do not have system pods labelled with CriticalAddonsOnly
+    resources
+    | where type == "microsoft.containerservice/managedclusters"
+    | mv-expand agentPoolProfile = properties.agentPoolProfiles
+    | where agentPoolProfile.mode =~ 'System' // system node pools
+    | extend taint = tostring(parse_json(agentPoolProfile.nodeTaints))
+    | extend hasCriticalAddonsTaint = agentPoolProfile.kubeletConfig has 'CriticalAddonsOnly'
+    | extend hasNodeLabel = agentPoolProfile.customNodeLabels has 'CriticalAddonsOnly'
+    | extend hasCriticalAddonsOnly = hasCriticalAddonsTaint or hasNodeLabel or isempty(taint)
+    | extend nodePool = tostring(parse_json(agentPoolProfile.name))
+    | where hasCriticalAddonsOnly
+    | project
+        recommendationId="5ee083cd-6ac3-4a83-8913-9549dd36cf56",
+        id,
+        name,
+        tags,
+        param1=strcat("nodepoolName: ", nodePool)
 resourceTypes:
 - Microsoft.ContainerService/managedClusters
 service: AKS
 severity: 0
-text: Isolate system and application pods
+source:
+  file: azure-resources/ContainerService/managedClusters/recommendations.yaml
+  type: aprl
+title: Isolate system and application pods

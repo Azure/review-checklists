@@ -1,36 +1,41 @@
-description: 'Nodepool subnets sized for max auto-scale settings enable AKS to efficiently
-  scale out nodes, meeting increased demand while reducing resource constraints and
-  potential service disruptions.
-
-  '
+description: |-
+  Nodepool subnets sized for max auto-scale settings enable AKS to efficiently scale out nodes, meeting increased demand while reducing resource constraints and potential service disruptions.
 guid: e620fa98-7a40-41a0-bfc9-b4407297fb58
 labels:
   area: High Availability
-  source: azure-resources/ContainerService/managedClusters/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: "// Azure Resource Graph Query\n// Returns each AKS cluster with nodepools\
-    \ that have user nodepools with a subnetmask that does not match autoscale configured\
-    \ max-nodes\n// Subtracting the network address, broadcast address, and default\
-    \ 3 addresses Azure reserves within each subnet\n\nresources\n| where type ==\
-    \ \"microsoft.containerservice/managedclusters\"\n| extend nodePools = properties['agentPoolProfiles']\n\
-    | mv-expand nodePools = properties.agentPoolProfiles\n| where nodePools.enableAutoScaling\
-    \ == true\n| extend nodePoolName=nodePools.name, maxNodes = nodePools.maxCount,\
-    \ subnetId = tostring(nodePools.vnetSubnetID)\n| project clusterId = id, clusterName=name,\
-    \ nodePoolName=nodePools.name, toint(maxNodes), subnetId\n| join kind = leftouter\
-    \ (\n    resources\n    | where type == 'microsoft.network/virtualnetworks'\n\
-    \    | extend subnets = properties.subnets\n    | mv-expand subnets\n    | project\
-    \ id = tostring(subnets.id), addressPrefix = tostring(subnets.properties['addressPrefix'])\n\
-    \    | extend subnetmask = toint(substring(addressPrefix, indexof(addressPrefix,\
-    \ '/')+1, string_size(addressPrefix)))\n    | extend possibleMaxNodeCount = toint(exp2(32-subnetmask)\
-    \ - 5)\n) on $left.subnetId == $right.id\n| project-away id, subnetmask\n| where\
-    \ possibleMaxNodeCount <= maxNodes\n| extend param1 = strcat(nodePoolName, \"\
-    \ autoscaler upper limit: \", maxNodes)\n| extend param2 = strcat(\"ip addresses\
-    \ on subnet: \", possibleMaxNodeCount)\n| project recommendationId=\"e620fa98-7a40-41a0-bfc9-b4407297fb58\"\
-    , name=clusterName, id=clusterId, param1, param2\n\n"
+  arg: |
+    // Azure Resource Graph Query
+    // Returns each AKS cluster with nodepools that have user nodepools with a subnetmask that does not match autoscale configured max-nodes
+    // Subtracting the network address, broadcast address, and default 3 addresses Azure reserves within each subnet
+
+    resources
+    | where type == "microsoft.containerservice/managedclusters"
+    | extend nodePools = properties['agentPoolProfiles']
+    | mv-expand nodePools = properties.agentPoolProfiles
+    | where nodePools.enableAutoScaling == true
+    | extend nodePoolName=nodePools.name, maxNodes = nodePools.maxCount, subnetId = tostring(nodePools.vnetSubnetID)
+    | project clusterId = id, clusterName=name, nodePoolName=nodePools.name, toint(maxNodes), subnetId
+    | join kind = leftouter (
+        resources
+        | where type == 'microsoft.network/virtualnetworks'
+        | extend subnets = properties.subnets
+        | mv-expand subnets
+        | project id = tostring(subnets.id), addressPrefix = tostring(subnets.properties['addressPrefix'])
+        | extend subnetmask = toint(substring(addressPrefix, indexof(addressPrefix, '/')+1, string_size(addressPrefix)))
+        | extend possibleMaxNodeCount = toint(exp2(32-subnetmask) - 5)
+    ) on $left.subnetId == $right.id
+    | project-away id, subnetmask
+    | where possibleMaxNodeCount <= maxNodes
+    | extend param1 = strcat(nodePoolName, " autoscaler upper limit: ", maxNodes)
+    | extend param2 = strcat("ip addresses on subnet: ", possibleMaxNodeCount)
+    | project recommendationId="e620fa98-7a40-41a0-bfc9-b4407297fb58", name=clusterName, id=clusterId, param1, param2
 resourceTypes:
 - Microsoft.ContainerService/managedClusters
 service: AKS
 severity: 0
-text: Nodepool subnet size needs to accommodate maximum auto-scale settings
+source:
+  file: azure-resources/ContainerService/managedClusters/recommendations.yaml
+  type: aprl
+title: Nodepool subnet size needs to accommodate maximum auto-scale settings

@@ -12,19 +12,29 @@
 # - run-arg: Run Azure Resource Graph queries stored in v2 recommendations
 # 
 # Usage examples for v1-to-v2 conversion:
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/aks_checklist.en.json --output-folder ./recos-v2 --overwrite
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/alz_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --output-format yaml --labels '{"checklist": "alz"}' --id-label alzId --category-label alzArea --subcategory-label alzSubarea --overwrite
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/aprl_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/wafsg_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/aks_checklist.en.json --output-folder ./recos-v2 --overwrite --verbose
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/alz_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --output-format yaml --labels '{"checklist": "alz"}' --id-label alzId --category-label alzArea --subcategory-label alzSubarea --overwrite --verbose
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/waf_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --output-format yaml --overwrite --verbose
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/aprl_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --overwrite --verbose
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/wafsg_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --overwrite --verbose
 #
 # Usage examples for v2 analysis:
+# python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --format yaml --show-sources
 # python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --format yaml --show-services
+# python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --format yaml --show-labels
 # python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --format yaml --checklist-file .\checklists-v2\alz.yaml
 #
 # Usage examples for v2 reco listing:
 # python3 ./scripts/cl.py list-recos --input-folder ./recos-v2 --format yaml --label-selector '{"checklist": "alz"}' --show-labels
-# python3 ./scripts/cl.py list-recos --input-folder ./recos-v2 --format yaml --label-selector '{"source": "aprl"}' --show-labels
+# python3 ./scripts/cl.py list-recos --input-folder ./recos-v2 --format yaml --source-selector 'aprl'
+# python3 ./scripts/cl.py list-recos --input-folder ./recos-v2 --format yaml --with-arg
 #
+# Usage examples for specific reco inspection:
+# python3 ./scripts/cl.py show-reco --input-folder ./recos-v2 --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
+#
+# Appendix: importing latest rules from APRL and WAF service guides (maybe useful before using v1-to-v2):
+# python3 ./.github/actions/get_aprl/entrypoint.py './checklists-ext/aprl_checklist.en.json' 'true'
+# python3 ./.github/actions/get_service_guides/entrypoint.py 'Azure Kubernetes Service, Azure Firewall, Azure ExpressRoute, Azure Application Gateway, Azure Front Door, App Service Web Apps, Azure Blob Storage, Azure Cosmos DB, Azure Files, Azure Machine Learning, Azure OpenAI, Virtual Machines' './checklists-ext' 'true'
 # Last updated: July 2024
 #
 #################################################################################
@@ -73,15 +83,23 @@ analyzev2_parser.add_argument('--show-services', dest='analyzev2_show_services',
 analyzev2_parser.add_argument('--show-waf', dest='analyzev2_show_waf', action='store_true',
                     default=False,
                     help='show all services and its number of items (default: False)')
+analyzev2_parser.add_argument('--show-sources', dest='analyzev2_show_sources', action='store_true',
+                    default=False,
+                    help='show all source types and its number of items (default: False)')
 analyzev2_parser.add_argument('--show-severities', dest='analyzev2_show_severities', action='store_true',
                     default=False,
                     help='show all severities and its number of items (default: False)')
+analyzev2_parser.add_argument('--show-resource-types', dest='analyzev2_show_resourceTypes', action='store_true',
+                    default=False,
+                    help='show all resource types and its number of items (default: False)')
 analyzev2_parser.add_argument('--label-selector', dest='analyzev2_labels', metavar='LABELS', action='store',
                     help='label selector for the items to analyze, for example {"mykey1": "myvalue1", "mykey2": "myvalue2"}')
 analyzev2_parser.add_argument('--service-selector', dest='analyzev2_services', metavar='SERVICES', action='store',
                     help='comma-separated services for the items to analyze, for example "AKS,firewall"')
 analyzev2_parser.add_argument('--waf-selector', dest='analyzev2_waf_pillars', metavar='WAF_PILLARS', action='store',
                     help='comma-separated WAF pillars for the items to analyze, for example "cost,reliability"')
+analyzev2_parser.add_argument('--source-selector', dest='analyzev2_sources', metavar='SOURCE', action='store',
+                    help='comma-separated source types for the items to analyze, for example "aprl,internal,wafsg"')
 analyzev2_parser.add_argument('--checklist-file', dest='analyzev2_checklist_file', metavar='CHECKLIST_FILE', action='store',
                     help='YAML file with a checklist definition that can include label-selectors, service-selectors and WAF-selectors as well as other metadata')
 # Create the 'list-recos' command
@@ -97,6 +115,8 @@ getrecos_parser.add_argument('--service-selector', dest='getrecos_services', met
                     help='comma-separated services for the items to retrieve, for example "AKS,firewall"')
 getrecos_parser.add_argument('--waf-selector', dest='getrecos_waf_pillars', metavar='WAF_PILLARS', action='store',
                     help='comma-separated WAF pillars for the items to retrieve, for example "cost,reliability"')
+getrecos_parser.add_argument('--source-selector', dest='getrecos_sources', metavar='SOURCE', action='store',
+                    help='comma-separated source types for the items to retrieve, for example "aprl,internal,wafsg"')
 getrecos_parser.add_argument('--show-labels', dest='getrecos_show_labels', action='store_true',
                     default=False, help='show labels (default: False)')
 getrecos_parser.add_argument('--show-arg', dest='getrecos_show_arg', action='store_true',
@@ -111,6 +131,14 @@ showreco_parser.add_argument('--input-folder', dest='showreco_input_folder', met
                     help='input folder where the recommendations to verify are stored')
 showreco_parser.add_argument('--guid', dest='showreco_guid', metavar='GUID', action='store',
                     help='GUID of the recommendation to show')
+# Create the 'open-reco' command
+openreco_parser = subparsers.add_parser('open-reco', help='Open with a text editor a specific recommendation', parents=[base_subparser])
+openreco_parser.add_argument('--input-folder', dest='openreco_input_folder', metavar='INPUT_FOLDER', action='store',
+                    help='input folder where the recommendations to verify are stored')
+openreco_parser.add_argument('--guid', dest='openreco_guid', metavar='GUID', action='store',
+                    help='GUID of the recommendation to show')
+openreco_parser.add_argument('--text-editor', dest='openreco_editor', metavar='GUID', action='store',
+                    help='Text editor to use, for example "code" or "notepad"')
 # Create the 'v1tov2' command
 v12_parser = subparsers.add_parser('v1tov2', help='Convert v1 to v2', parents=[base_subparser])
 v12_parser.add_argument('--input-file', dest='v12_input_file', metavar='INPUT_FILE', action='store',
@@ -158,7 +186,6 @@ export_parser.add_argument('--input-folder', dest='export_input_folder', metavar
                     help='input folder where the recommendations are stored')
 export_parser.add_argument('--output-file', dest='export_output_file', metavar='OUTPUT_FILE', action='store',
                     help='output file where the v1 checklist will be stored')
-
 
 # Parse the command-line arguments
 args = parser.parse_args()
@@ -255,6 +282,10 @@ elif args.command == 'analyze-v2':
             waf_pillars = args.analyzev2_waf_pillars.lower().split(",")
         else:
             waf_pillars = None
+        if args.analyzev2_sources:
+            sources = args.analyzev2_sources.lower().split(",")
+        else:
+            sources = None
         if args.analyzev2_checklist_file:
             if (not (labels or services or waf_pillars)):
                 labels, services, waf_pillars = cl_analyze_v2.get_checklist_selectors(args.analyzev2_checklist_file)
@@ -263,7 +294,7 @@ elif args.command == 'analyze-v2':
                 sys.exit(1)
         # Retrieve stats
         v2_stats = cl_analyze_v2.v2_stats_from_folder(args.analyzev2_input_folder, format=args.analyzev2_format, 
-                                                      labels=labels, services=services, waf_pillars=waf_pillars, 
+                                                      labels=labels, services=services, waf_pillars=waf_pillars, sources=sources,
                                                       verbose=args.verbose)
         # Print stats
         print("INFO: Total items found =", v2_stats['total_items'])
@@ -283,6 +314,14 @@ elif args.command == 'analyze-v2':
             print("INFO: Items per WAF pillar:")
             for key in v2_stats['waf']:
                 print("INFO: - {0} = {1}".format(key, v2_stats['waf'][key]))
+        if args.analyzev2_show_sources:
+            print("INFO: Items per source:")
+            for key in v2_stats['sources']:
+                print("INFO: - {0} = {1}".format(key, v2_stats['sources'][key]))
+        if args.analyzev2_show_resourceTypes:
+            print("INFO: Items per resource type:")
+            for key in v2_stats['resourceTypes']:
+                print("INFO: - {0} = {1}".format(key, v2_stats['resourceTypes'][key]))
     else:
         print("ERROR: you need to use the parameter `--input-folder` to specify the folder to analyze")
 elif args.command == 'list-recos':
@@ -305,6 +344,10 @@ elif args.command == 'list-recos':
             waf_pillars = args.getrecos_waf_pillars.lower().split(",")
         else:
             waf_pillars = None
+        if args.getrecos_sources:
+            sources = args.getrecos_sources.lower().split(",")
+        else:
+            sources = None
         if args.getrecos_checklist_file:
             if (not (labels or services or waf_pillars)):
                 labels, services, waf_pillars, variables = cl_analyze_v2.get_checklist_selectors(args.analyzev2_checklist_file)
@@ -313,7 +356,7 @@ elif args.command == 'list-recos':
                 sys.exit(1)
         # Retrieve recos
         v2recos = cl_analyze_v2.get_recos(args.getrecos_input_folder, 
-                                          labels=labels, services=services, waf_pillars=waf_pillars, format=args.getrecos_format, 
+                                          labels=labels, services=services, waf_pillars=waf_pillars, sources=sources, format=args.getrecos_format, 
                                           arg=args.getrecos_arg, verbose=args.verbose)
         # Print recos
         if v2recos:
@@ -331,12 +374,18 @@ elif args.command == 'show-reco':
                 print("ERROR: {0} recos found with GUID {1}".format(len(recos), args.showreco_guid))
             else:
                 for reco in recos:
-                    yaml.dump(reco, sys.stdout, default_flow_style=False)
+                    cl_analyze_v2.print_reco(reco)
                     print("---")
         else:
             print("ERROR: No reco found with GUID", args.showreco_guid)
     else:
         print("ERROR: you need to use the parameters `--input-folder` and `--guid` to specify the folder and GUID to analyze")
+elif args.command == 'open-reco':
+    # We need an input folder and a GUID
+    if args.openreco_input_folder and args.openreco_guid:
+        cl_analyze_v2.load_v2_files(args.openreco_input_folder, guid=args.openreco_guid, open_editor=True, text_editor=args.openreco_editor, verbose=args.verbose)
+    else:
+        print("ERROR: you need to use the parameters `--input-folder` and `--guid` to specify the folder and GUID to open")
 elif args.command == 'run-arg':
     if args.runarg_input_folder:
         # Convert label selectors argument to an object if specified

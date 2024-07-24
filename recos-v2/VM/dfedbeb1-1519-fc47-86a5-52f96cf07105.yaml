@@ -1,28 +1,33 @@
-description: 'Accelerated networking enables SR-IOV to a VM, greatly improving its
-  networking performance by bypassing the host from the data path, which reduces latency,
-  jitter, and CPU utilization for demanding network workloads on supported VM types.
-
-  '
+description: |-
+  Accelerated networking enables SR-IOV to a VM, greatly improving its networking performance by bypassing the host from the data path, which reduces latency, jitter, and CPU utilization for demanding network workloads on supported VM types.
 guid: dfedbeb1-1519-fc47-86a5-52f96cf07105
 labels:
   area: Scalability
-  source: azure-resources/Compute/virtualMachines/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: "// Azure Resource Graph Query\n// Find all VM NICs that do not have Accelerated\
-    \ Networking enabled\nresources\n| where type =~ 'Microsoft.Compute/virtualMachines'\n\
-    | mv-expand nic = properties.networkProfile.networkInterfaces\n| project name,\
-    \ id, tags, lowerCaseNicId = tolower(nic.id), vmSize = tostring(properties.hardwareProfile.vmSize)\n\
-    | join kind = inner (\n    resources\n    | where type =~ 'Microsoft.Network/networkInterfaces'\n\
-    \    | where properties.enableAcceleratedNetworking == false\n    | project nicName\
-    \ = split(id, \"/\")[8], lowerCaseNicId = tolower(id)\n    )\n    on lowerCaseNicId\n\
-    | summarize nicNames = make_set(nicName) by name, id, tostring(tags), vmSize\n\
-    | extend param1 = strcat(\"NicName: \", strcat_array(nicNames, \", \")), param2\
-    \ = strcat(\"VMSize: \", vmSize)\n| project recommendationId = \"dfedbeb1-1519-fc47-86a5-52f96cf07105\"\
-    , name, id, tags, param1, param2\n| order by id asc\n\n"
+  arg: |
+    // Azure Resource Graph Query
+    // Find all VM NICs that do not have Accelerated Networking enabled
+    resources
+    | where type =~ 'Microsoft.Compute/virtualMachines'
+    | mv-expand nic = properties.networkProfile.networkInterfaces
+    | project name, id, tags, lowerCaseNicId = tolower(nic.id), vmSize = tostring(properties.hardwareProfile.vmSize)
+    | join kind = inner (
+        resources
+        | where type =~ 'Microsoft.Network/networkInterfaces'
+        | where properties.enableAcceleratedNetworking == false
+        | project nicName = split(id, "/")[8], lowerCaseNicId = tolower(id)
+        )
+        on lowerCaseNicId
+    | summarize nicNames = make_set(nicName) by name, id, tostring(tags), vmSize
+    | extend param1 = strcat("NicName: ", strcat_array(nicNames, ", ")), param2 = strcat("VMSize: ", vmSize)
+    | project recommendationId = "dfedbeb1-1519-fc47-86a5-52f96cf07105", name, id, tags, param1, param2
+    | order by id asc
 resourceTypes:
 - Microsoft.Compute/virtualMachines
 service: VM
 severity: 1
-text: Enable Accelerated Networking (AccelNet)
+source:
+  file: azure-resources/Compute/virtualMachines/recommendations.yaml
+  type: aprl
+title: Enable Accelerated Networking (AccelNet)

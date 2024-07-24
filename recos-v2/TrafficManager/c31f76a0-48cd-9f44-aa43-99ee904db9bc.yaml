@@ -1,41 +1,26 @@
-description: 'For geographic routing, traffic is directed to endpoints based on specific
-  regions. If a region fails, without a predefined failover, configuring an endpoint
-  to "All (World)" for geographic profiles can prevent traffic black holes, ensuring
-  service remains available.
-
-  '
+description: |-
+  For geographic routing, traffic is directed to endpoints based on specific regions. If a region fails, without a predefined failover, configuring an endpoint to "All (World)" for geographic profiles can prevent traffic black holes, ensuring service remains available.
 guid: c31f76a0-48cd-9f44-aa43-99ee904db9bc
 labels:
   area: Disaster Recovery
-  source: azure-resources/Network/trafficManagerProfiles/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: '// Azure Resource Graph Query
-
-    // Provides a list of Traffic Manager resources that are not confirgured for all-World
-    access
-
+  arg: |-
+    // Azure Resource Graph Query
+    // Provides a list of Traffic Manager resources that are not confirgured for all-World access
     Resources
-
-    | where type == ''microsoft.network/trafficmanagerprofiles''
-
+    | where type == 'microsoft.network/trafficmanagerprofiles'
     | where properties.trafficRoutingMethod =~ "Geographic"
-
     | extend endpoints = properties.endpoints
-
     | mv-expand endpoint = endpoints
-
     | where endpoint.properties.geoMapping !contains "WORLD"
-
     | extend endpointName = endpoint.name
-
-    | project recommendationId="c31f76a0-48cd-9f44-aa43-99ee904db9bc", name, id, tags,
-    param1=strcat("endpointName:",endpointName), param2=strcat("GeoMapping:", tostring(endpoint.properties.geoMapping))
-
-    '
+    | project recommendationId="c31f76a0-48cd-9f44-aa43-99ee904db9bc", name, id, tags, param1=strcat("endpointName:",endpointName), param2=strcat("GeoMapping:", tostring(endpoint.properties.geoMapping))
 resourceTypes:
 - Microsoft.Network/trafficManagerProfiles
 service: Traffic Manager
 severity: 0
-text: Ensure endpoint configured to (All World) for geographic profiles
+source:
+  file: azure-resources/Network/trafficManagerProfiles/recommendations.yaml
+  type: aprl
+title: Ensure endpoint configured to (All World) for geographic profiles

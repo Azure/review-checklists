@@ -1,33 +1,38 @@
-description: 'Enabling automatic VM guest patching eases update management by safely,
-  automatically patching virtual machines to maintain security compliance, while limiting
-  blast radius of VMs. Note, the KQL will not return sets using Uniform orchestration.
-
-  '
+description: |-
+  Enabling automatic VM guest patching eases update management by safely, automatically patching virtual machines to maintain security compliance, while limiting blast radius of VMs. Note, the KQL will not return sets using Uniform orchestration.
 guid: e4ffd7b0-ba24-c84e-9352-ba4819f908c0
 labels:
   area: Other Best Practices
-  source: azure-resources/Compute/virtualMachineScaleSets/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: "// Azure Resource Graph query\n// Identifies VMs and VMSS with manual patch\
-    \ settings, excluding automatic patch modes\nresources\n| where type == \"microsoft.compute/virtualmachinescalesets\"\
-    \n| join kind=inner (\n    resources\n    | where type == \"microsoft.compute/virtualmachines\"\
-    \n    | project id = tostring(properties.virtualMachineScaleSet.id), vmproperties\
-    \ = properties\n) on id\n| extend recommendationId = \"e4ffd7b0-ba24-c84e-9352-ba4819f908c0\"\
-    , param1 = \"patchMode: Manual\", vmproperties.osProfile.linuxConfiguration.patchSettings.patchMode\n\
-    | where isnotnull(vmproperties.osProfile.linuxConfiguration) and vmproperties.osProfile.linuxConfiguration.patchSettings.patchMode\
-    \ !in (\"AutomaticByPlatform\", \"AutomaticByOS\")\n| distinct recommendationId,\
-    \ name, id, param1\n| union (resources\n| where type == \"microsoft.compute/virtualmachinescalesets\"\
-    \n| join kind=inner (\n    resources\n    | where type == \"microsoft.compute/virtualmachines\"\
-    \n    | project id = tostring(properties.virtualMachineScaleSet.id), vmproperties\
-    \ = properties\n) on id\n| extend recommendationId = \"e4ffd7b0-ba24-c84e-9352-ba4819f908c0\"\
-    , param1 = \"patchMode: Manual\", vmproperties.osProfile.windowsConfiguration.patchSettings.patchMode\n\
-    | where isnotnull(vmproperties.osProfile.windowsConfiguration) and vmproperties.osProfile.windowsConfiguration.patchSettings.patchMode\
-    \ !in (\"AutomaticByPlatform\", \"AutomaticByOS\")\n| distinct recommendationId,\
-    \ name, id, param1)\n\n"
+  arg: |
+    // Azure Resource Graph query
+    // Identifies VMs and VMSS with manual patch settings, excluding automatic patch modes
+    resources
+    | where type == "microsoft.compute/virtualmachinescalesets"
+    | join kind=inner (
+        resources
+        | where type == "microsoft.compute/virtualmachines"
+        | project id = tostring(properties.virtualMachineScaleSet.id), vmproperties = properties
+    ) on id
+    | extend recommendationId = "e4ffd7b0-ba24-c84e-9352-ba4819f908c0", param1 = "patchMode: Manual", vmproperties.osProfile.linuxConfiguration.patchSettings.patchMode
+    | where isnotnull(vmproperties.osProfile.linuxConfiguration) and vmproperties.osProfile.linuxConfiguration.patchSettings.patchMode !in ("AutomaticByPlatform", "AutomaticByOS")
+    | distinct recommendationId, name, id, param1
+    | union (resources
+    | where type == "microsoft.compute/virtualmachinescalesets"
+    | join kind=inner (
+        resources
+        | where type == "microsoft.compute/virtualmachines"
+        | project id = tostring(properties.virtualMachineScaleSet.id), vmproperties = properties
+    ) on id
+    | extend recommendationId = "e4ffd7b0-ba24-c84e-9352-ba4819f908c0", param1 = "patchMode: Manual", vmproperties.osProfile.windowsConfiguration.patchSettings.patchMode
+    | where isnotnull(vmproperties.osProfile.windowsConfiguration) and vmproperties.osProfile.windowsConfiguration.patchSettings.patchMode !in ("AutomaticByPlatform", "AutomaticByOS")
+    | distinct recommendationId, name, id, param1)
 resourceTypes:
 - Microsoft.Compute/virtualMachineScaleSets
 service: VMSS
 severity: 2
-text: Set Patch orchestration options to Azure-orchestrated
+source:
+  file: azure-resources/Compute/virtualMachineScaleSets/recommendations.yaml
+  type: aprl
+title: Set Patch orchestration options to Azure-orchestrated

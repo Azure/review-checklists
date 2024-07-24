@@ -1,26 +1,34 @@
-description: 'Enable backups for your virtual machines with Azure Backup to secure
-  and quickly recover your data. This service offers simple, secure, and cost-effective
-  solutions for backing up and recovering data from the Microsoft Azure cloud.
-
-  '
+description: |-
+  Enable backups for your virtual machines with Azure Backup to secure and quickly recover your data. This service offers simple, secure, and cost-effective solutions for backing up and recovering data from the Microsoft Azure cloud.
 guid: 1981f704-97b9-b645-9c57-33f8ded9261a
 labels:
   area: Disaster Recovery
-  source: azure-resources/Compute/virtualMachines/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: "// Azure Resource Graph Query\n// Find all VMs that do NOT have Backup enabled\n\
-    // Run query to see results.\nresources\n| where type =~ 'Microsoft.Compute/virtualMachines'\n\
-    | project name, id, tags\n| join kind=leftouter (\n    recoveryservicesresources\n\
-    \    | where type =~ 'Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems'\n\
-    \    | where properties.dataSourceInfo.datasourceType =~ 'Microsoft.Compute/virtualMachines'\n\
-    \    | project idBackupEnabled=properties.sourceResourceId\n    | extend name=strcat_array(array_slice(split(idBackupEnabled,\
-    \ '/'), 8, -1), '/')\n) on name\n| where isnull(idBackupEnabled)\n| project-away\
-    \ idBackupEnabled\n| project-away name1\n| project recommendationId = \"1981f704-97b9-b645-9c57-33f8ded9261a\"\
-    , name, id, tags\n| order by id asc\n\n"
+  arg: |
+    // Azure Resource Graph Query
+    // Find all VMs that do NOT have Backup enabled
+    // Run query to see results.
+    resources
+    | where type =~ 'Microsoft.Compute/virtualMachines'
+    | project name, id, tags
+    | join kind=leftouter (
+        recoveryservicesresources
+        | where type =~ 'Microsoft.RecoveryServices/vaults/backupFabrics/protectionContainers/protectedItems'
+        | where properties.dataSourceInfo.datasourceType =~ 'Microsoft.Compute/virtualMachines'
+        | project idBackupEnabled=properties.sourceResourceId
+        | extend name=strcat_array(array_slice(split(idBackupEnabled, '/'), 8, -1), '/')
+    ) on name
+    | where isnull(idBackupEnabled)
+    | project-away idBackupEnabled
+    | project-away name1
+    | project recommendationId = "1981f704-97b9-b645-9c57-33f8ded9261a", name, id, tags
+    | order by id asc
 resourceTypes:
 - Microsoft.Compute/virtualMachines
 service: VM
 severity: 1
-text: Backup VMs with Azure Backup service
+source:
+  file: azure-resources/Compute/virtualMachines/recommendations.yaml
+  type: aprl
+title: Backup VMs with Azure Backup service

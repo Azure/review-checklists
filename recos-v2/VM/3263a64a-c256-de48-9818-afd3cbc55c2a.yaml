@@ -1,36 +1,40 @@
-description: 'Azure shared disks let you attach a disk to multiple VMs at once for
-  deploying or migrating clustered applications, suitable only when a disk is shared
-  among VM cluster members.
-
-  '
+description: |-
+  Azure shared disks let you attach a disk to multiple VMs at once for deploying or migrating clustered applications, suitable only when a disk is shared among VM cluster members.
 guid: 3263a64a-c256-de48-9818-afd3cbc55c2a
 labels:
   area: Other Best Practices
-  source: azure-resources/Compute/virtualMachines/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: "// Azure Resource Graph Query\n// Find all Disks configured to be Shared.\
-    \ This is not an indication of an issue, but if a disk with this configuration\
-    \ is assigned to two or more VMs without a proper disk control mechanism (like\
-    \ a WSFC) it can lead to data loss\nresources\n| where type =~ 'Microsoft.Compute/disks'\n\
-    | where isnotnull(properties.maxShares) and properties.maxShares >= 2\n| project\
-    \ id, name, tags, lowerCaseDiskId = tolower(id), diskState = tostring(properties.diskState)\n\
-    | join kind = leftouter (\n    resources\n    | where type =~ 'Microsoft.Compute/virtualMachines'\n\
-    \    | project osDiskVmName = name, lowerCaseOsDiskId = tolower(properties.storageProfile.osDisk.managedDisk.id)\n\
-    \    | join kind = fullouter (\n        resources\n        | where type =~ 'Microsoft.Compute/virtualMachines'\n\
-    \        | mv-expand dataDisks = properties.storageProfile.dataDisks\n       \
-    \ | project dataDiskVmName = name, lowerCaseDataDiskId = tolower(dataDisks.managedDisk.id)\n\
-    \        )\n        on $left.lowerCaseOsDiskId == $right.lowerCaseDataDiskId\n\
-    \    | project lowerCaseDiskId = coalesce(lowerCaseOsDiskId, lowerCaseDataDiskId),\
-    \ vmName = coalesce(osDiskVmName, dataDiskVmName)\n    )\n    on lowerCaseDiskId\n\
-    | summarize vmNames = make_set(vmName) by name, id, tostring(tags), diskState\n\
-    | extend param1 = strcat(\"DiskState: \", diskState), param2 = iif(isempty(vmNames[0]),\
-    \ \"VMName: n/a\", strcat(\"VMName: \", strcat_array(vmNames, \", \")))\n| project\
-    \ recommendationId = \"3263a64a-c256-de48-9818-afd3cbc55c2a\", name, id, tags,\
-    \ param1, param2\n| order by id asc\n\n"
+  arg: |
+    // Azure Resource Graph Query
+    // Find all Disks configured to be Shared. This is not an indication of an issue, but if a disk with this configuration is assigned to two or more VMs without a proper disk control mechanism (like a WSFC) it can lead to data loss
+    resources
+    | where type =~ 'Microsoft.Compute/disks'
+    | where isnotnull(properties.maxShares) and properties.maxShares >= 2
+    | project id, name, tags, lowerCaseDiskId = tolower(id), diskState = tostring(properties.diskState)
+    | join kind = leftouter (
+        resources
+        | where type =~ 'Microsoft.Compute/virtualMachines'
+        | project osDiskVmName = name, lowerCaseOsDiskId = tolower(properties.storageProfile.osDisk.managedDisk.id)
+        | join kind = fullouter (
+            resources
+            | where type =~ 'Microsoft.Compute/virtualMachines'
+            | mv-expand dataDisks = properties.storageProfile.dataDisks
+            | project dataDiskVmName = name, lowerCaseDataDiskId = tolower(dataDisks.managedDisk.id)
+            )
+            on $left.lowerCaseOsDiskId == $right.lowerCaseDataDiskId
+        | project lowerCaseDiskId = coalesce(lowerCaseOsDiskId, lowerCaseDataDiskId), vmName = coalesce(osDiskVmName, dataDiskVmName)
+        )
+        on lowerCaseDiskId
+    | summarize vmNames = make_set(vmName) by name, id, tostring(tags), diskState
+    | extend param1 = strcat("DiskState: ", diskState), param2 = iif(isempty(vmNames[0]), "VMName: n/a", strcat("VMName: ", strcat_array(vmNames, ", ")))
+    | project recommendationId = "3263a64a-c256-de48-9818-afd3cbc55c2a", name, id, tags, param1, param2
+    | order by id asc
 resourceTypes:
 - Microsoft.Compute/virtualMachines
 service: VM
 severity: 1
-text: Shared disks should only be enabled in clustered servers
+source:
+  file: azure-resources/Compute/virtualMachines/recommendations.yaml
+  type: aprl
+title: Shared disks should only be enabled in clustered servers

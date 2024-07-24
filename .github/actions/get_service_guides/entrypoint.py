@@ -217,9 +217,10 @@ def parse_markdown(markdown, service, source=None, verbose=False):
             if (verbose): print("DEBUG: Processing pillar '{0}'".format(processing_pillar))
         if (line[0:4] == '> - ') and (processing_pillar != ''):
             reco = line[4:]
-            recos.append({'waf': processing_pillar, 'service': service, 'text': remove_markdown(reco), 'description': '', 'type': 'checklist', 'sourceType': 'wafsg', 'timestamp': timestamp})
+            reco_object = {'waf': processing_pillar, 'service': service, 'text': remove_markdown(reco), 'description': '', 'type': 'checklist', 'sourceType': 'wafsg', 'timestamp': timestamp}
             if source:
-                recos['sourceFile'] = source
+                reco_object['sourceFile'] = source
+            recos.append(reco_object)
         # If line matches a pattern that starts with "|" then comes a text, then "|" and a description and a closing "|"
         if (line[0:1] == '|'):
             line_table_items = line.split('|')

@@ -1,50 +1,31 @@
-description: 'The maintenance configuration settings let users schedule and manage
-  updates, making sure the updates or interruptions on the VM are performed within
-  a planned timeframe.
-
-  '
+description: |-
+  The maintenance configuration settings let users schedule and manage updates, making sure the updates or interruptions on the VM are performed within a planned timeframe.
 guid: 52ab9e5c-eec0-3148-8bd7-b6dd9e1be870
 labels:
   area: High Availability
-  source: azure-resources/Compute/virtualMachines/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: '// Azure Resource Graph Query
-
+  arg: |
+    // Azure Resource Graph Query
     // Find VMS that do not have maintenance configuration assigned
-
     Resources
-
     | extend resourceId = tolower(id)
-
     | project name, location, type, id, tags, resourceId, properties
-
-    | where type =~ ''Microsoft.Compute/virtualMachines''
-
+    | where type =~ 'Microsoft.Compute/virtualMachines'
     | join kind=leftouter (
-
     maintenanceresources
-
     | where type =~ "microsoft.maintenance/configurationassignments"
-
     | project planName = name, type, maintenanceProps = properties
-
     | extend resourceId = tostring(maintenanceProps.resourceId)
-
     ) on resourceId
-
     | where isnull(maintenanceProps)
-
-    | project recommendationId = "52ab9e5c-eec0-3148-8bd7-b6dd9e1be870",name, id,
-    tags
-
+    | project recommendationId = "52ab9e5c-eec0-3148-8bd7-b6dd9e1be870",name, id, tags
     | order by id asc
-
-
-    '
 resourceTypes:
 - Microsoft.Compute/virtualMachines
 service: VM
 severity: 0
-text: Use maintenance configurations for the VMs
+source:
+  file: azure-resources/Compute/virtualMachines/recommendations.yaml
+  type: aprl
+title: Use maintenance configurations for the VMs

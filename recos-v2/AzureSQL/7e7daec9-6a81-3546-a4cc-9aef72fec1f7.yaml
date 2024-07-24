@@ -1,27 +1,32 @@
-description: 'Monitoring and alerting are an important part of database operations.
-  When working with Azure SQL Database, make use of Azure Monitor and SQL Insights
-  to ensure that you capture relevant database metrics.
-
-  '
+description: |-
+  Monitoring and alerting are an important part of database operations. When working with Azure SQL Database, make use of Azure Monitor and SQL Insights to ensure that you capture relevant database metrics.
 guid: 7e7daec9-6a81-3546-a4cc-9aef72fec1f7
 labels:
   area: Monitoring and Alerting
-  source: azure-resources/Sql/servers/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: "// Azure Resource Graph Query\n// Provides a list of SQL databases that are\
-    \ not configured for monitoring.\nresources\n| where type == \"microsoft.insights/metricalerts\"\
-    \n| mv-expand properties.scopes\n| mv-expand properties.criteria.allOf\n| project\
-    \ databaseid = properties_scopes, monitoredMetric = properties_criteria_allOf.metricName\n\
-    | where databaseid contains 'databases'\n| summarize monitoredMetrics=make_list(monitoredMetric)\
-    \ by databaseid=tolower(tostring(databaseid))\n| join kind=fullouter   (\n  resources\n\
-    \  | where type =~ 'microsoft.sql/servers/databases'\n  | project databaseid =\
-    \ tolower(id), name, tags\n) on databaseid\n| where isnull(monitoredMetrics)\n\
-    | project recommendationId = \"7e7daec9-6a81-3546-a4cc-9aef72fec1f7\", name, id=databaseid1,\
-    \ tags, param1=strcat(\"MonitoringMetrics=false\" )\n\n"
+  arg: |
+    // Azure Resource Graph Query
+    // Provides a list of SQL databases that are not configured for monitoring.
+    resources
+    | where type == "microsoft.insights/metricalerts"
+    | mv-expand properties.scopes
+    | mv-expand properties.criteria.allOf
+    | project databaseid = properties_scopes, monitoredMetric = properties_criteria_allOf.metricName
+    | where databaseid contains 'databases'
+    | summarize monitoredMetrics=make_list(monitoredMetric) by databaseid=tolower(tostring(databaseid))
+    | join kind=fullouter   (
+      resources
+      | where type =~ 'microsoft.sql/servers/databases'
+      | project databaseid = tolower(id), name, tags
+    ) on databaseid
+    | where isnull(monitoredMetrics)
+    | project recommendationId = "7e7daec9-6a81-3546-a4cc-9aef72fec1f7", name, id=databaseid1, tags, param1=strcat("MonitoringMetrics=false" )
 resourceTypes:
 - Microsoft.Sql/servers
 service: Azure SQL
 severity: 0
-text: Monitor your Azure SQL Database in Near Real-Time to Detect Reliability Incidents
+source:
+  file: azure-resources/Sql/servers/recommendations.yaml
+  type: aprl
+title: Monitor your Azure SQL Database in Near Real-Time to Detect Reliability Incidents

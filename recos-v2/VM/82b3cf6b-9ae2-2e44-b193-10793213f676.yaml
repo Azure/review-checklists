@@ -1,37 +1,42 @@
-description: 'Unless you have a specific reason, it''s advised to associate a network
-  security group to a subnet or a network interface, but not both, to avoid unexpected
-  communication issues and troubleshooting due to potential rule conflicts between
-  the two associations.
-
-  '
+description: |-
+  Unless you have a specific reason, it's advised to associate a network security group to a subnet or a network interface, but not both, to avoid unexpected communication issues and troubleshooting due to potential rule conflicts between the two associations.
 guid: 82b3cf6b-9ae2-2e44-b193-10793213f676
 labels:
   area: Security
-  source: azure-resources/Compute/virtualMachines/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: "// Azure Resource Graph Query\n// Provides a list of virtual machines and\
-    \ associated NICs that do have an NSG associated to them and also an NSG associated\
-    \ to the subnet.\nResources\n| where type =~ 'Microsoft.Network/networkInterfaces'\n\
-    | where isnotnull(properties.networkSecurityGroup)\n| mv-expand ipConfigurations\
-    \ = properties.ipConfigurations, nsg = properties.networkSecurityGroup\n| project\
-    \ nicId = tostring(id), subnetId = tostring(ipConfigurations.properties.subnet.id),\
-    \ nsgName=split(nsg.id, '/')[8]\n| parse kind=regex subnetId with '/virtualNetworks/'\
-    \ virtualNetwork '/subnets/' subnet\n    | join kind=inner (\n        Resources\n\
-    \        | where type =~ 'Microsoft.Network/NetworkSecurityGroups' and isnotnull(properties.subnets)\n\
-    \        | project name, resourceGroup, subnet=properties.subnets\n        | mv-expand\
-    \ subnet\n        | project subnetId=tostring(subnet.id)\n    ) on subnetId\n\
-    \    | project nicId\n| join kind=leftouter (\n    Resources\n    | where type\
-    \ =~ 'Microsoft.Compute/virtualMachines'\n    | where isnotnull(properties.networkProfile.networkInterfaces)\n\
-    \    | mv-expand nic=properties.networkProfile.networkInterfaces\n    | project\
-    \ vmName = name, vmId = id, tags, nicId = nic.id, nicName=split(nic.id, '/')[8]\n\
-    \    | extend nicId = tostring(nicId)\n) on nicId\n| project recommendationId\
-    \ = \"82b3cf6b-9ae2-2e44-b193-10793213f676\", name=vmName, id = vmId, tags, param1\
-    \ = strcat(\"nic-name=\", nicName)\n\n"
+  arg: |
+    // Azure Resource Graph Query
+    // Provides a list of virtual machines and associated NICs that do have an NSG associated to them and also an NSG associated to the subnet.
+    Resources
+    | where type =~ 'Microsoft.Network/networkInterfaces'
+    | where isnotnull(properties.networkSecurityGroup)
+    | mv-expand ipConfigurations = properties.ipConfigurations, nsg = properties.networkSecurityGroup
+    | project nicId = tostring(id), subnetId = tostring(ipConfigurations.properties.subnet.id), nsgName=split(nsg.id, '/')[8]
+    | parse kind=regex subnetId with '/virtualNetworks/' virtualNetwork '/subnets/' subnet
+        | join kind=inner (
+            Resources
+            | where type =~ 'Microsoft.Network/NetworkSecurityGroups' and isnotnull(properties.subnets)
+            | project name, resourceGroup, subnet=properties.subnets
+            | mv-expand subnet
+            | project subnetId=tostring(subnet.id)
+        ) on subnetId
+        | project nicId
+    | join kind=leftouter (
+        Resources
+        | where type =~ 'Microsoft.Compute/virtualMachines'
+        | where isnotnull(properties.networkProfile.networkInterfaces)
+        | mv-expand nic=properties.networkProfile.networkInterfaces
+        | project vmName = name, vmId = id, tags, nicId = nic.id, nicName=split(nic.id, '/')[8]
+        | extend nicId = tostring(nicId)
+    ) on nicId
+    | project recommendationId = "82b3cf6b-9ae2-2e44-b193-10793213f676", name=vmName, id = vmId, tags, param1 = strcat("nic-name=", nicName)
 resourceTypes:
 - Microsoft.Compute/virtualMachines
 service: VM
 severity: 2
-text: VM network interfaces and associated subnets both have a Network Security Group
+source:
+  file: azure-resources/Compute/virtualMachines/recommendations.yaml
+  type: aprl
+title: VM network interfaces and associated subnets both have a Network Security Group
   associated

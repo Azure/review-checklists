@@ -1,35 +1,41 @@
-description: 'Recommended changing to "Disable public access and enable private access"
-  and creating a Private Endpoint to improve security by restricting direct public
-  access and ensuring connections are made privately, enhancing data protection and
-  minimizing potential external threats.
-
-  '
+description: |-
+  Recommended changing to "Disable public access and enable private access" and creating a Private Endpoint to improve security by restricting direct public access and ensuring connections are made privately, enhancing data protection and minimizing potential external threats.
 guid: 70b1d2be-e6c4-b54e-9959-b1b690f9e485
 labels:
   area: Security
-  source: azure-resources/Compute/virtualMachines/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: "// Azure Resource Graph Query\n// Find all Disks with \"Enable public access\
-    \ from all networks\" enabled\nresources\n| where type =~ 'Microsoft.Compute/disks'\n\
-    | where properties.publicNetworkAccess == \"Enabled\"\n| project id, name, tags,\
-    \ lowerCaseDiskId = tolower(id)\n| join kind = leftouter (\n    resources\n  \
-    \  | where type =~ 'Microsoft.Compute/virtualMachines'\n    | project osDiskVmName\
-    \ = name, lowerCaseOsDiskId = tolower(properties.storageProfile.osDisk.managedDisk.id)\n\
-    \    | join kind = fullouter (\n        resources\n        | where type =~ 'Microsoft.Compute/virtualMachines'\n\
-    \        | mv-expand dataDisks = properties.storageProfile.dataDisks\n       \
-    \ | project dataDiskVmName = name, lowerCaseDataDiskId = tolower(dataDisks.managedDisk.id)\n\
-    \        )\n        on $left.lowerCaseOsDiskId == $right.lowerCaseDataDiskId\n\
-    \    | project lowerCaseDiskId = coalesce(lowerCaseOsDiskId, lowerCaseDataDiskId),\
-    \ vmName = coalesce(osDiskVmName, dataDiskVmName)\n    )\n    on lowerCaseDiskId\n\
-    | summarize vmNames = make_set(vmName) by name, id, tostring(tags)\n| extend param1\
-    \ = iif(isempty(vmNames[0]), \"VMName: n/a\", strcat(\"VMName: \", strcat_array(vmNames,\
-    \ \", \")))\n| project recommendationId = \"70b1d2be-e6c4-b54e-9959-b1b690f9e485\"\
-    , name, id, tags, param1\n| order by id asc\n\n"
+  arg: |
+    // Azure Resource Graph Query
+    // Find all Disks with "Enable public access from all networks" enabled
+    resources
+    | where type =~ 'Microsoft.Compute/disks'
+    | where properties.publicNetworkAccess == "Enabled"
+    | project id, name, tags, lowerCaseDiskId = tolower(id)
+    | join kind = leftouter (
+        resources
+        | where type =~ 'Microsoft.Compute/virtualMachines'
+        | project osDiskVmName = name, lowerCaseOsDiskId = tolower(properties.storageProfile.osDisk.managedDisk.id)
+        | join kind = fullouter (
+            resources
+            | where type =~ 'Microsoft.Compute/virtualMachines'
+            | mv-expand dataDisks = properties.storageProfile.dataDisks
+            | project dataDiskVmName = name, lowerCaseDataDiskId = tolower(dataDisks.managedDisk.id)
+            )
+            on $left.lowerCaseOsDiskId == $right.lowerCaseDataDiskId
+        | project lowerCaseDiskId = coalesce(lowerCaseOsDiskId, lowerCaseDataDiskId), vmName = coalesce(osDiskVmName, dataDiskVmName)
+        )
+        on lowerCaseDiskId
+    | summarize vmNames = make_set(vmName) by name, id, tostring(tags)
+    | extend param1 = iif(isempty(vmNames[0]), "VMName: n/a", strcat("VMName: ", strcat_array(vmNames, ", ")))
+    | project recommendationId = "70b1d2be-e6c4-b54e-9959-b1b690f9e485", name, id, tags, param1
+    | order by id asc
 resourceTypes:
 - Microsoft.Compute/virtualMachines
 service: VM
 severity: 2
-text: Network access to the VM disk should be set to Disable public access and enable
+source:
+  file: azure-resources/Compute/virtualMachines/recommendations.yaml
+  type: aprl
+title: Network access to the VM disk should be set to Disable public access and enable
   private access

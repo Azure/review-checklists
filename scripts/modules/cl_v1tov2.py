@@ -25,7 +25,14 @@ def get_standard_service_name(service_name, service_dictionary=None):
     else:
         return service_name
 
-# Function that returns a data structure with the objects in v1 format
+# Function to modify yaml.dump for multiline strings, see https://github.com/yaml/pyyaml/issues/240
+def str_presenter(dumper, data):
+    if data.count('\n') > 0:
+        data = "\n".join([line.rstrip() for line in data.splitlines()])  # Remove any trailing spaces, then put it back together again
+        return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
+    return dumper.represent_scalar('tag:yaml.org,2002:str', data)
+
+# Function that returns a data structure with the objects in v2 format
 def generate_v2(input_file, service_dictionary=None, labels=None, id_label=None, cat_label=None, subcat_label=None, verbose=False):
     if verbose: print("DEBUG: Converting file", input_file)
     # Default values for non-mandatory labels
@@ -78,18 +85,29 @@ def generate_v2(input_file, service_dictionary=None, labels=None, id_label=None,
                 # Source
                 if 'source' in item:
                     if item['source'].lower() == 'aprl' or item['source'].lower() == 'wafsg':
-                        v2reco['labels']['sourceType'] = item['source'].lower()
+                        v2reco['source'] = {'type': item['source'].lower()}
                     elif '.yaml' in item['source']:   # If it was imported from YAML it is coming from APRL
-                        v2reco['labels']['sourceType'] = 'aprl'
-                if 'sourceType' in v2reco['labels']:
-                    v2reco['labels']['sourceFile'] = item['sourceType']
-                if 'sourceFile' in v2reco['labels']:
-                    v2reco['labels']['sourceFile'] = item['sourceFile']
+                        v2reco['source'] = {'type': 'aprl'}
+                    elif '.md' in item['source']:   # If it was imported from Markdown it is coming from a WAF service guide
+                        v2reco['source'] = {'type': 'wafsg'}
+                elif 'sourceType' in item:
+                    v2reco['source'] = {'type': item['sourceType'].lower()}
+                    if 'sourceFile' in item:
+                        v2reco['source']['file'] = item['sourceFile']
+                else:
+                    v2reco['source'] = {'type': 'local', 'file': input_file}
+                # Service and resource types
                 if 'service' in item:
                     v2reco['service'] = get_standard_service_name(item['service'], service_dictionary=service_dictionary)
                 v2reco['resourceTypes'] = []
                 if 'recommendationResourceType' in item:
                     v2reco['resourceTypes'].append(item['recommendationResourceType'])
+                # Else try to get the svc from the service dictionary
+                else:
+                    if service_dictionary:
+                        for svc in service_dictionary:
+                            if item['service'] in svc['names']:
+                                v2reco['resourceTypes'].append(svc['arm'])
                 # If additional labels were specified as parameter, add them to the object
                 if labels:
                     for key in labels.keys():
@@ -116,6 +134,9 @@ def store_v2(output_folder, checklist, output_format='yaml', overwrite=False, ve
     # Create the output folder if it doesn't exist
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
+    # Add representer to yaml for multiline strings, see https://github.com/yaml/pyyaml/issues/240
+    yaml.add_representer(str, str_presenter)
+    yaml.representer.SafeRepresenter.add_representer(str, str_presenter) # to use with safe_dum
     # Store each object in a separate YAML file
     for item in checklist:
         # ToDo: create folder structure for the output files:
@@ -176,6 +197,7 @@ def store_v2(output_folder, checklist, output_format='yaml', overwrite=False, ve
     # Clean up all empty folders that might exist in the output folder, recursively
     if overwrite:
         try:
+            if verbose: print("DEBUG: Removing empty directories in output folder", output_folder)
             [os.removedirs(p) for p in Path(output_folder).glob('**/*') if p.is_dir() and len(list(p.iterdir())) == 0]
         except Exception as e:
             print("ERROR: Error when removing empty directories in output folder", output_folder, ":", str(e))

@@ -1,42 +1,56 @@
-description: 'Keeping your virtual machine (VM) secure is crucial for the applications
-  you run. This involves using various Azure services and features to ensure secure
-  access to your VMs and the secure storage of your data, aiming for overall security
-  of your VM and applications.
-
-  '
+description: |-
+  Keeping your virtual machine (VM) secure is crucial for the applications you run. This involves using various Azure services and features to ensure secure access to your VMs and the secure storage of your data, aiming for overall security of your VM and applications.
 guid: c42343ae-2712-2843-a285-3437eb0b28a1
 labels:
   area: Governance
-  source: azure-resources/Compute/virtualMachines/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: "// Azure Resource Graph Query\n// Find all VMs in \"Non-compliant\" state\
-    \ with Azure Policies\npolicyresources\n| where type =~ \"Microsoft.PolicyInsights/policyStates\"\
-    \ and properties.resourceType =~ \"Microsoft.Compute/virtualMachines\" and properties.complianceState\
-    \ =~ \"NonCompliant\"\n| project\n    policyDefinitionId = tolower(properties.policyDefinitionId),\n\
-    \    policyAssignmentId = tolower(properties.policyAssignmentId),\n    targetResourceId\
-    \ = tolower(properties.resourceId)\n// Join the policy definition details\n| join\
-    \ kind = leftouter (\n    policyresources\n    | where type =~ \"Microsoft.Authorization/policyDefinitions\"\
-    \n    | project policyDefinitionId = tolower(id), policyDefinitionDisplayName\
-    \ = properties.displayName\n    )\n    on policyDefinitionId\n| project policyDefinitionId,\
-    \ policyDefinitionDisplayName, policyAssignmentId, targetResourceId\n// Join the\
-    \ policy assignment details\n| join kind = leftouter (\n    policyresources\n\
-    \    | where type =~ \"Microsoft.Authorization/policyAssignments\"\n    | project\
-    \ policyAssignmentId = tolower(id), policyAssignmentDisplayName = properties.displayName\n\
-    \    )\n    on policyAssignmentId\n| project policyDefinitionId, policyDefinitionDisplayName,\
-    \ policyAssignmentId, policyAssignmentDisplayName, targetResourceId\n// Join the\
-    \ target resource details\n| join kind = leftouter (\n    resources\n    | where\
-    \ type =~ \"Microsoft.Compute/virtualMachines\"\n    | project targetResourceId\
-    \ = tolower(id), targetResourceIdPreservedCase = id, targetResourceName = name,\
-    \ targetResourceTags = tags\n    )\n    on targetResourceId\n| project\n    recommendationId\
-    \ = \"c42343ae-2712-2843-a285-3437eb0b28a1\",\n    name = targetResourceName,\n\
-    \    id = targetResourceIdPreservedCase,\n    tags = targetResourceTags,\n   \
-    \ param1 = strcat(\"DefinitionName: \", policyDefinitionDisplayName),\n    param2\
-    \ = strcat(\"DefinitionID: \", policyDefinitionId),\n    param3 = strcat(\"AssignmentName:\
-    \ \", policyAssignmentDisplayName),\n    param4 = strcat(\"AssignmentID: \", policyAssignmentId)\n"
+  arg: |-
+    // Azure Resource Graph Query
+    // Find all VMs in "Non-compliant" state with Azure Policies
+    policyresources
+    | where type =~ "Microsoft.PolicyInsights/policyStates" and properties.resourceType =~ "Microsoft.Compute/virtualMachines" and properties.complianceState =~ "NonCompliant"
+    | project
+        policyDefinitionId = tolower(properties.policyDefinitionId),
+        policyAssignmentId = tolower(properties.policyAssignmentId),
+        targetResourceId = tolower(properties.resourceId)
+    // Join the policy definition details
+    | join kind = leftouter (
+        policyresources
+        | where type =~ "Microsoft.Authorization/policyDefinitions"
+        | project policyDefinitionId = tolower(id), policyDefinitionDisplayName = properties.displayName
+        )
+        on policyDefinitionId
+    | project policyDefinitionId, policyDefinitionDisplayName, policyAssignmentId, targetResourceId
+    // Join the policy assignment details
+    | join kind = leftouter (
+        policyresources
+        | where type =~ "Microsoft.Authorization/policyAssignments"
+        | project policyAssignmentId = tolower(id), policyAssignmentDisplayName = properties.displayName
+        )
+        on policyAssignmentId
+    | project policyDefinitionId, policyDefinitionDisplayName, policyAssignmentId, policyAssignmentDisplayName, targetResourceId
+    // Join the target resource details
+    | join kind = leftouter (
+        resources
+        | where type =~ "Microsoft.Compute/virtualMachines"
+        | project targetResourceId = tolower(id), targetResourceIdPreservedCase = id, targetResourceName = name, targetResourceTags = tags
+        )
+        on targetResourceId
+    | project
+        recommendationId = "c42343ae-2712-2843-a285-3437eb0b28a1",
+        name = targetResourceName,
+        id = targetResourceIdPreservedCase,
+        tags = targetResourceTags,
+        param1 = strcat("DefinitionName: ", policyDefinitionDisplayName),
+        param2 = strcat("DefinitionID: ", policyDefinitionId),
+        param3 = strcat("AssignmentName: ", policyAssignmentDisplayName),
+        param4 = strcat("AssignmentID: ", policyAssignmentId)
 resourceTypes:
 - Microsoft.Compute/virtualMachines
 service: VM
 severity: 2
-text: Ensure that your VMs are compliant with Azure Policies
+source:
+  file: azure-resources/Compute/virtualMachines/recommendations.yaml
+  type: aprl
+title: Ensure that your VMs are compliant with Azure Policies

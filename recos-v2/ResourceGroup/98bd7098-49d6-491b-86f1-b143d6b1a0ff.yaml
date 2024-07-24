@@ -1,50 +1,28 @@
-description: 'Ensure resource locations align with their resource group to manage
-  resources during regional outages. ARM stores resource data, which if in an unavailable
-  region, could halt updates, rendering resources read-only.
-
-  '
+description: |-
+  Ensure resource locations align with their resource group to manage resources during regional outages. ARM stores resource data, which if in an unavailable region, could halt updates, rendering resources read-only.
 guid: 98bd7098-49d6-491b-86f1-b143d6b1a0ff
 labels:
   area: Disaster Recovery
-  source: azure-resources/Resources/resourceGroups/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: '// Azure Resource Graph Query
-
-    // Provides a list of Azure Resource Groups that have resources deployed in a
-    region different than the Resource Group region
-
+  arg: |
+    // Azure Resource Graph Query
+    // Provides a list of Azure Resource Groups that have resources deployed in a region different than the Resource Group region
     resources
-
     | project id, name, tags, resourceGroup, location
-
-    | where location != "global"                                                                                                          //
-    exclude global resources
-
-    | where resourceGroup != "networkwatcherrg"                                                                                           //
-    exclude networkwatcherrg
-
-    | where split(id, "/", 3)[0] =~ "resourceGroups"                                                                                      //
-    resource is in a resource group
-
-    | extend resourceGroupId = strcat_array(array_slice(split(id, "/"),0,4), "/")                                                         //
-    create resource group resource id
-
-    | join (resourcecontainers | project containerid=id, containerlocation=location
-    ) on $left.resourceGroupId == $right.[''containerid'']  // join to resourcecontainers
-    table
-
+    | where location != "global"                                                                                                          // exclude global resources
+    | where resourceGroup != "networkwatcherrg"                                                                                           // exclude networkwatcherrg
+    | where split(id, "/", 3)[0] =~ "resourceGroups"                                                                                      // resource is in a resource group
+    | extend resourceGroupId = strcat_array(array_slice(split(id, "/"),0,4), "/")                                                         // create resource group resource id
+    | join (resourcecontainers | project containerid=id, containerlocation=location ) on $left.resourceGroupId == $right.['containerid']  // join to resourcecontainers table
     | where  location != containerlocation
-
     | project recommendationId="98bd7098-49d6-491b-86f1-b143d6b1a0ff", name, id, tags
-
     | order by id asc
-
-
-    '
 resourceTypes:
 - Microsoft.Resources/resourceGroups
 service: Resource Group
 severity: 0
-text: Ensure Resource Group and its Resources are located in the same Region
+source:
+  file: azure-resources/Resources/resourceGroups/recommendations.yaml
+  type: aprl
+title: Ensure Resource Group and its Resources are located in the same Region

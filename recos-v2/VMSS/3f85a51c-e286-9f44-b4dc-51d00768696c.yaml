@@ -1,27 +1,30 @@
-description: 'Predictive autoscale utilizes machine learning to efficiently manage
-  and scale Azure Virtual Machine Scale Sets by forecasting CPU load through historical
-  usage analysis, ensuring timely scale-out to meet demand.
-
-  '
+description: |-
+  Predictive autoscale utilizes machine learning to efficiently manage and scale Azure Virtual Machine Scale Sets by forecasting CPU load through historical usage analysis, ensuring timely scale-out to meet demand.
 guid: 3f85a51c-e286-9f44-b4dc-51d00768696c
 labels:
   area: Scalability
-  source: azure-resources/Compute/virtualMachineScaleSets/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: "// Azure Resource Graph Query\n// Find VMSS instances associated with autoscale\
-    \ settings when predictiveAutoscalePolicy_scaleMode is disabled\nresources\n|\
-    \ where type == \"microsoft.compute/virtualmachinescalesets\"\n| project name,\
-    \ id, tags\n| join kind=leftouter  (\n    resources\n    | where type == \"microsoft.insights/autoscalesettings\"\
-    \n    | where tostring(properties.targetResourceUri) contains \"Microsoft.Compute/virtualMachineScaleSets\"\
-    \n    | project id = tostring(properties.targetResourceUri), autoscalesettings\
-    \ = properties\n) on id\n| where autoscalesettings.enabled == \"true\" and autoscalesettings.predictiveAutoscalePolicy.scaleMode\
-    \ == \"Disabled\"\n| project recommendationId = \"3f85a51c-e286-9f44-b4dc-51d00768696c\"\
-    , name, id, tags, param1 = \"predictiveAutoscalePolicy_scaleMode: Disabled\"\n\
-    | order by id asc\n\n"
+  arg: |
+    // Azure Resource Graph Query
+    // Find VMSS instances associated with autoscale settings when predictiveAutoscalePolicy_scaleMode is disabled
+    resources
+    | where type == "microsoft.compute/virtualmachinescalesets"
+    | project name, id, tags
+    | join kind=leftouter  (
+        resources
+        | where type == "microsoft.insights/autoscalesettings"
+        | where tostring(properties.targetResourceUri) contains "Microsoft.Compute/virtualMachineScaleSets"
+        | project id = tostring(properties.targetResourceUri), autoscalesettings = properties
+    ) on id
+    | where autoscalesettings.enabled == "true" and autoscalesettings.predictiveAutoscalePolicy.scaleMode == "Disabled"
+    | project recommendationId = "3f85a51c-e286-9f44-b4dc-51d00768696c", name, id, tags, param1 = "predictiveAutoscalePolicy_scaleMode: Disabled"
+    | order by id asc
 resourceTypes:
 - Microsoft.Compute/virtualMachineScaleSets
 service: VMSS
 severity: 2
-text: Enable Predictive autoscale and configure at least for Forecast Only
+source:
+  file: azure-resources/Compute/virtualMachineScaleSets/recommendations.yaml
+  type: aprl
+title: Enable Predictive autoscale and configure at least for Forecast Only

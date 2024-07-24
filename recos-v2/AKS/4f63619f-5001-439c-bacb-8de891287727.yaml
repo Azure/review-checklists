@@ -1,28 +1,34 @@
-description: 'Azure Availability Zones ensure high availability by offering independent
-  locations within regions, equipped with their own power, cooling, and networking
-  to ensure applications and data are protected from datacenter-level failures.
-
-  '
+description: |-
+  Azure Availability Zones ensure high availability by offering independent locations within regions, equipped with their own power, cooling, and networking to ensure applications and data are protected from datacenter-level failures.
 guid: 4f63619f-5001-439c-bacb-8de891287727
 labels:
   area: High Availability
-  source: azure-resources/ContainerService/managedClusters/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: "// Azure Resource Graph Query\n// Returns AKS clusters that do not have any\
-    \ availability zones enabled or only use a single zone\nresources\n| where type\
-    \ =~ \"Microsoft.ContainerService/managedClusters\"\n| project id, name, tags,\
-    \ location, pools = properties.agentPoolProfiles\n| mv-expand pool = pools\n|\
-    \ extend\n    numOfAvailabilityZones = iif(isnull(pool.availabilityZones), 0,\
-    \ array_length(pool.availabilityZones))\n| where numOfAvailabilityZones < 2\n\
-    | project\n    recommendationId = \"4f63619f-5001-439c-bacb-8de891287727\",\n\
-    \    id,\n    name,\n    tags,\n    param1 = strcat(\"NodePoolName: \", pool.name),\n\
-    \    param2 = strcat(\"Mode: \", pool.mode),\n    param3 = strcat(\"AvailabilityZones:\
-    \ \", iif(numOfAvailabilityZones == 0, \"None\", strcat(\"Zone \", strcat_array(pool.availabilityZones,\
-    \ \", \")))),\n    param4 = strcat(\"Location: \", location)\n"
+  arg: |-
+    // Azure Resource Graph Query
+    // Returns AKS clusters that do not have any availability zones enabled or only use a single zone
+    resources
+    | where type =~ "Microsoft.ContainerService/managedClusters"
+    | project id, name, tags, location, pools = properties.agentPoolProfiles
+    | mv-expand pool = pools
+    | extend
+        numOfAvailabilityZones = iif(isnull(pool.availabilityZones), 0, array_length(pool.availabilityZones))
+    | where numOfAvailabilityZones < 2
+    | project
+        recommendationId = "4f63619f-5001-439c-bacb-8de891287727",
+        id,
+        name,
+        tags,
+        param1 = strcat("NodePoolName: ", pool.name),
+        param2 = strcat("Mode: ", pool.mode),
+        param3 = strcat("AvailabilityZones: ", iif(numOfAvailabilityZones == 0, "None", strcat("Zone ", strcat_array(pool.availabilityZones, ", ")))),
+        param4 = strcat("Location: ", location)
 resourceTypes:
 - Microsoft.ContainerService/managedClusters
 service: AKS
 severity: 0
-text: Deploy AKS cluster across availability zones
+source:
+  file: azure-resources/ContainerService/managedClusters/recommendations.yaml
+  type: aprl
+title: Deploy AKS cluster across availability zones

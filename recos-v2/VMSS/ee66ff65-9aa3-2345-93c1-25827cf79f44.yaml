@@ -1,25 +1,30 @@
-description: 'Use custom autoscale for VMSS based on metrics and schedules to improve
-  performance and cost effectiveness, adjusting instances as demand changes.
-
-  '
+description: |-
+  Use custom autoscale for VMSS based on metrics and schedules to improve performance and cost effectiveness, adjusting instances as demand changes.
 guid: ee66ff65-9aa3-2345-93c1-25827cf79f44
 labels:
   area: Scalability
-  source: azure-resources/Compute/virtualMachineScaleSets/recommendations.yaml
-  sourceType: aprl
 links: []
 queries:
-- arg: "// Azure Resource Graph Query\n// Find VMSS instances associated with autoscale\
-    \ settings when autoscale is disabled\nresources\n| where type == \"microsoft.compute/virtualmachinescalesets\"\
-    \n| project name, id, tags\n| join kind=leftouter  (\n    resources\n    | where\
-    \ type == \"microsoft.insights/autoscalesettings\"\n    | where tostring(properties.targetResourceUri)\
-    \ contains \"Microsoft.Compute/virtualMachineScaleSets\"\n    | project id = tostring(properties.targetResourceUri),\
-    \ autoscalesettings = properties\n) on id\n| where isnull(autoscalesettings) or\
-    \ autoscalesettings.enabled == \"false\"\n| project recommendationId = \"ee66ff65-9aa3-2345-93c1-25827cf79f44\"\
-    , name, id, tags, param1 = \"autoscalesettings: Disabled\"\n| order by id asc\n\
-    \n"
+  arg: |
+    // Azure Resource Graph Query
+    // Find VMSS instances associated with autoscale settings when autoscale is disabled
+    resources
+    | where type == "microsoft.compute/virtualmachinescalesets"
+    | project name, id, tags
+    | join kind=leftouter  (
+        resources
+        | where type == "microsoft.insights/autoscalesettings"
+        | where tostring(properties.targetResourceUri) contains "Microsoft.Compute/virtualMachineScaleSets"
+        | project id = tostring(properties.targetResourceUri), autoscalesettings = properties
+    ) on id
+    | where isnull(autoscalesettings) or autoscalesettings.enabled == "false"
+    | project recommendationId = "ee66ff65-9aa3-2345-93c1-25827cf79f44", name, id, tags, param1 = "autoscalesettings: Disabled"
+    | order by id asc
 resourceTypes:
 - Microsoft.Compute/virtualMachineScaleSets
 service: VMSS
 severity: 0
-text: Configure VMSS Autoscale to custom and configure the scaling metrics
+source:
+  file: azure-resources/Compute/virtualMachineScaleSets/recommendations.yaml
+  type: aprl
+title: Configure VMSS Autoscale to custom and configure the scaling metrics

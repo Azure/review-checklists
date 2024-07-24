@@ -13,8 +13,9 @@ import os
 from pathlib import Path
 
 # Function that returns true if a given reco matches the criteria specified by a label selector, a service selector and a WAF selector
-def reco_matches_criteria(reco, labels=None, services=None, waf_pillars=None, arg=False, guid=None):
+def reco_matches_criteria(reco, labels=None, services=None, waf_pillars=None, sources=None, arg=False, guid=None):
     # Check if the reco fulfills the criteria
+    # GUID
     if guid:
         guid_match = False
         if 'guid' in reco:
@@ -22,6 +23,7 @@ def reco_matches_criteria(reco, labels=None, services=None, waf_pillars=None, ar
                 return True
     else:
         guid_match = True
+    # Labels
     if labels:
         label_match = False
         if 'labels' in reco:
@@ -31,6 +33,7 @@ def reco_matches_criteria(reco, labels=None, services=None, waf_pillars=None, ar
                         label_match = True
     else:
         label_match = True
+    # Services
     if services:
         service_match = False
         if 'none' in services:
@@ -40,6 +43,7 @@ def reco_matches_criteria(reco, labels=None, services=None, waf_pillars=None, ar
                 service_match = True
     else:
         service_match = True
+    # WAF
     if waf_pillars:
         waf_match = False
         if 'none' in waf_pillars:
@@ -49,13 +53,42 @@ def reco_matches_criteria(reco, labels=None, services=None, waf_pillars=None, ar
                 waf_match = True
     else:
         waf_match = True
+    # Sources
+    if sources:
+        src_match = False
+        if 'none' in sources:
+            src_match = ('source' not in reco)
+        if 'source' in reco:
+            if 'type' in reco['source']:
+                if reco['source']['type'].lower() in sources:
+                    src_match = True
+    else:
+        src_match = True
     arg_match = ((not arg) or ('queries' in reco and 'arg' in reco['queries']))
     # If no selector was provided, add all recos to the list
-    return (guid_match and label_match and service_match and waf_match and arg_match)
+    return (guid_match and label_match and service_match and waf_match and arg_match and src_match)
+
+# Opens a file with a text editor
+def open_file_with_editor(file, text_editor=None, verbose=False):
+    if text_editor:
+        if verbose: print("DEBUG: Opening file", file.resolve(), "with text editor", text_editor)
+        os.system(text_editor + ' ' + str(file.resolve()))
+    else:
+        if os.name == 'nt':
+            if verbose: print("DEBUG: Opening file", file.resolve(), "with default Windows text editor")
+            os.system(str(file.resolve()))
+        elif os.name == 'posix':
+            if os.getenv('EDITOR'):
+                if verbose: print("DEBUG: Opening file", file, "with default Linux text editor")
+                os.system('%s %s' % (os.getenv('EDITOR'), str(file.resolve())))
+            else:
+                print("ERROR: No text editor found in the EDITOR environment variable")
+        else:
+            print("ERROR: Unsupported OS", os.name)
 
 # Function that loads all of the found v2 YAML/JSON files into a single object
 # labels, services and waf_pillars are selectors with object structure
-def load_v2_files(input_folder, format='yaml', labels=None, services=None, waf_pillars=None, guid=None, arg=False, verbose=False):
+def load_v2_files(input_folder, format='yaml', labels=None, services=None, waf_pillars=None, sources=None, guid=None, arg=False, open_editor=False, text_editor=None, verbose=False):
     # Banner
     if verbose:
         print("DEBUG: ======================================================================")
@@ -69,23 +102,29 @@ def load_v2_files(input_folder, format='yaml', labels=None, services=None, waf_p
             # JSON
             if format == 'json':
                 if file.suffix == '.json':
-                    if verbose: print("DEBUG: Loading file", file)
+                    # if verbose: print("DEBUG: Loading file", file)
                     try:
                         with open(file.resolve()) as f:
                             v2reco = json.safe_load(f)
-                            if reco_matches_criteria(v2reco, labels=labels, services=services, waf_pillars=waf_pillars, guid=guid):
+                            if reco_matches_criteria(v2reco, labels=labels, services=services, waf_pillars=waf_pillars, sources=sources, guid=guid):
+                                if verbose: print("DEBUG: reco in file", file, "matches criteria.")
                                 v2recos.append(v2reco)
+                                if open_editor:
+                                    open_file_with_editor(file, text_editor=text_editor, verbose=verbose)
                     except Exception as e:
                         print("ERROR: Error when loading file {0} - {1}". format(file, str(e)))
             # YAML
             if format == 'yaml' or format == 'yml':
                 if (file.suffix == '.yaml') or (file.suffix == '.yml'):
-                    if verbose: print("DEBUG: Loading file", file)
+                    # if verbose: print("DEBUG: Loading file", file)
                     try:
                         with open(file.resolve()) as f:
                             v2reco = yaml.safe_load(f)
                             if reco_matches_criteria(v2reco, labels=labels, services=services, waf_pillars=waf_pillars, guid=guid, arg=arg):
+                                if verbose: print("DEBUG: reco in file", file, "matches criteria.")
                                 v2recos.append(v2reco)
+                                if open_editor:
+                                    open_file_with_editor(file, text_editor=text_editor, verbose=verbose)
                     except Exception as e:
                         print("ERROR: Error when loading file {0} - {1}". format(file, str(e)))
         # Return the object with all the v2 objects
@@ -107,6 +146,8 @@ def v2_stats_from_object(v2recos, verbose=False):
     stats['labels'] = {}
     stats['services'] = {}
     stats['waf'] = {}
+    stats['sources'] = {}
+    stats['resourceTypes'] = {}
     for reco in v2recos:
         # Count the number of items per severity
         if 'severity' in reco:
@@ -149,27 +190,41 @@ def v2_stats_from_object(v2recos, verbose=False):
                 stats['waf']['undefined'] += 1
             else:
                 stats['waf']['undefined'] = 1
+        # Count the number of items per source
+        if 'source' in reco:
+            if 'type' in reco['source']:
+                if reco['source']['type'] in stats['sources']:
+                    stats['sources'][reco['source']['type']] += 1
+                else:
+                    stats['sources'][reco['source']['type']] = 1
+        # Resource types
+        if 'resourceTypes' in reco:
+            for resourceType in reco['resourceTypes']:
+                if resourceType in stats['resourceTypes']:
+                    stats['resourceTypes'][resourceType] += 1
+                else:
+                    stats['resourceTypes'][resourceType] = 1
     # Return the stats object
     return stats
 
 # Return an object with some statistics about the v2 objects in a folder
-def v2_stats_from_folder(input_folder, format='yaml', labels=None, services=None, waf_pillars=None, verbose=False):
+def v2_stats_from_folder(input_folder, format='yaml', labels=None, services=None, waf_pillars=None, sources=None, verbose=False):
     # Load the v2 objects from the folder
-    v2recos = load_v2_files(input_folder, format=format, labels=labels, services=services, waf_pillars=waf_pillars, verbose=verbose)
+    v2recos = load_v2_files(input_folder, format=format, labels=labels, services=services, waf_pillars=waf_pillars, sources=sources, verbose=verbose)
     # Get the stats from the v2 objects
     stats = v2_stats_from_object(v2recos, verbose=verbose)
     # Return the stats object
     return stats
 
 # Return an object with the recos fulfilling the specified criteria
-def get_recos(input_folder, labels=None, services=None, waf_pillars=None, guid=None, arg=False, format='yaml', verbose=False):
+def get_recos(input_folder, labels=None, services=None, waf_pillars=None, sources=None, guid=None, arg=False, format='yaml', verbose=False):
     # Load the v2 objects from the folder
     v2recos = load_v2_files(input_folder, format=format, verbose=verbose)
     if v2recos:
         # Create a list of recos that fulfill the criteria
         recos = []
         for reco in v2recos:
-            if reco_matches_criteria(reco, labels=labels, services=services, waf_pillars=waf_pillars, guid=guid, arg=arg):
+            if reco_matches_criteria(reco, labels=labels, services=services, waf_pillars=waf_pillars, sources=sources, guid=guid, arg=arg):
                 recos.append(reco)
         # Return the recos object
         return recos
@@ -188,6 +243,20 @@ def get_reco(input_folder, guid, verbose=False):
     else:
         print("ERROR: no reco could be loaded from folder", input_folder)
     return None
+
+# Function to modify yaml.dump for multiline strings, see https://github.com/yaml/pyyaml/issues/240
+def str_presenter(dumper, data):
+    if data.count('\n') > 0:
+        data = "\n".join([line.rstrip() for line in data.splitlines()])  # Remove any trailing spaces, then put it back together again
+        return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
+    return dumper.represent_scalar('tag:yaml.org,2002:str', data)
+
+# Print in screen a single v2 recommendation
+def print_reco(reco):
+    # Add representer to yaml for multiline strings, see https://github.com/yaml/pyyaml/issues/240
+    yaml.add_representer(str, str_presenter)
+    yaml.representer.SafeRepresenter.add_representer(str, str_presenter) # to use with safe_dum
+    print(yaml.safe_dump(reco, default_flow_style=False))
 
 # Print in screen a v2 recommendation in one line with fixed width columns
 def print_recos(recos, show_labels=False, show_arg=False):
