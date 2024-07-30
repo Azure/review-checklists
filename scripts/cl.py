@@ -31,6 +31,10 @@
 #
 # Usage examples for specific reco inspection:
 # python3 ./scripts/cl.py show-reco --input-folder ./recos-v2 --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
+# python3 ./scripts/cl.py open-reco --input-folder ./recos-v2 --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
+#
+# Usage examples for renaming:
+# python3 ./scripts/cl.py rename-reco --input-folder ./recos-v2 --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
 #
 # Appendix: importing latest rules from APRL and WAF service guides (maybe useful before using v1-to-v2):
 # python3 ./.github/actions/get_aprl/entrypoint.py './checklists-ext/aprl_checklist.en.json' 'true'
@@ -128,9 +132,21 @@ getrecos_parser.add_argument('--checklist-file', dest='getrecos_checklist_file',
 # Create the 'show-reco' command
 showreco_parser = subparsers.add_parser('show-reco', help='Show a specific recommendation', parents=[base_subparser])
 showreco_parser.add_argument('--input-folder', dest='showreco_input_folder', metavar='INPUT_FOLDER', action='store',
-                    help='input folder where the recommendations to verify are stored')
+                    help='input folder where the recommendations to show are stored')
 showreco_parser.add_argument('--guid', dest='showreco_guid', metavar='GUID', action='store',
                     help='GUID of the recommendation to show')
+# Create the 'rename-reco' command
+showreco_parser = subparsers.add_parser('rename-reco', help='Show a specific recommendation', parents=[base_subparser])
+showreco_parser.add_argument('--input-folder', dest='renamereco_input_folder', metavar='INPUT_FOLDER', action='store',
+                    help='input folder where the recommendations to rename are stored')
+showreco_parser.add_argument('--guid', dest='renamereco_guid', metavar='GUID', action='store',
+                    help='GUID of the recommendation to rename')
+showreco_parser.add_argument('--new-name', dest='renamereco_newname', metavar='NEW_NAME', action='store',
+                    help='new name for the recommendation. If not specified, you need to specify text analytics endpoint and key')
+showreco_parser.add_argument('--text-analytics-endpoint', dest='renamereco_endpoint', metavar='ENDPOINT', action='store',
+                    help='Text analytics endpoint to use for renaming')
+showreco_parser.add_argument('--text-analytics-key', dest='renamereco_key', metavar='KEY', action='store',
+                    help='Text analytics key to use for renaming')
 # Create the 'open-reco' command
 openreco_parser = subparsers.add_parser('open-reco', help='Open with a text editor a specific recommendation', parents=[base_subparser])
 openreco_parser.add_argument('--input-folder', dest='openreco_input_folder', metavar='INPUT_FOLDER', action='store',
@@ -375,6 +391,27 @@ elif args.command == 'show-reco':
             else:
                 for reco in recos:
                     cl_analyze_v2.print_reco(reco)
+                    print("---")
+        else:
+            print("ERROR: No reco found with GUID", args.showreco_guid)
+    else:
+        print("ERROR: you need to use the parameters `--input-folder` and `--guid` to specify the folder and GUID to analyze")
+elif args.command == 'rename-reco':
+    # We need an input folder and a GUID
+    if args.renamereco_input_folder and args.renamereco_guid:
+        recos = cl_analyze_v2.get_reco(args.renamereco_input_folder, args.renamereco_guid, verbose=args.verbose)
+        if recos:
+            if len(recos) > 1:
+                print("ERROR: {0} recos found with GUID {1}".format(len(recos), args.showreco_guid))
+            else:
+                for reco in recos:
+                    if args.renamereco_newname:
+                        # WIP!!!
+                        new_name = args.renamereco_newname
+                    else:
+                        new_name = cl_v1tov2.guess_reco_name(reco, cognitive_services_endpoint=args.renamereco_endpoint, cognitive_services_key=args.renamereco_key , verbose=args.verbose)
+                    reco['name'] = new_name
+                    cl_v1tov2.store_v2(args.renamereco_input_folder, [reco], output_format='yaml', verbose=args.verbose)
                     print("---")
         else:
             print("ERROR: No reco found with GUID", args.showreco_guid)

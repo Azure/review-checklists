@@ -79,6 +79,8 @@ def get_theaks_recos():
                                     item['waf'] = 'Resiliency'
                                 elif 'operations' in item['category'].lower() or 'management' in item['category'].lower():
                                     item['waf'] = 'Operational Excellence'
+                                item['sourceType'] = 'theakscl'
+                                item['sourceFile'] = file_url
                             retrieved_recos += theaks_recos
                             if verbose: print("DEBUG: {0} recommendations found in file {1}".format(len(theaks_recos), file_path))
                     else:

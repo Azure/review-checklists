@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 
 # Function that returns true if a given reco matches the criteria specified by a label selector, a service selector and a WAF selector
-def reco_matches_criteria(reco, labels=None, services=None, waf_pillars=None, sources=None, arg=False, guid=None):
+def reco_matches_criteria(reco, labels=None, services=None, resource_types=None, waf_pillars=None, sources=None, arg=False, guid=None):
     # Check if the reco fulfills the criteria
     # GUID
     if guid:
@@ -36,13 +36,25 @@ def reco_matches_criteria(reco, labels=None, services=None, waf_pillars=None, so
     # Services
     if services:
         service_match = False
+        services = [x.lower() for x in services]        # Transform to lower case for case-insensitive comparison
         if 'none' in services:
-            service_match = ('service' not in reco)
-        if 'service' in reco:
-            if reco['service'].lower() in services:
-                service_match = True
+            service_match = ('services' not in reco)
+        if 'services' in reco:
+            for reco_service in reco['services']:
+                if reco_service.lower() in services:
+                    service_match = True
+    # Resource Types
+    if resource_types:
+        resource_type_match = False
+        resource_types = [x.lower() for x in resource_types]        # Transform to lower case for case-insensitive comparison
+        if 'none' in resource_types:
+            resource_type_match = ('resourceTypes' not in reco)
+        if 'resourceTypes' in reco:
+            for reco_resource_type in reco['resourceTypes']:
+                if reco_resource_type.lower() in resource_types:
+                    resource_type_match = True
     else:
-        service_match = True
+        resource_type_match = True
     # WAF
     if waf_pillars:
         waf_match = False
@@ -66,7 +78,7 @@ def reco_matches_criteria(reco, labels=None, services=None, waf_pillars=None, so
         src_match = True
     arg_match = ((not arg) or ('queries' in reco and 'arg' in reco['queries']))
     # If no selector was provided, add all recos to the list
-    return (guid_match and label_match and service_match and waf_match and arg_match and src_match)
+    return (guid_match and label_match and service_match and resource_type_match and waf_match and arg_match and src_match)
 
 # Opens a file with a text editor
 def open_file_with_editor(file, text_editor=None, verbose=False):
@@ -256,7 +268,7 @@ def print_reco(reco):
     # Add representer to yaml for multiline strings, see https://github.com/yaml/pyyaml/issues/240
     yaml.add_representer(str, str_presenter)
     yaml.representer.SafeRepresenter.add_representer(str, str_presenter) # to use with safe_dum
-    print(yaml.safe_dump(reco, default_flow_style=False))
+    print(yaml.safe_dump(reco, default_flow_style=False, sort_keys=False))
 
 # Print in screen a v2 recommendation in one line with fixed width columns
 def print_recos(recos, show_labels=False, show_arg=False):
@@ -325,7 +337,7 @@ def get_checklist_selectors(checklist_file, verbose=False):
     # Return the selectors
     return labelSelector, serviceSelector, wafSelector, variables
 
-
+# Loads a checklist file in YAML format
 def get_checklist_object(checklist_file, verbose=False):
     # Load the checklist file
     try:
@@ -335,3 +347,44 @@ def get_checklist_object(checklist_file, verbose=False):
     except Exception as e:
         print("ERROR: Error when loading file {0} - {1}". format(checklist_file, str(e)))
         return None
+
+# Function that finds the file with a specific GUID and deletes it
+def delete_v2_reco(input_folder, guid, format='yaml', verbose=False):
+    # Whether the reco was found
+    reco_found = False
+    # If the input folder exists
+    if os.path.exists(input_folder):
+        files = list(Path(input_folder).rglob( '*.*' ))
+        for file in files:
+            # JSON
+            if format == 'json':
+                if file.suffix == '.json':
+                    # if verbose: print("DEBUG: Loading file", file)
+                    try:
+                        with open(file.resolve()) as f:
+                            v2reco = json.safe_load(f)
+                        f.close()
+                        if 'guid' in v2reco:
+                            if v2reco['guid'].lower() == guid.lower():
+                                if verbose: print('DEBUG: deleting reco', guid, 'in file', file)
+                                os.remove(file)
+                                reco_found = True
+                    except Exception as e:
+                        print("ERROR: Error when loading file {0} - {1}". format(file, str(e)))
+            # YAML
+            if format == 'yaml' or format == 'yml':
+                if (file.suffix == '.yaml') or (file.suffix == '.yml'):
+                    # if verbose: print("DEBUG: Loading file", file)
+                    try:
+                        with open(file.resolve()) as f:
+                            v2reco = yaml.safe_load(f)
+                        f.close()
+                        if 'guid' in v2reco:
+                            if v2reco['guid'].lower() == guid.lower():
+                                if verbose: print('DEBUG: deleting reco', guid, 'in file', file)
+                                os.remove(file)
+                                reco_found = True
+                    except Exception as e:
+                        print("ERROR: Error when loading file {0} - {1}". format(file, str(e)))
+        # Return the object with all the v2 objects
+        return reco_found
