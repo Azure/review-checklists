@@ -18,7 +18,8 @@ def get_standard_service_name(service_name, service_dictionary=None):
     svc_match_found = False
     if service_dictionary:
         for svc in service_dictionary:
-            if service_name in svc['names']:
+            svc_names = [x.lower for x in svc['names']]     # Case insensitive comparison
+            if service_name.lower() in svc_names:
                 svc_match_found = True
                 return svc['service']
         if not svc_match_found:
@@ -50,7 +51,7 @@ def str_presenter(dumper, data):
     return dumper.represent_scalar('tag:yaml.org,2002:str', data)
 
 # Function that returns a data structure with the objects in v2 format
-def generate_v2(input_file, service_dictionary=None, labels=None, id_label=None, cat_label=None, subcat_label=None, verbose=False):
+def generate_v2(input_file, text_analytics_endpoint=None, text_analytics_key=None, service_dictionary=None, labels=None, id_label=None, cat_label=None, subcat_label=None, verbose=False):
     if verbose: print("DEBUG: Converting file", input_file)
     if verbose and not service_dictionary: print("DEBUG: unless a service dictionary is supplied, no service or resource type mappings will be done.")
     # Default values for non-mandatory labels
@@ -73,7 +74,7 @@ def generate_v2(input_file, service_dictionary=None, labels=None, id_label=None,
             v2reco = {}
             if 'guid' in item:
                 v2reco['guid'] = item['guid']
-            v2reco['name']: ''          # To do: something more meaningful? (key phrase extraction?)
+            v2reco['name']: ''          # Initialize to blank, later on the name can be guessed
             # Title/description
             if 'text' in item:
                 v2reco['title'] = item['text']
@@ -157,6 +158,9 @@ def generate_v2(input_file, service_dictionary=None, labels=None, id_label=None,
             if 'graph' in item:
                 v2reco['queries'] = {}
                 v2reco['queries']['arg'] = item['graph']
+            # If text analytics endpoint and key were supplied, try to guess a reco name
+            if text_analytics_endpoint and text_analytics_key:
+                v2reco['name'] = guess_reco_name(v2reco, text_analytics_endpoint, text_analytics_key, verbose)
             # Add to the list of v2 objects
             v2recos.append(v2reco)
         return v2recos
@@ -201,11 +205,16 @@ def store_v2(output_folder, checklist, output_format='yaml', overwrite=False, ve
             if not os.path.exists(this_output_folder):
                 os.makedirs(this_output_folder)
             # Export JSON or YAML, depending on the output format
-            # NOTE: we always overwrite, the parameter 'overwrite' is not used
             if output_format in ['yaml', 'yml']:
                 output_file = os.path.join(this_output_folder, file_name + ".yaml")
                 # Delete any existing file for the same GUID
-                cl_analyze_v2.delete_v2_reco(output_folder, item['guid'], output_format, verbose=verbose)
+                if overwrite:
+                    cl_analyze_v2.delete_v2_reco(output_folder, item['guid'], output_format, verbose=verbose)
+                # If the new file exists, append a number to the name
+                i = 1
+                while os.path.exists(output_file):
+                    output_file = os.path.join(this_output_folder, file_name + "-" + str(i) + ".yaml")
+                    i += 1
                 # Create the new file
                 with open(output_file, 'w') as f:
                     yaml.dump(item, f, sort_keys=False)
@@ -221,7 +230,7 @@ def store_v2(output_folder, checklist, output_format='yaml', overwrite=False, ve
                 print("ERROR: Unsupported output format", output_format)
                 sys.exit(1)
         else:
-            print("ERROR: No name could be derived for recommendation (missing name and GUID), skipping", item['text'])
+            print("ERROR: No file name could be derived for recommendation (missing name and GUID), skipping", item['title'])
             continue
     # Clean up all empty folders that might exist in the output folder, recursively
     if overwrite:
@@ -232,34 +241,47 @@ def store_v2(output_folder, checklist, output_format='yaml', overwrite=False, ve
             print("ERROR: Error when removing empty directories in output folder", output_folder, ":", str(e))
 
 # Function that guesses a reco name from a reco v2 object by querying Azure Cognitive Services for key phrases
-def guess_reco_name(reco, cognitive_services_key, cognitive_services_endpoint, verbose=False):
+def guess_reco_name(reco, cognitive_services_endpoint, cognitive_services_key, verbose=False):
     # Dependencies
     from azure.ai.textanalytics import TextAnalyticsClient
     from azure.core.credentials import AzureKeyCredential
-    if verbose: print("DEBUG: Guessing recommendation name for reco", reco['guid'])
     # Authenticate
     ta_credential = AzureKeyCredential(cognitive_services_key)
     text_analytics_client = TextAnalyticsClient(
             endpoint=cognitive_services_endpoint, 
             credential=ta_credential)
-    # Extract key phrases
-    try:
+    # Prepare the document (either the title, the description or both)
+    if 'title' in reco and 'description' in reco:
         documents = [reco['title'] + '. ' + reco['description']]
+    elif 'title' in reco:
+        documents = [reco['title']]
+    elif 'description' in reco:
+        documents = [reco['description']]
+    else:
+        if verbose: print("ERROR: No title or description found for reco {0} that can be used to derive name".format(reco['guid']))
+        return ''
+    # Extract key phrases
+    if verbose: print("DEBUG: Guessing recommendation name for reco '{0}'. Using endpoint {2} and string '{1}'...".format(reco['guid'], documents[0], cognitive_services_endpoint))
+    try:
         response = text_analytics_client.extract_key_phrases(documents = documents)[0]
-        if not response.is_error:
-            # The first key phrase is used as the guessed name
-            guessed_name = response.key_phrases[0].title().replace(' ', '')
-            # The source is used as prefix, if there is one
-            if 'source' in reco:
-                if 'type' in reco['source']:
-                    guessed_name = reco['source']['type'].lower() + '-' + guessed_name
-            if verbose:
-                print("DEBUG: Key Phrases for reco:", str(response.key_phrases), '- Guessed name:', guessed_name)
-            return guessed_name
-        else:
-            print(response.id, response.error)
-            return None
     except Exception as err:
         print("Encountered exception. {}".format(err))
+        return None
+    # Return first key phrase as the guessed name formated without blanks
+    if not response.is_error:
+        # The first key phrase is used as the guessed name
+        guessed_name = response.key_phrases[0].title().replace(' ', '')
+        # Replace other special characters that might be present in the key phrase
+        guessed_name = guessed_name.replace('/', '')
+        guessed_name = guessed_name.replace('\\', '')
+        # The source is used as prefix, if there is one
+        if 'source' in reco:
+            if 'type' in reco['source']:
+                guessed_name = reco['source']['type'].lower() + '-' + guessed_name
+        if verbose:
+            print("DEBUG: Key Phrases for reco:", str(response.key_phrases), '- Guessed name:', guessed_name)
+        return guessed_name
+    else:
+        print(response.id, response.error)
         return None
 

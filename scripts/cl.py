@@ -12,11 +12,12 @@
 # - run-arg: Run Azure Resource Graph queries stored in v2 recommendations
 # 
 # Usage examples for v1-to-v2 conversion:
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/aks_checklist.en.json --output-folder ./recos-v2 --overwrite --verbose
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/aks_checklist.en.json --output-folder ./recos-v2 --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose 
 # python3 ./scripts/cl.py v1tov2 --input-file ./checklists/alz_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --output-format yaml --labels '{"checklist": "alz"}' --id-label alzId --category-label alzArea --subcategory-label alzSubarea --overwrite --verbose
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/waf_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --output-format yaml --overwrite --verbose
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/aprl_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --overwrite --verbose
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/wafsg_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --overwrite --verbose
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/alz_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --output-format yaml --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/waf_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --output-format yaml --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/aprl_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/wafsg_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
 #
 # Usage examples for v2 analysis:
 # python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --format yaml --show-sources
@@ -174,6 +175,10 @@ v12_parser.add_argument('--category-label', dest='v12_cat_label', metavar='CATEG
                     help='label to use for the checklist categories, for example "alzArea".')
 v12_parser.add_argument('--subcategory-label', dest='v12_subcat_label', metavar='SUBCATEGORY_LABEL', action='store',
                     help='label to use for the checklist subcategories, for example "alzSubarea".')
+v12_parser.add_argument('--text-analytics-endpoint', dest='v12_text_endpoint', metavar='TEXT_ANALYTICS_ENDPOINT', action='store',
+                    help='Text analytics endpoint to use for deriving missing reco names')
+v12_parser.add_argument('--text-analytics-key', dest='v12_text_key', metavar='TEXT_ANALYTICS_KEY', action='store',
+                    help='Text analytics key to use for deriving missing reco names')
 v12_parser.add_argument('--overwrite', dest='v12_overwrite', action='store_true',
                     default=False,
                     help='overwrite existing reco files with the same GUID (default: False)')
@@ -268,7 +273,8 @@ elif args.command == 'v1tov2':
         else:
             labels = None
         # Generate v2 objects and store them in the output folder
-        v2recos = cl_v1tov2.generate_v2(args.v12_input_file, service_dictionary=service_dictionary, 
+        v2recos = cl_v1tov2.generate_v2(args.v12_input_file, service_dictionary=service_dictionary,
+                                        text_analytics_endpoint=args.v12_text_endpoint, text_analytics_key=args.v12_text_key,
                                         labels=labels, id_label=args.v12_id_label, cat_label=args.v12_cat_label, subcat_label=args.v12_subcat_label,
                                         verbose=args.verbose)
         if v2recos:

@@ -43,6 +43,8 @@ def reco_matches_criteria(reco, labels=None, services=None, resource_types=None,
             for reco_service in reco['services']:
                 if reco_service.lower() in services:
                     service_match = True
+    else:
+        service_match = True
     # Resource Types
     if resource_types:
         resource_type_match = False
