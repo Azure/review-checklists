@@ -1,0 +1,306 @@
+{
+    "$schema": "https://raw.githubusercontent.com/Azure/review-checklists/main/checklists/checklist.schema.json",
+    "categories": [],
+    "items": [
+        {
+            "description": "Planeje tempo suficiente para atualizações antes de acessar o Gateway de Aplicativo ou fazer mais alterações. Por exemplo, a remoção de servidores do pool de back-end pode levar algum tempo porque eles precisam drenar as conexões existentes.",
+            "guid": "9a17eb2b-c5e3-428b-9e45-73dead45c4f9",
+            "service": "Azure Application Gateway",
+            "text": "Planejar atualizações de regras",
+            "type": "recommendation",
+            "waf": "Fiabilidade"
+        },
+        {
+            "description": "Se o Gateway de Aplicativo for usado para balancear a carga do tráfego de entrada em várias instâncias de back-end, recomendamos o uso de investigações de integridade. Isso garantirá que o tráfego não seja roteado para back-ends que não conseguem lidar com o tráfego.",
+            "guid": "5bfa95df-20d8-4452-a6c1-79c88b07d4cc",
+            "service": "Azure Application Gateway",
+            "text": "Usar investigações de integridade para detectar indisponibilidade de back-end",
+            "type": "recommendation",
+            "waf": "Fiabilidade"
+        },
+        {
+            "description": "A investigação de integridade envia solicitações para o ponto de extremidade configurado em um intervalo definido. Além disso, há um limite de solicitações com falha que serão toleradas antes que o back-end seja marcado como não íntegro. Esses números apresentam uma compensação.- Definir um intervalo maior coloca uma carga maior em seu serviço. Cada instância do Gateway de Aplicativo envia suas próprias investigações de integridade, portanto, 100 instâncias a cada 30 segundos significam 100 solicitações a cada 30 segundos.- Definir um intervalo menor deixa mais tempo antes que uma interrupção seja detectada.- Definir um limite baixo e não íntegro pode significar que falhas curtas e transitórias podem derrubar um back-end. - Definir um limite alto, pode levar mais tempo para tirar um back-end da rotação.",
+            "guid": "ec5bc6c4-6176-44a2-860e-8654f588effd",
+            "service": "Azure Application Gateway",
+            "text": "Examinar o impacto das configurações de intervalo e limite nas investigações de integridade",
+            "type": "recommendation",
+            "waf": "Fiabilidade"
+        },
+        {
+            "description": "Suponha que cada back-end tenha suas próprias dependências para garantir que as falhas sejam isoladas. Por exemplo, um aplicativo hospedado por trás do Gateway de Aplicativo pode ter vários back-ends, cada um conectado a um banco de dados diferente (réplica). Quando essa dependência falha, o aplicativo pode estar funcionando, mas não retornará resultados válidos. Por esse motivo, o ponto de extremidade de integridade deve validar idealmente todas as dependências. Lembre-se de que, se cada chamada para o ponto de extremidade de integridade tiver uma chamada de dependência direta, esse banco de dados receberá 100 consultas a cada 30 segundos em vez de 1. Para evitar isso, o ponto de extremidade de integridade deve armazenar em cache o estado das dependências por um curto período de tempo.",
+            "guid": "78bc5274-ca88-4e2a-8d3a-7b6a5ed1ccd6",
+            "service": "Azure Application Gateway",
+            "text": "Verificar dependências downstream por meio de pontos de extremidade de integridade",
+            "type": "recommendation",
+            "waf": "Fiabilidade"
+        },
+        {
+            "description": "Determinados cenários podem forçá-lo a implementar regras especificamente no Gateway de Aplicativo. Por exemplo, se as regras ModSec CRS 2.2.9, CRS 3.0 ou CRS 3.1 forem necessárias, essas regras só poderão ser implementadas no Gateway de Aplicativo. Por outro lado, a limitação de taxa e a filtragem geográfica estão disponíveis apenas no Azure Front Door, não no AppGateway.",
+            "guid": "da7234f3-70a7-47d2-b685-3e47843003e9",
+            "service": "Azure Application Gateway",
+            "text": "Ao usar o Azure Front Door e o Gateway de Aplicativo para proteger aplicativos 'HTTP/S', use políticas de WAF no Front Door e bloqueie o Gateway de Aplicativo para receber tráfego somente do Azure Front Door.",
+            "type": "recommendation",
+            "waf": "Fiabilidade"
+        },
+        {
+            "description": "Configure uma política TLS para segurança extra. Verifique se você está sempre usando a versão mais recente da política TLS disponível. Isso impõe o TLS 1.2 e cifras mais fortes.",
+            "guid": "9e5ba3b9-3512-425b-95e3-d5009e7630f3",
+            "service": "Azure Application Gateway",
+            "text": "Configurar uma política TLS para segurança aprimorada",
+            "type": "recommendation",
+            "waf": "Segurança"
+        },
+        {
+            "description": "Há vantagens de usar o Gateway de Aplicativo para terminação TLS:- O desempenho melhora porque as solicitações que vão para back-ends diferentes precisam ser autenticadas novamente em cada back-end.- Melhor utilização dos servidores de back-end porque eles não precisam executar o processamento TLS- Roteamento inteligente acessando o conteúdo da solicitação.- Gerenciamento de certificados mais fácil porque o certificado só precisa ser instalado no Gateway de Aplicativo.",
+            "guid": "5cbd84eb-56a7-4d18-9f50-de47d3b29a8f",
+            "service": "Azure Application Gateway",
+            "text": "Usar o AppGateway para terminação TLS",
+            "type": "recommendation",
+            "waf": "Segurança"
+        },
+        {
+            "description": "O Gateway de Aplicativo pode ser integrado ao Key Vault. Isso fornece segurança mais forte, separação mais fácil de funções e responsabilidades, suporte para certificados gerenciados e um processo de renovação e rotação de certificados mais fácil.",
+            "guid": "c1e7b351-a459-49d1-b473-a1f663310205",
+            "service": "Azure Application Gateway",
+            "text": "Usar o Azure Key Vault para armazenar certificados TLS",
+            "type": "recommendation",
+            "waf": "Segurança"
+        },
+        {
+            "description": "Um certificado TLS do servidor back-end deve ser emitido por uma autoridade de certificação conhecida. Se o certificado não tiver sido emitido por uma autoridade de certificação confiável, o Gateway de Aplicativo verificará se o certificado foi emitido por uma autoridade de certificação confiável e assim por diante, até que um certificado de autoridade de certificação confiável seja encontrado. Só então uma conexão segura é estabelecida. Caso contrário, o Gateway de Aplicativo marcará o back-end como não íntegro.",
+            "guid": "1f53df88-090e-4f67-8a41-866ea4938cb1",
+            "service": "Azure Application Gateway",
+            "text": "Ao criptografar novamente o tráfego de back-end, verifique se o certificado do servidor de back-end contém as CAs (Autoridades de Certificação) raiz e intermediária",
+            "type": "recommendation",
+            "waf": "Segurança"
+        },
+        {
+            "description": "Quando o pool de back-end contém um FQDN resolvível, a resolução DNS é baseada em uma zona DNS privada ou servidor DNS personalizado (se configurado na VNet) ou usa o DNS padrão fornecido pelo Azure.",
+            "guid": "0e1af02a-017b-4a41-a7e5-98b47d7b1fd7",
+            "service": "Azure Application Gateway",
+            "text": "Usar um servidor DNS apropriado para recursos do pool de back-end",
+            "type": "recommendation",
+            "waf": "Segurança"
+        },
+        {
+            "description": "Os NSGs têm suporte na sub-rede do Gateway de Aplicativo, mas há algumas restrições. Por exemplo, alguma comunicação com determinados intervalos de portas é proibida. Certifique-se de entender as implicações dessas restrições. Para obter detalhes, consulte Grupos de segurança de rede.",
+            "guid": "75da1adb-f8a2-4ad5-879a-a8552d1c836a",
+            "service": "Azure Application Gateway",
+            "text": "Cumprir todas as restrições de NSG para Gateway de Aplicativo",
+            "type": "recommendation",
+            "waf": "Segurança"
+        },
+        {
+            "description": "O uso de UDR (Rotas Definidas pelo Usuário) na sub-rede do Gateway de Aplicativo pode causar alguns problemas. O estado de integridade no back-end pode ser desconhecido. Os logs e métricas do Gateway de Aplicativo podem não ser gerados. Recomendamos que você não use UDRs na sub-rede do Gateway de Aplicativo para que possa exibir a integridade, os logs e as métricas de back-end. Se suas organizações precisarem usar a UDR na sub-rede do Gateway de Aplicativo, examine os cenários com suporte. Para obter mais informações, consulte Rotas definidas pelo usuário com suporte.",
+            "guid": "7776e1c9-a0a7-4fd5-8fe9-1b2b9c56cf31",
+            "service": "Azure Application Gateway",
+            "text": "Abster-se de usar UDRs na sub-rede do gateway de aplicativo",
+            "type": "recommendation",
+            "waf": "Segurança"
+        },
+        {
+            "description": "Quando o WAF está habilitado, cada solicitação deve ser armazenada em buffer pelo Gateway de Aplicativo até que chegue totalmente, verifica se a solicitação corresponde a qualquer violação de regra em seu conjunto de regras principal e, em seguida, encaminha o pacote para as instâncias de back-end. Quando há uploads de arquivos grandes (30 MB+ de tamanho), isso pode resultar em uma latência significativa. Como os requisitos de capacidade do Gateway de Aplicativo são diferentes com o WAF, não recomendamos habilitar o WAF no Gateway de Aplicativo sem teste e validação adequados.",
+            "guid": "7c173790-6fac-43bc-b1b4-e787fdbb904f",
+            "service": "Azure Application Gateway",
+            "text": "Esteja ciente das alterações de capacidade do Gateway de Aplicativo ao habilitar o WAF",
+            "type": "recommendation",
+            "waf": "Segurança"
+        },
+        {
+            "description": "Para obter informações sobre os preços do Gateway de Aplicativo, consulte Noções básicas sobre preços do Gateway de Aplicativo do Azure e do Firewall de Aplicativo Web. Você também pode aproveitar a calculadora de preços. Certifique-se de que as opções sejam dimensionadas adequadamente para atender à demanda de capacidade e fornecer o desempenho esperado sem desperdiçar recursos.",
+            "guid": "13adc786-048a-4720-9aad-610419507199",
+            "service": "Azure Application Gateway",
+            "text": "Familiarize-se com os preços do Gateway de Aplicativo",
+            "type": "recommendation",
+            "waf": "Custar"
+        },
+        {
+            "description": "Identifique e exclua instâncias do Gateway de Aplicativo com pools de back-end vazios para evitar custos desnecessários.",
+            "guid": "8d3979f9-bd25-4455-9e2f-2cc7e0deaf5e",
+            "service": "Azure Application Gateway",
+            "text": "Revise recursos subutilizados",
+            "type": "recommendation",
+            "waf": "Custar"
+        },
+        {
+            "description": "Você não é cobrado quando o Gateway de Aplicativo está no estado parado. A execução contínua de instâncias do Gateway de Aplicativo pode incorrer em custos irrelevantes. Avalie os padrões de uso e interrompa instâncias quando você não precisar deles. Por exemplo, espera-se que o uso após o horário comercial em ambientes de desenvolvimento/teste seja baixo. Consulte estes artigos para obter informações sobre como interromper e iniciar instâncias.- Stop-AzApplicationGateway- Start-AzApplicationGateway",
+            "guid": "fc01794b-1808-4152-a82c-95b43b2a4c45",
+            "service": "Azure Application Gateway",
+            "text": "Interromper instâncias do Gateway de Aplicativo quando não estiverem em uso",
+            "type": "recommendation",
+            "waf": "Custar"
+        },
+        {
+            "description": "Uma política de expansão garante que haverá instâncias suficientes para lidar com o tráfego de entrada e picos. Além disso, tenha uma política de redução de escala que garanta que o número de instâncias seja reduzido quando a demanda cair. Considere a escolha do tamanho da instância. O tamanho pode afetar significativamente o custo. Algumas considerações são descritas em Estimar a contagem de instâncias do Gateway de Aplicativo. Para obter mais informações, consulte O que é o Gateway de Aplicativo do Azure v2?",
+            "guid": "4e5743d9-44ec-4a09-9c80-d77056109fc6",
+            "service": "Azure Application Gateway",
+            "text": "Ter uma política de redução e expansão",
+            "type": "recommendation",
+            "waf": "Custar"
+        },
+        {
+            "description": "Você é cobrado com base em instâncias limitadas do Gateway de Aplicativo com base nas métricas rastreadas pelo Azure. Avalie as várias métricas e unidades de capacidade e determine os direcionadores de custo. Para obter mais informações, consulte Gerenciamento de Custos e Cobrança da Microsoft. As métricas a seguir são fundamentais para o Gateway de Aplicativo. Essas informações podem ser usadas para validar se a contagem de instâncias provisionadas corresponde à quantidade de tráfego de entrada.- Unidades de Capacidade Faturada Estimada- Unidades de Capacidade Faturáveis Fixas- Unidades de Capacidade AtuaisPara obter mais informações, consulte Métricas do Gateway de Aplicativo. Certifique-se de contabilizar os custos de largura de banda.",
+            "guid": "30129a61-cd84-4085-9533-5d42f89372d9",
+            "service": "Azure Application Gateway",
+            "text": "Analise as métricas de consumo em diferentes parâmetros",
+            "type": "recommendation",
+            "waf": "Custar"
+        },
+        {
+            "description": "Use essas métricas como indicadores de utilização da capacidade provisionada do Gateway de Aplicativo. É altamente recomendável configurar alertas sobre a capacidade. Para obter detalhes, consulte Suporte de alto tráfego do Gateway de Aplicativo.",
+            "guid": "57cc0c49-939f-46d9-864e-d7ce31733771",
+            "service": "Azure Application Gateway",
+            "text": "Monitorar métricas de capacidade",
+            "type": "recommendation",
+            "waf": "Operações"
+        },
+        {
+            "description": "Há outras métricas que podem indicar problemas no Gateway de Aplicativo ou no back-end. Recomendamos avaliar os seguintes alertas:- Contagem de Hosts Não Íntegros- Status da Resposta (dimensão 4xx e 5xx)- Status da Resposta de Back-end (dimensão 4xx e 5xx)- Tempo de Resposta do Último Byte de Back-end- Tempo Total do Gateway de AplicativoPara obter mais informações, consulte Métricas do Gateway de Aplicativo.",
+            "guid": "071e5241-c008-41a2-9e62-c056081158d2",
+            "service": "Azure Application Gateway",
+            "text": "Solucionar problemas usando métricas",
+            "type": "recommendation",
+            "waf": "Operações"
+        },
+        {
+            "description": "Os logs de diagnóstico permitem que você exiba logs de firewall, logs de desempenho e logs de acesso. Use esses logs para gerenciar e solucionar problemas com instâncias do Gateway de Aplicativo. Para obter mais informações, consulte Logs de diagnóstico e integridade de back-end para o Gateway de Aplicativo.",
+            "guid": "7e160588-dc1c-48d5-9a56-4ddc6aeb8fc2",
+            "service": "Azure Application Gateway",
+            "text": "Habilitar o diagnóstico no Gateway de Aplicativo e no WAF (Firewall de Aplicativo Web)",
+            "type": "recommendation",
+            "waf": "Operações"
+        },
+        {
+            "description": "O Azure Monitor Network Insights fornece uma visão abrangente da integridade e das métricas para recursos de rede, incluindo o Gateway de Aplicativo. Para obter detalhes adicionais e recursos com suporte para o Gateway de Aplicativo, consulte Insights de rede do Azure Monitor.",
+            "guid": "260dc49f-05b9-4c43-9cda-afc5b1923c89",
+            "service": "Azure Application Gateway",
+            "text": "Usar o Azure Monitor Network Insights",
+            "type": "recommendation",
+            "waf": "Operações"
+        },
+        {
+            "description": "Verifique se você configurou as configurações de IdleTimeout para corresponder às características do ouvinte e do tráfego do aplicativo de back-end. O valor padrão é definido como quatro minutos e pode ser configurado para um máximo de 30. Para obter mais informações, consulte Redefinição de TCP do Balanceador de Carga e Tempo Limite Ocioso.Para considerações sobre carga de trabalho, consulte Monitorando a integridade do aplicativo para confiabilidade.",
+            "guid": "8c5e5e8f-44d7-4494-8819-c1d765838fec",
+            "service": "Azure Application Gateway",
+            "text": "Corresponder as configurações de tempo limite com o aplicativo de back-end",
+            "type": "recommendation",
+            "waf": "Operações"
+        },
+        {
+            "description": "O Gateway de Aplicativo verifica a versão renovada do certificado no Key Vault vinculado a cada intervalo de 4 horas. Se ele estiver inacessível devido a qualquer configuração incorreta do Key Vault, ele registrará esse erro e enviará uma recomendação do Assistente correspondente. Você deve configurar os alertas do Advisor para se manter atualizado e corrigir esses problemas imediatamente para evitar problemas relacionados ao plano de controle ou de dados. Para obter mais informações, consulte Investigando e resolvendo erros do cofre de chaves. Para definir um alerta para esse caso específico, use o Tipo de Recomendação como Resolver problema do Azure Key Vault para o Gateway de Aplicativo.",
+            "guid": "4123369e-cbd7-472d-9879-e155476c2595",
+            "service": "Azure Application Gateway",
+            "text": "Monitorar problemas de configuração do Key Vault usando o Assistente do Azure",
+            "type": "recommendation",
+            "waf": "Operações"
+        },
+        {
+            "description": "As limitações de porta SNAT são importantes para conexões de back-end no Gateway de Aplicativo. Há fatores separados que afetam como o Gateway de Aplicativo atinge o limite de porta SNAT. Por exemplo, se o back-end for um endereço IP público, ele exigirá sua própria porta SNAT. Para evitar limitações de porta SNAT, você pode aumentar o número de instâncias por Gateway de Aplicativo, escalar horizontalmente os back-ends para ter mais endereços IP ou mover seus back-ends para a mesma rede virtual e usar endereços IP privados para os back-ends. As solicitações por segundo (RPS) no Gateway de Aplicativo serão afetadas se o limite de porta SNAT for atingido. Por exemplo, se um Gateway de Aplicativo atingir o limite de porta SNAT, ele não poderá abrir uma nova conexão com o back-end e a solicitação falhará.",
+            "guid": "d2713c48-1e6f-4ee8-b91c-8499e7146945",
+            "service": "Azure Application Gateway",
+            "text": "Considere as limitações da porta SNAT em seu design",
+            "type": "recommendation",
+            "waf": "Operações"
+        },
+        {
+            "description": "Para o SKU do Gateway de Aplicativo v2, o dimensionamento automático leva algum tempo (aproximadamente seis a sete minutos) antes que o conjunto adicional de instâncias esteja pronto para atender ao tráfego. Durante esse tempo, se houver picos curtos no tráfego, espere latência transitória ou perda de tráfego. Recomendamos que você defina sua contagem mínima de instâncias para um nível ideal. Depois de estimar a contagem média de instâncias e determinar as tendências de dimensionamento automático do Gateway de Aplicativo, defina a contagem mínima de instâncias com base nos padrões de aplicativo. Para obter informações, consulte Suporte de alto tráfego do Gateway de Aplicativo. Verifique as Unidades de Computação Atuais do último mês. Essa métrica representa a utilização da CPU do gateway. Para definir a contagem mínima de instâncias, divida o pico de uso por 10. Por exemplo, se a média de Unidades de Computação Atuais no mês passado for 50, defina a contagem mínima de instâncias como cinco.",
+            "guid": "8bba115b-e086-458e-beca-ae9d8144a1f6",
+            "service": "Azure Application Gateway",
+            "text": "Definir a contagem mínima de instâncias",
+            "type": "recommendation",
+            "waf": "Desempenho"
+        },
+        {
+            "description": "Recomendamos 125 como a contagem máxima de instâncias de dimensionamento automático. Verifique se a sub-rede que tem o Gateway de Aplicativo tem endereços IP disponíveis suficientes para dar suporte ao conjunto de instâncias de expansão. Definir a contagem máxima de instâncias como 125 não tem implicações de custo porque você é cobrado apenas pela capacidade consumida.",
+            "guid": "1250aa80-2761-4138-9565-57735472779b",
+            "service": "Azure Application Gateway",
+            "text": "Definir a contagem máxima de instâncias",
+            "type": "recommendation",
+            "waf": "Desempenho"
+        },
+        {
+            "description": "O Gateway de Aplicativo precisa de uma sub-rede dedicada em uma rede virtual. A sub-rede pode ter várias instâncias do recurso de Gateway de Aplicativo implantado. Você também pode implantar outros recursos do Gateway de Aplicativo nessa sub-rede, SKU v1 ou v2. Aqui estão algumas considerações para definir o tamanho da sub-rede:- O Gateway de Aplicativo usa um endereço IP privado por instância e outro endereço IP privado se um IP de front-end privado estiver configurado.- O Azure reserva cinco endereços IP em cada sub-rede para uso interno.- O Gateway de Aplicativo (SKU Standard ou WAF) pode dar suporte a até 32 instâncias. Usando 32 endereços IP de instância + 1 IP de front-end privado + 5 Azure reservados, é recomendável um tamanho mínimo de sub-rede de /26. Como o SKU Standard_v2 ou WAF_v2 pode dar suporte a até 125 instâncias, usando o mesmo cálculo, é recomendável um tamanho de sub-rede de /24.- Se você quiser implantar recursos adicionais do Gateway de Aplicativo na mesma sub-rede, considere os endereços IP adicionais que serão necessários para a contagem máxima de instâncias para Standard e Standard v2.",
+            "guid": "dbf3ca82-d3a8-431e-a86e-65df49c72032",
+            "service": "Azure Application Gateway",
+            "text": "Definir o tamanho da sub-rede do Gateway de Aplicativo",
+            "type": "recommendation",
+            "waf": "Desempenho"
+        },
+        {
+            "description": "O SKU v2 oferece dimensionamento automático para garantir que o Gateway de Aplicativo possa escalar verticalmente à medida que o tráfego aumenta. Quando comparada ao SKU v1, a v2 tem recursos que aprimoram o desempenho da carga de trabalho. Por exemplo, melhor desempenho de descarregamento de TLS, tempos de implantação e atualização mais rápidos, redundância de zona e muito mais. Para obter mais informações sobre recursos de dimensionamento automático, consulte Dimensionando o Gateway de Aplicativo v2 e o WAF v2. Se você estiver executando o SKU v1 Gateway de aplicativo, considere migrar para o SKU do gateway de aplicativo v2. Para obter mais informações, consulte Migrar o Gateway de Aplicativo do Azure e o Firewall de Aplicativo Web da v1 para a v2.",
+            "guid": "dffdc8e9-9139-46c1-93df-638e00cb3657",
+            "service": "Azure Application Gateway",
+            "text": "Aproveite os recursos para dimensionamento automático e benefícios de desempenho",
+            "type": "recommendation",
+            "waf": "Desempenho"
+        }
+    ],
+    "metadata": {
+        "name": "Azure Application Gateway Service Guide",
+        "state": "preview",
+        "timestamp": "August 05, 2024",
+        "waf": "all"
+    },
+    "status": [
+        {
+            "description": "Esta verificação ainda não foi analisada",
+            "name": "Não verificado"
+        },
+        {
+            "description": "Há um item de ação associado a essa verificação",
+            "name": "Abrir"
+        },
+        {
+            "description": "Essa verificação foi verificada e não há mais itens de ação associados a ela",
+            "name": "Cumprido"
+        },
+        {
+            "description": "Não aplicável para o projeto atual",
+            "name": "N/A"
+        },
+        {
+            "description": "Não é necessário",
+            "name": "Não é necessário"
+        }
+    ],
+    "waf": [
+        {
+            "name": "segurança"
+        },
+        {
+            "name": "Custar"
+        },
+        {
+            "name": "custar"
+        },
+        {
+            "name": "Fiabilidade"
+        },
+        {
+            "name": "fiabilidade"
+        },
+        {
+            "name": "Segurança"
+        },
+        {
+            "name": "desempenho"
+        },
+        {
+            "name": "Operações"
+        },
+        {
+            "name": "Operações"
+        },
+        {
+            "name": "Desempenho"
+        }
+    ],
+    "yesno": [
+        {
+            "name": "Sim"
+        },
+        {
+            "name": "Não"
+        }
+    ]
+}
