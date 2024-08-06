@@ -1,0 +1,22 @@
+guid: 4704489a-8042-4d88-b79d-17b73b22a5a6
+name: VirtualNetworkServiceEndpoints
+title: Don't enable virtual network service endpoints by default on all subnets.
+source:
+  type: revcl
+  file: ./checklists/waf_checklist.en.json
+services:
+- VNet
+resourceTypes:
+- Microsoft.Network/virtualNetworks
+waf: Security
+severity: 1
+labels: {}
+links:
+- https://learn.microsoft.com/azure/app-service/networking-features
+- https://learn.microsoft.com/learn/paths/implement-network-security/?source=learn
+queries:
+  arg: resources | where type =~ 'microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets
+    = properties.subnets | mv-expand subnets | project id = subnets.id, resourceGroup,
+    VNet = name, serviceEndpoints = subnets.properties.serviceEndpoints, compliant
+    = (isnull(subnets.properties.serviceEndpoints) or array_length(subnets.properties.serviceEndpoints)
+    == 0) | order by compliant asc

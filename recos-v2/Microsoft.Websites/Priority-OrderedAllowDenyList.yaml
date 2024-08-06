@@ -1,0 +1,33 @@
+guid: aab6b4a4-9981-43a4-8728-35c7ecbb746d
+name: Priority-OrderedAllowDenyList
+title: Configure network access restrictions
+description: |-
+  Use network access restrictions to define a priority-ordered allow/deny list that controls network access to your app. Web application firewalls, such as the one available in Application Gateway, are recommended for protection of public-facing web applications.
+source:
+  type: aprl
+  file: azure-resources/Web/sites/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Web/sites
+resourceTypes:
+- Microsoft.Web/sites
+severity: 1
+labels:
+  area: Governance
+links: []
+queries:
+  arg: |-
+    // Azure Resource Graph Query
+    // Check if Network access restrictions defined for App service
+
+    resources
+    | where type =~ 'microsoft.web/sites'
+    | where properties.kind has 'app'
+    | join kind = inner
+        (
+        appserviceresources
+        | mv-expand IpSecurityRestrictions = properties.IpSecurityRestrictions
+        | where isnotnull(IpSecurityRestrictions) == true
+        | project name
+        ) on name
+    | project recommendationId = "aab6b4a4-9981-43a4-8728-35c7ecbb746d", name, id, tags, param1 = "No network restrictions set"

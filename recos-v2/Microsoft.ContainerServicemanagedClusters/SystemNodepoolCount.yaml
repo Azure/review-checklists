@@ -1,0 +1,28 @@
+guid: 7f7ae535-a5ba-4665-b7e0-c451dbdda01f
+name: SystemNodepoolCount
+title: Configure system nodepool count
+description: |-
+  The system node pool should be configured with a minimum node count of two to ensure critical system pods are resilient to node outages.
+source:
+  type: aprl
+  file: azure-resources/ContainerService/managedClusters/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.ContainerService/managedClusters
+resourceTypes:
+- Microsoft.ContainerService/managedClusters
+severity: 0
+labels:
+  area: High Availability
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Returns each AKS cluster with nodepools that have system nodepools with less than 2 nodes
+    resources
+    | where type == "microsoft.containerservice/managedclusters"
+    | mv-expand agentPoolProfile = properties.agentPoolProfiles
+    | extend taints = tostring(parse_json(agentPoolProfile.nodeTaints))
+    | extend nodePool = tostring(parse_json(agentPoolProfile.name))
+    | where taints has "CriticalAddonsOnly=true:NoSchedule" and  agentPoolProfile.minCount < 2
+    | project recommendationId="7f7ae535-a5ba-4665-b7e0-c451dbdda01f", id, name, param1=strcat("nodePoolName: ", nodePool), param2=strcat("nodePoolMinNodeCount: ", agentPoolProfile.minCount)

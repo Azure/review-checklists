@@ -1,0 +1,31 @@
+guid: 74c2491d-048b-0041-a140-935960220e20
+name: ReadableSecondaryDatabaseReplicas
+title: Use Active Geo Replication to Create a Readable Secondary in Another Region
+description: |-
+  Active Geo Replication ensures business continuity by utilizing readable secondary database replicas. In case of primary database failure, manually failover to secondary database. Secondaries, up to four, can be in same/different regions, used for read-only access.
+source:
+  type: aprl
+  file: azure-resources/Sql/servers/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Sql/servers
+resourceTypes:
+- Microsoft.Sql/servers
+severity: 0
+labels:
+  area: Disaster Recovery
+links: []
+queries:
+  arg: |-
+    // Azure Resource Graph Query
+    // Provides a list of SQL databases that are not part of Geo Replication.
+    resources
+    | where type == "microsoft.sql/servers/databases"
+    | summarize secondaryTypeCount = countif(isnotempty(properties.secondaryType)) by name
+    | where secondaryTypeCount == 0
+    | join kind=inner (
+        Resources
+        | where type == "microsoft.sql/servers/databases"
+    ) on name
+    | extend param1 = "Not part of Geo Replication"
+    | project recommendationId = "74c2491d-048b-0041-a140-935960220e20", name, id, tags, param1

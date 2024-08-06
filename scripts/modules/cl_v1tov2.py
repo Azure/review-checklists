@@ -70,11 +70,18 @@ def generate_v2(input_file, text_analytics_endpoint=None, text_analytics_key=Non
         v2recos = []
         for item in checklist['items']:
             # Note that the order in which items are added to the dictionary is important, since yaml.dump is configured to not sort the keys
-            # GUID/Name
+            # GUID
             v2reco = {}
             if 'guid' in item:
                 v2reco['guid'] = item['guid']
-            v2reco['name']: ''          # Initialize to blank, later on the name can be guessed
+            else:
+                print("ERROR: No GUID found for reco in file", input_file)
+                continue
+            # If text analytics endpoint and key were supplied, try to guess a reco name
+            if text_analytics_endpoint and text_analytics_key:
+                v2reco['name'] = guess_reco_name(item, text_analytics_endpoint, text_analytics_key, version=1, verbose=verbose)
+            else:
+                v2reco['name'] = ''
             # Title/description
             if 'text' in item:
                 v2reco['title'] = item['text']
@@ -109,9 +116,9 @@ def generate_v2(input_file, text_analytics_endpoint=None, text_analytics_key=Non
                     resource_type = get_resource_type_name(item['service'], service_dictionary=service_dictionary)
                     if resource_type:
                         v2reco['resourceTypes'].append(resource_type)
-                        # if verbose: print("DEBUG: resource type {0} identified for service {1}.".format(resource_type, item['service']))
-                    # else:
-                    #     if verbose: print("WARNING: not able to get resource type from service", item['service'])
+                        if verbose: print("DEBUG: resource type {0} identified for service {1}.".format(resource_type, item['service']))
+                    else:
+                        if verbose: print("WARNING: not able to get resource type from service", item['service'])
             # WAF
             if 'waf' in item:
                 # Normalize WAF
@@ -158,9 +165,6 @@ def generate_v2(input_file, text_analytics_endpoint=None, text_analytics_key=Non
             if 'graph' in item:
                 v2reco['queries'] = {}
                 v2reco['queries']['arg'] = item['graph']
-            # If text analytics endpoint and key were supplied, try to guess a reco name
-            if text_analytics_endpoint and text_analytics_key:
-                v2reco['name'] = guess_reco_name(v2reco, text_analytics_endpoint, text_analytics_key, verbose)
             # Add to the list of v2 objects
             v2recos.append(v2reco)
         return v2recos
@@ -184,8 +188,10 @@ def store_v2(output_folder, checklist, output_format='yaml', overwrite=False, ve
     yaml.add_representer(str, str_presenter)
     yaml.representer.SafeRepresenter.add_representer(str, str_presenter) # to use with safe_dum
     # Store each object in a separate YAML file
+    item_count = 0
     for item in checklist:
         # Use the reco's name as the file name, otherwise the guid
+        item_count += 1
         if 'name' in item:
             file_name = item['name']
         elif 'guid' in item:
@@ -193,12 +199,21 @@ def store_v2(output_folder, checklist, output_format='yaml', overwrite=False, ve
         else:
             file_name = None
         if file_name:
-            # Append service and WAF pillar to output folder if available
+            # Append service (pick the first one) and WAF pillar to output folder if available
             this_output_folder = output_folder
-            if 'service' in item:
-                this_output_folder = os.path.join(output_folder, item['service'].replace(" ", ""))
+            if 'services' in item:
+                if len(item['services']) > 0:
+                    service_folder_name = item['services'][0].replace(" ", "")
+                    service_folder_name = service_folder_name.replace("/", "")
+                    service_folder_name = service_folder_name.replace('"', "")
+                    service_folder_name = service_folder_name.replace("'", "")
+                    this_output_folder = os.path.join(output_folder, service_folder_name)
+                else:
+                    this_output_folder = os.path.join(output_folder, "cross-service")
+                    if verbose: print("DEBUG: No services found for reco", item['guid'])
             else:
                 this_output_folder = os.path.join(output_folder, "cross-service")
+                if verbose: print("DEBUG: 'services' field missing from reco", item['guid'])
             if 'waf' in item:
                 this_output_folder = os.path.join(this_output_folder, item['waf'].replace(" ", ""))
             # Create the output folder if it doesn't exist
@@ -216,9 +231,13 @@ def store_v2(output_folder, checklist, output_format='yaml', overwrite=False, ve
                     output_file = os.path.join(this_output_folder, file_name + "-" + str(i) + ".yaml")
                     i += 1
                 # Create the new file
-                with open(output_file, 'w') as f:
-                    yaml.dump(item, f, sort_keys=False)
-                if verbose: print("DEBUG: Stored YAML recommendation in", output_file)
+                try:
+                    with open(output_file, 'w') as f:
+                        yaml.dump(item, f, sort_keys=False)
+                    if verbose: print("DEBUG: Stored YAML recommendation {0}/{1} in file {2}.".format(item_count, len(checklist), output_file))
+                except Exception as e:
+                    print("ERROR: Error when writing YAML file", output_file, ":", str(e))
+            # JSON not finished (not using JSON for now)
             elif output_format == 'json':
                 output_file = os.path.join(this_output_folder, item['guid'] + ".json")
                 # Delete any existing file for the same GUID
@@ -230,7 +249,7 @@ def store_v2(output_folder, checklist, output_format='yaml', overwrite=False, ve
                 print("ERROR: Unsupported output format", output_format)
                 sys.exit(1)
         else:
-            print("ERROR: No file name could be derived for recommendation (missing name and GUID), skipping", item['title'])
+            print("ERROR: No file name could be derived for recommendation '{0}' (missing name and GUID), skipping. Full reco object: '{1}'".format(item['title'], str(item)))
             continue
     # Clean up all empty folders that might exist in the output folder, recursively
     if overwrite:
@@ -241,7 +260,7 @@ def store_v2(output_folder, checklist, output_format='yaml', overwrite=False, ve
             print("ERROR: Error when removing empty directories in output folder", output_folder, ":", str(e))
 
 # Function that guesses a reco name from a reco v2 object by querying Azure Cognitive Services for key phrases
-def guess_reco_name(reco, cognitive_services_endpoint, cognitive_services_key, verbose=False):
+def guess_reco_name(reco, cognitive_services_endpoint, cognitive_services_key, version=2, verbose=False):
     # Dependencies
     from azure.ai.textanalytics import TextAnalyticsClient
     from azure.core.credentials import AzureKeyCredential
@@ -250,16 +269,29 @@ def guess_reco_name(reco, cognitive_services_endpoint, cognitive_services_key, v
     text_analytics_client = TextAnalyticsClient(
             endpoint=cognitive_services_endpoint, 
             credential=ta_credential)
-    # Prepare the document (either the title, the description or both)
-    if 'title' in reco and 'description' in reco:
-        documents = [reco['title'] + '. ' + reco['description']]
-    elif 'title' in reco:
-        documents = [reco['title']]
-    elif 'description' in reco:
-        documents = [reco['description']]
+    # Prepare the document (either the title, the description or both), depending on the version being used (the field names vary)
+    if version == 1:
+        if 'text' in reco and 'description' in reco:
+            documents = [reco['text'] + '. ' + reco['description']]
+        elif 'text' in reco:
+            documents = [reco['text']]
+        elif 'description' in reco:
+            documents = [reco['description']]
+        else:
+            if verbose: print("ERROR: No title or description found for reco {0} that can be used to derive name".format(reco['guid']))
+            return ''
+    elif version == 2:
+        if 'title' in reco and 'description' in reco:
+            documents = [reco['title'] + '. ' + reco['description']]
+        elif 'title' in reco:
+            documents = [reco['title']]
+        elif 'description' in reco:
+            documents = [reco['description']]
+        else:
+            if verbose: print("ERROR: No title or description found for reco {0} that can be used to derive name".format(reco['guid']))
+            return ''
     else:
-        if verbose: print("ERROR: No title or description found for reco {0} that can be used to derive name".format(reco['guid']))
-        return ''
+        print("ERROR: Unsupported version for name guessing", version)
     # Extract key phrases
     if verbose: print("DEBUG: Guessing recommendation name for reco '{0}'. Using endpoint {2} and string '{1}'...".format(reco['guid'], documents[0], cognitive_services_endpoint))
     try:
@@ -274,6 +306,8 @@ def guess_reco_name(reco, cognitive_services_endpoint, cognitive_services_key, v
         # Replace other special characters that might be present in the key phrase
         guessed_name = guessed_name.replace('/', '')
         guessed_name = guessed_name.replace('\\', '')
+        guessed_name = guessed_name.replace('"', '')
+        guessed_name = guessed_name.replace("'", '')
         # The source is used as prefix, if there is one
         if 'source' in reco:
             if 'type' in reco['source']:

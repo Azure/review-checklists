@@ -1,0 +1,32 @@
+guid: 94794d2a-eff0-2345-9b67-6f9349d0a627
+name: AzureVirtualMachineScaleSet
+title: Enable Azure Virtual Machine Scale Set Application Health Monitoring
+description: |-
+  Monitoring application health in Azure Virtual Machine Scale Sets is crucial for deployment management. It supports rolling upgrades such as automatic OS-image upgrades and VM guest patching, leveraging health monitoring for upgrading.
+source:
+  type: aprl
+  file: azure-resources/Compute/virtualMachineScaleSets/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Compute/virtualMachineScaleSets
+resourceTypes:
+- Microsoft.Compute/virtualMachineScaleSets
+severity: 1
+labels:
+  area: Monitoring and Alerting
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Find all VMs that do NOT have health monitoring enabled
+    resources
+    | where type == "microsoft.compute/virtualmachinescalesets"
+    | join kind=leftouter  (
+        resources
+        | where type == "microsoft.compute/virtualmachinescalesets"
+        | mv-expand extension=properties.virtualMachineProfile.extensionProfile.extensions
+        | where extension.properties.type in ( "ApplicationHealthWindows", "ApplicationHealthLinux" )
+        | project id
+    ) on id
+    | where id1 == ""
+    | project recommendationId = "94794d2a-eff0-2345-9b67-6f9349d0a627", name, id, tags, param1 = "extension: null"

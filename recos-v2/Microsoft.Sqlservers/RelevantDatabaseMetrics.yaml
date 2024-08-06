@@ -1,0 +1,35 @@
+guid: 7e7daec9-6a81-3546-a4cc-9aef72fec1f7
+name: RelevantDatabaseMetrics
+title: Monitor your Azure SQL Database in Near Real-Time to Detect Reliability Incidents
+description: |-
+  Monitoring and alerting are an important part of database operations. When working with Azure SQL Database, make use of Azure Monitor and SQL Insights to ensure that you capture relevant database metrics.
+source:
+  type: aprl
+  file: azure-resources/Sql/servers/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Sql/servers
+resourceTypes:
+- Microsoft.Sql/servers
+severity: 0
+labels:
+  area: Monitoring and Alerting
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Provides a list of SQL databases that are not configured for monitoring.
+    resources
+    | where type == "microsoft.insights/metricalerts"
+    | mv-expand properties.scopes
+    | mv-expand properties.criteria.allOf
+    | project databaseid = properties_scopes, monitoredMetric = properties_criteria_allOf.metricName
+    | where databaseid contains 'databases'
+    | summarize monitoredMetrics=make_list(monitoredMetric) by databaseid=tolower(tostring(databaseid))
+    | join kind=fullouter   (
+      resources
+      | where type =~ 'microsoft.sql/servers/databases'
+      | project databaseid = tolower(id), name, tags
+    ) on databaseid
+    | where isnull(monitoredMetrics)
+    | project recommendationId = "7e7daec9-6a81-3546-a4cc-9aef72fec1f7", name, id=databaseid1, tags, param1=strcat("MonitoringMetrics=false" )

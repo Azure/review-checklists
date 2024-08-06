@@ -1,0 +1,44 @@
+guid: e620fa98-7a40-41a0-bfc9-b4407297fb58
+name: MaximumAuto-ScaleSettings
+title: Nodepool subnet size needs to accommodate maximum auto-scale settings
+description: |-
+  Nodepool subnets sized for max auto-scale settings enable AKS to efficiently scale out nodes, meeting increased demand while reducing resource constraints and potential service disruptions.
+source:
+  type: aprl
+  file: azure-resources/ContainerService/managedClusters/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.ContainerService/managedClusters
+resourceTypes:
+- Microsoft.ContainerService/managedClusters
+severity: 0
+labels:
+  area: High Availability
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Returns each AKS cluster with nodepools that have user nodepools with a subnetmask that does not match autoscale configured max-nodes
+    // Subtracting the network address, broadcast address, and default 3 addresses Azure reserves within each subnet
+
+    resources
+    | where type == "microsoft.containerservice/managedclusters"
+    | extend nodePools = properties['agentPoolProfiles']
+    | mv-expand nodePools = properties.agentPoolProfiles
+    | where nodePools.enableAutoScaling == true
+    | extend nodePoolName=nodePools.name, maxNodes = nodePools.maxCount, subnetId = tostring(nodePools.vnetSubnetID)
+    | project clusterId = id, clusterName=name, nodePoolName=nodePools.name, toint(maxNodes), subnetId
+    | join kind = leftouter (
+        resources
+        | where type == 'microsoft.network/virtualnetworks'
+        | extend subnets = properties.subnets
+        | mv-expand subnets
+        | project id = tostring(subnets.id), addressPrefix = tostring(subnets.properties['addressPrefix'])
+        | extend subnetmask = toint(substring(addressPrefix, indexof(addressPrefix, '/')+1, string_size(addressPrefix)))
+        | extend possibleMaxNodeCount = toint(exp2(32-subnetmask) - 5)
+    ) on $left.subnetId == $right.id
+    | project-away id, subnetmask
+    | where possibleMaxNodeCount <= maxNodes
+    | extend param1 = strcat(nodePoolName, " autoscaler upper limit: ", maxNodes)
+    | extend param2 = strcat("ip addresses on subnet: ", possibleMaxNodeCount)
+    | project recommendationId="e620fa98-7a40-41a0-bfc9-b4407297fb58", name=clusterName, id=clusterId, param1, param2

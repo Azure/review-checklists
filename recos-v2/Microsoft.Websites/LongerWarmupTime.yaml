@@ -1,0 +1,32 @@
+guid: 9e6682ac-31bc-4635-9959-ab74b52454e6
+name: LongerWarmupTime
+title: Set minimum instance count to 2 for app service
+description: |-
+  App Service should be configured with a minimum of two instances for production workloads. If apps have a longer warmup time a minimum of three instances should be used.
+source:
+  type: aprl
+  file: azure-resources/Web/sites/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Web/sites
+resourceTypes:
+- Microsoft.Web/sites
+severity: 1
+labels:
+  area: Scalability
+links: []
+queries:
+  arg: |-
+    // Azure Resource Graph Query
+    // Provides a list of App services that do not have minimum instance count of 2
+
+    resources
+    | where type =~ 'microsoft.web/sites'
+    | where properties.kind has 'app'
+    | join kind = inner
+        (
+        appserviceresources
+        | where properties.PreWarmedInstanceCount < 2
+        | project name
+        ) on name
+    | project recommendationId = "9e6682ac-31bc-4635-9959-ab74b52454e6", name, id, tags, param1 = "PreWarmedInstanceCount is less than 2"

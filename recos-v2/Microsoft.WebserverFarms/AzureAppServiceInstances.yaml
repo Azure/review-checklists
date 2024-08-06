@@ -1,0 +1,32 @@
+guid: 07243659-4643-d44c-a1c6-07ac21635072
+name: AzureAppServiceInstances
+title: Avoid scaling up or down
+description: |-
+  Avoid frequent scaling up/down of Azure App Service instances to prevent service disruptions. Choose the right tier and size for the workload and scale out for traffic changes, as scaling adjustments can trigger application restarts.
+source:
+  type: aprl
+  file: azure-resources/Web/serverFarms/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Web/serverFarms
+resourceTypes:
+- Microsoft.Web/serverFarms
+severity: 1
+labels:
+  area: Scalability
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Provides a list of Azure App Service Plans and the number of changes that was made to the pricing tier, if the count is higher that 3 it means you need to avoid scaling up and down that often
+
+    resourcechanges
+    | extend changeTime = todatetime(properties.changeAttributes.timestamp), targetResourceId = tostring(properties.targetResourceId),
+    changeType = tostring(properties.changeType), correlationId = properties.changeAttributes.correlationId,
+    changedProperties = properties.changes, changeCount = properties.changeAttributes.changesCount
+    | where changeTime > ago(14d)
+    | join kind=inner (resources | project resources_Name = name, resources_Type = type, resources_Subscription= subscriptionId, resources_ResourceGroup= resourceGroup, id) on $left.targetResourceId == $right.id
+    | where resources_Type contains "microsoft.web/serverfarms"
+    | where changedProperties['sku.name'].propertyChangeType == 'Update' or changedProperties['sku.tier'].propertyChangeType == 'Update'
+    | summarize count() by targetResourceId, resources_Name  ,tostring(changedProperties['sku.name'].previousValue), tostring(changedProperties['sku.tier'].newValue)
+    | project recommendationId="07243659-4643-d44c-a1c6-07ac21635072", name=resources_Name, id=targetResourceId, tags="", param1=['changedProperties_sku.name_previousValue'], param2=['changedProperties_sku.tier_newValue'], param3=count_

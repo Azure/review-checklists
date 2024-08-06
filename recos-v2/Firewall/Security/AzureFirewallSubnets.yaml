@@ -1,0 +1,21 @@
+guid: 22d6419e-b627-4d95-9e7d-019fa759387f
+name: AzureFirewallSubnets
+title: Use a /26 prefix for your Azure Firewall subnets.
+source:
+  type: revcl
+  file: ./checklists/waf_checklist.en.json
+services:
+- Firewall
+resourceTypes:
+- Microsoft.Network/azureFirewalls
+waf: Security
+severity: 0
+labels: {}
+links:
+- https://learn.microsoft.com/azure/firewall/firewall-faq#why-does-azure-firewall-need-a--26-subnet-size
+queries:
+  arg: resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets
+    | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix
+    | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName ==
+    'AzureFirewallSubnet' | extend compliant = (subnetPrefixLength == 26) | distinct
+    id, compliant

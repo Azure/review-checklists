@@ -1,0 +1,63 @@
+guid: 4232eb32-3241-4049-9e14-9b8005817b56
+name: AzureMonitorAlertWarningThresholds
+title: Configure Azure Monitor Alert warning thresholds for vSAN datastore utilization
+description: |-
+  Ensure VMware vSAN datastore slack space is maintained for SLA by monitoring storage utilization and setting alerts at 70% and 75% utilization to allow for capacity planning. To expand, add hosts or external storage like Azure Elastic SAN, Azure NetApp Files, if CPU and RAM requirements are met.
+source:
+  type: aprl
+  file: azure-resources/AVS/privateClouds/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.AVS/privateClouds
+resourceTypes:
+- Microsoft.AVS/privateClouds
+severity: 0
+labels:
+  area: Monitoring and Alerting
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Provides a list of Azure VMware Solution resources that don't have a vSAN capacity critical alert with a threshold of 75% or a warning capacity of 70%.
+    (
+    resources
+    | where ['type'] == "microsoft.avs/privateclouds"
+    | extend scopeId = tolower(tostring(id))
+    | project ['scopeId'], name, id, tags
+    | join kind=leftouter (
+    resources
+    | where type == "microsoft.insights/metricalerts"
+    | extend alertProperties = todynamic(properties)
+    | mv-expand alertProperties.scopes
+    | mv-expand alertProperties.criteria.allOf
+    | extend scopeId = tolower(tostring(alertProperties_scopes))
+    | extend metric = alertProperties_criteria_allOf.metricName
+    | extend threshold = alertProperties_criteria_allOf.threshold
+    | project scopeId, tostring(metric), toint(['threshold'])
+    | where metric == "DiskUsedPercentage"
+    | where threshold == 75
+    ) on scopeId
+    | where isnull(['threshold'])
+    | project recommendationId = "4232eb32-3241-4049-9e14-9b8005817b56", name, id, tags, param1 = "vsanCapacityCriticalAlert: isNull or threshold != 75"
+    )
+    | union (
+    resources
+    | where ['type'] == "microsoft.avs/privateclouds"
+    | extend scopeId = tolower(tostring(id))
+    | project ['scopeId'], name, id, tags
+    | join kind=leftouter (
+    resources
+    | where type == "microsoft.insights/metricalerts"
+    | extend alertProperties = todynamic(properties)
+    | mv-expand alertProperties.scopes
+    | mv-expand alertProperties.criteria.allOf
+    | extend scopeId = tolower(tostring(alertProperties_scopes))
+    | extend metric = alertProperties_criteria_allOf.metricName
+    | extend threshold = alertProperties_criteria_allOf.threshold
+    | project scopeId, tostring(metric), toint(['threshold'])
+    | where metric == "DiskUsedPercentage"
+    | where threshold == 70
+    ) on scopeId
+    | where isnull(['threshold'])
+    | project recommendationId = "4232eb32-3241-4049-9e14-9b8005817b56", name, id, tags, param1 = "vsanCapacityWarningAlert: isNull or threshold != 70"
+    )

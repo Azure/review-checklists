@@ -1,0 +1,45 @@
+guid: 82b3cf6b-9ae2-2e44-b193-10793213f676
+name: UnexpectedCommunicationIssues
+title: VM network interfaces and associated subnets both have a Network Security Group
+  associated
+description: |-
+  Unless you have a specific reason, it's advised to associate a network security group to a subnet or a network interface, but not both, to avoid unexpected communication issues and troubleshooting due to potential rule conflicts between the two associations.
+source:
+  type: aprl
+  file: azure-resources/Compute/virtualMachines/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Compute/virtualMachines
+resourceTypes:
+- Microsoft.Compute/virtualMachines
+severity: 2
+labels:
+  area: Security
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Provides a list of virtual machines and associated NICs that do have an NSG associated to them and also an NSG associated to the subnet.
+    Resources
+    | where type =~ 'Microsoft.Network/networkInterfaces'
+    | where isnotnull(properties.networkSecurityGroup)
+    | mv-expand ipConfigurations = properties.ipConfigurations, nsg = properties.networkSecurityGroup
+    | project nicId = tostring(id), subnetId = tostring(ipConfigurations.properties.subnet.id), nsgName=split(nsg.id, '/')[8]
+    | parse kind=regex subnetId with '/virtualNetworks/' virtualNetwork '/subnets/' subnet
+        | join kind=inner (
+            Resources
+            | where type =~ 'Microsoft.Network/NetworkSecurityGroups' and isnotnull(properties.subnets)
+            | project name, resourceGroup, subnet=properties.subnets
+            | mv-expand subnet
+            | project subnetId=tostring(subnet.id)
+        ) on subnetId
+        | project nicId
+    | join kind=leftouter (
+        Resources
+        | where type =~ 'Microsoft.Compute/virtualMachines'
+        | where isnotnull(properties.networkProfile.networkInterfaces)
+        | mv-expand nic=properties.networkProfile.networkInterfaces
+        | project vmName = name, vmId = id, tags, nicId = nic.id, nicName=split(nic.id, '/')[8]
+        | extend nicId = tostring(nicId)
+    ) on nicId
+    | project recommendationId = "82b3cf6b-9ae2-2e44-b193-10793213f676", name=vmName, id = vmId, tags, param1 = strcat("nic-name=", nicName)

@@ -1,0 +1,32 @@
+guid: 24ae3773-cc2c-3649-88de-c9788e25b463
+name: AzureServiceAccess
+title: When available, use Private Endpoints instead of Service Endpoints for PaaS
+  Services
+description: |-
+  Use VNet service endpoints only if Private Link isn't available and no data movement concerns. This feature restricts Azure service access to specified VNet and subnet, enhancing network security and isolating service traffic.
+source:
+  type: aprl
+  file: azure-resources/Network/virtualNetworks/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Network/virtualNetworks
+resourceTypes:
+- Microsoft.Network/virtualNetworks
+severity: 1
+labels:
+  area: Security
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Find Subnets with Service Endpoint enabled for services that offer Private Link
+    resources
+    | where type =~ 'Microsoft.Network/virtualnetworks'
+    | mv-expand subnets = properties.subnets
+    | extend se = array_length(subnets.properties.serviceEndpoints)
+    | where se >= 1
+    | project name, id, tags, subnets, serviceEndpoints=todynamic(subnets.properties.serviceEndpoints)
+    | mv-expand serviceEndpoints
+    | project name, id, tags, subnetName=subnets.name, serviceName=tostring(serviceEndpoints.service)
+    | where serviceName in (parse_json('["Microsoft.CognitiveServices","Microsoft.AzureCosmosDB","Microsoft.DBforMariaDB","Microsoft.DBforMySQL","Microsoft.DBforPostgreSQL","Microsoft.EventHub","Microsoft.KeyVault","Microsoft.ServiceBus","Microsoft.Sql", "Microsoft.Storage","Microsoft.StorageSync","Microsoft.Synapse","Microsoft.Web"]'))
+    | project recommendationId = "24ae3773-cc2c-3649-88de-c9788e25b463", name, id, tags, param1 = strcat("subnet=", subnetName), param2=strcat("serviceName=",serviceName), param3="ServiceEndpoints=true"

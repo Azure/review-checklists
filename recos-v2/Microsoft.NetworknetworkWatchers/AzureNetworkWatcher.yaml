@@ -1,0 +1,28 @@
+guid: 4e133bd0-8762-bc40-a95b-b29142427d73
+name: AzureNetworkWatcher
+title: Deploy Network Watcher in all regions where you have networking services
+description: |-
+  Azure Network Watcher offers tools for monitoring, diagnosing, viewing metrics, and managing logs for IaaS resources. It helps maintain the health of VMs, VNets, application gateways, load balancers, but not for PaaS or Web analytics.
+source:
+  type: aprl
+  file: azure-resources/Network/networkWatchers/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Network/networkWatchers
+resourceTypes:
+- Microsoft.Network/networkWatchers
+severity: 2
+labels:
+  area: Monitoring and Alerting
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // This query will return all locations that do not have a Network Watcher deployed
+    resources
+    | where location != "global"
+    | union (Resources
+        | where type =~ "microsoft.network/networkwatchers")
+    | summarize NetworkWatcherCount = countif(type =~ 'Microsoft.Network/networkWatchers') by location
+    | where NetworkWatcherCount == 0
+    | project recommendationId = "4e133bd0-8762-bc40-a95b-b29142427d73", name=location, id="n/a", param1 = strcat("LocationMisingNetworkWatcher:", location)

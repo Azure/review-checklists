@@ -1,0 +1,29 @@
+guid: b2113023-a553-2e41-9789-597e2fb54c31
+name: StandardPremiumAzureAppServicePlan
+title: Use Standard or Premium tier
+description: |-
+  Choose Standard/Premium Azure App Service Plan for robust apps with advanced scaling, high availability, better performance, and multiple slots, ensuring resilience and continuous operation.
+source:
+  type: aprl
+  file: azure-resources/Web/serverFarms/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Web/serverFarms
+resourceTypes:
+- Microsoft.Web/serverFarms
+severity: 0
+labels:
+  area: High Availability
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Provides a list of Azure App Service Plans that are not in the "Standard", "Premium", or "IsolatedV2" SKU tiers.
+
+    resources
+    | where type =~ 'microsoft.web/serverfarms'
+    | extend sku_tier = tostring(sku.tier)
+    | where tolower(sku_tier) !contains "standard" and
+            tolower(sku_tier) !contains "premium" and
+            tolower(sku_tier) !contains "isolatedv2"
+    | project recommendationId="b2113023-a553-2e41-9789-597e2fb54c31", name, id, tags, param1= strcat("SKU=",sku_tier)

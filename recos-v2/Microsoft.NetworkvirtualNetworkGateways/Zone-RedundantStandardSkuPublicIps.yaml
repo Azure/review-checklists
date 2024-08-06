@@ -1,0 +1,33 @@
+guid: 4bae5a28-5cf4-40d9-bcf1-623d28f6d917
+name: Zone-RedundantStandardSkuPublicIps
+title: Deploy zone-redundant VPN gateways with zone-redundant Public IP(s)
+description: |-
+  For zone-redundant VPN gateways, always use zone-redundant Standard SKU public IPs to avoid deploying all instances in one zone. This ensures the gateway's reliability, applying to both active-passive (single IP) and active-active (dual IP) setups.
+source:
+  type: aprl
+  file: azure-resources/Network/virtualNetworkGateways/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Network/virtualNetworkGateways
+resourceTypes:
+- Microsoft.Network/virtualNetworkGateways
+severity: 0
+labels:
+  area: High Availability
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Provides a list of zone-redundant Azure VPN gateways associated with non-zone-redundant Public IPs
+    resources
+    | where type =~ "Microsoft.Network/virtualNetworkGateways"
+    | where properties.gatewayType == "Vpn"
+    | where properties.sku.tier contains 'AZ'
+    | mv-expand ipconfig = properties.ipConfigurations
+    | extend pipId = tostring(ipconfig.properties.publicIPAddress.id)
+    | join kind=inner (
+        resources
+        | where type == "microsoft.network/publicipaddresses"
+        | where isnull(zones) or array_length(zones) < 3   )
+        on $left.pipId == $right.id
+    | project recommendationId = "4bae5a28-5cf4-40d9-bcf1-623d28f6d917", name, id, tags, param1 = strcat("PublicIpAddressName: ", name1), param2 = strcat ("PublicIpAddressId: ",id1), param3 = strcat ("PublicIpAddressTags: ",tags1)

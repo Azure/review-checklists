@@ -14,48 +14,59 @@ from pathlib import Path
 from . import cl_analyze_v2
 import datetime
 
+
 # Function that returns a data structure with the objects in v1 format
 def generate_v1(checklist_file, input_folder, output_file, verbose=False):
-    # Get selectors from checklist file
-    labels, services, waf_pillars, variables = cl_analyze_v2.get_checklist_selectors(checklist_file)
+    # Get checklist object and full reco list
     checklist_v2 = cl_analyze_v2.get_checklist_object(checklist_file)
-    # Get recos from v2 files
-    recos_v2 = cl_analyze_v2.get_recos(input_folder, labels=labels, services=services, waf_pillars=waf_pillars, verbose=verbose)
-    # Convert them to v1 format
+    recos_v2_full = cl_analyze_v2.get_recos(input_folder, verbose=verbose)
     recos_v1 = []
-    for reco_v2 in recos_v2:
-        reco_v1 = {}
-        # Main fields
-        reco_v1['guid'] = reco_v2['guid']
-        if 'title' in reco_v2:
-            reco_v1['text'] = reco_v2['title']
-        elif 'text' in reco_v2:     # Legacy
-            reco_v1['text'] = reco_v2['text']
-        if 'description' in reco_v2:
-            reco_v1['description'] = reco_v2['description']
-        if 'severity' in reco_v2:
-            if reco_v2['severity'] == 0:
-                reco_v1['severity'] = 'High'
-            elif reco_v2['severity'] == 1:
-                reco_v1['severity'] = 'Medium'
-            elif reco_v2['severity'] == 2:
-                reco_v1['severity'] = 'Low' 
-        if 'service' in reco_v2:
-            reco_v1['service'] = reco_v2['service']
-        if 'waf' in reco_v2:
-            reco_v1['waf'] = reco_v2['waf']
-        # ID, area and subarea
-        if 'idLabel' in variables:
-            if variables['idLabel'] in reco_v2['labels']:
-                reco_v1['id'] = reco_v2['labels'][variables['idLabel']]
-        if 'catLabel' in variables:
-            if variables['catLabel'] in reco_v2['labels']:
-                reco_v1['category'] = reco_v2['labels'][variables['catLabel']]
-        if 'subcatLabel' in variables:
-            if variables['subcatLabel'] in reco_v2['labels']:
-                reco_v1['subcategory'] = reco_v2['labels'][variables['subcatLabel']]
-        recos_v1.append(reco_v1)
-    # Build the whole checklist structure
+    # Selectors can be at the checklist root, in an area, or a subarea
+    if 'include' in checklist_v2:
+        root_include_selectors = cl_analyze_v2.get_object_selectors(checklist_v2['include'])
+        if 'exclude' in checklist_v2:
+            root_exclude_selectors = cl_analyze_v2.get_object_selectors(checklist_v2['exclude'])
+        else:
+            root_exclude_selectors = None
+        # Filter all recos according to the selectors
+        root_recos_v2 = cl_analyze_v2.filter_v2_recos(recos_v2_full, include=root_include_selectors, exclude=root_exclude_selectors)
+        if verbose: print("{0} recos extracted at root level".format(len(root_recos_v2)))
+        recos_v1 += [get_v1_from_v2(x) for x in root_recos_v2]
+    if 'areas' in checklist_v2:
+        for area in checklist_v2['areas']:
+            if 'name' in area:
+                if 'include' in area:
+                    area_include_selectors = get_object_selectors(area['include'])
+                    if 'exclude' in area:
+                        area_exclude_selectors = get_object_selectors(area['exclude'])
+                    else:
+                        area_exclude_selectors = None
+                    # Filter all recos according to the selectors
+                    area_recos_v2 = cl_analyze_v2.filter_v2_recos(recos_v2_full, include=area_include_selectors, exclude=area_exclude_selectors)
+                    if verbose: print("{0} recos extracted at area {1}".format(len(area_recos_v2), area['name']))
+                    recos_v1 += [get_v1_from_v2(x, area=area['name']) for x in area_recos_v2]
+                else:
+                    if verbose: print("WARNING: skipping area '{0}', no include specified.".format(area['name']))
+                if 'subareas' in area:
+                    for subarea in area['subareas']:
+                        if 'name' in subarea:
+                            if 'include' in subarea:
+                                subarea_include_selectors = cl_analyze_v2.get_object_selectors(subarea['include'])
+                                if 'exclude' in subarea:
+                                    subarea_exclude_selectors = cl_analyze_v2.get_object_selectors(subarea['exclude'])
+                                else:
+                                    subarea_exclude_selectors = None
+                                # Filter all recos according to the selectors
+                                subarea_recos_v2 = cl_analyze_v2.filter_v2_recos(recos_v2_full, include=subarea_include_selectors, exclude=subarea_exclude_selectors)
+                                if verbose: print("{0} recos extracted at area '{1}', subarea '{2}'".format(len(subarea_recos_v2), area['name'], subarea['name']))
+                                recos_v1 += [get_v1_from_v2(x, area=area['name'], subarea=subarea['name']) for x in subarea_recos_v2]
+                            else:
+                                if verbose: print("WARNING: skipping subarea '{0}' in area '{1}, no include specified.".format(subarea['name'], area['name']))
+                        else:
+                            if verbose: print("WARNING: Skipping subarea in area {0}, no name specified.".format(area['name']))
+            else:
+                if verbose: print("WARNING: Skipping area, no name specified.")
+    # Build the rest of the checklist structure
     categories = list(set([x['category'] for x in recos_v1 if 'category' in x]))
     cat_object = [{'name': x.title()} for x in categories]
     waf_pillars = list(set([x['waf'] for x in recos_v1 if 'waf' in x]))
@@ -65,11 +76,45 @@ def generate_v1(checklist_file, input_folder, output_file, verbose=False):
         'yesno': ({'name': 'Yes'}, {'name': 'No'}),
         'waf': waf_pillars_object,
         'categories': cat_object,
-        'metadata': {'name': checklist_v2['name'], 'timestamp': datetime.date.today().strftime("%B %d, %Y")}
+        'metadata': {'timestamp': datetime.date.today().strftime("%B %d, %Y")}
     }
+    if 'name' in checklist_v2:
+        checklist_v1['metadata']['name'] = checklist_v2['name']
+    else:
+        checklist_v1['metadata']['name'] = 'Name missing from checklist YAML file'
     # Write the output file
     if verbose: print("DEBUG: Writing file", output_file)
     if output_file:
         with open(output_file, 'w') as f:
             json.dump(checklist_v1, f, indent=4)
 
+# Function that returns a single v1 reco out of a single v2 reco:
+def get_v1_from_v2(reco_v2, area=None, subarea=None, id=None):
+    reco_v1 = {}
+    # Main fields
+    reco_v1['guid'] = reco_v2['guid']
+    if 'title' in reco_v2:
+        reco_v1['text'] = reco_v2['title']
+    elif 'text' in reco_v2:     # Legacy
+        reco_v1['text'] = reco_v2['text']
+    if 'description' in reco_v2:
+        reco_v1['description'] = reco_v2['description']
+    if 'severity' in reco_v2:
+        if reco_v2['severity'] == 0:
+            reco_v1['severity'] = 'High'
+        elif reco_v2['severity'] == 1:
+            reco_v1['severity'] = 'Medium'
+        elif reco_v2['severity'] == 2:
+            reco_v1['severity'] = 'Low' 
+    if 'service' in reco_v2:
+        reco_v1['service'] = reco_v2['service']
+    if 'waf' in reco_v2:
+        reco_v1['waf'] = reco_v2['waf']
+    # Optional fields
+    if area:
+        reco_v1['category']: area
+    if subarea:
+        reco_v1['subcategory']: subarea
+    if id:
+        reco_v1['id']: id
+    return reco_v1

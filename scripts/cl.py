@@ -12,8 +12,7 @@
 # - run-arg: Run Azure Resource Graph queries stored in v2 recommendations
 # 
 # Usage examples for v1-to-v2 conversion:
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/aks_checklist.en.json --output-folder ./recos-v2 --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose 
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/alz_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --output-format yaml --labels '{"checklist": "alz"}' --id-label alzId --category-label alzArea --subcategory-label alzSubarea --overwrite --verbose
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/aks_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose 
 # python3 ./scripts/cl.py v1tov2 --input-file ./checklists/alz_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --output-format yaml --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
 # python3 ./scripts/cl.py v1tov2 --input-file ./checklists/waf_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --output-format yaml --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
 # python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/aprl_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
@@ -23,7 +22,6 @@
 # python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --format yaml --show-sources
 # python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --format yaml --show-services
 # python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --format yaml --show-labels
-# python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --format yaml --checklist-file .\checklists-v2\alz.yaml
 #
 # Usage examples for v2 reco listing:
 # python3 ./scripts/cl.py list-recos --input-folder ./recos-v2 --format yaml --label-selector '{"checklist": "alz"}' --show-labels
@@ -36,6 +34,12 @@
 #
 # Usage examples for renaming:
 # python3 ./scripts/cl.py rename-reco --input-folder ./recos-v2 --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
+#
+# Usage examples for analysis of checklist files:
+# Analyze a single checklist file:
+# python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --checklist-file .\checklists-v2\alz.yaml --show-areas --verbose
+# Export v2 checklist to v1 JSON format:
+# python3 ./scripts/cl.py export-checklist --input-folder ./recos-v2 --checklist-file ./checklists-v2/alz.json --output-file ./checklists-v2/alz.json
 #
 # Appendix: importing latest rules from APRL and WAF service guides (maybe useful before using v1-to-v2):
 # python3 ./.github/actions/get_aprl/entrypoint.py './checklists-ext/aprl_checklist.en.json' 'true'
@@ -97,6 +101,9 @@ analyzev2_parser.add_argument('--show-severities', dest='analyzev2_show_severiti
 analyzev2_parser.add_argument('--show-resource-types', dest='analyzev2_show_resourceTypes', action='store_true',
                     default=False,
                     help='show all resource types and its number of items (default: False)')
+analyzev2_parser.add_argument('--show-areas', dest='analyzev2_show_areas', action='store_true',
+                    default=False,
+                    help='show areas and subareas and its number of items (default: False)')
 analyzev2_parser.add_argument('--label-selector', dest='analyzev2_labels', metavar='LABELS', action='store',
                     help='label selector for the items to analyze, for example {"mykey1": "myvalue1", "mykey2": "myvalue2"}')
 analyzev2_parser.add_argument('--service-selector', dest='analyzev2_services', metavar='SERVICES', action='store',
@@ -287,63 +294,72 @@ elif args.command == 'v1tov2':
 elif args.command == 'analyze-v2':
     # We need an input folder
     if args.analyzev2_input_folder:
-        # Convert label selectors argument to an object if specified
-        if args.analyzev2_labels:
-            try:
-                labels = json.loads(args.analyzev2_labels)
-            except Exception as e:
-                print("ERROR: Error when loading labels from", args.analyzev2_labels, "-", str(e))
-                labels = None
-        else:
-            labels = None
-        if args.analyzev2_services:
-            services = args.analyzev2_services.lower().split(",")
-        else:
-            services = None
-        if args.analyzev2_waf_pillars:
-            waf_pillars = args.analyzev2_waf_pillars.lower().split(",")
-        else:
-            waf_pillars = None
-        if args.analyzev2_sources:
-            sources = args.analyzev2_sources.lower().split(",")
-        else:
-            sources = None
+        # If a checklist file is specified, load the selectors from it
         if args.analyzev2_checklist_file:
-            if (not (labels or services or waf_pillars)):
-                labels, services, waf_pillars = cl_analyze_v2.get_checklist_selectors(args.analyzev2_checklist_file)
+            if (not (args.analyzev2_labels or args.analyzev2_services or args.analyzev2_waf_pillars)):
+                v2_stats = cl_analyze_v2.v2_stats_from_checklist(args.analyzev2_checklist_file, args.analyzev2_input_folder, format=args.analyzev2_format, verbose=args.verbose)
             else:
                 print("ERROR: You should either specify a checklist file or individual selectors, but not both.")
                 sys.exit(1)
-        # Retrieve stats
-        v2_stats = cl_analyze_v2.v2_stats_from_folder(args.analyzev2_input_folder, format=args.analyzev2_format, 
-                                                      labels=labels, services=services, waf_pillars=waf_pillars, sources=sources,
-                                                      verbose=args.verbose)
-        # Print stats
-        print("INFO: Total items found =", v2_stats['total_items'])
-        if args.analyzev2_show_severities:
-            print("INFO: Items per severity:")
-            for key in v2_stats['severity']:
-                print("INFO: - {0} = {1}".format(key, v2_stats['severity'][key]))
-        if args.analyzev2_show_labels:
-            print("INFO: Items per label:")
-            for key in v2_stats['labels']:
-                print("INFO: - {0} = {1}".format(key, v2_stats['labels'][key]))
-        if args.analyzev2_show_services:
-            print("INFO: Items per service:")
-            for key in v2_stats['services']:
-                print("INFO: - {0} = {1}".format(key, v2_stats['services'][key]))
-        if args.analyzev2_show_waf:
-            print("INFO: Items per WAF pillar:")
-            for key in v2_stats['waf']:
-                print("INFO: - {0} = {1}".format(key, v2_stats['waf'][key]))
-        if args.analyzev2_show_sources:
-            print("INFO: Items per source:")
-            for key in v2_stats['sources']:
-                print("INFO: - {0} = {1}".format(key, v2_stats['sources'][key]))
-        if args.analyzev2_show_resourceTypes:
-            print("INFO: Items per resource type:")
-            for key in v2_stats['resourceTypes']:
-                print("INFO: - {0} = {1}".format(key, v2_stats['resourceTypes'][key]))
+        else:
+            # Convert label selectors argument to an object if specified
+            if args.analyzev2_labels:
+                try:
+                    labels = json.loads(args.analyzev2_labels)
+                except Exception as e:
+                    print("ERROR: Error when loading labels from", args.analyzev2_labels, "-", str(e))
+                    labels = None
+            else:
+                labels = None
+            if args.analyzev2_services:
+                services = args.analyzev2_services.lower().split(",")
+            else:
+                services = None
+            if args.analyzev2_waf_pillars:
+                waf_pillars = args.analyzev2_waf_pillars.lower().split(",")
+            else:
+                waf_pillars = None
+            if args.analyzev2_sources:
+                sources = args.analyzev2_sources.lower().split(",")
+            else:
+                sources = None
+            # Retrieve stats
+            v2_stats = cl_analyze_v2.v2_stats_from_folder(args.analyzev2_input_folder, format=args.analyzev2_format, 
+                                                        labels=labels, services=services, waf_pillars=waf_pillars, sources=sources,
+                                                        verbose=args.verbose)
+        if v2_stats:
+            # Print stats
+            print("INFO: Total items found =", v2_stats['total_items'])
+            if args.analyzev2_show_severities:
+                print("INFO: Items per severity:")
+                for key in v2_stats['severity']:
+                    print("INFO: - {0} = {1}".format(key, v2_stats['severity'][key]))
+            if args.analyzev2_show_labels:
+                print("INFO: Items per label:")
+                for key in v2_stats['labels']:
+                    print("INFO: - {0} = {1}".format(key, v2_stats['labels'][key]))
+            if args.analyzev2_show_services:
+                print("INFO: Items per service:")
+                for key in v2_stats['services']:
+                    print("INFO: - {0} = {1}".format(key, v2_stats['services'][key]))
+            if args.analyzev2_show_waf:
+                print("INFO: Items per WAF pillar:")
+                for key in v2_stats['waf']:
+                    print("INFO: - {0} = {1}".format(key, v2_stats['waf'][key]))
+            if args.analyzev2_show_sources:
+                print("INFO: Items per source:")
+                for key in v2_stats['sources']:
+                    print("INFO: - {0} = {1}".format(key, v2_stats['sources'][key]))
+            if args.analyzev2_show_resourceTypes:
+                print("INFO: Items per resource type:")
+                for key in v2_stats['resourceTypes']:
+                    print("INFO: - {0} = {1}".format(key, v2_stats['resourceTypes'][key]))
+            if args.analyzev2_show_areas:
+                print("INFO: Items per area | subarea:")
+                for key in v2_stats['areas']:
+                    print("INFO: - {0} = {1}".format(key, v2_stats['areas'][key]))
+        else:
+            print("ERROR: No v2 objects found.")
     else:
         print("ERROR: you need to use the parameter `--input-folder` to specify the folder to analyze")
 elif args.command == 'list-recos':

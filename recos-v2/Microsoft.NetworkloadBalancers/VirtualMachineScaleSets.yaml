@@ -1,0 +1,54 @@
+guid: 6d82d042-6d61-ad49-86f0-6a5455398081
+name: VirtualMachineScaleSets
+title: Ensure the Backend Pool contains at least two instances
+description: |-
+  Deploying Azure Load Balancers with at least two instances in the backend prevents a single point of failure and supports scalability. Pairing with Virtual Machine Scale Sets is advised for optimal scale building.
+source:
+  type: aprl
+  file: azure-resources/Network/loadBalancers/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Network/loadBalancers
+resourceTypes:
+- Microsoft.Network/loadBalancers
+severity: 0
+labels:
+  area: High Availability
+links: []
+queries:
+  arg: |-
+    // Azure Resource Graph Query
+    // Find all LoadBalancers which only have 1 backend pool defined or only 1 VM in the backend pool
+    resources
+    | where type =~ 'Microsoft.Network/loadBalancers'
+    | extend bep = properties.backendAddressPools
+    | extend BackEndPools = array_length(bep)
+    | where BackEndPools == 0
+    | project recommendationId = "6d82d042-6d61-ad49-86f0-6a5455398081", name, id, Param1="backendPools", Param2=toint(0), tags
+    | union (resources
+      | where type =~ 'Microsoft.Network/loadBalancers'
+      | where sku.name == "Standard"
+      | extend bep = properties.backendAddressPools
+      | extend BackEndPools = toint(array_length(bep))
+      | mv-expand bip = properties.backendAddressPools
+      | extend BackendAddresses = array_length(bip.properties.loadBalancerBackendAddresses)
+      | where toint(BackendAddresses) <= 1
+      | project recommendationId = "6d82d042-6d61-ad49-86f0-6a5455398081", name, id, tags, Param1="backendAddresses", Param2=toint(BackendAddresses))
+    | union (
+      resources
+      | where type =~ 'Microsoft.Network/loadBalancers'
+      | where sku.name == "Basic"
+      | mv-expand properties.backendAddressPools
+      | extend backendPoolId = properties_backendAddressPools.id
+      | project id, name, tags, tostring(backendPoolId), recommendationId = "6d82d042-6d61-ad49-86f0-6a5455398081", Param1="BackEndPools"
+      | join kind = leftouter (
+      resources
+      | where type =~ "Microsoft.Network/networkInterfaces"
+      | mv-expand properties.ipConfigurations
+      | mv-expand properties_ipConfigurations.properties.loadBalancerBackendAddressPools
+      | extend backendPoolId = tostring(properties_ipConfigurations_properties_loadBalancerBackendAddressPools.id)
+      | summarize poolMembers = count() by backendPoolId
+      | project tostring(backendPoolId), poolMembers ) on backendPoolId
+      | where toint(poolMembers) <= 1
+      | extend BackendAddresses = poolMembers
+      | project id, name, tags, recommendationId, Param1="backendAddresses", Param2=toint(BackendAddresses))

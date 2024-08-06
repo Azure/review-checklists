@@ -1,0 +1,29 @@
+guid: a3784907-9836-4271-aafc-93535f8ec08b
+name: NetworkVirtualAppliance
+title: For subnets in VNets not connected to Virtual WAN, attach a route table so
+  that Internet traffic is redirected to Azure Firewall or a Network Virtual Appliance
+source:
+  type: revcl
+  file: ./checklists/waf_checklist.en.json
+services:
+- Firewall
+resourceTypes:
+- Microsoft.Network/azureFirewalls
+waf: Security
+severity: 0
+labels: {}
+links:
+- https://learn.microsoft.com/azure/virtual-network/virtual-networks-udr-overview
+queries:
+  arg: resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets
+    | mv-expand subnets | project id,name,subnetId=tostring(subnets.id), subnetName=tostring(subnets.name),subnetRT=subnets.properties.routeTable.id
+    | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet',
+    'AzureBastionSubnet')) | extend hasRT = isnotnull(subnetRT) | distinct id, hasRT,
+    subnetId | join kind=fullouter (resources | where type == 'microsoft.network/virtualnetworks'
+    | mvexpand properties.virtualNetworkPeerings | extend isVWAN=(tolower(split(properties_virtualNetworkPeerings.name,
+    '_')[0]) == 'remotevnettohubpeering') | mv-expand properties.subnets | project
+    id, isVWAN, name, subnetId=tostring(properties_subnets.id), subnetName=tostring(properties_subnets.name)
+    | summarize PeeredToVWAN=max(isVWAN) by id, subnetId | project id, subnetId, isVWANpeer
+    = (PeeredToVWAN == true)) on subnetId | project id=iff(isnotempty(id), id, id1),
+    subnetId=iff(isnotempty(subnetId), subnetId, subnetId1), hasRT, isVWANpeer | extend
+    compliant = (hasRT==true or isVWANpeer==true) | distinct id, subnetId, compliant

@@ -1,0 +1,27 @@
+guid: 24ab9f11-a3e4-3043-a985-22cf94c4933a
+name: AzureFrontDoor
+title: Use HTTP to HTTPS redirection
+description: |-
+  Using HTTPS is ideal for secure connections. However, for compatibility with older clients, HTTP requests may be necessary. Azure Front Door enables auto redirection of HTTP to HTTPS, enhancing security without sacrificing accessibility.
+source:
+  type: aprl
+  file: azure-resources/Cdn/profiles/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Cdn/profiles
+resourceTypes:
+- Microsoft.Cdn/profiles
+severity: 0
+labels:
+  area: Security
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Use HTTP to HTTPS redirection
+    cdnresources
+    | where type == "microsoft.cdn/profiles/afdendpoints/routes"
+    | extend httpsRedirect=tostring(properties.httpsRedirect)
+    | project id,name,httpsRedirect,tags
+    | where httpsRedirect !~ "enabled"
+    | project recommendationId= "24ab9f11-a3e4-3043-a985-22cf94c4933a", name,id,tags,param1=strcat("httpsRedirect:",httpsRedirect)

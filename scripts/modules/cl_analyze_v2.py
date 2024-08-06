@@ -13,14 +13,16 @@ import os
 from pathlib import Path
 
 # Function that returns true if a given reco matches the criteria specified by a label selector, a service selector and a WAF selector
-def reco_matches_criteria(reco, labels=None, services=None, resource_types=None, waf_pillars=None, sources=None, arg=False, guid=None):
+def reco_matches_criteria(reco, labels=None, services=None, resource_types=None, waf_pillars=None, sources=None, guids=None, arg=False):
     # Check if the reco fulfills the criteria
     # GUID
-    if guid:
+    if guids:
         guid_match = False
         if 'guid' in reco:
-            if reco['guid'].lower() == guid.lower():
-                return True
+            guids_lower = [x.lower() for x in guids]
+            for guid in guids_lower:
+                if reco['guid'].lower() == guid.lower():
+                    return True
     else:
         guid_match = True
     # Labels
@@ -82,6 +84,32 @@ def reco_matches_criteria(reco, labels=None, services=None, resource_types=None,
     # If no selector was provided, add all recos to the list
     return (guid_match and label_match and service_match and resource_type_match and waf_match and arg_match and src_match)
 
+# Extracts certain recos based on include and optionally exclude selectors
+def filter_v2_recos(input_recos, include=None, exclude=None):
+    if include:
+        waf_pillars = include['waf']
+        services = include['service']
+        resource_types = include['resourceType']
+        guids = include['guid']
+        labels = include['label']
+        sources = include['source']
+        output_recos_include = [x for x in input_recos if reco_matches_criteria(x, waf_pillars=waf_pillars, services=services, resource_types=resource_types, guids=guids, sources=sources, labels=labels)]
+        # There might be exclude selectors too
+        if exclude:
+            waf_pillars = exclude['waf']
+            services = exclude['service']
+            resource_types = exclude['resourceType']
+            guids = exclude['guid']
+            labels = exclude['label']
+            sources = exclude['source']
+            output_recos = [x for x in output_recos_include if not reco_matches_criteria(x, waf_pillars=waf_pillars, services=services, resource_types=resource_types, guids=guids, sources=sources, labels=labels)]
+        else:
+            output_recos = output_recos_include
+        return output_recos
+    else:
+        # If no include selectors specified, return nothing
+        return None
+
 # Opens a file with a text editor
 def open_file_with_editor(file, text_editor=None, verbose=False):
     if text_editor:
@@ -102,11 +130,9 @@ def open_file_with_editor(file, text_editor=None, verbose=False):
 
 # Function that loads all of the found v2 YAML/JSON files into a single object
 # labels, services and waf_pillars are selectors with object structure
-def load_v2_files(input_folder, format='yaml', labels=None, services=None, waf_pillars=None, sources=None, guid=None, arg=False, open_editor=False, text_editor=None, verbose=False):
+def load_v2_files(input_folder, format='yaml', labels=None, services=None, waf_pillars=None, sources=None, guids=None, arg=False, open_editor=False, text_editor=None, verbose=False):
     # Banner
-    if verbose:
-        print("DEBUG: ======================================================================")
-        print("DEBUG: Loading v2 files from folder", input_folder)
+    if verbose: print("DEBUG: Loading v2 files from folder", input_folder)
     # Look for files in the input folder
     v2recos = []
     # If the input folder exists
@@ -120,13 +146,13 @@ def load_v2_files(input_folder, format='yaml', labels=None, services=None, waf_p
                     try:
                         with open(file.resolve()) as f:
                             v2reco = json.safe_load(f)
-                            if reco_matches_criteria(v2reco, labels=labels, services=services, waf_pillars=waf_pillars, sources=sources, guid=guid):
+                            if reco_matches_criteria(v2reco, labels=labels, services=services, waf_pillars=waf_pillars, sources=sources, guids=guids):
                                 if verbose: print("DEBUG: reco in file", file, "matches criteria.")
                                 v2recos.append(v2reco)
                                 if open_editor:
                                     open_file_with_editor(file, text_editor=text_editor, verbose=verbose)
                     except Exception as e:
-                        print("ERROR: Error when loading file {0} - {1}". format(file, str(e)))
+                        print("ERROR: Error when loading JSON reco file {0} - {1}". format(file, str(e)))
             # YAML
             if format == 'yaml' or format == 'yml':
                 if (file.suffix == '.yaml') or (file.suffix == '.yml'):
@@ -134,13 +160,13 @@ def load_v2_files(input_folder, format='yaml', labels=None, services=None, waf_p
                     try:
                         with open(file.resolve()) as f:
                             v2reco = yaml.safe_load(f)
-                            if reco_matches_criteria(v2reco, labels=labels, services=services, waf_pillars=waf_pillars, guid=guid, arg=arg):
+                            if reco_matches_criteria(v2reco, labels=labels, services=services, waf_pillars=waf_pillars, guids=guids, arg=arg):
                                 if verbose: print("DEBUG: reco in file", file, "matches criteria.")
                                 v2recos.append(v2reco)
                                 if open_editor:
                                     open_file_with_editor(file, text_editor=text_editor, verbose=verbose)
                     except Exception as e:
-                        print("ERROR: Error when loading file {0} - {1}". format(file, str(e)))
+                        print("ERROR: Error when loading YAML reco file {0} - {1}". format(file, str(e)))
         # Return the object with all the v2 objects
         return v2recos
     else:
@@ -150,76 +176,113 @@ def load_v2_files(input_folder, format='yaml', labels=None, services=None, waf_p
 # Return an object with some statistics about the v2 objects 
 def v2_stats_from_object(v2recos, verbose=False):
     # Banner
-    if verbose:
-        print("DEBUG: ======================================================================")
-        print("DEBUG: Analyzing v2 objects...")
+    if verbose: print("DEBUG: Analyzing v2 objects...")
     # Create a dictionary with the stats
     stats = {}
-    stats['total_items'] = len(v2recos)
+    if v2recos:
+        stats['total_items'] = len(v2recos)
+    else:
+        stats['total_items'] = 0
     stats['severity'] = {}
     stats['labels'] = {}
     stats['services'] = {}
     stats['waf'] = {}
     stats['sources'] = {}
     stats['resourceTypes'] = {}
-    for reco in v2recos:
-        # Count the number of items per severity
-        if 'severity' in reco:
-            if reco['severity'] in stats['severity']:
-                stats['severity'][reco['severity']] += 1
+    stats['areas'] = {}
+    if v2recos:
+        for reco in v2recos:
+            # Count the number of items per severity
+            if 'severity' in reco:
+                if reco['severity'] in stats['severity']:
+                    stats['severity'][reco['severity']] += 1
+                else:
+                    stats['severity'][reco['severity']] = 1
             else:
-                stats['severity'][reco['severity']] = 1
-        else:
-            if 'undefined' in stats['severity']:
-                stats['severity']['undefined'] += 1
+                if 'undefined' in stats['severity']:
+                    stats['severity']['undefined'] += 1
+                else:
+                    stats['severity']['undefined'] = 1
+            # Count the number of items per area
+            if 'labels' in reco:
+                    for thislabelkey in reco['labels'].keys():
+                        labeltext = thislabelkey + ":" + reco['labels'][thislabelkey]
+                        if labeltext in stats['labels']:
+                            stats['labels'][labeltext] += 1
+                        else:
+                            stats['labels'][labeltext] = 1
+            # Count the number of items per service
+            if 'service' in reco:
+                if reco['service'] in stats['services']:
+                    stats['services'][reco['service']] += 1
+                else:
+                    stats['services'][reco['service']] = 1
             else:
-                stats['severity']['undefined'] = 1
-        # Count the number of items per area
-        if 'labels' in reco:
-                for thislabelkey in reco['labels'].keys():
-                    labeltext = thislabelkey + ":" + reco['labels'][thislabelkey]
-                    if labeltext in stats['labels']:
-                        stats['labels'][labeltext] += 1
+                if 'undefined' in stats['services']:
+                    stats['services']['undefined'] += 1
+                else:
+                    stats['services']['undefined'] = 1
+            # Count the number of items per WAF pillar
+            if 'waf' in reco:
+                if reco['waf'] in stats['waf']:
+                    stats['waf'][reco['waf']] += 1
+                else:
+                    stats['waf'][reco['waf']] = 1
+            else:
+                if 'undefined' in stats['waf']:
+                    stats['waf']['undefined'] += 1
+                else:
+                    stats['waf']['undefined'] = 1
+            # Count the number of items per source
+            if 'source' in reco:
+                if 'type' in reco['source']:
+                    if reco['source']['type'] in stats['sources']:
+                        stats['sources'][reco['source']['type']] += 1
                     else:
-                        stats['labels'][labeltext] = 1
-        # Count the number of items per service
-        if 'service' in reco:
-            if reco['service'] in stats['services']:
-                stats['services'][reco['service']] += 1
-            else:
-                stats['services'][reco['service']] = 1
-        else:
-            if 'undefined' in stats['services']:
-                stats['services']['undefined'] += 1
-            else:
-                stats['services']['undefined'] = 1
-        # Count the number of items per WAF pillar
-        if 'waf' in reco:
-            if reco['waf'] in stats['waf']:
-                stats['waf'][reco['waf']] += 1
-            else:
-                stats['waf'][reco['waf']] = 1
-        else:
-            if 'undefined' in stats['waf']:
-                stats['waf']['undefined'] += 1
-            else:
-                stats['waf']['undefined'] = 1
-        # Count the number of items per source
-        if 'source' in reco:
-            if 'type' in reco['source']:
-                if reco['source']['type'] in stats['sources']:
-                    stats['sources'][reco['source']['type']] += 1
+                        stats['sources'][reco['source']['type']] = 1
+            # Resource types
+            if 'resourceTypes' in reco:
+                for resourceType in reco['resourceTypes']:
+                    if resourceType in stats['resourceTypes']:
+                        stats['resourceTypes'][resourceType] += 1
+                    else:
+                        stats['resourceTypes'][resourceType] = 1
+            # Areas / subareas
+            if 'area' in reco:
+                if 'subarea' in reco:
+                    if reco['area'] + ' | ' + reco['subarea'] in stats['areas']:
+                        stats['areas'][reco['area'] + ' | ' + reco['subarea']] += 1
+                    else:
+                        stats['areas'][reco['area'] + ' | ' + reco['subarea']] = 1
                 else:
-                    stats['sources'][reco['source']['type']] = 1
-        # Resource types
-        if 'resourceTypes' in reco:
-            for resourceType in reco['resourceTypes']:
-                if resourceType in stats['resourceTypes']:
-                    stats['resourceTypes'][resourceType] += 1
+                    if reco['area'] in stats['areas']:
+                        stats['areas'][reco['area']] += 1
+                    else:
+                        stats['areas'][reco['area']] = 1
+            else:
+                if 'undefined' in stats['areas']:
+                    stats['areas']['undefined'] += 1
                 else:
-                    stats['resourceTypes'][resourceType] = 1
-    # Return the stats object
-    return stats
+                    stats['areas']['undefined'] = 1
+        # Return the stats object
+        return stats
+    else:
+        print("ERROR: no recos to analyze for statistics.")
+        return stats
+
+# Return an object with some statistics about the v2 objects in a checklist
+def v2_stats_from_checklist(checklist_file, input_folder, format='yaml', verbose=False):
+    # Load the v2 objects from the checklist
+    v2recos = get_recos_from_checklist(checklist_file, input_folder, verbose)
+    if v2recos:
+        if verbose: print("DEBUG: {0} v2 objects extracted, calculating stats...".format(len(v2recos)))
+        # Get the stats from the v2 objects
+        stats = v2_stats_from_object(v2recos, verbose=verbose)
+        # Return the stats object
+        return stats
+    else:
+        print("ERROR: no recos could be loaded from checklist", checklist_file)
+        return None
 
 # Return an object with some statistics about the v2 objects in a folder
 def v2_stats_from_folder(input_folder, format='yaml', labels=None, services=None, waf_pillars=None, sources=None, verbose=False):
@@ -231,14 +294,15 @@ def v2_stats_from_folder(input_folder, format='yaml', labels=None, services=None
     return stats
 
 # Return an object with the recos fulfilling the specified criteria
-def get_recos(input_folder, labels=None, services=None, waf_pillars=None, sources=None, guid=None, arg=False, format='yaml', verbose=False):
+# ToDo: the parameter guid should be an array, to support a list of guids
+def get_recos(input_folder, labels=None, services=None, waf_pillars=None, sources=None, guids=None, arg=False, format='yaml', verbose=False):
     # Load the v2 objects from the folder
     v2recos = load_v2_files(input_folder, format=format, verbose=verbose)
     if v2recos:
         # Create a list of recos that fulfill the criteria
         recos = []
         for reco in v2recos:
-            if reco_matches_criteria(reco, labels=labels, services=services, waf_pillars=waf_pillars, sources=sources, guid=guid, arg=arg):
+            if reco_matches_criteria(reco, labels=labels, services=services, waf_pillars=waf_pillars, sources=sources, guids=guids, arg=arg):
                 recos.append(reco)
         # Return the recos object
         return recos
@@ -250,7 +314,7 @@ def get_recos(input_folder, labels=None, services=None, waf_pillars=None, source
 #   errors where the file name is incorrect would be hard to debug
 def get_reco(input_folder, guid, verbose=False):
     # Load the v2 objects from the folder
-    v2recos = load_v2_files(input_folder, guid=guid, format='yaml', verbose=verbose)
+    v2recos = load_v2_files(input_folder, guids=[guid], format='yaml', verbose=verbose)
     if v2recos:
         # Return the reco object
         return v2recos
@@ -303,52 +367,123 @@ def print_recos(recos, show_labels=False, show_arg=False):
 
 # Get selectors from a checklist file in YAML format
 # Returns the label, service and WAF selectors, and the variables, in this order
-def get_checklist_selectors(checklist_file, verbose=False):
-    # Load the checklist file
-    try:
-        with open(checklist_file) as f:
-            checklist = yaml.safe_load(f)
-    except Exception as e:
-        print("ERROR: Error when loading file {0} - {1}". format(checklist_file, str(e)))
-        return None, None, None
-    # Get the selectors
-    if 'labelSelector' in checklist:
-        labelSelector = checklist['labelSelector']
+def get_object_selectors(checklist_object, verbose=False):
+    # Label
+    if 'labelSelector' in checklist_object:
+        labelSelector = checklist_object['labelSelector']
         for key in labelSelector.keys():
             print ("DEBUG: Label selector found:", key + ":" + labelSelector[key])
     else:
         labelSelector = None
-    if 'serviceSelector' in checklist:
-        serviceSelector = checklist['serviceSelector']
+    # Service
+    if 'serviceSelector' in checklist_object:
+        serviceSelector = checklist_object['serviceSelector']
         for service in serviceSelector:
             print ("DEBUG: Service selector found:", service)
     else:
         serviceSelector = None
-    if 'wafSelector' in checklist:
-        wafSelector = checklist['wafSelector']
+    # ResourceType
+    if 'resourceTypeSelector' in checklist_object:
+        resourceTypeSelector = checklist_object['resourceTypeSelector']
+        for resourceType in resourceTypeSelector:
+            print ("DEBUG: resourceType selector found:", resourceType)
+    else:
+        resourceTypeSelector = None
+    # WAF
+    if 'wafSelector' in checklist_object:
+        wafSelector = checklist_object['wafSelector']
         for waf in wafSelector:
             print ("DEBUG: WAF selector found:", waf)
     else:
         wafSelector = None
-    if 'variables' in checklist:
-        variables = checklist['variables']
-        for variable_key in variables.keys():
-            print ("DEBUG: Variable found:", variable_key + ":" + variables[variable_key])
+    # GUID
+    if 'guidSelector' in checklist_object:
+        guidSelector = checklist_object['guidSelector']
+        for guid in guidSelector:
+            print ("DEBUG: guid selector found:", guid)
     else:
-        variables = None
+        guidSelector = None
+    # Source
+    if 'sourceSelector' in checklist_object:
+        sourceSelector = checklist_object['sourceSelector']
+        for source in sourceSelector:
+            print ("DEBUG: source selector found:", source)
+    else:
+        sourceSelector = None
     # Return the selectors
-    return labelSelector, serviceSelector, wafSelector, variables
+    return {
+        'label': labelSelector,
+        'source': sourceSelector,
+        'service': serviceSelector,
+        'waf': wafSelector,
+        'resourceType': resourceTypeSelector,
+        'guid': guidSelector
+    }
 
 # Loads a checklist file in YAML format
 def get_checklist_object(checklist_file, verbose=False):
     # Load the checklist file
     try:
+        if verbose: print("DEBUG: Loading checklist file", checklist_file)
         with open(checklist_file) as f:
             checklist = yaml.safe_load(f)
             return checklist
     except Exception as e:
-        print("ERROR: Error when loading file {0} - {1}". format(checklist_file, str(e)))
+        print("ERROR: Error when loading checklist file {0} - {1}". format(checklist_file, str(e)))
         return None
+
+# Return v2 recos that match the selectors included in a checklist file
+def get_recos_from_checklist(checklist_file, input_folder, verbose=False):
+    # Get checklist object and full reco list
+    checklist_v2 = get_checklist_object(checklist_file, verbose)
+    if verbose: print("DEBUG: Loading recos from folder", input_folder)
+    recos_v2_full = get_recos(input_folder, verbose=False)  # Loading all recos, verbose not needed
+    recos_v2 = []
+    # Selectors can be at the checklist root, in an area, or a subarea
+    if 'include' in checklist_v2:
+        root_include_selectors = get_object_selectors(checklist_v2['include'])
+        if 'exclude' in checklist_v2:
+            root_exclude_selectors = get_object_selectors(checklist_v2['exclude'])
+        else:
+            root_exclude_selectors = None
+        # Filter all recos according to the selectors
+        root_recos_v2 = filter_v2_recos(recos_v2_full, include=root_include_selectors, exclude=root_exclude_selectors)
+        recos_v2 += root_recos_v2
+        if verbose: print("DEBUG: {0} recos extracted at root level, reco list at {1} elements".format(len(root_recos_v2), len(recos_v2)))
+    if 'areas' in checklist_v2:
+        for area in checklist_v2['areas']:
+            if 'name' in area:
+                if 'include' in area:
+                    area_include_selectors = get_object_selectors(area['include'])
+                    if 'exclude' in area:
+                        area_exclude_selectors = get_object_selectors(area['exclude'])
+                    else:
+                        area_exclude_selectors = None
+                    # Filter all recos according to the selectors
+                    area_recos_v2 = filter_v2_recos(recos_v2_full, include=area_include_selectors, exclude=area_exclude_selectors)
+                    recos_v2 += [x | {'area': area['name']} for x in area_recos_v2]
+                    if verbose: print("DEBUG: {0} recos extracted at area {1}, reco list at {2} elements".format(len(area_recos_v2), area['name'], len(recos_v2)))
+                if 'subareas' in area:
+                    for subarea in area['subareas']:
+                        if 'name' in subarea:
+                            if 'include' in subarea:
+                                subarea_include_selectors = get_object_selectors(subarea['include'])
+                                if 'exclude' in subarea:
+                                    subarea_exclude_selectors = get_object_selectors(subarea['exclude'])
+                                else:
+                                    subarea_exclude_selectors = None
+                                # Filter all recos according to the selectors
+                                subarea_recos_v2 = filter_v2_recos(recos_v2_full, include=subarea_include_selectors, exclude=subarea_exclude_selectors)
+                                recos_v2 += [x | {'area': area['name'], 'subarea': subarea['name']} for x in subarea_recos_v2]
+                                if verbose: print("DEBUG: {0} recos extracted at area '{1}', subarea '{2}', reco list at {3} elements".format(len(subarea_recos_v2), area['name'], subarea['name'], len(recos_v2)))
+                            else:
+                                if verbose: print("WARNING: skipping subarea '{0}' in area '{1}, no include specified.".format(subarea['name'], area['name']))
+                        else:
+                            if verbose: print("WARNING: Skipping subarea in area {0}, no name specified.".format(area['name']))
+            else:
+                if verbose: print("WARNING: Skipping area, no name specified.")
+    # Return the recos object
+    return recos_v2
 
 # Function that finds the file with a specific GUID and deletes it
 def delete_v2_reco(input_folder, guid, format='yaml', verbose=False):
@@ -368,11 +503,11 @@ def delete_v2_reco(input_folder, guid, format='yaml', verbose=False):
                         f.close()
                         if 'guid' in v2reco:
                             if v2reco['guid'].lower() == guid.lower():
-                                if verbose: print('DEBUG: deleting reco', guid, 'in file', file)
+                                if verbose: print('DEBUG: Deleting reco', guid, 'in file', file)
                                 os.remove(file)
                                 reco_found = True
                     except Exception as e:
-                        print("ERROR: Error when loading file {0} - {1}". format(file, str(e)))
+                        print("ERROR: Error when loading reco file {0} - {1}". format(file, str(e)))
             # YAML
             if format == 'yaml' or format == 'yml':
                 if (file.suffix == '.yaml') or (file.suffix == '.yml'):
@@ -387,6 +522,6 @@ def delete_v2_reco(input_folder, guid, format='yaml', verbose=False):
                                 os.remove(file)
                                 reco_found = True
                     except Exception as e:
-                        print("ERROR: Error when loading file {0} - {1}". format(file, str(e)))
+                        print("ERROR: Error when loading reco file {0} - {1}". format(file, str(e)))
         # Return the object with all the v2 objects
         return reco_found

@@ -1,0 +1,23 @@
+guid: 9bda4776-8f24-4c11-9775-c2ea55b46a94
+name: AksVirtualNetwork
+title: Use DDoS Standard in the AKS Virtual Network
+source:
+  type: revcl
+  file: ./checklists/waf_checklist.en.json
+services:
+- AKS
+resourceTypes:
+- microsoft.containerservice/managedClusters
+waf: Security
+severity: 1
+labels: {}
+links:
+- https://learn.microsoft.com/azure/virtual-network/ddos-protection-overview
+queries:
+  arg: Resources | where type=~'microsoft.containerservice/managedclusters' | project
+    resourceGroup,name,pools=properties.agentPoolProfiles | mv-expand pools | project
+    subnetId=tostring(pools.vnetSubnetID) | where isnotempty(subnetId) | join (Resources
+    | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,enableDdosProtection=tostring(properties.enableDdosProtection),subnets=properties.subnets
+    | mv-expand subnets | project id,resourceGroup,name,enableDdosProtection,subnetId=tostring(subnets.id))
+    on subnetId | distinct id,resourceGroup,name,enableDdosProtection | extend compliant
+    = (enableDdosProtection == 'true')

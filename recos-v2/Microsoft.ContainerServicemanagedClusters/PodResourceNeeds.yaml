@@ -1,0 +1,26 @@
+guid: 902c82ff-4910-4b61-942d-0d6ef7f39b67
+name: PodResourceNeeds
+title: Enable the cluster auto-scaler on an existing cluster
+description: |-
+  The cluster auto-scaler in AKS adjusts node counts based on pod resource needs and available capacity, enabling scaling as per demand to prevent outages.
+source:
+  type: aprl
+  file: azure-resources/ContainerService/managedClusters/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.ContainerService/managedClusters
+resourceTypes:
+- Microsoft.ContainerService/managedClusters
+severity: 0
+labels:
+  area: Scalability
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Find AKS clusters with auto-scaling disabled
+    Resources
+    | where type == "microsoft.containerservice/managedclusters"
+    | extend autoScaling = tostring (parse_json(properties.agentPoolProfiles.[0].enableAutoScaling))
+    | where autoScaling == "false"
+    | project recommendationId="902c82ff-4910-4b61-942d-0d6ef7f39b67", name, id, tags, param1=strcat("autoScaling :", autoScaling)

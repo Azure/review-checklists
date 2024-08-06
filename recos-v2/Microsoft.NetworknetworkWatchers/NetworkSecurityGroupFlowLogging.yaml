@@ -1,0 +1,29 @@
+guid: 22a769ed-0ecb-8b49-bafe-8f52e6373d9c
+name: NetworkSecurityGroupFlowLogging
+title: Fix Flow Log configurations in Failed state or Disabled Status
+description: |-
+  Network security group flow logging is a feature of Azure Network Watcher that logs IP traffic info through a network security group. If in Failed state, monitoring data from the associated resource is not collected.
+source:
+  type: aprl
+  file: azure-resources/Network/networkWatchers/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Network/networkWatchers
+resourceTypes:
+- Microsoft.Network/networkWatchers
+severity: 2
+labels:
+  area: Monitoring and Alerting
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // This query will return all Network Watcher Flow Logs that are not enabled or in a succeeded state
+    resources
+    | where type =~ "microsoft.network/networkwatchers/flowlogs" and isnotnull(properties)
+    | extend targetResourceId = tostring(properties.targetResourceId)
+    | extend status = iff(properties.enabled =~ 'true', "Enabled", "Disabled")
+    | extend provisioningState = tostring(properties.provisioningState)
+    | extend flowLogType = iff(properties.targetResourceId contains "Microsoft.Network/virtualNetworks", 'Virtual network', 'Network security group')
+    | where provisioningState != "Succeeded" or status != "Enabled"
+    | project recommendationId = "22a769ed-0ecb-8b49-bafe-8f52e6373d9c", name, id, tags, param1 = strcat("provisioningState:", provisioningState), param2=strcat("Status:", status), param3=strcat("targetResourceId:",targetResourceId), param4=strcat("flowLogType:",flowLogType)

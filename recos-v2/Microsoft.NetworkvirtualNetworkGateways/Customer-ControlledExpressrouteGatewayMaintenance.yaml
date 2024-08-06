@@ -1,0 +1,39 @@
+guid: 3e115044-a3aa-433e-be01-ce17d67e50da
+name: Customer-ControlledExpressrouteGatewayMaintenance
+title: Configure customer-controlled ExpressRoute gateway maintenance
+description: |-
+  ExpressRoute gateways are updated for improved functionality, reliability, performance, and security. Customer-controlled maintenance configuration and scheduling minimize update impact and align with your maintenance windows.
+source:
+  type: aprl
+  file: azure-resources/Network/virtualNetworkGateways/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Network/virtualNetworkGateways
+resourceTypes:
+- Microsoft.Network/virtualNetworkGateways
+severity: 0
+labels:
+  area: High Availability
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Find all Virtual Network Gateways without Maintenance Configurations
+
+    resources
+    | where type =~ "Microsoft.Network/virtualNetworkGateways"
+    | extend resourceId = tolower(id)
+    | join kind=leftouter  (
+        maintenanceresources
+        | where type =~ "Microsoft.Maintenance/configurationAssignments"
+        | project JsonData = parse_json(properties)
+        | extend maintenanceConfigurationId = tolower(tostring(JsonData.maintenanceConfigurationId))
+        | join kind=inner (
+            resources
+            | where type =~ "Microsoft.Maintenance/maintenanceConfigurations"
+            | project maintenanceConfigurationId=tolower(id)
+        ) on maintenanceConfigurationId
+        | project maintenanceConfigurationId, resourceId=tolower(tostring(JsonData.resourceId))
+    ) on resourceId
+    | where isempty(maintenanceConfigurationId)
+    | project recommendationId = "3e115044-a3aa-433e-be01-ce17d67e50da", name, id, tags, param1= strcat("sku-tier: " , properties.sku.tier), param2=location

@@ -1,0 +1,58 @@
+guid: 1bd2b7e8-400f-e64a-99a2-c572f7b08a62
+name: FrontDoorWebApplicationFirewall
+title: Enable the WAF
+description: |-
+  For internet-facing applications, enabling the Front Door web application firewall (WAF) and configuring it to use managed rules is recommended for protection against a wide range of attacks using Microsoft-managed rules.
+source:
+  type: aprl
+  file: azure-resources/Cdn/profiles/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Cdn/profiles
+resourceTypes:
+- Microsoft.Cdn/profiles
+severity: 1
+labels:
+  area: Security
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Enable the WAF
+
+    resources
+    | where type =~ "microsoft.cdn/profiles" and sku has "AzureFrontDoor"
+    | project name, cdnprofileid=tolower(id), tostring(tags), resourceGroup, subscriptionId,skuname=tostring(sku.name)
+    | join kind= fullouter (
+        cdnresources
+        | where type == "microsoft.cdn/profiles/securitypolicies"
+        | extend wafpolicyid=tostring(properties['parameters']['wafPolicy']['id'])
+        | extend splitid=split(id, "/")
+        | extend cdnprofileid=tolower(strcat_array(array_slice(splitid, 0, 8), "/"))
+        | project secpolname=name, cdnprofileid, wafpolicyid
+        )
+        on cdnprofileid
+    | project name, cdnprofileid, secpolname, wafpolicyid,skuname
+    | join kind = fullouter (
+        resources
+        | where type == "microsoft.network/frontdoorwebapplicationfirewallpolicies"
+        | extend
+            managedrulesenabled=iff(tostring(properties.managedRules.managedRuleSets) != "[]", true, false),
+            enabledState = tostring(properties.policySettings.enabledState)
+        | project afdwafname=name, managedrulesenabled, wafpolicyid=id, enabledState, tostring(tags)
+        )
+        on wafpolicyid
+    | where name != ""
+    | summarize
+        associatedsecuritypolicies=countif(secpolname != ""),
+        wafswithmanagedrules=countif(managedrulesenabled == 1)
+        by name, id=cdnprofileid, tags,skuname
+    | where associatedsecuritypolicies == 0 or wafswithmanagedrules  == 0
+    | project
+        recommendationId = "1bd2b7e8-400f-e64a-99a2-c572f7b08a62",
+        name,
+        id,
+        todynamic(tags),
+        param1 = strcat("associatedsecuritypolicies:", associatedsecuritypolicies),
+        param2 = strcat("wafswithmanagedrules:", wafswithmanagedrules),
+        param3 = strcat("skuname:",skuname)

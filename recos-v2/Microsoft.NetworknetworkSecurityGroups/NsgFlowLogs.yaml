@@ -1,0 +1,32 @@
+guid: da1a3c06-d1d5-a940-9a99-fcc05966fe7c
+name: NsgFlowLogs
+title: Configure NSG Flow Logs
+description: |-
+  Monitoring, managing, and understanding your network is crucial for protection and optimization. Knowing the current state, who and from where connections are made, open internet ports, expected and irregular behavior, and traffic spikes is essential.
+source:
+  type: aprl
+  file: azure-resources/Network/networkSecurityGroups/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Network/networkSecurityGroups
+resourceTypes:
+- Microsoft.Network/networkSecurityGroups
+severity: 1
+labels:
+  area: Monitoring and Alerting
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Find all Network Security Groups without NSG Flow logs configured or disabled.
+    resources
+    | where type =~ "Microsoft.Network/networkSecurityGroups"
+    | project name, id, tags, lowerCaseNsgId = tolower(id)
+    | join kind = leftouter (
+        resources
+        | where type == "microsoft.network/networkwatchers/flowlogs" and properties.enabled == true
+        | project flowLogName = name, lowerCaseTargetNsgId = tolower(properties.targetResourceId)
+        )
+        on $left.lowerCaseNsgId == $right.lowerCaseTargetNsgId
+    | where isempty(lowerCaseTargetNsgId)
+    | project recommendationId = "da1a3c06-d1d5-a940-9a99-fcc05966fe7c", name, id, tags, param1 = "NSGFlowLog: Not configured/Disabled"

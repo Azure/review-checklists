@@ -1,0 +1,24 @@
+guid: 3f630472-2dd6-49c5-a5c2-622f54b69bad
+name: AddressAllocationRanges
+title: Use IP addresses from the address allocation ranges for private internets (RFC
+  1918).
+source:
+  type: revcl
+  file: ./checklists/waf_checklist.en.json
+services:
+- VNet
+resourceTypes:
+- Microsoft.Network/virtualNetworks
+waf: Security
+severity: 2
+labels: {}
+links:
+- https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing
+- https://learn.microsoft.com/learn/paths/architect-network-infrastructure/
+queries:
+  arg: resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace
+    = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes)
+    | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location,
+    resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr
+    matches regex @'^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)')  | project
+    id, compliant, cidr

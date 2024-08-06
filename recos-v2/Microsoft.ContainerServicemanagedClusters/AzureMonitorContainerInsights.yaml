@@ -1,0 +1,27 @@
+guid: dcaf8128-94bd-4d53-9235-3a0371df6b74
+name: AzureMonitorContainerInsights
+title: Enable AKS Monitoring
+description: |-
+  Azure Monitor enables real-time health and performance insights for AKS by collecting events, capturing container logs, and gathering CPU/Memory data from the Metrics API. It allows data visualization using Azure Monitor Container Insights, Prometheus, Grafana, or others.
+source:
+  type: aprl
+  file: azure-resources/ContainerService/managedClusters/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.ContainerService/managedClusters
+resourceTypes:
+- Microsoft.ContainerService/managedClusters
+severity: 0
+labels:
+  area: Monitoring and Alerting
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Returns AKS clusters where either Azure Monitor is not enabled and/or Container Insights is not enabled
+    resources
+    |  where type == "microsoft.containerservice/managedclusters"
+    |  extend azureMonitor = tostring(parse_json(properties.azureMonitorProfile.metrics.enabled))
+    |  extend insights = tostring(parse_json(properties.addonProfiles.omsagent.enabled))
+    |  where isempty(azureMonitor) or isempty(insights)
+    |  project recommendationId="dcaf8128-94bd-4d53-9235-3a0371df6b74",id, name, tags, param1=strcat("azureMonitorProfileEnabled: ", iff(isempty(azureMonitor), "false", azureMonitor)), param2=strcat("containerInsightsEnabled: ", iff(isempty(insights), "false", insights))

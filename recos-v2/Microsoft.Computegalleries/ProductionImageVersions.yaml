@@ -1,0 +1,28 @@
+guid: b49a39fd-f431-4b61-9062-f2157849d845
+name: ProductionImageVersions
+title: A minimum of three replicas should be kept for production image versions
+description: |-
+  Keeping a minimum of 3 replicas for production images in Azure's Compute Gallery ensures scalability and prevents throttling in multi-VM deployments by distributing VM deployments across different replicas. This reduces the risk of overloading a single replica.
+source:
+  type: aprl
+  file: azure-resources/Compute/galleries/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Compute/galleries
+resourceTypes:
+- Microsoft.Compute/galleries
+severity: 1
+labels:
+  area: High Availability
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Query to list all image versions,its associated image name and version replica configurations per region in a compute gallery whose version replicas is less than 3
+    resources
+    | where type =~ "microsoft.compute/galleries/images/versions"
+    | extend GalleryName = tostring(split(tostring(id), "/")[8]), ImageName = tostring(split(tostring(id), "/")[10])
+    | mv-expand VersionReplicas = properties.publishingProfile.targetRegions
+    | project RecommendationId="b49a39fd-f431-4b61-9062-f2157849d845",name,id,tags,param1=strcat("GalleryName: ",GalleryName),param2=strcat("ImageName: ",ImageName),param3=strcat("VersionReplicaRegionName: ",VersionReplicas.name),param4=strcat("VersionReplicationCount: ",VersionReplicas.regionalReplicaCount),rc=toint(VersionReplicas.regionalReplicaCount)
+    | where rc < 3
+    | project-away rc
