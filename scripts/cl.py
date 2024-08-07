@@ -35,9 +35,14 @@
 # Usage examples for renaming:
 # python3 ./scripts/cl.py rename-reco --input-folder ./recos-v2 --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
 #
+# Create a v2 checklist file out of a v1 checklist file:
+# python3 ./scripts/cl.py checklist-to-v2 --checklist-file ./checklists/alz_checklist.en.json --output-file ./checklists-v2/alz_export.yaml --verbose
+# python3 ./scripts/cl.py checklist-to-v2 --checklist-file ./checklists/alz_checklist.en.json --output-file ./checklists-v2/alz_export.yaml --input-folder .\recos-v2\ --use-names --verbose
+#
 # Usage examples for analysis of checklist files:
 # Analyze a single checklist file:
 # python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --checklist-file .\checklists-v2\alz.yaml --show-areas --verbose
+# python3 ./scripts/cl.py list-recos --input-folder ./recos-v2 --checklist-file .\checklists-v2\alz_export.yaml --verbose
 # Export v2 checklist to v1 JSON format:
 # python3 ./scripts/cl.py export-checklist --input-folder ./recos-v2 --checklist-file ./checklists-v2/alz.json --output-file ./checklists-v2/alz.json
 #
@@ -207,13 +212,24 @@ runarg_parser.add_argument('--guid', dest='runarg_guid', metavar='GUID', action=
 runarg_parser.add_argument('--subscription-id', dest='runarg_subscription_id', metavar='SUBSCRIPTION_ID', action='store',
                     help='Azure subscription ID where to run the queries')
 # Create the 'export-checklist' command
-export_parser = subparsers.add_parser('export-checklist', help='Show a specific recommendation', parents=[base_subparser])
+export_parser = subparsers.add_parser('export-checklist', help='Exports a v2 checklist file (YAML) to a v1 format (JSON)', parents=[base_subparser])
 export_parser.add_argument('--checklist-file', dest='export_checklist_file', metavar='CHECKLIST_FILE', action='store',
                     help='YAML file with a checklist definition that can include label-selectors, service-selectors and WAF-selectors as well as other metadata')
 export_parser.add_argument('--input-folder', dest='export_input_folder', metavar='INPUT_FOLDER', action='store',
                     help='input folder where the recommendations are stored')
 export_parser.add_argument('--output-file', dest='export_output_file', metavar='OUTPUT_FILE', action='store',
                     help='output file where the v1 checklist will be stored')
+# Create the 'checklist-v1tov2' command
+checklist_v12_parser = subparsers.add_parser('checklist-to-v2', help='Exports a v1 checklist file (JSON) to a checklist v2 format (YAML) including the required areas and selectors', parents=[base_subparser])
+checklist_v12_parser.add_argument('--checklist-file', dest='checklist_v12_checklist_file', metavar='CHECKLIST_FILE', action='store',
+                    help='JSON file with a v1 checklist definition')
+checklist_v12_parser.add_argument('--output-file', dest='checklist_v12_output_file', metavar='OUTPUT_FILE', action='store',
+                    help='output file where the v2 checklist will be stored')
+checklist_v12_parser.add_argument('--use-names', dest='checklist_v12_use_names', action='store_true',
+                    default=False,
+                    help='overwrite existing reco files with the same GUID (default: False)')
+checklist_v12_parser.add_argument('--input-folder', dest='checklist_v12_input_folder', metavar='INPUT_FOLDER', action='store',
+                    help='input folder where the recommendations are stored. This parameter is required if using names instead of GUIDs.')
 
 # Parse the command-line arguments
 args = parser.parse_args()
@@ -323,13 +339,15 @@ elif args.command == 'analyze-v2':
                 sources = args.analyzev2_sources.lower().split(",")
             else:
                 sources = None
-            # Retrieve stats
+            # Retrieve stats (with verbosity disabled)
             v2_stats = cl_analyze_v2.v2_stats_from_folder(args.analyzev2_input_folder, format=args.analyzev2_format, 
                                                         labels=labels, services=services, waf_pillars=waf_pillars, sources=sources,
-                                                        verbose=args.verbose)
+                                                        verbose=False)
         if v2_stats:
             # Print stats
             print("INFO: Total items found =", v2_stats['total_items'])
+            print("INFO: Duplicate GUIDs =", str(v2_stats['duplicate_guids']))
+            print("INFO: Duplicate Names =", str(v2_stats['duplicate_names']))
             if args.analyzev2_show_severities:
                 print("INFO: Items per severity:")
                 for key in v2_stats['severity']:
@@ -365,37 +383,35 @@ elif args.command == 'analyze-v2':
 elif args.command == 'list-recos':
     # We need an input folder
     if args.getrecos_input_folder:
-        # Convert label selectors argument to an object if specified
-        if args.getrecos_labels:
-            try:
-                labels = json.loads(args.getrecos_labels)
-            except Exception as e:
-                print("ERROR: Error when loading labels from", args.getrecos_labels, "-", str(e))
-                labels = None
-        else:
-            labels = None
-        if args.getrecos_services:
-            services = args.getrecos_services.lower().split(",")
-        else:
-            services = None
-        if args.getrecos_waf_pillars:
-            waf_pillars = args.getrecos_waf_pillars.lower().split(",")
-        else:
-            waf_pillars = None
-        if args.getrecos_sources:
-            sources = args.getrecos_sources.lower().split(",")
-        else:
-            sources = None
         if args.getrecos_checklist_file:
-            if (not (labels or services or waf_pillars)):
-                labels, services, waf_pillars, variables = cl_analyze_v2.get_checklist_selectors(args.analyzev2_checklist_file)
+            # Get recos from the checklist file
+            v2recos = cl_analyze_v2.get_recos_from_checklist( args.getrecos_checklist_file, args.getrecos_input_folder, verbose=args.verbose)
+        else:
+            # Convert label selectors argument to an object if specified
+            if args.getrecos_labels:
+                try:
+                    labels = json.loads(args.getrecos_labels)
+                except Exception as e:
+                    print("ERROR: Error when loading labels from", args.getrecos_labels, "-", str(e))
+                    labels = None
             else:
-                print("ERROR: You should either specify a checklist file or individual selectors, but not both.")
-                sys.exit(1)
-        # Retrieve recos
-        v2recos = cl_analyze_v2.get_recos(args.getrecos_input_folder, 
-                                          labels=labels, services=services, waf_pillars=waf_pillars, sources=sources, format=args.getrecos_format, 
-                                          arg=args.getrecos_arg, verbose=args.verbose)
+                labels = None
+            if args.getrecos_services:
+                services = args.getrecos_services.lower().split(",")
+            else:
+                services = None
+            if args.getrecos_waf_pillars:
+                waf_pillars = args.getrecos_waf_pillars.lower().split(",")
+            else:
+                waf_pillars = None
+            if args.getrecos_sources:
+                sources = args.getrecos_sources.lower().split(",")
+            else:
+                sources = None
+            # Retrieve recos
+            v2recos = cl_analyze_v2.get_recos(args.getrecos_input_folder, 
+                                            labels=labels, services=services, waf_pillars=waf_pillars, sources=sources, format=args.getrecos_format, 
+                                            arg=args.getrecos_arg, verbose=args.verbose)
         # Print recos
         if v2recos:
             cl_analyze_v2.print_recos(v2recos, show_labels=args.getrecos_show_labels, show_arg=args.getrecos_show_arg)
@@ -477,5 +493,12 @@ elif args.command == "export-checklist":
         cl_v2tov1.generate_v1(args.export_checklist_file, args.export_input_folder, args.export_output_file, verbose=args.verbose)
     else:
         print("ERROR: you need to use the parameters `--checklist-file` and `--input-folder` to specify the checklist file and the input folder")
+elif args.command == "checklist-to-v2":
+    if args.checklist_v12_checklist_file and args.checklist_v12_output_file:
+        cl_v1tov2.checklist_v1_to_v2(args.checklist_v12_checklist_file, args.checklist_v12_output_file,
+                                     use_names=args.checklist_v12_use_names, v2recos_folder=args.checklist_v12_input_folder, 
+                                     verbose=args.verbose)
+    else:
+        print("ERROR: you need to use the parameters `--checklist-file` and `--output-file` to specify the v1 checklist file and the v2 output file")
 else:
     print("ERROR: unknown command, please verify the command syntax with {0} --help".format(sys.argv[0]))

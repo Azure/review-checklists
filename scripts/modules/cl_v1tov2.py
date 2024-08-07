@@ -308,6 +308,8 @@ def guess_reco_name(reco, cognitive_services_endpoint, cognitive_services_key, v
         guessed_name = guessed_name.replace('\\', '')
         guessed_name = guessed_name.replace('"', '')
         guessed_name = guessed_name.replace("'", '')
+        guessed_name = guessed_name.replace('-', '')
+        guessed_name = guessed_name.replace('_', '')
         # The source is used as prefix, if there is one
         if 'source' in reco:
             if 'type' in reco['source']:
@@ -318,4 +320,67 @@ def guess_reco_name(reco, cognitive_services_endpoint, cognitive_services_key, v
     else:
         print(response.id, response.error)
         return None
+    
+# Load a v1 checklist and generate a v2 checklist YAML file
+# If use_names = True, it will add a name selector instead of a GUID selector. Recos folder needs to be specified
+# Try to match the subarea sections with services if possible, if not use a guid selector
+def checklist_v1_to_v2(input_file, output_file, use_names=False, v2recos_folder=None, verbose=None):
+    # Load the v1 checklist
+    try:
+        if verbose: print("DEBUG: Loading v1 checklist from file", input_file)
+        with open(input_file) as f:
+            checklist_v1 = json.load(f)
+    except Exception as e:
+        print("ERROR: Error when processing JSON file", input_file, ":", str(e))
+        return None
+    # If use_names is True, load the v2 recos
+    if use_names:
+        if not v2recos_folder:
+            print("ERROR: Recos folder needs to be specified when using names")
+            return None
+        if verbose: print("DEBUG: Loading v2 recos from folder {0}, since using names...".format(v2recos_folder))
+        v2recos = cl_analyze_v2.load_v2_files(v2recos_folder, verbose=False)
+        if verbose: print("DEBUG: {0} v2 recos loaded.".format(len(v2recos)))
+    # Create the v2 checklist
+    checklist_v2 = {}
+    # Add the metadata
+    checklist_v2['metadata'] = {}
+    if 'metadata' in checklist_v1:
+        if 'name' in checklist_v1['metadata']:
+            checklist_v2['name'] = checklist_v1['metadata']['name']
+        else:
+            checklist_v2['name'] = 'Name missing from checklist YAML file'
+    else:
+        checklist_v2['name'] = 'Name missing from checklist YAML file'
+    # Create a dictionary with areas/subareas
+    area_list = list(set([x['category'] for x in checklist_v1['items'] if 'category' in x]))
+    if verbose: print("DEBUG: {0} areas found in v1 checklist.".format(len(area_list)))
+    area_dict = {}
+    for area in area_list:
+        area_dict[area] = list(set([x['subcategory'] for x in checklist_v1['items'] if ('subcategory' in x) and ('category' in x) and (x['category'] == area)]))
+        if verbose: print("DEBUG: {0} subareas found in area {1}.".format(len(area_dict[area]), area))
+    # For each area/subarea, add a guid selector
+    checklist_v2['areas'] = []
+    for area in area_dict.keys():
+        checklist_v2_area_object = {'name': area, 'subareas': []}
+        for subarea in area_dict[area]:
+            guids = [x['guid'] for x in checklist_v1['items'] if ('guid' in x) and ('category' in x) and (x['category'] == area) and ('subcategory' in x) and (x['subcategory'] == subarea)]
+            if verbose: print("DEBUG: {0} GUIDs found in area {1} and subarea {2}.".format(len(guids), area, subarea))
+            if use_names:
+                names = [cl_analyze_v2.get_reco_name_from_guid(v2recos, x) for x in guids]
+                names = [x for x in names if x] # Remove empty names
+                if verbose: print("DEBUG: {0} names found in area {1} and subarea {2}.".format(len(names), area, subarea))
+                if names and len(names) > 0:
+                    checklist_v2_subarea_object = {'name': subarea, 'include': {'nameSelector': names}}
+                    checklist_v2_area_object['subareas'].append(checklist_v2_subarea_object)
+            else:
+                if guids and len(guids) > 0:
+                    checklist_v2_subarea_object = {'name': subarea, 'include': {'guidSelector': guids}}
+                    checklist_v2_area_object['subareas'].append(checklist_v2_subarea_object)
+        checklist_v2['areas'].append(checklist_v2_area_object)
+    # Write the output file
+    if verbose: print("DEBUG: Writing v2 checklist to file", output_file)
+    with open(output_file, 'w') as f:
+        yaml.dump(checklist_v2, f, indent=4)
+    return checklist_v2
 

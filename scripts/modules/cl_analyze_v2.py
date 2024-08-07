@@ -11,20 +11,29 @@ import yaml
 import json
 import os
 from pathlib import Path
+from collections import Counter
 
 # Function that returns true if a given reco matches the criteria specified by a label selector, a service selector and a WAF selector
-def reco_matches_criteria(reco, labels=None, services=None, resource_types=None, waf_pillars=None, sources=None, guids=None, arg=False):
+def reco_matches_criteria(reco, labels=None, services=None, resource_types=None, waf_pillars=None, sources=None, guids=None, names=None, arg=False):
     # Check if the reco fulfills the criteria
     # GUID
     if guids:
         guid_match = False
         if 'guid' in reco:
             guids_lower = [x.lower() for x in guids]
-            for guid in guids_lower:
-                if reco['guid'].lower() == guid.lower():
-                    return True
+            if reco['guid'].lower() in guids_lower:
+                return True
     else:
         guid_match = True
+    # Names
+    if names:
+        name_match = False
+        if 'name' in reco:
+            names_lower = [x.lower() for x in names]
+            if reco['name'].lower() in names_lower:
+                return True
+    else:
+        name_match = True
     # Labels
     if labels:
         label_match = False
@@ -82,7 +91,7 @@ def reco_matches_criteria(reco, labels=None, services=None, resource_types=None,
         src_match = True
     arg_match = ((not arg) or ('queries' in reco and 'arg' in reco['queries']))
     # If no selector was provided, add all recos to the list
-    return (guid_match and label_match and service_match and resource_type_match and waf_match and arg_match and src_match)
+    return (guid_match and name_match and label_match and service_match and resource_type_match and waf_match and arg_match and src_match)
 
 # Extracts certain recos based on include and optionally exclude selectors
 def filter_v2_recos(input_recos, include=None, exclude=None):
@@ -91,18 +100,20 @@ def filter_v2_recos(input_recos, include=None, exclude=None):
         services = include['service']
         resource_types = include['resourceType']
         guids = include['guid']
+        names = include['name']
         labels = include['label']
         sources = include['source']
-        output_recos_include = [x for x in input_recos if reco_matches_criteria(x, waf_pillars=waf_pillars, services=services, resource_types=resource_types, guids=guids, sources=sources, labels=labels)]
+        output_recos_include = [x for x in input_recos if reco_matches_criteria(x, waf_pillars=waf_pillars, services=services, resource_types=resource_types, guids=guids, names=names, sources=sources, labels=labels)]
         # There might be exclude selectors too
         if exclude:
             waf_pillars = exclude['waf']
             services = exclude['service']
             resource_types = exclude['resourceType']
             guids = exclude['guid']
+            names = include['name']
             labels = exclude['label']
             sources = exclude['source']
-            output_recos = [x for x in output_recos_include if not reco_matches_criteria(x, waf_pillars=waf_pillars, services=services, resource_types=resource_types, guids=guids, sources=sources, labels=labels)]
+            output_recos = [x for x in output_recos_include if not reco_matches_criteria(x, waf_pillars=waf_pillars, services=services, resource_types=resource_types, guids=guids, names=names, sources=sources, labels=labels)]
         else:
             output_recos = output_recos_include
         return output_recos
@@ -191,6 +202,13 @@ def v2_stats_from_object(v2recos, verbose=False):
     stats['resourceTypes'] = {}
     stats['areas'] = {}
     if v2recos:
+        # Find GUID and name duplicates
+        guid_list = [reco['guid'] for reco in v2recos if 'guid' in reco]
+        guid_counts = Counter(guid_list)
+        stats['duplicate_guids'] = [item for item, count in guid_counts.items() if count > 1]
+        name_list = [reco['name'] for reco in v2recos if 'name' in reco]
+        name_counts = Counter(name_list)
+        stats['duplicate_names'] = [item for item, count in name_counts.items() if count > 1]
         for reco in v2recos:
             # Count the number of items per severity
             if 'severity' in reco:
@@ -212,11 +230,12 @@ def v2_stats_from_object(v2recos, verbose=False):
                         else:
                             stats['labels'][labeltext] = 1
             # Count the number of items per service
-            if 'service' in reco:
-                if reco['service'] in stats['services']:
-                    stats['services'][reco['service']] += 1
-                else:
-                    stats['services'][reco['service']] = 1
+            if 'services' in reco:
+                for service in reco['services']:
+                    if service in stats['services']:
+                        stats['services'][service] += 1
+                    else:
+                        stats['services'][service] = 1
             else:
                 if 'undefined' in stats['services']:
                     stats['services']['undefined'] += 1
@@ -400,9 +419,16 @@ def get_object_selectors(checklist_object, verbose=False):
     if 'guidSelector' in checklist_object:
         guidSelector = checklist_object['guidSelector']
         for guid in guidSelector:
-            print ("DEBUG: guid selector found:", guid)
+            print ("DEBUG: GUID selector found:", guid)
     else:
         guidSelector = None
+    # Names
+    if 'nameSelector' in checklist_object:
+        nameSelector = checklist_object['nameSelector']
+        for name in nameSelector:
+            print ("DEBUG: name selector found:", name)
+    else:
+        nameSelector = None
     # Source
     if 'sourceSelector' in checklist_object:
         sourceSelector = checklist_object['sourceSelector']
@@ -417,7 +443,8 @@ def get_object_selectors(checklist_object, verbose=False):
         'service': serviceSelector,
         'waf': wafSelector,
         'resourceType': resourceTypeSelector,
-        'guid': guidSelector
+        'guid': guidSelector,
+        'name': nameSelector
     }
 
 # Loads a checklist file in YAML format
@@ -436,6 +463,9 @@ def get_checklist_object(checklist_file, verbose=False):
 def get_recos_from_checklist(checklist_file, input_folder, verbose=False):
     # Get checklist object and full reco list
     checklist_v2 = get_checklist_object(checklist_file, verbose)
+    if not checklist_v2:
+        print("ERROR: Checklist file could not be loaded.")
+        return None
     if verbose: print("DEBUG: Loading recos from folder", input_folder)
     recos_v2_full = get_recos(input_folder, verbose=False)  # Loading all recos, verbose not needed
     recos_v2 = []
@@ -525,3 +555,14 @@ def delete_v2_reco(input_folder, guid, format='yaml', verbose=False):
                         print("ERROR: Error when loading reco file {0} - {1}". format(file, str(e)))
         # Return the object with all the v2 objects
         return reco_found
+
+# Function that returns a reco name provided its GUID. It takes as argument an object with the full list of recos
+def get_reco_name_from_guid(recos, guid):
+    for reco in recos:
+        if 'guid' in reco:
+            if reco['guid'].lower() == guid.lower():
+                if 'name' in reco:
+                    return reco['name']
+                else:
+                    return None
+    return None
