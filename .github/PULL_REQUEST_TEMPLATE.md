@@ -8,7 +8,7 @@ Link to any related issues or discussions here. This helps reviewers understand 
 ## Checklist
 
 - [ ] I've tested my changes to ensure they are ready for review.
-- [ ] I've read the [CONTRIBUTING.md](./CONTRIBUTING.md) guide.
+- [ ] I've read the [CONTRIBUTING.md](/CONTRIBUTING.md) guide.
 - [ ] I've updated the documentation (if applicable).
 
 ## Additional Information
