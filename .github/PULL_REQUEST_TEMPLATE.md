@@ -8,7 +8,7 @@ Link to any related issues or discussions here. This helps reviewers understand 
 ## Checklist
 
 - [ ] I've tested my changes to ensure they are ready for review.
-- [ ] I've read the [CONTRIBUTING.md](CONTRIBUTING.md) guide.
+- [ ] I've read the [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md) guide.
 - [ ] I've updated the documentation (if applicable).
 - [ ] Resource Graph queries have been included (and tested) for recommendations where ever possible[^note].
 - [ ] Resource Graph queries have NOT been included (please explain below).
@@ -22,4 +22,4 @@ Is there any additional context, screenshots, or considerations that might help 
 Is there a specific area you’d like feedback on? Please highlight it here. We're here to help and learn together! 💡
 
 [^note]:
-    Details on how to add Azure Resource Graph queries to recommendations can be found [here](CONTRIBUTING.md#1-adding-or-modifying-resource-graph-queries).
+    Details on how to add Azure Resource Graph queries to recommendations can be found [here](../blob/main/CONTRIBUTING.md#1-adding-or-modifying-resource-graph-queries).
