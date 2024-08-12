@@ -16,8 +16,7 @@ There are three ways to use these checklists.
 
 ## Reporting errors and contributing
 
-Please feel free to open an issue or create a PR if you find any error or missing information in the checklists, following the [Contributing guidelines](./CONTRIBUTING.md)
-
+Please feel free to [open an issue](https://github.com/Azure/review-checklists/issues/new/choose) or create a PR if you find any error or missing information in the checklists, following the [Contributing guidelines](./CONTRIBUTING.md).
 
 ## Checklists
 

@@ -5,7 +5,7 @@
 
 2. Use the dropdown lists to select the technology and language you would like to do your review
 
-![](./pictures/spreadsheet_screenshot.png)
+![](../pictures/spreadsheet_screenshot.png)
 
 3. Click the control button "Import latest checklist". After you accept the verification message, the spreadsheet will load the latest version of the selected technology and language
 
@@ -19,7 +19,7 @@
 
 6. Check the "Dashboard" worksheet for a graphical representation of the review progress
 
-![](./pictures/spreadsheet_screenshot_dashboard.png)
+![](../pictures/spreadsheet_screenshot_dashboard.png)
 
 ## Security settings running macros
 
@@ -29,20 +29,20 @@ There are some settings that you might need to change in your system to run macr
 
 In other cases, the file opens with the following message, which prevents you from being able to load the checklist items:
 
-![macro warning in excel](./pictures/macro_warning.png)
+![macro warning in excel](../pictures/macro_warning.png)
 
 ### Unblock the file or add an exception to Windows Security
 
 1. You might need to unblock the file from the file properties in the Windows File Explorer so that you can use the macros required to import the checklist content from github.com:
 
-![how to unblock a file to run macros](./pictures/unblock.png)
+![how to unblock a file to run macros](../pictures/unblock.png)
 
 2. Additionally, you might want to add the macro-enabled spreadsheet file to the list of exceptions in Windows Security (in the Virus & Threat Protection section):
 
-![how to add an exception to windows security 1](./pictures/defender_settings_1.png)
-![how to add an exception to windows security 2](./pictures/defender_settings_2.png)
-![how to add an exception to windows security 3](./pictures/defender_settings_3.png)
-![how to add an exception to windows security 4](./pictures/defender_settings_4.png)
+![how to add an exception to windows security 1](../pictures/defender_settings_1.png)
+![how to add an exception to windows security 2](../pictures/defender_settings_2.png)
+![how to add an exception to windows security 3](../pictures/defender_settings_3.png)
+![how to add an exception to windows security 4](../pictures/defender_settings_4.png)
 
 ## Using the spreadsheet to generate JSON checklist files (advanced)
 
@@ -50,5 +50,5 @@ If you wish to do contributions to the checklists, one option is the following:
 
 1. Load up the latest version of the checklist you want to modify
 2. Do the required modifications to the checklist items
-3. Push the button "Export checklist to JSON" in the **"Advanced"** section of controls in the checklist. Store your file in your local file system, and upload it to the [checklists folder](./checklists) of this Github repo (use the format `<technology>_checklist.en.json`, for example, `lz_checklist.en.json`)
+3. Push the button "Export checklist to JSON" in the **"Advanced"** section of controls in the checklist. Store your file in your local file system, and upload it to the [checklists folder](../checklists) of this Github repo (use the format `<technology>_checklist.en.json`, for example, `lz_checklist.en.json`)
 4. This will create a PR and will be reviewed by the corresponding approvers.
