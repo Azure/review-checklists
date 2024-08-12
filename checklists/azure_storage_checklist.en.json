@@ -158,9 +158,22 @@
     },
     {
       "category": "Security",
+      "subcategory": "Networking",
+      "text": "Enforce the latest TLS version for a storage account",
+      "description": ". Enforcing the latest TLS version will reject request from clients using the older version. ",
+      "waf": "Security",
+      "service": "Azure Storage",
+      "guid": "e12be569-a18f-4562-8d5d-ce151b9e7d55",
+      "id": "A10.4",
+      "severity": "High",
+      "graph":"resources | where type == 'microsoft.storage/storageaccounts' | extend compliant = (isnull(properties.minimumTlsVersion) == false and properties.minimumTlsVersion in ('TLS1_2', 'TLS1_3')) | distinct id, compliant",
+      "link": "https://learn.microsoft.com/azure/storage/common/transport-layer-security-configure-minimum-version"
+    },
+    {
+      "category": "Security",
       "subcategory": "Identity and Access Management",
-      "text": "Use Azure Active Directory (Azure AD) tokens for blob access",
-      "description": "AAD tokens should be favored over shared access signatures, wherever possible",
+      "text": "Use Microsoft Entra ID tokens for blob access",
+      "description": "Microsoft Entra ID tokens should be favored over shared access signatures, wherever possible",
       "waf": "Security",
       "service": "Azure Storage",
       "guid": "e1ce15dd-3f0d-45e7-92d4-1e3611cc57b4",
@@ -194,13 +207,14 @@
     {
       "category": "Security",
       "subcategory": "Identity and Access Management",
-      "text": "Consider disabling storage account keys, so that only AAD access (and user delegation SAS) is supported.",
-      "description": "Storage account keys ('shared keys') have very little audit capabilities. While it can be monitored on who/when fetched a copy of the keys, once the keys are in the hands of multiple people, it is impossible to attribute usage to a specific user. Solely relying on AAD authentication makes it easier to tie storage access to a user. ",
+      "text": "Consider disabling storage account keys, so that only Microsoft Entra ID access (and user delegation SAS) is supported.",
+      "description": "Storage account keys ('shared keys') have very little audit capabilities. While it can be monitored on who/when fetched a copy of the keys, once the keys are in the hands of multiple people, it is impossible to attribute usage to a specific user. Solely relying on Entra ID authentication makes it easier to tie storage access to a user. ",
       "waf": "Security",
       "service": "Azure Storage",
       "guid": "15f51296-5398-4e6d-bd22-7dd142b06c21",
       "id": "A11.04",
       "severity": "High",
+      "graph":"resources | where type == 'microsoft.storage/storageaccounts' | extend allowSharedKeyAccess = tostring(properties.allowSharedKeyAccess) | extend compliant = (isnotempty(allowSharedKeyAccess) and allowSharedKeyAccess == 'false') | distinct id, compliant",
       "link": "https://learn.microsoft.com/rest/api/storageservices/authorize-with-shared-key"
     },
     {
@@ -393,13 +407,14 @@
     {
       "category": "Security",
       "subcategory": "Identity and Access Management",
-      "text": "Consider whether public blob access is needed, or whether it can be disabled for certain storage accounts. ",
+      "text": "Consider whether public blob anonymous access is needed, or whether it can be disabled for certain storage accounts. ",
       "description": "Leverage Resource Graph Explorer (resources | where type == 'microsoft.storage/storageaccounts' | where properties['allowBlobPublicAccess'] == true) to find storage accounts which allow anonymous blob access.",
       "waf": "Security",
       "service": "Azure Storage",
       "guid": "659ae558-b937-4d49-a5e1-112dbd7ba012",
       "id": "A18.01",
       "severity": "High",
+      "graph": "resources | where type == 'microsoft.storage/storageaccounts' | extend compliant = (properties.allowBlobPublicAccess == 'false') | distinct id, compliant",
       "link": "https://learn.microsoft.com/azure/storage/blobs/anonymous-read-access-configure?tabs=portal#allow-or-disallow-public-read-access-for-a-storage-account"
     },
     {
