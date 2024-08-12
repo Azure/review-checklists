@@ -1,0 +1,21 @@
+guid: 9c2299c4-d7b5-47d0-a655-562f2b3e4563
+name: ApplicationSecurityGroups-524
+title: The application team should use application security groups at the subnet-level
+  NSGs to help protect multi-tier VMs within the landing zone.
+source:
+  type: revcl
+  file: ./checklists/waf_checklist.en.json
+services:
+- NSG
+resourceTypes:
+- Microsoft.Network/networkSecurityGroups
+waf: Security
+severity: 1
+labels: {}
+links:
+- https://learn.microsoft.com/learn/paths/implement-network-security/
+queries:
+  arg: Resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets=properties.subnets
+    | mv-expand subnets | project id,name,subnetName=subnets.name,subnetNsg=subnets.properties.networkSecurityGroup
+    | where not (subnetName in ('GatewaySubnet', 'AzureFirewallSubnet', 'RouteServerSubnet',
+    'AzureBastionSubnet')) | extend compliant = isnotnull(subnetNsg)

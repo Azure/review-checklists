@@ -18,6 +18,9 @@
 # python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/aprl_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
 # python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/wafsg_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
 #
+# Disambiguate names
+# python3 ./scripts/cl.py disambiguate-names --input-folder ./recos-v2 --verbose
+#
 # Usage examples for v2 analysis:
 # python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --format yaml --show-sources
 # python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --format yaml --show-services
@@ -230,6 +233,10 @@ checklist_v12_parser.add_argument('--use-names', dest='checklist_v12_use_names',
                     help='overwrite existing reco files with the same GUID (default: False)')
 checklist_v12_parser.add_argument('--input-folder', dest='checklist_v12_input_folder', metavar='INPUT_FOLDER', action='store',
                     help='input folder where the recommendations are stored. This parameter is required if using names instead of GUIDs.')
+# Create the 'disambiguate-names' command
+disambiguate_names_parser = subparsers.add_parser('disambiguate-names', help='Exports a v1 checklist file (JSON) to a checklist v2 format (YAML) including the required areas and selectors', parents=[base_subparser])
+disambiguate_names_parser.add_argument('--input-folder', dest='disambiguate_names_input_folder', metavar='INPUT_FOLDER', action='store',
+                    help='input folder where the recommendations are stored.')
 
 # Parse the command-line arguments
 args = parser.parse_args()
@@ -500,5 +507,30 @@ elif args.command == "checklist-to-v2":
                                      verbose=args.verbose)
     else:
         print("ERROR: you need to use the parameters `--checklist-file` and `--output-file` to specify the v1 checklist file and the v2 output file")
+elif args.command == 'disambiguate-names':
+    # We need an input folder
+    if args.disambiguate_names_input_folder:
+        if args.verbose: print("DEBUG: loading up recos from folder", args.disambiguate_names_input_folder)
+        v2_recos = cl_analyze_v2.get_recos(args.disambiguate_names_input_folder, verbose=False)
+        if args.verbose: print("DEBUG: getting statistics", args.disambiguate_names_input_folder)
+        v2_stats = cl_analyze_v2.v2_stats_from_object(v2_recos, verbose=args.verbose)
+        if 'duplicate_names' in v2_stats:
+            if args.verbose: print("DEBUG: Disambiguating {0} duplicate names".format(len(v2_stats['duplicate_names'])))
+            print("INFO: Found {0} duplicate names".format(len(v2_stats['duplicate_names'])))
+            for name in v2_stats['duplicate_names']:
+                matching_recos = [reco for reco in v2_recos if reco['name'] == name]
+                suffix = 1
+                if len(matching_recos) > 1:
+                    if args.verbose: print("DEBUG: Found {0} recos with name {1}".format(len(matching_recos), name))
+                    for reco in matching_recos:
+                        reco['name'] = name + "-" + str(suffix)
+                        suffix += 1
+                    # Store new recos
+                    cl_v1tov2.store_v2(args.disambiguate_names_input_folder, matching_recos, overwrite=True, output_format='yaml', verbose=args.verbose)
+                else:
+                    print("ERROR: Found only {0} reco with name {1}".format(len(matching_recos), name))
+    else:
+        print("ERROR: You need to specify an input folder.")
+        sys.exit(1)
 else:
     print("ERROR: unknown command, please verify the command syntax with {0} --help".format(sys.argv[0]))

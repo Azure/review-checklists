@@ -1,0 +1,34 @@
+guid: 8364fd0a-7c0e-e240-9d95-4bf965aec243
+name: ApplicationGatewaySubnet-110
+title: Ensure Application Gateway Subnet is using a /24 subnet mask
+description: Application Gateway v2 (Standard_v2 or WAF_v2 SKU) can support up to
+  125 instances. A /24 subnet isn't mandatory for deployment but is advised to provide
+  enough space for autoscaling and maintenance upgrades.
+source:
+  type: aprl
+  file: azure-resources/Network/applicationGateways/recommendations.yaml
+  timestamp: July 24, 2024
+services:
+- Microsoft.Network/applicationGateways
+resourceTypes:
+- Microsoft.Network/applicationGateways
+severity: 0
+labels:
+  area: Other Best Practices
+links: []
+queries:
+  arg: |-
+    // Azure Resource Graph Query
+    // This query will validate the subnet id for an appGW ends with a /24
+
+    resources
+    | where type =~ 'Microsoft.Network/applicationGateways'
+    | extend subnetid = tostring(properties.gatewayIPConfigurations[0].properties.subnet.id)
+    | join kind=leftouter(resources
+        | where type == "microsoft.network/virtualnetworks"
+        | mv-expand properties.subnets
+        | extend subnetid = tostring(properties_subnets.id)
+        | extend addressprefix = tostring(properties_subnets.properties.addressPrefix)
+        | project subnetid, addressprefix) on subnetid
+    | where addressprefix !endswith '/24'
+    | project recommendationId = "8364fd0a-7c0e-e240-9d95-4bf965aec243", name, id, tags, param1 = strcat('AppGW subnet prefix: ', addressprefix)
