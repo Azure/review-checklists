@@ -46,6 +46,7 @@
 # Analyze a single checklist file:
 # python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --checklist-file .\checklists-v2\alz.yaml --show-areas --verbose
 # python3 ./scripts/cl.py list-recos --input-folder ./recos-v2 --checklist-file .\checklists-v2\alz_export.yaml --verbose
+#
 # Export v2 checklist to v1 JSON format:
 # python3 ./scripts/cl.py export-checklist --input-folder ./recos-v2 --checklist-file ./checklists-v2/alz.json --output-file ./checklists-v2/alz.json
 #

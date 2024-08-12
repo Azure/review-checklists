@@ -344,7 +344,6 @@ def checklist_v1_to_v2(input_file, output_file, use_names=False, v2recos_folder=
     # Create the v2 checklist
     checklist_v2 = {}
     # Add the metadata
-    checklist_v2['metadata'] = {}
     if 'metadata' in checklist_v1:
         if 'name' in checklist_v1['metadata']:
             checklist_v2['name'] = checklist_v1['metadata']['name']
@@ -381,6 +380,6 @@ def checklist_v1_to_v2(input_file, output_file, use_names=False, v2recos_folder=
     # Write the output file
     if verbose: print("DEBUG: Writing v2 checklist to file", output_file)
     with open(output_file, 'w') as f:
-        yaml.dump(checklist_v2, f, indent=4)
+        yaml.dump(checklist_v2, f, indent=4, sort_keys=False)
     return checklist_v2
 
