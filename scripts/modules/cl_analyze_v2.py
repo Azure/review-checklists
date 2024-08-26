@@ -10,6 +10,7 @@ import sys
 import yaml
 import json
 import os
+import datetime
 from pathlib import Path
 from collections import Counter
 
@@ -340,6 +341,17 @@ def get_reco(input_folder, guid, verbose=False):
     else:
         print("ERROR: no reco could be loaded from folder", input_folder)
     return None
+
+# Update recommendations refreshing the reviewed date to the current date
+# Only updates recommendations with source type 'revcl'
+def refresh_reviewed(recos, verbose=False):
+    for reco in recos:
+        if 'source' in reco:
+            if 'type' in reco['source']:
+                if reco['source']['type'] == 'revcl':
+                    if verbose: print("DEBUG: Refreshing reviewed date for reco", reco['guid'], "to current date", datetime.date.today().strftime("%B %d, %Y"))
+                    reco['reviewed'] = datetime.date.today().strftime("%B %d, %Y")
+    return recos
 
 # Function to modify yaml.dump for multiline strings, see https://github.com/yaml/pyyaml/issues/240
 def str_presenter(dumper, data):

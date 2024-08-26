@@ -38,6 +38,9 @@
 # Usage examples for renaming:
 # python3 ./scripts/cl.py rename-reco --input-folder ./recos-v2 --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
 #
+# Usage examples for updating recos:
+# python3 ./scripts/cl.py update-recos --input-folder ./recos-v2 --reviewed --verbose
+#
 # Create a v2 checklist file out of a v1 checklist file:
 # python3 ./scripts/cl.py checklist-to-v2 --checklist-file ./checklists/alz_checklist.en.json --output-file ./checklists-v2/alz_export.yaml --verbose
 # python3 ./scripts/cl.py checklist-to-v2 --checklist-file ./checklists/alz_checklist.en.json --output-file ./checklists-v2/alz_export.yaml --input-folder .\recos-v2\ --use-names --verbose
@@ -146,6 +149,19 @@ getrecos_parser.add_argument('--with-arg', dest='getrecos_arg', action='store_tr
                     default=False, help='only return queries with ARG queries (default: False)')
 getrecos_parser.add_argument('--checklist-file', dest='getrecos_checklist_file', metavar='CHECKLIST_FILE', action='store',
                     help='YAML file with a checklist definition that can include label-selectors, service-selectors and WAF-selectors as well as other metadata')
+# Create the 'update-recos' command
+updaterecos_parser = subparsers.add_parser('update-recos', help='Update recommendations from a folder structure containing v2 recos', parents=[base_subparser])
+updaterecos_parser.add_argument('--input-folder', dest='updaterecos_input_folder', metavar='INPUT_FOLDER', action='store',
+                    help='folder where the recommendations to update are stored')
+updaterecos_parser.add_argument('--service-dictionary', dest='updaterecos_service_dictionary', metavar='SERVICE_DICTIONARY', action='store',
+                    help='JSON file with dictionary to map services to standard names and to ARM services')
+updaterecos_parser.add_argument('--format', dest='updaterecos_format', metavar='FORMAT', action='store',
+                    default='yaml',
+                    help='format of the v2 checklist items (default: yaml)')
+updaterecos_parser.add_argument('--reviewed', dest='updaterecos_reviewed', action='store_true',
+                    default=False, help='Set the reviewed field to the current date (default: False)')
+updaterecos_parser.add_argument('--standard-service-names', dest='updaterecos_standardsvc', action='store_true',
+                    default=False, help='Set the names in the services field to standard names (default: False, service dictionary needs to be provided)')
 # Create the 'show-reco' command
 showreco_parser = subparsers.add_parser('show-reco', help='Show a specific recommendation', parents=[base_subparser])
 showreco_parser.add_argument('--input-folder', dest='showreco_input_folder', metavar='INPUT_FOLDER', action='store',
@@ -425,6 +441,27 @@ elif args.command == 'list-recos':
             cl_analyze_v2.print_recos(v2recos, show_labels=args.getrecos_show_labels, show_arg=args.getrecos_show_arg)
         else:
             print("ERROR: No v2 objects found satisfying the criteria.")
+    else:
+        print("ERROR: you need to use the parameter `--input-folder` to specify the folder to analyze")
+elif args.command == 'update-recos':
+    # We need an input folder
+    if args.updaterecos_input_folder:
+        # Retrieve recos
+        if args.verbose: print("DEBUG: Retrieving recos from", args.updaterecos_input_folder)
+        v2recos = cl_analyze_v2.get_recos(args.updaterecos_input_folder, format=args.updaterecos_format, verbose=False)
+        if v2recos and len(v2recos) > 0:
+            if args.updaterecos_reviewed:
+                answer = input("\nDo you want to refresh the reviewed field in {0} recommendations? (Y/n) ".format(len(v2recos)))
+                if (answer == "") or (answer.lower() == "y"):
+                    updated_v2recos = cl_analyze_v2.refresh_reviewed(v2recos, verbose=args.verbose)
+            if args.updaterecos_standardsvc:
+                answer = input("\nDo you want to update the services field in {0} recommendations? (Y/n) ".format(len(v2recos)))
+                if (answer == "") or (answer.lower() == "y"):
+                    # WIP!!
+                    print('WIP!!')
+            cl_v1tov2.store_v2(args.updaterecos_input_folder, updated_v2recos, overwrite=True, output_format=args.updaterecos_format, verbose=args.verbose)
+        else:
+            print("ERROR: No v2 objects found.")
     else:
         print("ERROR: you need to use the parameter `--input-folder` to specify the folder to analyze")
 elif args.command == 'show-reco':
