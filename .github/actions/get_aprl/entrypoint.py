@@ -1,5 +1,7 @@
 # This scripts gets the latest recommendations from the APRL checklists
-#   and stores them in JSON files with the checklist format
+#   and stores them in JSON files with the checklist format.
+# Sample usage:
+#   python3 entrypoint.py ./checklists-ext/aprl_checklist.en.json true
 
 import requests
 import json
@@ -91,7 +93,8 @@ def get_aprl_recos():
     github_file_extension = '.yaml'
     github_branch = 'master'
     retrieved_recos = []
-    # Get last commit
+    # Get last commit to APRL reco
+    if (verbose): print("DEBUG: Scanning GitHub repository {0} for {1} files...".format(github_repo, github_file_extension))
     r = requests.get(f'https://api.github.com/repos/{github_org}/{github_repo}/commits')
     if (r.status_code == 200):
         commits = r.json()
@@ -103,7 +106,7 @@ def get_aprl_recos():
             files_processed = 0
             for path in r.json()['tree']:
                 file_path = path['path']
-                # Only process files in the containing folder folder
+                # Only process files in the containing folder defined in the variables above
                 if (github_folder in file_path) and (github_file_extension in file_path):
                     files_processed += 1
                     if (max_files > 0) and (files_processed > max_files):
@@ -151,6 +154,7 @@ def get_aprl_kql(aprl_recos):
     files_processed = 0
     kql_matches = 0
     # Get last commit
+    if (verbose): print("DEBUG: Scanning GitHub repository {0} for {1} files...".format(github_repo, github_file_extension))
     r = requests.get(f'https://api.github.com/repos/{github_org}/{github_repo}/commits')
     if (r.status_code == 200):
         commits = r.json()
@@ -191,7 +195,7 @@ def get_aprl_kql(aprl_recos):
     else:
         print("ERROR: Unable to retrieve list of commits from GitHub API: {0}. Message: {1}".format(r.status_code, r.text))
     # The modified list of recos is returned
-    if (verbose): print("DEBUG: {0} KQL files processed, {1} matched to reccommendations...".format(files_processed, kql_matches))
+    if (verbose): print("DEBUG: {0} KQL files processed, {1} matched to recommendations...".format(files_processed, kql_matches))
     return aprl_recos
 
 #######################

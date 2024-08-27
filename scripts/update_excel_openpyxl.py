@@ -217,11 +217,12 @@ def update_excel_file(input_excel_file, output_excel_file, checklist_data):
         print("DEBUG:", str(row_counter - values_row1), "statuses added to Excel spreadsheet")
 
     # Update severities
-    row_counter = values_row1
-    for item in checklist_data.get("severities"):
-        severity = item.get("name")
-        wsv[col_values_severity + str(row_counter)].value = severity
-        row_counter += 1
+    if 'severities' in checklist_data:
+        row_counter = values_row1
+        for item in checklist_data.get("severities"):
+            severity = item.get("name")
+            wsv[col_values_severity + str(row_counter)].value = severity
+            row_counter += 1
 
     # Display summary
     if args.verbose:

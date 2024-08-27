@@ -4,7 +4,7 @@
 # Optionally a file is saved with the recommendations from the WAF svc guides 
 #   in JSON format.
 # Examples:
-#   python ./scripts/entrypoint.py --service 'Azure Kubernetes Service' --output-checklist-folder ./checklists
+#   python3 ./scripts/entrypoint.py 'Azure Kubernetes Service, Azure Firewall' './checklist-ext' 'true'
 
 import requests
 # import argparse
@@ -13,6 +13,7 @@ import re
 import sys
 import os
 import datetime
+import uuid
 
 # # Arguments
 # parser = argparse.ArgumentParser(description='Retrieve recommendations in Azure Well-Architected Framework service guides')
@@ -311,6 +312,36 @@ def get_waf_service_guide_recos():
 #     if (args_verbose): print("DEBUG: Recommendations compared and {1} matches found. Maximum score found was {0}".format(max_score, match_count))
 #     return waf_recos
 
+# If file exists, try to match the recos in the file by the text field and update the GUIDs
+# If file doesn't exist, generate random GUIDs for each reco
+def update_guids(checklist, filename):
+    # If file exists
+    if os.path.isfile(filename):
+        if (args_verbose): print("DEBUG: Retrieving checklist GUIDs from file {0}...".format(filename))
+        existing_checklist = load_json(filename)
+        for reco in checklist['items']:
+            # Find a reco in the existing checklist that matches the text
+            existing_reco = [x for x in existing_checklist['items'] if x['text'] == reco['text']]
+            if len(existing_reco) > 0:
+                # Verify that the existing reco has a GUID
+                if 'guid' in existing_reco[0]:
+                    reco['guid'] = existing_reco[0]['guid']
+                else:
+                    if (args_verbose): print("DEBUG: reco {0} not found in file {1}, generating new GUID...".format(reco['text'], filename))
+                    reco['guid'] = str(uuid.uuid4())
+            # If no reco was found, generate a new GUID
+            else:
+                reco['guid'] = str(uuid.uuid4())
+        return checklist
+    # If file doesn't exist, generate GUIDs for each reco
+    else:
+        if (args_verbose): print("DEBUG: File {0} not found, generating new GUIDs...".format(filename))
+        for reco in checklist['items']:
+            reco['guid'] = str(uuid.uuid4())
+            if 'checklist_match' in reco:
+                reco['checklist_match_guid'] = str(uuid.uuid4())
+        return checklist
+
 #######################
 #       Main          #
 #######################
@@ -405,6 +436,8 @@ if (len(args_output_checklist_folder) > 0):
             service_filename = service.lower().replace(' ', '') + '_sg_checklist.en.json'
             # Concatenate the folder with the filename using the os module
             service_filename = os.path.join(args_output_checklist_folder, service_filename)
+            # Get GUIDs from the existing file, if there was already one (to keep the same GUIDs)
+            service_checklist = update_guids(service_checklist, service_filename)
             # Store the service checklist in the output folder
             store_json(service_checklist, service_filename)
             # Print a message
@@ -426,6 +459,7 @@ if (len(args_output_checklist_folder) > 0):
             }
         }
         full_checklist_filename = os.path.join(args_output_checklist_folder, 'wafsg_checklist.en.json')
+        full_checklist = update_guids(full_checklist, full_checklist_filename)
         store_json(full_checklist, full_checklist_filename)
         if (args_verbose): print("DEBUG: Exported {0} recos (only recommendations and not design checks are exported) to filename {1}".format(len(waf_recos), full_checklist_filename))
 
