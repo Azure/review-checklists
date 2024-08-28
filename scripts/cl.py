@@ -54,7 +54,8 @@
 # python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --checklist-file .\checklists-v2\alz_export.yaml --verbose
 #
 # Export v2 checklist to v1 JSON format:
-# python3 ./scripts/cl.py export-checklist --input-folder ./v2/recos --checklist-file ./v2/checklists/alz.json --output-file ./v2/checklists/alz.json
+# python3 ./scripts/cl.py export-checklist --input-folder ./v2/recos --checklist-file ./v2/checklists/alz.yaml --output-file ./v2/checklists/alz.json
+# python3 ./scripts/cl.py export-checklist --input-folder ./v2/recos --checklist-file ./v2/checklists/alz_export.yaml --output-file ./v2/checklists/alz.json --verbose
 #
 # Appendix: importing latest rules from APRL and WAF service guides (maybe useful before using v1-to-v2):
 # python3 ./.github/actions/get_aprl/entrypoint.py './checklists-ext/aprl_checklist.en.json' 'true'

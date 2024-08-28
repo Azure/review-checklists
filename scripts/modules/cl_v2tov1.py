@@ -19,10 +19,11 @@ import datetime
 def generate_v1(checklist_file, input_folder, output_file, verbose=False):
     # Get checklist object and full reco list
     checklist_v2 = cl_analyze_v2.get_checklist_object(checklist_file)
-    recos_v2_full = cl_analyze_v2.get_recos(input_folder, verbose=verbose)
+    recos_v2_full = cl_analyze_v2.get_recos(input_folder, verbose=False)
     recos_v1 = []
     area_index = 0
     subarea_index = 0
+    reco_index = 0
     # Selectors can be at the checklist root, in an area, or a subarea
     if 'include' in checklist_v2:
         root_include_selectors = cl_analyze_v2.get_object_selectors(checklist_v2['include'])
@@ -39,6 +40,7 @@ def generate_v1(checklist_file, input_folder, output_file, verbose=False):
             if 'name' in area:
                 area_index += 1
                 subarea_index = 0
+                reco_index = 0
                 if 'include' in area:
                     area_include_selectors = cl_analyze_v2.get_object_selectors(area['include'])
                     if 'exclude' in area:
@@ -48,7 +50,7 @@ def generate_v1(checklist_file, input_folder, output_file, verbose=False):
                     # Filter all recos according to the selectors
                     area_recos_v2 = cl_analyze_v2.filter_v2_recos(recos_v2_full, include=area_include_selectors, exclude=area_exclude_selectors)
                     if verbose: print("{0} recos extracted at area {1}".format(len(area_recos_v2), area['name']))
-                    recos_v1 += [get_v1_from_v2(x, area=area['name']) | {'id': get_reco_id(i+1, subarea_index=None, area_index=area_index)} for i, x in enumerate(area_recos_v2)]
+                    recos_v1 += [get_v1_from_v2(x, area=area['name']) | {'category': area['name'], 'id': get_reco_id(i+1, subarea_index=None, area_index=area_index)} for i, x in enumerate(area_recos_v2)]
                 else:
                     if verbose: print("WARNING: skipping area '{0}', no include specified.".format(area['name']))
                 if 'subareas' in area:
@@ -64,7 +66,7 @@ def generate_v1(checklist_file, input_folder, output_file, verbose=False):
                                 # Filter all recos according to the selectors
                                 subarea_recos_v2 = cl_analyze_v2.filter_v2_recos(recos_v2_full, include=subarea_include_selectors, exclude=subarea_exclude_selectors)
                                 if verbose: print("{0} recos extracted at area '{1}', subarea '{2}'".format(len(subarea_recos_v2), area['name'], subarea['name']))
-                                recos_v1 += [get_v1_from_v2(x, area=area['name'], subarea=subarea['name']) | {'id': get_reco_id(i+1, subarea_index=subarea_index, area_index=area_index)} for x in subarea_recos_v2]
+                                recos_v1 += [get_v1_from_v2(x, area=area['name'], subarea=subarea['name']) | {'category': area['name'], 'subcategory': subarea['name'], 'id': get_reco_id(i+1, subarea_index=subarea_index, area_index=area_index)} for i, x in enumerate(subarea_recos_v2)]
                             else:
                                 if verbose: print("WARNING: skipping subarea '{0}' in area '{1}, no include specified.".format(subarea['name'], area['name']))
                         else:
