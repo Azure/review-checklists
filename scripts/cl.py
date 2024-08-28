@@ -172,6 +172,9 @@ validaterecos_parser.add_argument('--input-folder', dest='validaterecos_input_fo
                     help='folder where the recommendations to update are stored')
 validaterecos_parser.add_argument('--schema', dest='validaterecos_schema_file', metavar='SCHEMA_FILE', action='store',
                     help='file with validation schema')
+validaterecos_parser.add_argument('--max-items', dest='validaterecos_max_items', metavar='SCHEMA_FILE', action='store',
+                    default=0, type=int,
+                    help='Maximum number of items to validate, default is 0 (all items)')
 # Create the 'show-reco' command
 showreco_parser = subparsers.add_parser('show-reco', help='Show a specific recommendation', parents=[base_subparser])
 showreco_parser.add_argument('--input-folder', dest='showreco_input_folder', metavar='INPUT_FOLDER', action='store',
@@ -489,8 +492,22 @@ elif args.command == 'validate-recos':
             if args.verbose: print("DEBUG: Retrieving recos from", args.validaterecos_input_folder)
             v2recos = cl_analyze_v2.get_recos(args.validaterecos_input_folder, verbose=False)
             if args.verbose: print("DEBUG: Starting validation...", args.validaterecos_schema_file)
+            reco_counter = 0
             for reco in v2recos:
-                jsonschema.validate(reco, reco_schema)
+                reco_counter +=1
+                if (args.validaterecos_max_items == 0) or (reco_counter <= args.validaterecos_max_items):
+                    try:
+                        jsonschema.validate(reco, reco_schema)
+                        if args.verbose: print("INFO: Reco with GUID", reco['guid'], "validates correctly against the schema.")
+                    except jsonschema.exceptions.ValidationError as e:
+                        print("ERROR: Reco with GUID", reco['guid'], "does not validate against the schema.")
+                        if args.verbose: print("DEBUG: -", str(e))
+                    except jsonschema.exceptions.SchemaError as e:
+                        print("ERROR: Schema", args.validaterecos_schema_file, "does not seem to be valid.")
+                        if args.verbose: print("DEBUG: -", str(e))
+                        sys.exit(1)
+                    except Exception as e:
+                        print("ERROR: Unknown error validating reco", reco['guid'], "against the schema", args.validaterecos_schema_file, "-", str(e))
         else:
             print("ERROR: Schema could not be loaded.")
     else:
