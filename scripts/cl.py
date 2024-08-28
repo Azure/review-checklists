@@ -12,46 +12,49 @@
 # - run-arg: Run Azure Resource Graph queries stored in v2 recommendations
 # 
 # Usage examples for v1-to-v2 conversion:
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/aks_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose 
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/alz_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --output-format yaml --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/waf_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --output-format yaml --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/aprl_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/wafsg_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./recos-v2 --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/aks_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./v2/recos --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose 
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/alz_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./v2/recos --output-format yaml --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/waf_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./v2/recos --output-format yaml --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/aprl_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./v2/recos --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/wafsg_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./v2/recos --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
 #
 # Disambiguate names
-# python3 ./scripts/cl.py disambiguate-names --input-folder ./recos-v2 --verbose
+# python3 ./scripts/cl.py disambiguate-names --input-folder ./v2/recos --verbose
+#
+# Validate reco files
+# python3 ./scripts/cl.py validate-recos --input-folder ./v2/recos --schema ./v2/schema/recommendation.schema.json --verbose
 #
 # Usage examples for v2 analysis:
-# python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --format yaml --show-sources
-# python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --format yaml --show-services
-# python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --format yaml --show-labels
+# python3 ./scripts/cl.py analyze-v2 --input-folder ./v2/recos --format yaml --show-sources
+# python3 ./scripts/cl.py analyze-v2 --input-folder ./v2/recos --format yaml --show-services
+# python3 ./scripts/cl.py analyze-v2 --input-folder ./v2/recos --format yaml --show-labels
 #
 # Usage examples for v2 reco listing:
-# python3 ./scripts/cl.py list-recos --input-folder ./recos-v2 --format yaml --label-selector '{"checklist": "alz"}' --show-labels
-# python3 ./scripts/cl.py list-recos --input-folder ./recos-v2 --format yaml --source-selector 'aprl'
-# python3 ./scripts/cl.py list-recos --input-folder ./recos-v2 --format yaml --with-arg
+# python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --format yaml --label-selector '{"checklist": "alz"}' --show-labels
+# python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --format yaml --source-selector 'aprl'
+# python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --format yaml --with-arg
 #
 # Usage examples for specific reco inspection:
-# python3 ./scripts/cl.py show-reco --input-folder ./recos-v2 --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
-# python3 ./scripts/cl.py open-reco --input-folder ./recos-v2 --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
+# python3 ./scripts/cl.py show-reco --input-folder ./v2/recos --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
+# python3 ./scripts/cl.py open-reco --input-folder ./v2/recos --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
 #
 # Usage examples for renaming:
-# python3 ./scripts/cl.py rename-reco --input-folder ./recos-v2 --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
+# python3 ./scripts/cl.py rename-reco --input-folder ./v2/recos --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
 #
 # Usage examples for updating recos:
-# python3 ./scripts/cl.py update-recos --input-folder ./recos-v2 --reviewed --verbose
+# python3 ./scripts/cl.py update-recos --input-folder ./v2/recos --reviewed --verbose
 #
 # Create a v2 checklist file out of a v1 checklist file:
-# python3 ./scripts/cl.py checklist-to-v2 --checklist-file ./checklists/alz_checklist.en.json --output-file ./checklists-v2/alz_export.yaml --verbose
-# python3 ./scripts/cl.py checklist-to-v2 --checklist-file ./checklists/alz_checklist.en.json --output-file ./checklists-v2/alz_export.yaml --input-folder .\recos-v2\ --use-names --verbose
+# python3 ./scripts/cl.py checklist-to-v2 --checklist-file ./checklists/alz_checklist.en.json --output-file ./v2/checklists/alz_export.yaml --verbose
+# python3 ./scripts/cl.py checklist-to-v2 --checklist-file ./checklists/alz_checklist.en.json --output-file ./v2/checklists/alz_export.yaml --input-folder .\recos-v2\ --use-names --verbose
 #
 # Usage examples for analysis of checklist files:
 # Analyze a single checklist file:
-# python3 ./scripts/cl.py analyze-v2 --input-folder ./recos-v2 --checklist-file .\checklists-v2\alz.yaml --show-areas --verbose
-# python3 ./scripts/cl.py list-recos --input-folder ./recos-v2 --checklist-file .\checklists-v2\alz_export.yaml --verbose
+# python3 ./scripts/cl.py analyze-v2 --input-folder ./v2/recos --checklist-file .\checklists-v2\alz.yaml --show-areas --verbose
+# python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --checklist-file .\checklists-v2\alz_export.yaml --verbose
 #
 # Export v2 checklist to v1 JSON format:
-# python3 ./scripts/cl.py export-checklist --input-folder ./recos-v2 --checklist-file ./checklists-v2/alz.json --output-file ./checklists-v2/alz.json
+# python3 ./scripts/cl.py export-checklist --input-folder ./v2/recos --checklist-file ./v2/checklists/alz.json --output-file ./v2/checklists/alz.json
 #
 # Appendix: importing latest rules from APRL and WAF service guides (maybe useful before using v1-to-v2):
 # python3 ./.github/actions/get_aprl/entrypoint.py './checklists-ext/aprl_checklist.en.json' 'true'
@@ -66,6 +69,7 @@ import argparse
 import sys
 import glob
 import os
+import jsonschema
 from modules import cl_analyze_v1
 from modules import cl_v1tov2
 from modules import cl_analyze_v2
@@ -162,6 +166,12 @@ updaterecos_parser.add_argument('--reviewed', dest='updaterecos_reviewed', actio
                     default=False, help='Set the reviewed field to the current date (default: False)')
 updaterecos_parser.add_argument('--standard-service-names', dest='updaterecos_standardsvc', action='store_true',
                     default=False, help='Set the names in the services field to standard names (default: False, service dictionary needs to be provided)')
+# Create the 'validate-recos' command
+validaterecos_parser = subparsers.add_parser('validate-recos', help='Validate recommendations to the reco schema', parents=[base_subparser])
+validaterecos_parser.add_argument('--input-folder', dest='validaterecos_input_folder', metavar='INPUT_FOLDER', action='store',
+                    help='folder where the recommendations to update are stored')
+validaterecos_parser.add_argument('--schema', dest='validaterecos_schema_file', metavar='SCHEMA_FILE', action='store',
+                    help='file with validation schema')
 # Create the 'show-reco' command
 showreco_parser = subparsers.add_parser('show-reco', help='Show a specific recommendation', parents=[base_subparser])
 showreco_parser.add_argument('--input-folder', dest='showreco_input_folder', metavar='INPUT_FOLDER', action='store',
@@ -464,6 +474,27 @@ elif args.command == 'update-recos':
             print("ERROR: No v2 objects found.")
     else:
         print("ERROR: you need to use the parameter `--input-folder` to specify the folder to analyze")
+elif args.command == 'validate-recos':
+    # We need an input folder and a schema file
+    if args.validaterecos_input_folder and args.validaterecos_schema_file:
+        # Retrieve recos and schema
+        if args.verbose: print("DEBUG: Loading schema from", args.validaterecos_schema_file)
+        with open(args.validaterecos_schema_file, 'r') as stream:
+            try:
+                reco_schema = json.load(stream)
+            except yaml.YAMLError as exception:
+                raise exception
+        # To Do: validate that the schema is valid
+        if reco_schema:
+            if args.verbose: print("DEBUG: Retrieving recos from", args.validaterecos_input_folder)
+            v2recos = cl_analyze_v2.get_recos(args.validaterecos_input_folder, verbose=False)
+            if args.verbose: print("DEBUG: Starting validation...", args.validaterecos_schema_file)
+            for reco in v2recos:
+                jsonschema.validate(reco, reco_schema)
+        else:
+            print("ERROR: Schema could not be loaded.")
+    else:
+        print("ERROR: you need to use the parameters `--input-folder` and `--schema` to specify the recos folder and their schema")
 elif args.command == 'show-reco':
     # We need an input folder and a GUID
     if args.showreco_input_folder and args.showreco_guid:
