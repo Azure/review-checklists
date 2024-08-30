@@ -50,12 +50,13 @@
     {
       "category": "Network Topology and Connectivity",
       "subcategory": "Front Door",
-      "text": "Avoid combining Azure Traffic Manager and Azure Front Door.",
+      "text": "Avoid placing Traffic Manager behind Front Door.",
       "waf": "Security",
       "service": "Front Door",
       "guid": "062d5839-4d36-402f-bfa4-02811eb936e9",
       "id": "A01.17",
       "severity": "High",
+      "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend compliant = properties['hostName'] !endswith '.trafficmanager.net' | project compliant, id=frontDoorId",
       "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#avoid-combining-traffic-manager-and-front-door"
     },
     {
@@ -136,6 +137,7 @@
       "guid": "2e30abab-5478-417c-81bf-bf1ad4ed1ed4",
       "id": "A01.25",
       "severity": "High",
+      "graph": "cdnresources | where type == 'microsoft.cdn/profiles/afdendpoints/routes' | extend frontDoorId = substring(id, 0, indexof(id, '/afdendpoints')) | extend forwardingProtocol=tostring(properties.forwardingProtocol),supportedProtocols=properties.supportedProtocols,httpsRedirect=properties.httpsRedirect | extend compliant = forwardingProtocol =~ 'httpsonly' and (supportedProtocols has 'https' or httpsRedirect =~ 'enabled') | project id = frontDoorId, compliant",
       "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-end-to-end-tls"
     },
     {
@@ -147,6 +149,7 @@
       "guid": "10aa45af-166f-44c4-9f36-b6d592dac2ca",
       "id": "A01.26",
       "severity": "Medium",
+      "graph": "cdnresources | where type == 'microsoft.cdn/profiles/afdendpoints/routes' | extend frontDoorId = substring(id, 0, indexof(id, '/afdendpoints')) | extend forwardingProtocol=tostring(properties.forwardingProtocol),supportedProtocols=properties.supportedProtocols,httpsRedirect=properties.httpsRedirect | extend compliant = httpsRedirect =~ 'enabled' | project id = frontDoorId, compliant",
       "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-http-to-https-redirection"
     },
     {
@@ -301,6 +304,7 @@
       "guid": "c3a769e4-cc78-40a9-b36a-f9bcab19ec2d",
       "id": "A01.51",
       "severity": "High",
+      "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend healthprobe=tostring(properties.healthProbeSettings) | project origingroupname=name, id, tags, resourceGroup, subscriptionId, healthprobe, frontDoorId | join ( cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/Origins' | extend origingroupname = tostring(properties.originGroupName) ) on origingroupname | summarize origincount=count(), enabledhealthprobecount=countif(healthprobe != '') by origingroupname, id, tostring(tags), resourceGroup, subscriptionId, frontDoorId | extend compliant = origincount > 1 | project id = frontDoorId, compliant",
       "link": "https://learn.microsoft.com/azure/frontdoor/quickstart-create-front-door"
     },
     {
@@ -356,6 +360,7 @@
       "guid": "34069d73-e4de-46c5-a36f-625f87575a56",
       "id": "A01.60",
       "severity": "Low",
+      "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend healthprobe=tostring(properties.healthProbeSettings) | project origingroupname=name, id, tags, resourceGroup, subscriptionId, healthprobe, frontDoorId | join ( cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/Origins' | extend origingroupname = tostring(properties.originGroupName) ) on origingroupname | summarize origincount=count(), enabledhealthprobecount=countif(healthprobe != '') by origingroupname, id, tostring(tags), resourceGroup, subscriptionId, frontDoorId | extend compliant = origincount > 1 or (origincount == 1 and enabledhealthprobecount == 0) | project id = frontDoorId, compliant",
       "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group"
     },
     {
@@ -470,7 +475,7 @@
     "name": "Azure Application Delivery Networking",
     "state": "GA",
     "waf": "all",
-    "timestamp": "08-22-2024 15:12:29"
+    "timestamp": "08-30-2024 10:48:07"
   }
 }
 
