@@ -528,7 +528,7 @@ def get_recos_from_checklist(checklist_file, input_folder, verbose=False):
     return recos_v2
 
 # Function that finds the file with a specific GUID and deletes it
-def delete_v2_reco(input_folder, guid, format='yaml', verbose=False):
+def delete_v2_reco(input_folder, reco_name, format='yaml', verbose=False):
     # Whether the reco was found
     reco_found = False
     # If the input folder exists
@@ -543,9 +543,9 @@ def delete_v2_reco(input_folder, guid, format='yaml', verbose=False):
                         with open(file.resolve()) as f:
                             v2reco = json.safe_load(f)
                         f.close()
-                        if 'guid' in v2reco:
-                            if v2reco['guid'].lower() == guid.lower():
-                                if verbose: print('DEBUG: Deleting reco', guid, 'in file', file)
+                        if 'name' in v2reco:
+                            if v2reco['name'].lower() == reco_name.lower():
+                                if verbose: print('DEBUG: Deleting reco', reco_name, 'in file', file)
                                 os.remove(file)
                                 reco_found = True
                     except Exception as e:
@@ -558,9 +558,9 @@ def delete_v2_reco(input_folder, guid, format='yaml', verbose=False):
                         with open(file.resolve()) as f:
                             v2reco = yaml.safe_load(f)
                         f.close()
-                        if 'guid' in v2reco:
-                            if v2reco['guid'].lower() == guid.lower():
-                                if verbose: print('DEBUG: deleting reco', guid, 'in file', file)
+                        if 'name' in v2reco:
+                            if v2reco['name'].lower() == reco_name.lower():
+                                if verbose: print('DEBUG: deleting reco', reco_name, 'in file', file)
                                 os.remove(file)
                                 reco_found = True
                     except Exception as e:

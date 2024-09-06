@@ -253,6 +253,8 @@ export_parser.add_argument('--input-folder', dest='export_input_folder', metavar
                     help='input folder where the recommendations are stored')
 export_parser.add_argument('--output-file', dest='export_output_file', metavar='OUTPUT_FILE', action='store',
                     help='output file where the v1 checklist will be stored')
+export_parser.add_argument('--service-dictionary', dest='export_service_dictionary', metavar='SERVICE_DICTIONARY', action='store',
+                    help='JSON file with dictionary to map services to standard names and to ARM services')
 # Create the 'checklist-v1tov2' command
 checklist_v12_parser = subparsers.add_parser('checklist-to-v2', help='Exports a v1 checklist file (JSON) to a checklist v2 format (YAML) including the required areas and selectors', parents=[base_subparser])
 checklist_v12_parser.add_argument('--checklist-file', dest='checklist_v12_checklist_file', metavar='CHECKLIST_FILE', action='store',
@@ -552,7 +554,7 @@ elif args.command == 'rename-reco':
 elif args.command == 'open-reco':
     # We need an input folder and a GUID
     if args.openreco_input_folder and args.openreco_guid:
-        cl_analyze_v2.load_v2_files(args.openreco_input_folder, guid=args.openreco_guid, open_editor=True, text_editor=args.openreco_editor, verbose=args.verbose)
+        cl_analyze_v2.load_v2_files(args.openreco_input_folder, guids=[ args.openreco_guid ], open_editor=True, text_editor=args.openreco_editor, verbose=args.verbose)
     else:
         print("ERROR: you need to use the parameters `--input-folder` and `--guid` to specify the folder and GUID to open")
 elif args.command == 'run-arg':
@@ -584,7 +586,9 @@ elif args.command == 'run-arg':
             print("ERROR: No v2 objects found.")
 elif args.command == "export-checklist":
     if args.export_checklist_file and args.export_input_folder:
-        cl_v2tov1.generate_v1(args.export_checklist_file, args.export_input_folder, args.export_output_file, verbose=args.verbose)
+        if not args.export_service_dictionary:
+            print("WARNING: you may want to use the parameter `--service-dictionary` to extract human-readable service names from ARM resource types.")
+        cl_v2tov1.generate_v1(args.export_checklist_file, args.export_input_folder, args.export_output_file, service_dictionary=args.export_service_dictionary, verbose=args.verbose)
     else:
         print("ERROR: you need to use the parameters `--checklist-file` and `--input-folder` to specify the checklist file and the input folder")
 elif args.command == "checklist-to-v2":

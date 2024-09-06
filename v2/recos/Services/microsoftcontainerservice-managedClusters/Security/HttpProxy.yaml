@@ -1,0 +1,24 @@
+name: HttpProxy
+title: If required add company HTTP Proxy
+source:
+  type: revcl
+  file: ./checklists/aks_checklist.en.json
+resourceTypes:
+- microsoft.containerservice/managedClusters
+waf: Security
+severity: 2
+labels:
+  guid: 6c46b91a-1107-4485-ad66-3183e2a8c266
+  area: Network Topology and Connectivity
+  subarea: Security
+  id: 06.07.09
+links:
+- https://learn.microsoft.com/azure/aks/http-proxy
+queries:
+  arg: Resources | where type=~'microsoft.containerservice/managedclusters' | project
+    resourceGroup,name,pools=properties.agentPoolProfiles | mv-expand pools | project
+    subnetId=tostring(pools.vnetSubnetID) | where isnotempty(subnetId) | join (Resources
+    | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,enableDdosProtection=tostring(properties.enableDdosProtection),subnets=properties.subnets
+    | mv-expand subnets | project id,resourceGroup,name,enableDdosProtection,subnetId=tostring(subnets.id))
+    on subnetId | distinct id,resourceGroup,name,enableDdosProtection | extend compliant
+    = (enableDdosProtection == 'true')
