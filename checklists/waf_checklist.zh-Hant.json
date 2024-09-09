@@ -7540,6 +7540,408 @@
             "waf": "卓越運營"
         },
         {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "f00a69de-7076-4734-a734-6e4552cad9e1",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-latest-version-for-customer-managed-certificates",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "如果將客戶管理的 TLS 證書與 Azure Front Door 一起使用，請使用“最新”證書版本。降低手動證書續訂導致中斷的風險。",
+            "waf": "操作"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "e79d17b7-3b22-4a5a-97e7-a8ed4b30e38c",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/ag-overview",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "將 Azure Front Door 與 WAF 策略結合使用，以交付和幫助保護跨多個 Azure 區域的全球 HTTP/S 應用程式。",
+            "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
+            "waf": "安全"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "3f29812b-2363-4cef-b179-b599de0d5973",
+            "link": "https://learn.microsoft.com/azure/frontdoor/origin-security?tabs=application-gateway&pivots=front-door-standard-premium#example-configuration",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "使用 Front Door 和應用程式閘道幫助保護 HTTP/S 應用時，請在 Front Door 中使用 WAF 策略。鎖定應用程式閘道以僅接收來自 Front Door 的流量。",
+            "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
+            "waf": "安全"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "graph": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode",
+            "guid": "ae248989-b306-4591-9186-de482e3f0f0e",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings",
+            "service": "Front Door",
+            "severity": "高",
+            "text": "在「防護」模式下部署 Front Door 的 WAF 策略，以便 Web 應用程式防火牆採取適當的措施來允許或拒絕流量。",
+            "waf": "安全"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend compliant = properties['hostName'] !endswith '.trafficmanager.net' | project compliant, id=frontDoorId",
+            "guid": "062d5839-4d36-402f-bfa4-02811eb936e9",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#avoid-combining-traffic-manager-and-front-door",
+            "service": "Front Door",
+            "severity": "高",
+            "text": "避免將 Traffic Manager 放在 Front Door 後面。",
+            "waf": "安全"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "5efeb96a-003f-4b18-8fcd-b4d84459c2b2",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-the-same-domain-name-on-front-door-and-your-origin",
+            "service": "Front Door",
+            "severity": "高",
+            "text": "在 Azure Front Door 和源上使用相同的功能變數名稱。不匹配的主機名可能會導致細微的錯誤。",
+            "waf": "安全"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend originGroupId = substring(id, 0, indexof(id, '/origins')) | join kind=inner (cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend originGroupName = name | extend hasHealthProbe = isnotnull(properties.healthProbeSettings)) on $left.originGroupId == $right.id | summarize numberOrigins = count() by originGroupId, subscriptionId, frontDoorId, hasHealthProbe, originGroupName | extend compliant = not(numberOrigins == 1 and hasHealthProbe) | project id = frontDoorId, compliant",
+            "guid": "0b5a380c-4bfb-47bc-b1d7-dcfef363a61b",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group",
+            "service": "Front Door",
+            "severity": "低",
+            "text": "當 Azure Front Door 源組中只有一個源時，禁用運行狀況探測。",
+            "waf": "性能"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "5567048e-e5d7-4206-9c55-b5ed45d2cc0c",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#select-good-health-probe-endpoints",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "為 Azure Front Door 選擇良好的運行狀況探測終結點。考慮構建運行狀況終端節點來檢查應用程式的所有依賴項。",
+            "waf": "可靠性"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups/')) | extend compliant = (isnull(properties['healthProbeSettings']['probeRequestType']) or toupper(properties['healthProbeSettings']['probeRequestType']) == 'HEAD') | project compliant, id=frontDoorId",
+            "guid": "a13f72f3-8f5c-4864-95e5-75bf37fbbeb1",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-head-health-probes",
+            "service": "Front Door",
+            "severity": "低",
+            "text": "將 HEAD 運行狀況探測與 Azure Front Door 配合使用，以減少 Front Door 發送到應用程式的流量。",
+            "waf": "性能"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/customdomains' | extend frontDoorId = substring(id, 0, indexof(id, '/customdomains')) | extend compliant = (isnull(properties['tlsSettings']['certificateType']) or tolower(properties['tlsSettings']['certificateType']) =~ 'customercertificate') | project compliant, id = frontDoorId",
+            "guid": "af95c92d-d723-4f4a-98d7-8722324efd4d",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-managed-tls-certificates",
+            "service": "Front Door",
+            "severity": "高",
+            "text": "將託管 TLS 證書與 Azure Front Door 配合使用。降低運營成本和因證書續訂而導致的中斷風險。",
+            "waf": "操作"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "189ea962-3969-4863-8f5a-5ad808c2cf4b",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#define-your-waf-configuration-as-code",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "將 Azure Front Door WAF 配置定義為代碼。通過使用代碼，您可以更輕鬆地採用新的規則集版本並獲得額外的保護。",
+            "waf": "操作"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "graph": "cdnresources | where type == 'microsoft.cdn/profiles/afdendpoints/routes' | extend frontDoorId = substring(id, 0, indexof(id, '/afdendpoints')) | extend forwardingProtocol=tostring(properties.forwardingProtocol),supportedProtocols=properties.supportedProtocols,httpsRedirect=properties.httpsRedirect | extend compliant = forwardingProtocol =~ 'httpsonly' and (supportedProtocols has 'https' or httpsRedirect =~ 'enabled') | project id = frontDoorId, compliant",
+            "guid": "2e30abab-5478-417c-81bf-bf1ad4ed1ed4",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-end-to-end-tls",
+            "service": "Front Door",
+            "severity": "高",
+            "text": "將端到端 TLS 與 Azure Front Door 配合使用。將 TLS 用於從用戶端到 Front Door 以及從 Front Door 到源的連接。",
+            "waf": "安全"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "graph": "cdnresources | where type == 'microsoft.cdn/profiles/afdendpoints/routes' | extend frontDoorId = substring(id, 0, indexof(id, '/afdendpoints')) | extend forwardingProtocol=tostring(properties.forwardingProtocol),supportedProtocols=properties.supportedProtocols,httpsRedirect=properties.httpsRedirect | extend compliant = httpsRedirect =~ 'enabled' | project id = frontDoorId, compliant",
+            "guid": "10aa45af-166f-44c4-9f36-b6d592dac2ca",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-http-to-https-redirection",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "將 HTTP 到 HTTPS 重定向與 Azure Front Door 配合使用。通過自動將較舊的用戶端重定向到 HTTPS 請求來支援這些用戶端。",
+            "waf": "安全"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "28b9ee82-b2c7-45aa-bc98-6de6f59a095d",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#enable-the-waf",
+            "service": "Front Door",
+            "severity": "高",
+            "text": "啟用 Azure Front Door WAF。保護您的應用程式免受各種攻擊。",
+            "waf": "安全"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "2902d8cc-1b0c-4495-afad-624ab70f7bd6",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#tune-your-waf",
+            "service": "Front Door",
+            "severity": "高",
+            "text": "通過在檢測模式下配置 WAF 來減少和修復誤報檢測，從而針對工作負載優化 Azure Front Door WAF。",
+            "waf": "安全"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "17ba124b-127d-42b6-9322-388d5b2bbcfc",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/application-gateway-waf-request-size-limits#request-body-inspection",
+            "service": "Front Door",
+            "severity": "高",
+            "text": "在 Azure Front Door WAF 策略中啟用請求正文檢查功能。",
+            "waf": "安全"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "49a98f2b-ec22-4a87-9415-6a10b00d6555",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#enable-default-rule-sets",
+            "service": "Front Door",
+            "severity": "高",
+            "text": "啟用 Azure Front Door WAF 預設規則集。默認規則集檢測和阻止常見攻擊。",
+            "waf": "安全"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "147a13d4-2a2f-4824-a524-f5855b52b946",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#enable-bot-management-rules",
+            "service": "Front Door",
+            "severity": "高",
+            "text": "啟用 Azure Front Door WAF 機器人保護規則集。機器人規則檢測好的機器人和壞的機器人。",
+            "waf": "安全"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "d7dcdcb9-0d99-44b9-baab-ac7570ede79a",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#use-the-latest-ruleset-versions",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "使用最新的 Azure Front Door WAF 規則集版本。規則集更新會定期更新，以考慮當前的威脅形勢。",
+            "waf": "安全"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "b9620385-1cde-418f-914b-a84a06982ffc",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#add-rate-limiting",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "向 Azure Front Door WAF 添加速率限制。Rate limit 會阻止客戶端在短時間內意外或故意發送大量流量。",
+            "waf": "安全"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "6dc36c52-0124-4ffe-9eaf-23ec1282dedb",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#use-a-high-threshold-for-rate-limits",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "對 Azure Front Door WAF 速率限制使用高閾值。高速率限制閾值可避免阻止合法流量，同時仍可針對可能使基礎設施不堪重負的極大量請求提供保護。",
+            "waf": "安全"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "388a3d0e-0a43-4367-90b2-3dd2aeece5ee",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#geo-filter-traffic",
+            "service": "Front Door",
+            "severity": "低",
+            "text": "如果您不希望收到來自所有地理區域的流量，請使用地理篩選條件來阻止來自非預期國家/地區的流量。",
+            "waf": "安全"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "00acd8a9-6975-414f-8491-2be6309893b8",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#specify-the-unknown-zz-location",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "在使用 Azure Front Door WAF 對流量進行異地篩選時，指定未知 （ZZ） 位置。避免在IP位址無法進行異地匹配時意外阻止合法請求。",
+            "waf": "安全"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "4cea4050-7946-4a7c-89e6-b021b73c352d",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#add-diagnostic-settings-to-save-your-wafs-logs",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "通過打開 Diagnostic Settings （診斷設置） 來捕獲日誌和指標。包括資源活動日誌、訪問日誌、運行狀況探測日誌和 WAF 日誌。設置警報。",
+            "waf": "操作"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "845f5f91-9c21-4674-a725-5ce890850e20",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#send-logs-to-microsoft-sentinel",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "將 Azure Front Door WAF 日誌發送到 Microsoft Sentinel。",
+            "waf": "操作"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "3bb0a854-ea3d-4212-bd8e-3f0cb7792b02",
+            "link": "https://learn.microsoft.com/azure/frontdoor/routing-methods",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "選擇支援您的部署策略的路由方法。加權方法根據配置的權重係數分配流量，支持主動-主動模型。一個基於優先順序的值，將主區域配置為接收所有流量並將流量作為備份發送到輔助區域，支援主動-被動模型。將上述方法與延遲相結合，以便延遲最低的源接收流量。",
+            "waf": "可靠性"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend healthprobe=tostring(properties.healthProbeSettings) | project origingroupname=name, id, tags, resourceGroup, subscriptionId, healthprobe, frontDoorId | join ( cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/Origins' | extend origingroupname = tostring(properties.originGroupName) ) on origingroupname | summarize origincount=count(), enabledhealthprobecount=countif(healthprobe != '') by origingroupname, id, tostring(tags), resourceGroup, subscriptionId, frontDoorId | extend compliant = origincount > 1 | project id = frontDoorId, compliant",
+            "guid": "c3a769e4-cc78-40a9-b36a-f9bcab19ec2d",
+            "link": "https://learn.microsoft.com/azure/frontdoor/quickstart-create-front-door",
+            "service": "Front Door",
+            "severity": "高",
+            "text": "通過在一個或多個後端池中擁有多個源來支援冗餘。始終具有應用程式的冗餘實例，並確保每個實例都公開一個終端節點或源。可以將這些源放置在一個或多個後端池中。",
+            "waf": "可靠性"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "999852be-2137-4179-8fc3-30d1df6fed1d",
+            "link": "https://learn.microsoft.com/azure/frontdoor/troubleshoot-issues#troubleshooting-steps",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "設置將請求轉發到後端的超時。根據終端節點的需要調整超時設置。否則，Azure Front Door 可能會在源發送回應之前關閉連接。如果所有源的超時時間較短，還可以降低 Azure Front Door 的預設超時。",
+            "waf": "可靠性"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "17bf6351-3e5e-41f1-87bb-d5ad0b4e3de6",
+            "link": "https://learn.microsoft.com/azure/frontdoor/routing-methods#23session-affinity",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "確定您的應用程式是否需要會話關聯。如果您對可靠性要求較高，建議您關閉會話關聯。",
+            "waf": "可靠性"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "425bfb31-94c4-4007-b9ae-46da9fe57cc7",
+            "link": "https://learn.microsoft.com/azure/frontdoor/origin?pivots=front-door-standard-premium#origin-host-header",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "將主機標頭髮送到後端。後端服務應該知道主機名，以便它們可以創建規則以僅接受來自該主機的流量。",
+            "waf": "安全"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "81a5398a-2414-450f-9fc3-e048bc65784c",
+            "link": "https://learn.microsoft.com/azure/frontdoor/front-door-caching",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "對支援快取的終端節點使用緩存。",
+            "waf": "成本"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend healthprobe=tostring(properties.healthProbeSettings) | project origingroupname=name, id, tags, resourceGroup, subscriptionId, healthprobe, frontDoorId | join ( cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/Origins' | extend origingroupname = tostring(properties.originGroupName) ) on origingroupname | summarize origincount=count(), enabledhealthprobecount=countif(healthprobe != '') by origingroupname, id, tostring(tags), resourceGroup, subscriptionId, frontDoorId | extend compliant = origincount > 1 or (origincount == 1 and enabledhealthprobecount == 0) | project id = frontDoorId, compliant",
+            "guid": "34069d73-e4de-46c5-a36f-625f87575a56",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group",
+            "service": "Front Door",
+            "severity": "低",
+            "text": "在單個後端池中禁用運行狀況檢查。如果在 Azure Front Door 源組中只配置了一個源，則這些調用是不必要的。僅當終端節點中不能有多個源時，才建議這樣做。",
+            "waf": "成本"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "c92d6786-cdd1-444d-9cad-934a192a276a",
+            "link": "https://learn.microsoft.com/azure/frontdoor/standard-premium/how-to-reports",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "我們建議使用高級層來利用安全報告，而標準 Azure Front Door 配置檔僅在內置分析/報告下提供流量報告。",
+            "waf": "操作"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "440cf7de-30a1-4550-ab50-c9f6eac140cd",
+            "link": "https://learn.microsoft.com/azure/frontdoor/front-door-wildcard-domain",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "盡可能使用通配符 TLS 證書。",
+            "waf": "操作"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "556e2733-6ca9-4edd-9cc7-26de66d46c2e",
+            "link": "https://learn.microsoft.com/azure/frontdoor/front-door-caching",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "優化應用程式查詢字串以進行緩存。對於純靜態內容，請忽略查詢字串以最大限度地利用緩存。如果您的應用程式使用查詢字串，請考慮將它們包含在緩存鍵中。在緩存鍵中包含查詢字串可讓 Azure Front Door 根據您的配置提供緩存的回應或其他回應。",
+            "waf": "性能"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "c0b7e55e-fcab-4e66-bdae-bd0290f6aece",
+            "link": "https://learn.microsoft.com/azure/frontdoor/standard-premium/how-to-compression",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "在訪問可下載內容時使用檔壓縮。",
+            "waf": "性能"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "graph": "resources | where type =~ 'microsoft.network/frontdoors' and properties['resourceState'] !~ 'migrated' | extend compliant = false | project id, compliant",
+            "guid": "cb8eb8c0-aa73-4a26-a495-6eba8dc4a243",
+            "link": "https://learn.microsoft.com/azure/cdn/tier-migration",
+            "service": "Front Door",
+            "severity": "高",
+            "text": "如果目前使用的是經典 Azure Front Door，請考慮遷移到標準或高級 SKU，因為經典 Azure Front Door 將於 2027 年 3 月棄用。",
+            "waf": "操作"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "67c33697-15b1-4752-aeee-0b9b588defc4",
+            "link": "https://learn.microsoft.com/azure/architecture/guide/networking/global-web-applications/mission-critical-content-delivery",
+            "service": "Front Door",
+            "severity": "中等",
+            "text": "考慮將流量管理器負載均衡 Azure Front Door 和第三方 CDN 供應商 CDN 配置檔用於任務關鍵型高可用性方案。",
+            "waf": "可靠性"
+        },
+        {
+            "arm-service": "microsoft.network/frontdoors",
+            "checklist": "Azure Application Delivery Networking",
+            "guid": "972cd4cd-25b0-4b70-96e9-eab4bfd32907",
+            "link": "https://learn.microsoft.com/azure/app-service/app-service-ip-restrictions?tabs=azurecli#restrict-access-to-a-specific-azure-front-door-instance",
+            "service": "Front Door",
+            "severity": "高",
+            "text": "將源作為應用服務的 Front Door 一起使用時，請考慮使用訪問限制僅通過 Azure Front Door 鎖定到應用服務的流量。",
+            "waf": "安全"
+        },
+        {
             "arm-service": "Microsoft.AVS/privateClouds",
             "checklist": "Azure VMware Solution Design Review",
             "guid": "32e42e36-11c8-418b-8a0b-c510e43a18a9",

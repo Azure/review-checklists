@@ -1,0 +1,514 @@
+{
+    "categories": [
+        {
+            "name": "네트워크 토폴로지 및 연결성"
+        }
+    ],
+    "items": [
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "f00a69de-7076-4734-a734-6e4552cad9e1",
+            "id": "A01.01",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-latest-version-for-customer-managed-certificates",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "Azure Front Door에서 고객 관리형 TLS 인증서를 사용하는 경우 '최신' 인증서 버전을 사용합니다. 수동 인증서 갱신으로 인한 중단 위험을 줄입니다.",
+            "waf": "작업"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "e79d17b7-3b22-4a5a-97e7-a8ed4b30e38c",
+            "id": "A01.11",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/ag-overview",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "WAF 정책과 함께 Azure Front Door를 사용하여 여러 Azure 지역에 걸쳐 있는 글로벌 HTTP/S 앱을 제공하고 보호할 수 있습니다.",
+            "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "3f29812b-2363-4cef-b179-b599de0d5973",
+            "id": "A01.12",
+            "link": "https://learn.microsoft.com/azure/frontdoor/origin-security?tabs=application-gateway&pivots=front-door-standard-premium#example-configuration",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "Front Door 및 Application Gateway를 사용하여 HTTP/S 앱을 보호하는 경우 Front Door에서 WAF 정책을 사용합니다. Front Door에서만 트래픽을 수신하도록 Application Gateway를 잠급니다.",
+            "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "graph": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode",
+            "guid": "ae248989-b306-4591-9186-de482e3f0f0e",
+            "id": "A01.16",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings",
+            "service": "Front Door",
+            "severity": "높다",
+            "subcategory": "정문",
+            "text": "Web Application Firewall이 트래픽을 허용하거나 거부하기 위해 적절한 조치를 취할 수 있도록 Front Door에 대한 WAF 정책을 '방지' 모드'에 배포합니다.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend compliant = properties['hostName'] !endswith '.trafficmanager.net' | project compliant, id=frontDoorId",
+            "guid": "062d5839-4d36-402f-bfa4-02811eb936e9",
+            "id": "A01.17",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#avoid-combining-traffic-manager-and-front-door",
+            "service": "Front Door",
+            "severity": "높다",
+            "subcategory": "정문",
+            "text": "Traffic Manager를 Front Door 뒤에 배치하지 마세요.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "5efeb96a-003f-4b18-8fcd-b4d84459c2b2",
+            "id": "A01.18",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-the-same-domain-name-on-front-door-and-your-origin",
+            "service": "Front Door",
+            "severity": "높다",
+            "subcategory": "정문",
+            "text": "Azure Front Door 및 원본에서 동일한 도메인 이름을 사용합니다. 호스트 이름이 일치하지 않으면 미묘한 버그가 발생할 수 있습니다.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend originGroupId = substring(id, 0, indexof(id, '/origins')) | join kind=inner (cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend originGroupName = name | extend hasHealthProbe = isnotnull(properties.healthProbeSettings)) on $left.originGroupId == $right.id | summarize numberOrigins = count() by originGroupId, subscriptionId, frontDoorId, hasHealthProbe, originGroupName | extend compliant = not(numberOrigins == 1 and hasHealthProbe) | project id = frontDoorId, compliant",
+            "guid": "0b5a380c-4bfb-47bc-b1d7-dcfef363a61b",
+            "id": "A01.19",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group",
+            "service": "Front Door",
+            "severity": "낮다",
+            "subcategory": "정문",
+            "text": "Azure Front Door 원본 그룹에 원본이 하나만 있는 경우 상태 프로브를 사용하지 않도록 설정합니다.",
+            "waf": "공연"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "5567048e-e5d7-4206-9c55-b5ed45d2cc0c",
+            "id": "A01.20",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#select-good-health-probe-endpoints",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "Azure Front Door에 대한 양호한 상태 프로브 엔드포인트를 선택합니다. 애플리케이션의 모든 종속성을 확인하는 상태 엔드포인트를 구축하는 것이 좋습니다.",
+            "waf": "신뢰도"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups/')) | extend compliant = (isnull(properties['healthProbeSettings']['probeRequestType']) or toupper(properties['healthProbeSettings']['probeRequestType']) == 'HEAD') | project compliant, id=frontDoorId",
+            "guid": "a13f72f3-8f5c-4864-95e5-75bf37fbbeb1",
+            "id": "A01.21",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-head-health-probes",
+            "service": "Front Door",
+            "severity": "낮다",
+            "subcategory": "정문",
+            "text": "Azure Front Door와 함께 HEAD 상태 프로브를 사용하여 Front Door가 애플리케이션으로 보내는 트래픽을 줄입니다.",
+            "waf": "공연"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/customdomains' | extend frontDoorId = substring(id, 0, indexof(id, '/customdomains')) | extend compliant = (isnull(properties['tlsSettings']['certificateType']) or tolower(properties['tlsSettings']['certificateType']) =~ 'customercertificate') | project compliant, id = frontDoorId",
+            "guid": "af95c92d-d723-4f4a-98d7-8722324efd4d",
+            "id": "A01.23",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-managed-tls-certificates",
+            "service": "Front Door",
+            "severity": "높다",
+            "subcategory": "정문",
+            "text": "Azure Front Door에서 관리형 TLS 인증서를 사용합니다. 운영 비용을 줄이고 인증서 갱신으로 인한 중단 위험을 줄입니다.",
+            "waf": "작업"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "189ea962-3969-4863-8f5a-5ad808c2cf4b",
+            "id": "A01.24",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#define-your-waf-configuration-as-code",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "Azure Front Door WAF 구성을 코드로 정의합니다. 코드를 사용하면 새 규칙 집합 버전을 보다 쉽게 채택하고 추가 보호를 얻을 수 있습니다.",
+            "waf": "작업"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "graph": "cdnresources | where type == 'microsoft.cdn/profiles/afdendpoints/routes' | extend frontDoorId = substring(id, 0, indexof(id, '/afdendpoints')) | extend forwardingProtocol=tostring(properties.forwardingProtocol),supportedProtocols=properties.supportedProtocols,httpsRedirect=properties.httpsRedirect | extend compliant = forwardingProtocol =~ 'httpsonly' and (supportedProtocols has 'https' or httpsRedirect =~ 'enabled') | project id = frontDoorId, compliant",
+            "guid": "2e30abab-5478-417c-81bf-bf1ad4ed1ed4",
+            "id": "A01.25",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-end-to-end-tls",
+            "service": "Front Door",
+            "severity": "높다",
+            "subcategory": "정문",
+            "text": "Azure Front Door에서 엔드투엔드 TLS를 사용합니다. 클라이언트에서 Front Door로, Front Door에서 원본으로의 연결에 TLS를 사용합니다.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "graph": "cdnresources | where type == 'microsoft.cdn/profiles/afdendpoints/routes' | extend frontDoorId = substring(id, 0, indexof(id, '/afdendpoints')) | extend forwardingProtocol=tostring(properties.forwardingProtocol),supportedProtocols=properties.supportedProtocols,httpsRedirect=properties.httpsRedirect | extend compliant = httpsRedirect =~ 'enabled' | project id = frontDoorId, compliant",
+            "guid": "10aa45af-166f-44c4-9f36-b6d592dac2ca",
+            "id": "A01.26",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-http-to-https-redirection",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "Azure Front Door에서 HTTP를 HTTPS로 리디렉션을 사용합니다. 이전 클라이언트를 HTTPS 요청으로 자동으로 리디렉션하여 지원합니다.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "28b9ee82-b2c7-45aa-bc98-6de6f59a095d",
+            "id": "A01.27",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#enable-the-waf",
+            "service": "Front Door",
+            "severity": "높다",
+            "subcategory": "정문",
+            "text": "Azure Front Door WAF를 사용하도록 설정합니다. 다양한 공격으로부터 애플리케이션을 보호합니다.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "2902d8cc-1b0c-4495-afad-624ab70f7bd6",
+            "id": "A01.28",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#tune-your-waf",
+            "service": "Front Door",
+            "severity": "높다",
+            "subcategory": "정문",
+            "text": "검색 모드에서 WAF를 구성하여 워크로드에 맞게 Azure Front Door WAF를 조정하여 가양성 검색을 줄이고 수정합니다.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "17ba124b-127d-42b6-9322-388d5b2bbcfc",
+            "id": "A01.29",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/application-gateway-waf-request-size-limits#request-body-inspection",
+            "service": "Front Door",
+            "severity": "높다",
+            "subcategory": "정문",
+            "text": "Azure Front Door WAF 정책에서 요청 본문 검사 기능을 사용하도록 설정합니다.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "49a98f2b-ec22-4a87-9415-6a10b00d6555",
+            "id": "A01.30",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#enable-default-rule-sets",
+            "service": "Front Door",
+            "severity": "높다",
+            "subcategory": "정문",
+            "text": "Azure Front Door WAF 기본 규칙 집합을 사용하도록 설정합니다. 기본 규칙 집합은 일반적인 공격을 탐지하고 차단합니다.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "147a13d4-2a2f-4824-a524-f5855b52b946",
+            "id": "A01.31",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#enable-bot-management-rules",
+            "service": "Front Door",
+            "severity": "높다",
+            "subcategory": "정문",
+            "text": "Azure Front Door WAF 봇 보호 규칙 집합을 사용하도록 설정합니다. 봇 규칙은 좋은 봇과 나쁜 봇을 감지합니다.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "d7dcdcb9-0d99-44b9-baab-ac7570ede79a",
+            "id": "A01.32",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#use-the-latest-ruleset-versions",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "최신 Azure Front Door WAF 규칙 집합 버전을 사용합니다. 규칙 집합 업데이트는 현재 위협 환경을 고려하기 위해 정기적으로 업데이트됩니다.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "b9620385-1cde-418f-914b-a84a06982ffc",
+            "id": "A01.33",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#add-rate-limiting",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "Azure Front Door WAF에 속도 제한을 추가합니다. 속도 제한은 클라이언트가 실수로 또는 의도적으로 단기간에 많은 양의 트래픽을 보내는 것을 차단합니다.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "6dc36c52-0124-4ffe-9eaf-23ec1282dedb",
+            "id": "A01.34",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#use-a-high-threshold-for-rate-limits",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "Azure Front Door WAF 속도 제한에 높은 임계값을 사용합니다. 높은 속도 제한 임계값은 합법적인 트래픽 차단을 방지하는 동시에 인프라를 압도할 수 있는 매우 많은 수의 요청에 대한 보호를 제공합니다.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "388a3d0e-0a43-4367-90b2-3dd2aeece5ee",
+            "id": "A01.35",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#geo-filter-traffic",
+            "service": "Front Door",
+            "severity": "낮다",
+            "subcategory": "정문",
+            "text": "모든 지역에서 트래픽이 발생할 것으로 예상되지 않는 경우 지역 필터를 사용하여 예상하지 못한 국가의 트래픽을 차단합니다.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "00acd8a9-6975-414f-8491-2be6309893b8",
+            "id": "A01.36",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#specify-the-unknown-zz-location",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "Azure Front Door WAF를 사용하여 트래픽을 지리적으로 필터링할 때 알 수 없는(ZZ) 위치를 지정합니다. IP 주소를 지리적으로 일치시킬 수 없는 경우 합법적인 요청을 실수로 차단하지 마세요.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "4cea4050-7946-4a7c-89e6-b021b73c352d",
+            "id": "A01.47",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#add-diagnostic-settings-to-save-your-wafs-logs",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "Diagnostic Settings(진단 설정)를 켜서 로그 및 메트릭을 캡처합니다. 리소스 활동 로그, 액세스 로그, 상태 프로브 로그 및 WAF 로그를 포함합니다. 알림을 설정합니다.",
+            "waf": "작업"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "845f5f91-9c21-4674-a725-5ce890850e20",
+            "id": "A01.49",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#send-logs-to-microsoft-sentinel",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "Azure Front Door WAF 로그를 Microsoft Sentinel로 보냅니다.",
+            "waf": "작업"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "3bb0a854-ea3d-4212-bd8e-3f0cb7792b02",
+            "id": "A01.50",
+            "link": "https://learn.microsoft.com/azure/frontdoor/routing-methods",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "배포 전략을 지원하는 라우팅 방법을 선택합니다. 구성된 가중치 계수에 따라 트래픽을 분산하는 가중치 방법은 액티브-액티브 모델을 지원합니다. 모든 트래픽을 수신하고 보조 지역으로 트래픽을 백업으로 보내도록 주 지역을 구성하는 우선 순위 기반 값은 활성-수동 모델을 지원합니다. 앞의 방법을 지연 시간과 결합하여 지연 시간이 가장 낮은 오리진이 트래픽을 수신하도록 합니다.",
+            "waf": "신뢰도"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend healthprobe=tostring(properties.healthProbeSettings) | project origingroupname=name, id, tags, resourceGroup, subscriptionId, healthprobe, frontDoorId | join ( cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/Origins' | extend origingroupname = tostring(properties.originGroupName) ) on origingroupname | summarize origincount=count(), enabledhealthprobecount=countif(healthprobe != '') by origingroupname, id, tostring(tags), resourceGroup, subscriptionId, frontDoorId | extend compliant = origincount > 1 | project id = frontDoorId, compliant",
+            "guid": "c3a769e4-cc78-40a9-b36a-f9bcab19ec2d",
+            "id": "A01.51",
+            "link": "https://learn.microsoft.com/azure/frontdoor/quickstart-create-front-door",
+            "service": "Front Door",
+            "severity": "높다",
+            "subcategory": "정문",
+            "text": "하나 이상의 백 엔드 풀에 여러 원본을 두어 중복성을 지원합니다. 항상 응용 프로그램의 중복 인스턴스를 가지고 있으며 각 인스턴스가 끝점 또는 원본을 노출하는지 확인하십시오. 이러한 원본을 하나 이상의 백 엔드 풀에 배치할 수 있습니다.",
+            "waf": "신뢰도"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "999852be-2137-4179-8fc3-30d1df6fed1d",
+            "id": "A01.52",
+            "link": "https://learn.microsoft.com/azure/frontdoor/troubleshoot-issues#troubleshooting-steps",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "백 엔드에 대한 요청 전달에 대한 시간 제한을 설정합니다. 엔드포인트의 필요에 따라 시간 제한 설정을 조정합니다. 그렇지 않으면 원본이 응답을 보내기 전에 Azure Front Door가 연결을 닫을 수 있습니다. 모든 원본의 시간 제한이 더 짧은 경우 Azure Front Door의 기본 시간 제한을 낮출 수도 있습니다.",
+            "waf": "신뢰도"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "17bf6351-3e5e-41f1-87bb-d5ad0b4e3de6",
+            "id": "A01.53",
+            "link": "https://learn.microsoft.com/azure/frontdoor/routing-methods#23session-affinity",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "응용 프로그램에 세션 선호도가 필요한지 여부를 결정합니다. 높은 안정성 요구 사항이 있는 경우 세션 선호도를 사용하지 않도록 설정하는 것이 좋습니다.",
+            "waf": "신뢰도"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "425bfb31-94c4-4007-b9ae-46da9fe57cc7",
+            "id": "A01.56",
+            "link": "https://learn.microsoft.com/azure/frontdoor/origin?pivots=front-door-standard-premium#origin-host-header",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "호스트 헤더를 백 엔드로 보냅니다. 백 엔드 서비스는 해당 호스트의 트래픽만 허용하는 규칙을 만들 수 있도록 호스트 이름을 인식해야 합니다.",
+            "waf": "안전"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "81a5398a-2414-450f-9fc3-e048bc65784c",
+            "id": "A01.58",
+            "link": "https://learn.microsoft.com/azure/frontdoor/front-door-caching",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "캐싱을 지원하는 엔드포인트에 대해 캐싱을 사용합니다.",
+            "waf": "비용"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend healthprobe=tostring(properties.healthProbeSettings) | project origingroupname=name, id, tags, resourceGroup, subscriptionId, healthprobe, frontDoorId | join ( cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/Origins' | extend origingroupname = tostring(properties.originGroupName) ) on origingroupname | summarize origincount=count(), enabledhealthprobecount=countif(healthprobe != '') by origingroupname, id, tostring(tags), resourceGroup, subscriptionId, frontDoorId | extend compliant = origincount > 1 or (origincount == 1 and enabledhealthprobecount == 0) | project id = frontDoorId, compliant",
+            "guid": "34069d73-e4de-46c5-a36f-625f87575a56",
+            "id": "A01.60",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group",
+            "service": "Front Door",
+            "severity": "낮다",
+            "subcategory": "정문",
+            "text": "단일 백 엔드 풀에서 상태 검사를 사용하지 않도록 설정합니다. Azure Front Door 원본 그룹에 원본이 하나만 구성된 경우 이러한 호출이 필요하지 않습니다. 이는 엔드포인트에 여러 원본을 가질 수 없는 경우에만 권장됩니다.",
+            "waf": "비용"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "c92d6786-cdd1-444d-9cad-934a192a276a",
+            "id": "A01.62",
+            "link": "https://learn.microsoft.com/azure/frontdoor/standard-premium/how-to-reports",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "보안 보고서를 활용하기 위해 프리미엄 계층을 사용하는 것이 좋지만 표준 Azure Front Door 프로필은 기본 제공 분석/보고서에서 트래픽 보고서만 제공합니다.",
+            "waf": "작업"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "440cf7de-30a1-4550-ab50-c9f6eac140cd",
+            "id": "A01.63",
+            "link": "https://learn.microsoft.com/azure/frontdoor/front-door-wildcard-domain",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "가능한 경우 와일드카드 TLS 인증서를 사용합니다.",
+            "waf": "작업"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "556e2733-6ca9-4edd-9cc7-26de66d46c2e",
+            "id": "A01.64",
+            "link": "https://learn.microsoft.com/azure/frontdoor/front-door-caching",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "캐싱을 위해 응용 프로그램 쿼리 문자열을 최적화합니다. 순전히 정적인 콘텐츠의 경우 쿼리 문자열을 무시하여 캐시 사용을 최대화합니다. 응용 프로그램에서 쿼리 문자열을 사용하는 경우 캐시 키에 포함하는 것이 좋습니다. 캐시 키에 쿼리 문자열을 포함하면 Azure Front Door가 구성에 따라 캐시된 응답 또는 기타 응답을 제공할 수 있습니다.",
+            "waf": "공연"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "c0b7e55e-fcab-4e66-bdae-bd0290f6aece",
+            "id": "A01.65",
+            "link": "https://learn.microsoft.com/azure/frontdoor/standard-premium/how-to-compression",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "다운로드 가능한 콘텐츠에 액세스할 때 파일 압축을 사용합니다.",
+            "waf": "공연"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "graph": "resources | where type =~ 'microsoft.network/frontdoors' and properties['resourceState'] !~ 'migrated' | extend compliant = false | project id, compliant",
+            "guid": "cb8eb8c0-aa73-4a26-a495-6eba8dc4a243",
+            "id": "A01.66",
+            "link": "https://learn.microsoft.com/azure/cdn/tier-migration",
+            "service": "Front Door",
+            "severity": "높다",
+            "subcategory": "정문",
+            "text": "클래식 Azure Front Door는 2027년 3월까지 더 이상 사용되지 않으므로 현재 클래식 Azure Front Door를 사용하는 경우 표준 또는 프리미엄 SKU로 마이그레이션하는 것이 좋습니다.",
+            "waf": "작업"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "67c33697-15b1-4752-aeee-0b9b588defc4",
+            "id": "A01.67",
+            "link": "https://learn.microsoft.com/azure/architecture/guide/networking/global-web-applications/mission-critical-content-delivery",
+            "service": "Front Door",
+            "severity": "보통",
+            "subcategory": "정문",
+            "text": "중요 업무용 고가용성 시나리오의 경우 Traffic Manager 부하 분산 Azure Front Door 및 타사 CDN 공급자 CDN 프로필을 사용하는 것이 좋습니다. ",
+            "waf": "신뢰도"
+        },
+        {
+            "category": "네트워크 토폴로지 및 연결성",
+            "guid": "972cd4cd-25b0-4b70-96e9-eab4bfd32907",
+            "id": "A01.68",
+            "link": "https://learn.microsoft.com/azure/app-service/app-service-ip-restrictions?tabs=azurecli#restrict-access-to-a-specific-azure-front-door-instance",
+            "service": "Front Door",
+            "severity": "높다",
+            "subcategory": "정문",
+            "text": "원본과 함께 Front Door를 App Services로 사용하는 경우 액세스 제한을 사용하여 Azure Front Door를 통해서만 앱 서비스에 대한 트래픽을 잠그는 것이 좋습니다. ",
+            "waf": "안전"
+        }
+    ],
+    "metadata": {
+        "name": "Azure Application Delivery Networking",
+        "state": "GA",
+        "timestamp": "September 09, 2024",
+        "waf": "all"
+    },
+    "severities": [
+        {
+            "name": "높다"
+        },
+        {
+            "name": "보통"
+        },
+        {
+            "name": "낮다"
+        }
+    ],
+    "status": [
+        {
+            "description": "이 검사는 아직 검토되지 않았습니다",
+            "name": "확인되지 않음"
+        },
+        {
+            "description": "이 검사와 연관된 작업 항목이 있습니다",
+            "name": "열다"
+        },
+        {
+            "description": "이 검사는 확인되었으며 이와 관련된 추가 작업 항목이 없습니다",
+            "name": "성취"
+        },
+        {
+            "description": "권장 사항을 이해하지만 현재 요구 사항에 필요하지 않음",
+            "name": "필요 없음"
+        },
+        {
+            "description": "현재 설계에는 적용되지 않습니다.",
+            "name": "해당 없음"
+        }
+    ],
+    "waf": [
+        {
+            "name": "신뢰도"
+        },
+        {
+            "name": "안전"
+        },
+        {
+            "name": "비용"
+        },
+        {
+            "name": "작업"
+        },
+        {
+            "name": "공연"
+        }
+    ],
+    "yesno": [
+        {
+            "name": "예"
+        },
+        {
+            "name": "아니요"
+        }
+    ]
+}
