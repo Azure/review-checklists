@@ -1,515 +1,514 @@
 {
-  "items": [
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "If you use customer-managed TLS certificates with Azure Front Door, use the 'Latest' certificate version. Reduce the risk of outages caused by manual certificate renewal.",
-      "waf": "Operations",
-      "service": "Front Door",
-      "guid": "f00a69de-7076-4734-a734-6e4552cad9e1",
-      "id": "A01.01",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-latest-version-for-customer-managed-certificates"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Use Azure Front Door with WAF policies to deliver and help protect global HTTP/S apps that span multiple Azure regions.",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "e79d17b7-3b22-4a5a-97e7-a8ed4b30e38c",
-      "id": "A01.11",
-      "severity": "Medium",
-      "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
-      "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/ag-overview"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "When using Front Door and Application Gateway to help protect HTTP/S apps, use WAF policies in Front Door. Lock down Application Gateway to receive traffic only from Front Door.",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "3f29812b-2363-4cef-b179-b599de0d5973",
-      "id": "A01.12",
-      "severity": "Medium",
-      "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
-      "link": "https://learn.microsoft.com/azure/frontdoor/origin-security?tabs=application-gateway&pivots=front-door-standard-premium#example-configuration"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Deploy your WAF policy for Front Door in 'Prevention' mode' so that Web Application Firewall takes appropriate action to allow or deny traffic.",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "ae248989-b306-4591-9186-de482e3f0f0e",
-      "id": "A01.16",
-      "severity": "High",
-      "graph": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode",
-      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Avoid placing Traffic Manager behind Front Door.",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "062d5839-4d36-402f-bfa4-02811eb936e9",
-      "id": "A01.17",
-      "severity": "High",
-      "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend compliant = properties['hostName'] !endswith '.trafficmanager.net' | project compliant, id=frontDoorId",
-      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#avoid-combining-traffic-manager-and-front-door"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Use the same domain name on Azure Front Door and your origin. Mismatched host names can cause subtle bugs.",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "5efeb96a-003f-4b18-8fcd-b4d84459c2b2",
-      "id": "A01.18",
-      "severity": "High",
-      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-the-same-domain-name-on-front-door-and-your-origin"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Disable health probes when there is only one origin in an Azure Front Door origin group.",
-      "waf": "Performance",
-      "service": "Front Door",
-      "guid": "0b5a380c-4bfb-47bc-b1d7-dcfef363a61b",
-      "id": "A01.19",
-      "severity": "Low",
-      "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend originGroupId = substring(id, 0, indexof(id, '/origins')) | join kind=inner (cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend originGroupName = name | extend hasHealthProbe = isnotnull(properties.healthProbeSettings)) on $left.originGroupId == $right.id | summarize numberOrigins = count() by originGroupId, subscriptionId, frontDoorId, hasHealthProbe, originGroupName | extend compliant = not(numberOrigins == 1 and hasHealthProbe) | project id = frontDoorId, compliant",
-      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Select good health probe endpoints for Azure Front Door. Consider building health endpoints that check all of your application's dependencies.",
-      "waf": "Reliability",
-      "service": "Front Door",
-      "guid": "5567048e-e5d7-4206-9c55-b5ed45d2cc0c",
-      "id": "A01.20",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#select-good-health-probe-endpoints"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Use HEAD health probes with Azure Front Door, to reduce the traffic that Front Door sends to your application.",
-      "waf": "Performance",
-      "service": "Front Door",
-      "guid": "a13f72f3-8f5c-4864-95e5-75bf37fbbeb1",
-      "id": "A01.21",
-      "severity": "Low",
-      "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups/')) | extend compliant = (isnull(properties['healthProbeSettings']['probeRequestType']) or toupper(properties['healthProbeSettings']['probeRequestType']) == 'HEAD') | project compliant, id=frontDoorId",
-      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-head-health-probes"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Use managed TLS certificates with Azure Front Door. Reduce operational cost and risk of outages due to certificate renewals.",
-      "waf": "Operations",
-      "service": "Front Door",
-      "guid": "af95c92d-d723-4f4a-98d7-8722324efd4d",
-      "id": "A01.23",
-      "severity": "High",
-      "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/customdomains' | extend frontDoorId = substring(id, 0, indexof(id, '/customdomains')) | extend compliant = (isnull(properties['tlsSettings']['certificateType']) or tolower(properties['tlsSettings']['certificateType']) =~ 'customercertificate') | project compliant, id = frontDoorId",
-      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-managed-tls-certificates"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Define your Azure Front Door WAF configuration as code. By using code, you can more easily adopt new rule set version and gain additional protection.",
-      "waf": "Operations",
-      "service": "Front Door",
-      "guid": "189ea962-3969-4863-8f5a-5ad808c2cf4b",
-      "id": "A01.24",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#define-your-waf-configuration-as-code"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Use end-to-end TLS with Azure Front Door. Use TLS for connections from your clients to Front Door, and from Front Door to your origin.",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "2e30abab-5478-417c-81bf-bf1ad4ed1ed4",
-      "id": "A01.25",
-      "severity": "High",
-      "graph": "cdnresources | where type == 'microsoft.cdn/profiles/afdendpoints/routes' | extend frontDoorId = substring(id, 0, indexof(id, '/afdendpoints')) | extend forwardingProtocol=tostring(properties.forwardingProtocol),supportedProtocols=properties.supportedProtocols,httpsRedirect=properties.httpsRedirect | extend compliant = forwardingProtocol =~ 'httpsonly' and (supportedProtocols has 'https' or httpsRedirect =~ 'enabled') | project id = frontDoorId, compliant",
-      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-end-to-end-tls"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Use HTTP to HTTPS redirection with Azure Front Door. Support older clients by redirecting them to an HTTPS request automatically.",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "10aa45af-166f-44c4-9f36-b6d592dac2ca",
-      "id": "A01.26",
-      "severity": "Medium",
-      "graph": "cdnresources | where type == 'microsoft.cdn/profiles/afdendpoints/routes' | extend frontDoorId = substring(id, 0, indexof(id, '/afdendpoints')) | extend forwardingProtocol=tostring(properties.forwardingProtocol),supportedProtocols=properties.supportedProtocols,httpsRedirect=properties.httpsRedirect | extend compliant = httpsRedirect =~ 'enabled' | project id = frontDoorId, compliant",
-      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-http-to-https-redirection"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Enable the Azure Front Door WAF. Protect your application from a range of attacks.",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "28b9ee82-b2c7-45aa-bc98-6de6f59a095d",
-      "id": "A01.27",
-      "severity": "High",
-      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#enable-the-waf"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Tune the Azure Front Door WAF for your workload by configuring the WAF in Detection mode to reduce and fix false positive detections.",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "2902d8cc-1b0c-4495-afad-624ab70f7bd6",
-      "id": "A01.28",
-      "severity": "High",
-      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#tune-your-waf"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Enable request body inspection feature enabled in Azure Front Door WAF policy.",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "17ba124b-127d-42b6-9322-388d5b2bbcfc",
-      "id": "A01.29",
-      "severity": "High",
-      "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/application-gateway-waf-request-size-limits#request-body-inspection"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Enable the Azure Front Door WAF default rule sets. The default rule sets detect and block common attacks.",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "49a98f2b-ec22-4a87-9415-6a10b00d6555",
-      "id": "A01.30",
-      "severity": "High",
-      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#enable-default-rule-sets"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Enable the Azure Front Door WAF bot protection rule set. The bot rules detect good and bad bots.",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "147a13d4-2a2f-4824-a524-f5855b52b946",
-      "id": "A01.31",
-      "severity": "High",
-      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#enable-bot-management-rules"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Use the latest Azure Front Door WAF rule set version. Rule set updates are regularly updated to take account of the current threat landscape.",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "d7dcdcb9-0d99-44b9-baab-ac7570ede79a",
-      "id": "A01.32",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#use-the-latest-ruleset-versions"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Add rate limiting to the Azure Front Door WAF. Rate limiting blocks clients accidentally or intentionally sending large amounts of traffic in a short period of time.",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "b9620385-1cde-418f-914b-a84a06982ffc",
-      "id": "A01.33",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#add-rate-limiting"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Use a high threshold for Azure Front Door WAF rate limits. High rate limit thresholds avoid blocking legitimate traffic, while still providing protection against extremely high numbers of requests that might overwhelm your infrastructure.",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "6dc36c52-0124-4ffe-9eaf-23ec1282dedb",
-      "id": "A01.34",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#use-a-high-threshold-for-rate-limits"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "If you are not expecting traffic from all geographical regions, use geo-filters to block traffic from non-expected countries.",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "388a3d0e-0a43-4367-90b2-3dd2aeece5ee",
-      "id": "A01.35",
-      "severity": "Low",
-      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#geo-filter-traffic"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Specify the unknown (ZZ) location when geo-filtering traffic with the Azure Front Door WAF. Avoid accidentally blocking legitimate requests when IP addresses can't be geo-matched.",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "00acd8a9-6975-414f-8491-2be6309893b8",
-      "id": "A01.36",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#specify-the-unknown-zz-location"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Capture logs and metrics by turning on Diagnostic Settings. Include resource activity logs, access logs, health probe logs, and WAF logs. Set up alerts.",
-      "waf": "Operations",
-      "service": "Front Door",
-      "guid": "4cea4050-7946-4a7c-89e6-b021b73c352d",
-      "id": "A01.47",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#add-diagnostic-settings-to-save-your-wafs-logs"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Send Azure Front Door WAF logs to Microsoft Sentinel.",
-      "waf": "Operations",
-      "service": "Front Door",
-      "guid": "845f5f91-9c21-4674-a725-5ce890850e20",
-      "id": "A01.49",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#send-logs-to-microsoft-sentinel"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Choose a routing method that supports your deployment strategy. The weighted method, which distributes traffic based on the configured weight coefficient, supports active-active models. A priority-based value that configures the primary region to receive all traffic and send traffic to the secondary region as a backup supports active-passive models. Combine the preceding methods with latency so that the origin with the lowest latency receives traffic.",
-      "waf": "Reliability",
-      "service": "Front Door",
-      "guid": "3bb0a854-ea3d-4212-bd8e-3f0cb7792b02",
-      "id": "A01.50",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/frontdoor/routing-methods"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Support redundancy by having multiple origins in one or more back-end pools. Always have redundant instances of your application and make sure each instance exposes an endpoint or origin. You can place those origins in one or more back-end pools.",
-      "waf": "Reliability",
-      "service": "Front Door",
-      "guid": "c3a769e4-cc78-40a9-b36a-f9bcab19ec2d",
-      "id": "A01.51",
-      "severity": "High",
-      "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend healthprobe=tostring(properties.healthProbeSettings) | project origingroupname=name, id, tags, resourceGroup, subscriptionId, healthprobe, frontDoorId | join ( cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/Origins' | extend origingroupname = tostring(properties.originGroupName) ) on origingroupname | summarize origincount=count(), enabledhealthprobecount=countif(healthprobe != '') by origingroupname, id, tostring(tags), resourceGroup, subscriptionId, frontDoorId | extend compliant = origincount > 1 | project id = frontDoorId, compliant",
-      "link": "https://learn.microsoft.com/azure/frontdoor/quickstart-create-front-door"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Set a timeout on forwarding requests to the back end. Adjust the timeout setting according to your endpoints' needs. If you don't, Azure Front Door might close the connection before the origin sends the response. You can also lower the default timeout for Azure Front Door if all of your origins have a shorter timeout.",
-      "waf": "Reliability",
-      "service": "Front Door",
-      "guid": "999852be-2137-4179-8fc3-30d1df6fed1d",
-      "id": "A01.52",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/frontdoor/troubleshoot-issues#troubleshooting-steps"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Decide if your application requires session affinity. If you have high reliability requirements, we recommend that you disable session affinity.",
-      "waf": "Reliability",
-      "service": "Front Door",
-      "guid": "17bf6351-3e5e-41f1-87bb-d5ad0b4e3de6",
-      "id": "A01.53",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/frontdoor/routing-methods#23session-affinity"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Send the host header to the back end. The back-end services should be aware of the host name so that they can create rules to accept traffic only from that host.",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "425bfb31-94c4-4007-b9ae-46da9fe57cc7",
-      "id": "A01.56",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/frontdoor/origin?pivots=front-door-standard-premium#origin-host-header"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Use caching for endpoints that support it.",
-      "waf": "Cost",
-      "service": "Front Door",
-      "guid": "81a5398a-2414-450f-9fc3-e048bc65784c",
-      "id": "A01.58",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/frontdoor/front-door-caching"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Disable health checks in single back-end pools. If you have only one origin configured in your Azure Front Door origin group, these calls are unnecessary. This is only recommended if you can't have multiple origins in your endpoint.",
-      "waf": "Cost",
-      "service": "Front Door",
-      "guid": "34069d73-e4de-46c5-a36f-625f87575a56",
-      "id": "A01.60",
-      "severity": "Low",
-      "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend healthprobe=tostring(properties.healthProbeSettings) | project origingroupname=name, id, tags, resourceGroup, subscriptionId, healthprobe, frontDoorId | join ( cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/Origins' | extend origingroupname = tostring(properties.originGroupName) ) on origingroupname | summarize origincount=count(), enabledhealthprobecount=countif(healthprobe != '') by origingroupname, id, tostring(tags), resourceGroup, subscriptionId, frontDoorId | extend compliant = origincount > 1 or (origincount == 1 and enabledhealthprobecount == 0) | project id = frontDoorId, compliant",
-      "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "We recommend using the Premium Tier for leveraging the Security reports while the Standard Azure Front Door Profile provides only traffic reports under built-in analytics/reports.",
-      "waf": "Operations",
-      "service": "Front Door",
-      "guid": "c92d6786-cdd1-444d-9cad-934a192a276a",
-      "id": "A01.62",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/frontdoor/standard-premium/how-to-reports"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Use wildcard TLS certificates when possible.",
-      "waf": "Operations",
-      "service": "Front Door",
-      "guid": "440cf7de-30a1-4550-ab50-c9f6eac140cd",
-      "id": "A01.63",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/frontdoor/front-door-wildcard-domain"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Optimize your application query string for caching. For purely static content, ignore query strings to maximize your use of the cache. If your application uses query strings, consider including them in the cache key. Including the query strings in the cache key allows Azure Front Door to serve cached responses or other responses, based on your configuration.",
-      "waf": "Performance",
-      "service": "Front Door",
-      "guid": "556e2733-6ca9-4edd-9cc7-26de66d46c2e",
-      "id": "A01.64",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/frontdoor/front-door-caching"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Use file compression when you're accessing downloadable content.",
-      "waf": "Performance",
-      "service": "Front Door",
-      "guid": "c0b7e55e-fcab-4e66-bdae-bd0290f6aece",
-      "id": "A01.65",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/frontdoor/standard-premium/how-to-compression"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Consider migrating to Standard or Premium SKU if you are using Classic Azure Front Door currently as Classic Azure Front Door will be deprecated by March 2027.",
-      "waf": "Operations",
-      "service": "Front Door",
-      "guid": "cb8eb8c0-aa73-4a26-a495-6eba8dc4a243",
-      "id": "A01.66",
-      "severity": "High",
-      "graph": "resources | where type =~ 'microsoft.network/frontdoors' and properties['resourceState'] !~ 'migrated' | extend compliant = false | project id, compliant",
-      "link": "https://learn.microsoft.com/azure/cdn/tier-migration"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "Consider using Traffic Manager load balancing Azure Front Door and a third party CDN provider CDN profile for mission critical high availability scenario. ",
-      "waf": "Reliability",
-      "service": "Front Door",
-      "guid": "67c33697-15b1-4752-aeee-0b9b588defc4",
-      "id": "A01.67",
-      "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/architecture/guide/networking/global-web-applications/mission-critical-content-delivery"
-    },
-    {
-      "category": "Network Topology and Connectivity",
-      "subcategory": "Front Door",
-      "text": "When using Front Door with origin as App services, consider locking down the traffic to app services only through Azure Front Door using access restrictions. ",
-      "waf": "Security",
-      "service": "Front Door",
-      "guid": "972cd4cd-25b0-4b70-96e9-eab4bfd32907",
-      "id": "A01.68",
-      "severity": "High",
-      "link": "https://learn.microsoft.com/azure/app-service/app-service-ip-restrictions?tabs=azurecli#restrict-access-to-a-specific-azure-front-door-instance"
+    "items": [
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "If you use customer-managed TLS certificates with Azure Front Door, use the 'Latest' certificate version. Reduce the risk of outages caused by manual certificate renewal.",
+            "waf": "Operations",
+            "service": "Front Door",
+            "guid": "f00a69de-7076-4734-a734-6e4552cad9e1",
+            "id": "A01.01",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-latest-version-for-customer-managed-certificates"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Use Azure Front Door with WAF policies to deliver and help protect global HTTP/S apps that span multiple Azure regions.",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "e79d17b7-3b22-4a5a-97e7-a8ed4b30e38c",
+            "id": "A01.11",
+            "severity": "Medium",
+            "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/ag-overview"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "When using Front Door and Application Gateway to help protect HTTP/S apps, use WAF policies in Front Door. Lock down Application Gateway to receive traffic only from Front Door.",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "3f29812b-2363-4cef-b179-b599de0d5973",
+            "id": "A01.12",
+            "severity": "Medium",
+            "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
+            "link": "https://learn.microsoft.com/azure/frontdoor/origin-security?tabs=application-gateway&pivots=front-door-standard-premium#example-configuration"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Deploy your WAF policy for Front Door in 'Prevention' mode' so that Web Application Firewall takes appropriate action to allow or deny traffic.",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "ae248989-b306-4591-9186-de482e3f0f0e",
+            "id": "A01.16",
+            "severity": "High",
+            "graph": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Avoid placing Traffic Manager behind Front Door.",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "062d5839-4d36-402f-bfa4-02811eb936e9",
+            "id": "A01.17",
+            "severity": "High",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend compliant = properties['hostName'] !endswith '.trafficmanager.net' | project compliant, id=frontDoorId",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#avoid-combining-traffic-manager-and-front-door"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Use the same domain name on Azure Front Door and your origin. Mismatched host names can cause subtle bugs.",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "5efeb96a-003f-4b18-8fcd-b4d84459c2b2",
+            "id": "A01.18",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-the-same-domain-name-on-front-door-and-your-origin"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Disable health probes when there is only one origin in an Azure Front Door origin group.",
+            "waf": "Performance",
+            "service": "Front Door",
+            "guid": "0b5a380c-4bfb-47bc-b1d7-dcfef363a61b",
+            "id": "A01.19",
+            "severity": "Low",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend originGroupId = substring(id, 0, indexof(id, '/origins')) | join kind=inner (cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend originGroupName = name | extend hasHealthProbe = isnotnull(properties.healthProbeSettings)) on $left.originGroupId == $right.id | summarize numberOrigins = count() by originGroupId, subscriptionId, frontDoorId, hasHealthProbe, originGroupName | extend compliant = not(numberOrigins == 1 and hasHealthProbe) | project id = frontDoorId, compliant",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Select good health probe endpoints for Azure Front Door. Consider building health endpoints that check all of your application's dependencies.",
+            "waf": "Reliability",
+            "service": "Front Door",
+            "guid": "5567048e-e5d7-4206-9c55-b5ed45d2cc0c",
+            "id": "A01.20",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#select-good-health-probe-endpoints"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Use HEAD health probes with Azure Front Door, to reduce the traffic that Front Door sends to your application.",
+            "waf": "Performance",
+            "service": "Front Door",
+            "guid": "a13f72f3-8f5c-4864-95e5-75bf37fbbeb1",
+            "id": "A01.21",
+            "severity": "Low",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups/')) | extend compliant = (isnull(properties['healthProbeSettings']['probeRequestType']) or toupper(properties['healthProbeSettings']['probeRequestType']) == 'HEAD') | project compliant, id=frontDoorId",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-head-health-probes"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Use managed TLS certificates with Azure Front Door. Reduce operational cost and risk of outages due to certificate renewals.",
+            "waf": "Operations",
+            "service": "Front Door",
+            "guid": "af95c92d-d723-4f4a-98d7-8722324efd4d",
+            "id": "A01.23",
+            "severity": "High",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/customdomains' | extend frontDoorId = substring(id, 0, indexof(id, '/customdomains')) | extend compliant = (isnull(properties['tlsSettings']['certificateType']) or tolower(properties['tlsSettings']['certificateType']) =~ 'customercertificate') | project compliant, id = frontDoorId",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-managed-tls-certificates"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Define your Azure Front Door WAF configuration as code. By using code, you can more easily adopt new rule set version and gain additional protection.",
+            "waf": "Operations",
+            "service": "Front Door",
+            "guid": "189ea962-3969-4863-8f5a-5ad808c2cf4b",
+            "id": "A01.24",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#define-your-waf-configuration-as-code"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Use end-to-end TLS with Azure Front Door. Use TLS for connections from your clients to Front Door, and from Front Door to your origin.",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "2e30abab-5478-417c-81bf-bf1ad4ed1ed4",
+            "id": "A01.25",
+            "severity": "High",
+            "graph": "cdnresources | where type == 'microsoft.cdn/profiles/afdendpoints/routes' | extend frontDoorId = substring(id, 0, indexof(id, '/afdendpoints')) | extend forwardingProtocol=tostring(properties.forwardingProtocol),supportedProtocols=properties.supportedProtocols,httpsRedirect=properties.httpsRedirect | extend compliant = forwardingProtocol =~ 'httpsonly' and (supportedProtocols has 'https' or httpsRedirect =~ 'enabled') | project id = frontDoorId, compliant",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-end-to-end-tls"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Use HTTP to HTTPS redirection with Azure Front Door. Support older clients by redirecting them to an HTTPS request automatically.",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "10aa45af-166f-44c4-9f36-b6d592dac2ca",
+            "id": "A01.26",
+            "severity": "Medium",
+            "graph": "cdnresources | where type == 'microsoft.cdn/profiles/afdendpoints/routes' | extend frontDoorId = substring(id, 0, indexof(id, '/afdendpoints')) | extend forwardingProtocol=tostring(properties.forwardingProtocol),supportedProtocols=properties.supportedProtocols,httpsRedirect=properties.httpsRedirect | extend compliant = httpsRedirect =~ 'enabled' | project id = frontDoorId, compliant",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-http-to-https-redirection"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Enable the Azure Front Door WAF. Protect your application from a range of attacks.",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "28b9ee82-b2c7-45aa-bc98-6de6f59a095d",
+            "id": "A01.27",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#enable-the-waf"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Tune the Azure Front Door WAF for your workload by configuring the WAF in Detection mode to reduce and fix false positive detections.",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "2902d8cc-1b0c-4495-afad-624ab70f7bd6",
+            "id": "A01.28",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#tune-your-waf"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Enable request body inspection feature enabled in Azure Front Door WAF policy.",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "17ba124b-127d-42b6-9322-388d5b2bbcfc",
+            "id": "A01.29",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/application-gateway-waf-request-size-limits#request-body-inspection"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Enable the Azure Front Door WAF default rule sets. The default rule sets detect and block common attacks.",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "49a98f2b-ec22-4a87-9415-6a10b00d6555",
+            "id": "A01.30",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#enable-default-rule-sets"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Enable the Azure Front Door WAF bot protection rule set. The bot rules detect good and bad bots.",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "147a13d4-2a2f-4824-a524-f5855b52b946",
+            "id": "A01.31",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#enable-bot-management-rules"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Use the latest Azure Front Door WAF rule set version. Rule set updates are regularly updated to take account of the current threat landscape.",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "d7dcdcb9-0d99-44b9-baab-ac7570ede79a",
+            "id": "A01.32",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#use-the-latest-ruleset-versions"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Add rate limiting to the Azure Front Door WAF. Rate limiting blocks clients accidentally or intentionally sending large amounts of traffic in a short period of time.",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "b9620385-1cde-418f-914b-a84a06982ffc",
+            "id": "A01.33",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#add-rate-limiting"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Use a high threshold for Azure Front Door WAF rate limits. High rate limit thresholds avoid blocking legitimate traffic, while still providing protection against extremely high numbers of requests that might overwhelm your infrastructure.",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "6dc36c52-0124-4ffe-9eaf-23ec1282dedb",
+            "id": "A01.34",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#use-a-high-threshold-for-rate-limits"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "If you are not expecting traffic from all geographical regions, use geo-filters to block traffic from non-expected countries.",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "388a3d0e-0a43-4367-90b2-3dd2aeece5ee",
+            "id": "A01.35",
+            "severity": "Low",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#geo-filter-traffic"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Specify the unknown (ZZ) location when geo-filtering traffic with the Azure Front Door WAF. Avoid accidentally blocking legitimate requests when IP addresses can't be geo-matched.",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "00acd8a9-6975-414f-8491-2be6309893b8",
+            "id": "A01.36",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#specify-the-unknown-zz-location"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Capture logs and metrics by turning on Diagnostic Settings. Include resource activity logs, access logs, health probe logs, and WAF logs. Set up alerts.",
+            "waf": "Operations",
+            "service": "Front Door",
+            "guid": "4cea4050-7946-4a7c-89e6-b021b73c352d",
+            "id": "A01.47",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#add-diagnostic-settings-to-save-your-wafs-logs"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Send Azure Front Door WAF logs to Microsoft Sentinel.",
+            "waf": "Operations",
+            "service": "Front Door",
+            "guid": "845f5f91-9c21-4674-a725-5ce890850e20",
+            "id": "A01.49",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#send-logs-to-microsoft-sentinel"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Choose a routing method that supports your deployment strategy. The weighted method, which distributes traffic based on the configured weight coefficient, supports active-active models. A priority-based value that configures the primary region to receive all traffic and send traffic to the secondary region as a backup supports active-passive models. Combine the preceding methods with latency so that the origin with the lowest latency receives traffic.",
+            "waf": "Reliability",
+            "service": "Front Door",
+            "guid": "3bb0a854-ea3d-4212-bd8e-3f0cb7792b02",
+            "id": "A01.50",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/frontdoor/routing-methods"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Support redundancy by having multiple origins in one or more back-end pools. Always have redundant instances of your application and make sure each instance exposes an endpoint or origin. You can place those origins in one or more back-end pools.",
+            "waf": "Reliability",
+            "service": "Front Door",
+            "guid": "c3a769e4-cc78-40a9-b36a-f9bcab19ec2d",
+            "id": "A01.51",
+            "severity": "High",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend healthprobe=tostring(properties.healthProbeSettings) | project origingroupname=name, id, tags, resourceGroup, subscriptionId, healthprobe, frontDoorId | join ( cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/Origins' | extend origingroupname = tostring(properties.originGroupName) ) on origingroupname | summarize origincount=count(), enabledhealthprobecount=countif(healthprobe != '') by origingroupname, id, tostring(tags), resourceGroup, subscriptionId, frontDoorId | extend compliant = origincount > 1 | project id = frontDoorId, compliant",
+            "link": "https://learn.microsoft.com/azure/frontdoor/quickstart-create-front-door"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Set a timeout on forwarding requests to the back end. Adjust the timeout setting according to your endpoints' needs. If you don't, Azure Front Door might close the connection before the origin sends the response. You can also lower the default timeout for Azure Front Door if all of your origins have a shorter timeout.",
+            "waf": "Reliability",
+            "service": "Front Door",
+            "guid": "999852be-2137-4179-8fc3-30d1df6fed1d",
+            "id": "A01.52",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/frontdoor/troubleshoot-issues#troubleshooting-steps"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Decide if your application requires session affinity. If you have high reliability requirements, we recommend that you disable session affinity.",
+            "waf": "Reliability",
+            "service": "Front Door",
+            "guid": "17bf6351-3e5e-41f1-87bb-d5ad0b4e3de6",
+            "id": "A01.53",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/frontdoor/routing-methods#23session-affinity"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Send the host header to the back end. The back-end services should be aware of the host name so that they can create rules to accept traffic only from that host.",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "425bfb31-94c4-4007-b9ae-46da9fe57cc7",
+            "id": "A01.56",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/frontdoor/origin?pivots=front-door-standard-premium#origin-host-header"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Use caching for endpoints that support it.",
+            "waf": "Cost",
+            "service": "Front Door",
+            "guid": "81a5398a-2414-450f-9fc3-e048bc65784c",
+            "id": "A01.58",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/frontdoor/front-door-caching"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Disable health checks in single back-end pools. If you have only one origin configured in your Azure Front Door origin group, these calls are unnecessary. This is only recommended if you can't have multiple origins in your endpoint.",
+            "waf": "Cost",
+            "service": "Front Door",
+            "guid": "34069d73-e4de-46c5-a36f-625f87575a56",
+            "id": "A01.60",
+            "severity": "Low",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend healthprobe=tostring(properties.healthProbeSettings) | project origingroupname=name, id, tags, resourceGroup, subscriptionId, healthprobe, frontDoorId | join ( cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/Origins' | extend origingroupname = tostring(properties.originGroupName) ) on origingroupname | summarize origincount=count(), enabledhealthprobecount=countif(healthprobe != '') by origingroupname, id, tostring(tags), resourceGroup, subscriptionId, frontDoorId | extend compliant = origincount > 1 or (origincount == 1 and enabledhealthprobecount == 0) | project id = frontDoorId, compliant",
+            "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "We recommend using the Premium Tier for leveraging the Security reports while the Standard Azure Front Door Profile provides only traffic reports under built-in analytics/reports.",
+            "waf": "Operations",
+            "service": "Front Door",
+            "guid": "c92d6786-cdd1-444d-9cad-934a192a276a",
+            "id": "A01.62",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/frontdoor/standard-premium/how-to-reports"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Use wildcard TLS certificates when possible.",
+            "waf": "Operations",
+            "service": "Front Door",
+            "guid": "440cf7de-30a1-4550-ab50-c9f6eac140cd",
+            "id": "A01.63",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/frontdoor/front-door-wildcard-domain"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Optimize your application query string for caching. For purely static content, ignore query strings to maximize your use of the cache. If your application uses query strings, consider including them in the cache key. Including the query strings in the cache key allows Azure Front Door to serve cached responses or other responses, based on your configuration.",
+            "waf": "Performance",
+            "service": "Front Door",
+            "guid": "556e2733-6ca9-4edd-9cc7-26de66d46c2e",
+            "id": "A01.64",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/frontdoor/front-door-caching"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Use file compression when you're accessing downloadable content.",
+            "waf": "Performance",
+            "service": "Front Door",
+            "guid": "c0b7e55e-fcab-4e66-bdae-bd0290f6aece",
+            "id": "A01.65",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/frontdoor/standard-premium/how-to-compression"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Consider migrating to Standard or Premium SKU if you are using Classic Azure Front Door currently as Classic Azure Front Door will be deprecated by March 2027.",
+            "waf": "Operations",
+            "service": "Front Door",
+            "guid": "cb8eb8c0-aa73-4a26-a495-6eba8dc4a243",
+            "id": "A01.66",
+            "severity": "High",
+            "graph": "resources | where type =~ 'microsoft.network/frontdoors' and properties['resourceState'] !~ 'migrated' | extend compliant = false | project id, compliant",
+            "link": "https://learn.microsoft.com/azure/cdn/tier-migration"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "Consider using Traffic Manager load balancing Azure Front Door and a third party CDN provider CDN profile for mission critical high availability scenario. ",
+            "waf": "Reliability",
+            "service": "Front Door",
+            "guid": "67c33697-15b1-4752-aeee-0b9b588defc4",
+            "id": "A01.67",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/architecture/guide/networking/global-web-applications/mission-critical-content-delivery"
+        },
+        {
+            "category": "Network Topology and Connectivity",
+            "subcategory": "Front Door",
+            "text": "When using Front Door with origin as App services, consider locking down the traffic to app services only through Azure Front Door using access restrictions. ",
+            "waf": "Security",
+            "service": "Front Door",
+            "guid": "972cd4cd-25b0-4b70-96e9-eab4bfd32907",
+            "id": "A01.68",
+            "severity": "High",
+            "link": "https://learn.microsoft.com/azure/app-service/app-service-ip-restrictions?tabs=azurecli#restrict-access-to-a-specific-azure-front-door-instance"
+        }
+    ],
+    "categories": [
+        {
+            "name": "Network Topology and Connectivity"
+        }
+    ],
+    "waf": [
+        {
+            "name": "Reliability"
+        },
+        {
+            "name": "Security"
+        },
+        {
+            "name": "Cost"
+        },
+        {
+            "name": "Operations"
+        },
+        {
+            "name": "Performance"
+        }
+    ],
+    "yesno": [
+        {
+            "name": "Yes"
+        },
+        {
+            "name": "No"
+        }
+    ],
+    "status": [
+        {
+            "name": "Not verified",
+            "description": "This check has not been looked at yet"
+        },
+        {
+            "name": "Open",
+            "description": "There is an action item associated to this check"
+        },
+        {
+            "name": "Fulfilled",
+            "description": "This check has been verified, and there are no further action items associated to it"
+        },
+        {
+            "name": "Not required",
+            "description": "Recommendation understood, but not needed by current requirements"
+        },
+        {
+            "name": "N/A",
+            "description": "Not applicable for current design"
+        }
+    ],
+    "severities": [
+        {
+            "name": "High"
+        },
+        {
+            "name": "Medium"
+        },
+        {
+            "name": "Low"
+        }
+    ],
+    "metadata": {
+        "name": "Azure Application Delivery Networking",
+        "state": "GA",
+        "waf": "all",
+        "timestamp": "September 09, 2024"
     }
-  ],
-  "categories": [
-    {
-      "name": "Network Topology and Connectivity"
-    }
-  ],
-  "waf": [
-    {
-      "name": "Reliability"
-    },
-    {
-      "name": "Security"
-    },
-    {
-      "name": "Cost"
-    },
-    {
-      "name": "Operations"
-    },
-    {
-      "name": "Performance"
-    }
-  ],
-  "yesno": [
-    {
-      "name": "Yes"
-    },
-    {
-      "name": "No"
-    }
-  ],
-  "status": [
-    {
-      "name": "Not verified",
-      "description": "This check has not been looked at yet"
-    },
-    {
-      "name": "Open",
-      "description": "There is an action item associated to this check"
-    },
-    {
-      "name": "Fulfilled",
-      "description": "This check has been verified, and there are no further action items associated to it"
-    },
-    {
-      "name": "Not required",
-      "description": "Recommendation understood, but not needed by current requirements"
-    },
-    {
-      "name": "N/A",
-      "description": "Not applicable for current design"
-    }
-  ],
-  "severities": [
-    {
-      "name": "High"
-    },
-    {
-      "name": "Medium"
-    },
-    {
-      "name": "Low"
-    }
-  ],
-  "metadata": {
-    "name": "Azure Application Delivery Networking",
-    "state": "GA",
-    "waf": "all",
-    "timestamp": "08/30/2024 08:02:42"
-  }
 }
-
