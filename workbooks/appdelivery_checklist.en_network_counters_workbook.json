@@ -208,7 +208,7 @@
                         "version": "KqlParameterItem/1.0",
                         "name": "Query5Stats",
                         "type": 1,
-                        "query": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "query": "resources | where type=='microsoft.network/loadbalancers' | extend countOutRules=array_length(properties.outboundRules) | extend compliant = (countOutRules == 0) | distinct id,compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
                         "crossComponentResources": [
                             "{Subscription}"
                         ],
@@ -236,7 +236,7 @@
                         "version": "KqlParameterItem/1.0",
                         "name": "Query6Stats",
                         "type": 1,
-                        "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend originGroupId = substring(id, 0, indexof(id, '/origins')) | join kind=inner (cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend originGroupName = name | extend hasHealthProbe = isnotnull(properties.healthProbeSettings)) on $left.originGroupId == $right.id | summarize numberOrigins = count() by originGroupId, subscriptionId, frontDoorId, hasHealthProbe, originGroupName | extend compliant = not(numberOrigins == 1 and hasHealthProbe) | project id = frontDoorId, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "query": "resources | where type == 'microsoft.network/applicationgatewaywebapplicationfirewallpolicies' | mv-expand properties.managedRules.managedRuleSets | project id, rulesettype = properties_managedRules_managedRuleSets.ruleSetType | extend compliant1 = (rulesettype == 'Microsoft_BotManagerRuleSet') | project id, compliant1 | summarize compliant = max(compliant1) by id| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
                         "crossComponentResources": [
                             "{Subscription}"
                         ],
@@ -264,7 +264,7 @@
                         "version": "KqlParameterItem/1.0",
                         "name": "Query7Stats",
                         "type": 1,
-                        "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups/')) | extend compliant = (isnull(properties['healthProbeSettings']['probeRequestType']) or toupper(properties['healthProbeSettings']['probeRequestType']) == 'HEAD') | project compliant, id=frontDoorId| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "query": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
                         "crossComponentResources": [
                             "{Subscription}"
                         ],
@@ -290,118 +290,6 @@
                     {
                         "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
                         "version": "KqlParameterItem/1.0",
-                        "name": "Query8Stats",
-                        "type": 1,
-                        "query": "resources | where type=='microsoft.network/loadbalancers' | extend countOutRules=array_length(properties.outboundRules) | extend compliant = (countOutRules == 0) | distinct id,compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
-                        "crossComponentResources": [
-                            "{Subscription}"
-                        ],
-                        "isHiddenWhenLocked": true,
-                        "timeContext": {
-                            "durationMs": 86400000
-                        },
-                        "queryType": 1,
-                        "resourceType": "microsoft.resourcegraph/resources"
-                    },
-                    {
-                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                        "version": "KqlParameterItem/1.0",
-                        "name": "Query8FullyCompliant",
-                        "type": 1,
-                        "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query8Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
-                        "isHiddenWhenLocked": true,
-                        "timeContext": {
-                            "durationMs": 86400000
-                        },
-                        "queryType": 8
-                    },
-                    {
-                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                        "version": "KqlParameterItem/1.0",
-                        "name": "Query9Stats",
-                        "type": 1,
-                        "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/customdomains' | extend frontDoorId = substring(id, 0, indexof(id, '/customdomains')) | extend compliant = (isnull(properties['tlsSettings']['certificateType']) or tolower(properties['tlsSettings']['certificateType']) =~ 'customercertificate') | project compliant, id = frontDoorId| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
-                        "crossComponentResources": [
-                            "{Subscription}"
-                        ],
-                        "isHiddenWhenLocked": true,
-                        "timeContext": {
-                            "durationMs": 86400000
-                        },
-                        "queryType": 1,
-                        "resourceType": "microsoft.resourcegraph/resources"
-                    },
-                    {
-                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                        "version": "KqlParameterItem/1.0",
-                        "name": "Query9FullyCompliant",
-                        "type": 1,
-                        "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query9Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
-                        "isHiddenWhenLocked": true,
-                        "timeContext": {
-                            "durationMs": 86400000
-                        },
-                        "queryType": 8
-                    },
-                    {
-                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                        "version": "KqlParameterItem/1.0",
-                        "name": "Query10Stats",
-                        "type": 1,
-                        "query": "resources | where type == 'microsoft.network/applicationgatewaywebapplicationfirewallpolicies' | mv-expand properties.managedRules.managedRuleSets | project id, rulesettype = properties_managedRules_managedRuleSets.ruleSetType | extend compliant1 = (rulesettype == 'Microsoft_BotManagerRuleSet') | project id, compliant1 | summarize compliant = max(compliant1) by id| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
-                        "crossComponentResources": [
-                            "{Subscription}"
-                        ],
-                        "isHiddenWhenLocked": true,
-                        "timeContext": {
-                            "durationMs": 86400000
-                        },
-                        "queryType": 1,
-                        "resourceType": "microsoft.resourcegraph/resources"
-                    },
-                    {
-                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                        "version": "KqlParameterItem/1.0",
-                        "name": "Query10FullyCompliant",
-                        "type": 1,
-                        "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query10Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
-                        "isHiddenWhenLocked": true,
-                        "timeContext": {
-                            "durationMs": 86400000
-                        },
-                        "queryType": 8
-                    },
-                    {
-                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                        "version": "KqlParameterItem/1.0",
-                        "name": "Query11Stats",
-                        "type": 1,
-                        "query": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
-                        "crossComponentResources": [
-                            "{Subscription}"
-                        ],
-                        "isHiddenWhenLocked": true,
-                        "timeContext": {
-                            "durationMs": 86400000
-                        },
-                        "queryType": 1,
-                        "resourceType": "microsoft.resourcegraph/resources"
-                    },
-                    {
-                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                        "version": "KqlParameterItem/1.0",
-                        "name": "Query11FullyCompliant",
-                        "type": 1,
-                        "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query11Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
-                        "isHiddenWhenLocked": true,
-                        "timeContext": {
-                            "durationMs": 86400000
-                        },
-                        "queryType": 8
-                    },
-                    {
-                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                        "version": "KqlParameterItem/1.0",
                         "name": "Tab0Success",
                         "type": 1,
                         "isHiddenWhenLocked": true,
@@ -413,7 +301,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query0Stats:$.Success}+{Query2Stats:$.Success}+{Query3Stats:$.Success}+{Query4Stats:$.Success}+{Query10Stats:$.Success}+{Query11Stats:$.Success}"
+                                    "resultVal": "{Query0Stats:$.Success}+{Query2Stats:$.Success}+{Query3Stats:$.Success}+{Query4Stats:$.Success}+{Query6Stats:$.Success}+{Query7Stats:$.Success}"
                                 }
                             }
                         ]
@@ -432,7 +320,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query0Stats:$.Total}+{Query2Stats:$.Total}+{Query3Stats:$.Total}+{Query4Stats:$.Total}+{Query10Stats:$.Total}+{Query11Stats:$.Total}"
+                                    "resultVal": "{Query0Stats:$.Total}+{Query2Stats:$.Total}+{Query3Stats:$.Total}+{Query4Stats:$.Total}+{Query6Stats:$.Total}+{Query7Stats:$.Total}"
                                 }
                             }
                         ]
@@ -470,7 +358,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query1Stats:$.Success}+{Query8Stats:$.Success}"
+                                    "resultVal": "{Query1Stats:$.Success}+{Query5Stats:$.Success}"
                                 }
                             }
                         ]
@@ -489,7 +377,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query1Stats:$.Total}+{Query8Stats:$.Total}"
+                                    "resultVal": "{Query1Stats:$.Total}+{Query5Stats:$.Total}"
                                 }
                             }
                         ]
@@ -516,63 +404,6 @@
                     {
                         "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
                         "version": "KqlParameterItem/1.0",
-                        "name": "Tab2Success",
-                        "type": 1,
-                        "isHiddenWhenLocked": true,
-                        "timeContext": {
-                            "durationMs": 86400000
-                        },
-                        "criteriaData": [
-                            {
-                                "criteriaContext": {
-                                    "operator": "Default",
-                                    "resultValType": "expression",
-                                    "resultVal": "{Query5Stats:$.Success}+{Query6Stats:$.Success}+{Query7Stats:$.Success}+{Query9Stats:$.Success}"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                        "version": "KqlParameterItem/1.0",
-                        "name": "Tab2Total",
-                        "type": 1,
-                        "isHiddenWhenLocked": true,
-                        "timeContext": {
-                            "durationMs": 86400000
-                        },
-                        "criteriaData": [
-                            {
-                                "criteriaContext": {
-                                    "operator": "Default",
-                                    "resultValType": "expression",
-                                    "resultVal": "{Query5Stats:$.Total}+{Query6Stats:$.Total}+{Query7Stats:$.Total}+{Query9Stats:$.Total}"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                        "version": "KqlParameterItem/1.0",
-                        "name": "Tab2Percent",
-                        "type": 1,
-                        "isHiddenWhenLocked": true,
-                        "timeContext": {
-                            "durationMs": 86400000
-                        },
-                        "criteriaData": [
-                            {
-                                "criteriaContext": {
-                                    "operator": "Default",
-                                    "resultValType": "expression",
-                                    "resultVal": "round(100*{Tab2Success}/{Tab2Total})"
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                        "version": "KqlParameterItem/1.0",
                         "name": "WorkbookTotal",
                         "type": 1,
                         "isHiddenWhenLocked": true,
@@ -584,7 +415,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query0Stats:$.Total}+{Query2Stats:$.Total}+{Query3Stats:$.Total}+{Query4Stats:$.Total}+{Query10Stats:$.Total}+{Query11Stats:$.Total}+{Query1Stats:$.Total}+{Query8Stats:$.Total}+{Query5Stats:$.Total}+{Query6Stats:$.Total}+{Query7Stats:$.Total}+{Query9Stats:$.Total}"
+                                    "resultVal": "{Query0Stats:$.Total}+{Query2Stats:$.Total}+{Query3Stats:$.Total}+{Query4Stats:$.Total}+{Query6Stats:$.Total}+{Query7Stats:$.Total}+{Query1Stats:$.Total}+{Query5Stats:$.Total}"
                                 }
                             }
                         ]
@@ -603,7 +434,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query0Stats:$.Success}+{Query2Stats:$.Success}+{Query3Stats:$.Success}+{Query4Stats:$.Success}+{Query10Stats:$.Success}+{Query11Stats:$.Success}+{Query1Stats:$.Success}+{Query8Stats:$.Success}+{Query5Stats:$.Success}+{Query6Stats:$.Success}+{Query7Stats:$.Success}+{Query9Stats:$.Success}"
+                                    "resultVal": "{Query0Stats:$.Success}+{Query2Stats:$.Success}+{Query3Stats:$.Success}+{Query4Stats:$.Success}+{Query6Stats:$.Success}+{Query7Stats:$.Success}+{Query1Stats:$.Success}+{Query5Stats:$.Success}"
                                 }
                             }
                         ]
@@ -677,7 +508,7 @@
                 "style": "tabs",
                 "links": [
                     {
-                        "id": "8b88c1e6-1057-430b-a77d-3dcc5c551944",
+                        "id": "9b17328c-2944-45b9-a98f-695c35c5a502",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "App Gateway ({Tab0Success:value}/{Tab0Total:value})",
@@ -686,21 +517,12 @@
                         "style": "primary"
                     },
                     {
-                        "id": "25376e9f-fd4e-4e40-b1b5-eb361859e567",
+                        "id": "b8f70fa2-565b-4462-9bd6-8d6aa80844fb",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Load Balancer ({Tab1Success:value}/{Tab1Total:value})",
                         "subTarget": "tab1",
                         "preText": "Load Balancer",
-                        "style": "primary"
-                    },
-                    {
-                        "id": "255a1c6b-8cad-429d-b562-7559de75f8ae",
-                        "cellValue": "VisibleTab",
-                        "linkTarget": "parameter",
-                        "linkLabel": "Front Door ({Tab2Success:value}/{Tab2Total:value})",
-                        "subTarget": "tab2",
-                        "preText": "Front Door",
                         "style": "primary"
                     }
                 ]
@@ -973,7 +795,7 @@
                         "content": {
                             "json": "Enable the Azure Application Gateway WAF bot protection rule set. The bot rules detect good and bad bots. Check [this link](https://learn.microsoft.com/azure/web-application-firewall/ag/bot-protection) for further information."
                         },
-                        "name": "querytext10"
+                        "name": "querytext6"
                     },
                     {
                         "type": 3,
@@ -1028,14 +850,14 @@
                                 ]
                             }
                         },
-                        "name": "query10"
+                        "name": "query6"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Deploy your WAF policy for Application Gateway in 'Prevention' mode. Check [this link](https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings) for further information."
                         },
-                        "name": "querytext11"
+                        "name": "querytext7"
                     },
                     {
                         "type": 3,
@@ -1090,7 +912,7 @@
                                 ]
                             }
                         },
-                        "name": "query11"
+                        "name": "query7"
                     }
                 ]
             },
@@ -1181,7 +1003,7 @@
                         "content": {
                             "json": "Use Azure NAT Gateway instead of Load Balancer outbound rules for better SNAT scalability. Check [this link](https://learn.microsoft.com/azure/nat-gateway/nat-overview#outbound-connectivity) for further information."
                         },
-                        "name": "querytext8"
+                        "name": "querytext5"
                     },
                     {
                         "type": 3,
@@ -1236,7 +1058,7 @@
                                 ]
                             }
                         },
-                        "name": "query8"
+                        "name": "query5"
                     }
                 ]
             },
@@ -1246,276 +1068,6 @@
                 "value": "tab1"
             },
             "name": "tab1"
-        },
-        {
-            "type": 12,
-            "content": {
-                "version": "NotebookGroup/1.0",
-                "groupType": "editable",
-                "items": [
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "## Front Door"
-                        },
-                        "name": "tab2title"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Deploy your WAF policy for Front Door in 'Prevention' mode' so that Web Application Firewall takes appropriate action to allow or deny traffic. Check [this link](https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings) for further information."
-                        },
-                        "name": "querytext5"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query5"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Disable health probes when there is only one origin in an Azure Front Door origin group. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group) for further information."
-                        },
-                        "name": "querytext6"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend originGroupId = substring(id, 0, indexof(id, '/origins')) | join kind=inner (cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend originGroupName = name | extend hasHealthProbe = isnotnull(properties.healthProbeSettings)) on $left.originGroupId == $right.id | summarize numberOrigins = count() by originGroupId, subscriptionId, frontDoorId, hasHealthProbe, originGroupName | extend compliant = not(numberOrigins == 1 and hasHealthProbe) | project id = frontDoorId, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query6"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Use HEAD health probes with Azure Front Door, to reduce the traffic that Front Door sends to your application. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-head-health-probes) for further information."
-                        },
-                        "name": "querytext7"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups/')) | extend compliant = (isnull(properties['healthProbeSettings']['probeRequestType']) or toupper(properties['healthProbeSettings']['probeRequestType']) == 'HEAD') | project compliant, id=frontDoorId | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query7"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Use managed TLS certificates with Azure Front Door. Reduce operational cost and risk of outages due to certificate renewals. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-managed-tls-certificates) for further information."
-                        },
-                        "name": "querytext9"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/customdomains' | extend frontDoorId = substring(id, 0, indexof(id, '/customdomains')) | extend compliant = (isnull(properties['tlsSettings']['certificateType']) or tolower(properties['tlsSettings']['certificateType']) =~ 'customercertificate') | project compliant, id = frontDoorId | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query9"
-                    }
-                ]
-            },
-            "conditionalVisibility": {
-                "parameterName": "VisibleTab",
-                "comparison": "isEqualTo",
-                "value": "tab2"
-            },
-            "name": "tab2"
         }
     ],
     "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
