@@ -45,7 +45,7 @@ If you wish to make a contribution, please create the proposed changes in a fork
 
 ### 1. Adding or modifying Resource Graph queries
 
-When adding Azure Resource Graph queries to existing recommendations the query is expected to return (at least) two fields:
+When adding Azure Resource Graph queries to existing recommendations using the `graph` key, the query is expected to return (at least) two fields:
 
 * `id`: ARM ID of the resource being evaluated
 * `compliant`: boolean value that indicates whether the resource is compliant or non-compliant with the recommendation
