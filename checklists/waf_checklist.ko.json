@@ -8277,7 +8277,7 @@
             "link": "https://learn.microsoft.com/azure/role-based-access-control/overview",
             "service": "Entra",
             "severity": "높다",
-            "text": "클라우드 운영 모델에 맞는 RBAC 모델을 적용합니다. Scope and Assign across Management Groups and Subscriptions.",
+            "text": "클라우드 운영 모델에 맞는 RBAC 모델을 적용합니다. 관리 그룹 및 구독에서 범위를 지정하고 할당합니다.",
             "training": "https://learn.microsoft.com/learn/paths/implement-resource-mgmt-security/",
             "waf": "안전"
         },
@@ -8317,7 +8317,7 @@
             "link": "https://learn.microsoft.com/azure/active-directory/authentication/concept-mfa-howitworks",
             "service": "Entra",
             "severity": "높다",
-            "text": "Azure 환경에 대한 권한이 있는 모든 사용자에 대해 Multi-Factor Authentication을 적용합니다.",
+            "text": "Azure 환경에 대한 권한이 있는 모든 사용자에 대해 다단계 인증을 적용합니다.",
             "training": "https://learn.microsoft.com/learn/modules/secure-aad-users-with-mfa/",
             "waf": "안전"
         },
@@ -8343,11 +8343,22 @@
         },
         {
             "checklist": "Azure Landing Zone Review",
+            "graph": "resources | where type == 'microsoft.aad/domainservices' | extend replicaSets = properties.replicaSets | where array_length(replicaSets) < 2 | project name=name, id=id, tags=tags, param1=strcat('replicaSetLocation:', replicaSets[0].location)",
+            "guid": "0dd4e625-9c4b-4a56-b54a-4357bac12761",
+            "link": "https://learn.microsoft.com/entra/identity/domain-services/overview",
+            "service": "Entra",
+            "severity": "보통",
+            "text": "Microsoft Entra Domain Services를 사용하는 경우 복제본 세트를 사용합니다. 복제본 세트는 관리되는 도메인의 복원력을 향상시키고 추가 지역에 배포할 수 있도록 합니다. ",
+            "training": "https://learn.microsoft.com/training/modules/understand-azure-active-directory/6-examine-azure-domain-services",
+            "waf": "신뢰도"
+        },
+        {
+            "checklist": "Azure Landing Zone Review",
             "guid": "1cf0b8da-70bd-44d0-94af-8d99cfc89ae1",
             "link": "https://learn.microsoft.com/azure/active-directory/reports-monitoring/concept-activity-logs-azure-monitor",
             "service": "Entra",
             "severity": "보통",
-            "text": "Microsoft Entra ID 로그를 플랫폼 중앙 Azure Monitor와 통합합니다. Azure Monitor는 Azure의 로그 및 모니터링 데이터에 대한 단일 정보 소스를 허용하여 조직에 로그 수집 및 보존에 대한 요구 사항을 충족하는 클라우드 네이티브 옵션을 제공합니다.",
+            "text": "Microsoft Entra ID 로그를 플랫폼 중앙 Azure Monitor와 통합합니다. Azure Monitor는 Azure의 로그 및 모니터링 데이터에 대한 단일 정보 소스를 허용하여 조직에 로그 수집 및 보존에 대한 요구 사항을 충족할 수 있는 클라우드 네이티브 옵션을 제공합니다.",
             "training": "https://learn.microsoft.com/entra/identity/monitoring-health/howto-integrate-activity-logs-with-azure-monitor-logs",
             "waf": "안전"
         },
@@ -8507,13 +8518,33 @@
             "waf": "신뢰도"
         },
         {
+            "checklist": "Azure Landing Zone Review",
+            "graph": "resources | where type == 'microsoft.network/loadbalancers' | where tolower(sku.name) != 'basic' | mv-expand feIPconfigs = properties.frontendIPConfigurations | extend feConfigName = (feIPconfigs.name), PrivateSubnetId = toupper(feIPconfigs.properties.subnet.id), PrivateIPZones = feIPconfigs.zones, PIPid = toupper(feIPconfigs.properties.publicIPAddress.id), JoinID = toupper(id) | where isnotempty(PrivateSubnetId) | where isnull(PrivateIPZones) or array_length(PrivateIPZones) < 2 | project name, feConfigName, id | union (resources | where type == 'microsoft.network/loadbalancers' | where tolower(sku.name) != 'basic' | mv-expand feIPconfigs = properties.frontendIPConfigurations | extend feConfigName = (feIPconfigs.name), PIPid = toupper(feIPconfigs.properties.publicIPAddress.id), JoinID = toupper(id) | where isnotempty(PIPid) | join kind=innerunique ( resources | where type == 'microsoft.network/publicipaddresses' | where isnull(zones) or array_length(zones) < 2 | extend LBid = toupper(substring(properties.ipConfiguration.id, 0, indexof(properties.ipConfiguration.id, '/frontendIPConfigurations'))), InnerID = toupper(id) ) on $left.PIPid == $right.InnerID) | project name, id, tags, param1='Zones: No Zone or Zonal', param2=strcat('Frontend IP Configuration:', ' ', feConfigName)",
+            "guid": "9dcd6250-9c4a-4382-aa9b-5b84c64fc1fe",
+            "link": "https://learn.microsoft.com/en-us/azure/reliability/reliability-load-balancer?tabs=graph#zone-redundant",
+            "service": "Load Balancers",
+            "severity": "높다",
+            "text": "영역 중복 배포와 함께 표준 Load Balancer SKU를 사용하는 경우 표준 SKU Load Balancer를 선택하면 가용성 영역 및 영역 복원력을 통해 안정성이 향상되어 배포가 영역 및 지역 오류를 견딜 수 있습니다. Basic과 달리 전역 부하 분산을 지원하고 SLA를 제공합니다.",
+            "waf": "신뢰도"
+        },
+        {
+            "checklist": "Azure Landing Zone Review",
+            "graph": "resources | where type =~ 'Microsoft.Network/loadBalancers' | extend bep = properties.backendAddressPools | extend BackEndPools = array_length(bep) | where BackEndPools == 0 | project name, id, Param1='backendPools', Param2=toint(0), tags | union (resources | where type =~ 'Microsoft.Network/loadBalancers' | where sku.name == 'Standard' | extend bep = properties.backendAddressPools | extend BackEndPools = toint(array_length(bep)) | mv-expand bip = properties.backendAddressPools | extend BackendAddresses = array_length(bip.properties.loadBalancerBackendAddresses) | where toint(BackendAddresses) <= 1 | project name, id, tags, Param1='backendAddresses', Param2=toint(BackendAddresses)) | union ( resources | where type =~ 'Microsoft.Network/loadBalancers' | where sku.name == 'Basic' | mv-expand properties.backendAddressPools | extend backendPoolId = properties_backendAddressPools.id | project id, name, tags, tostring(backendPoolId), Param1='BackEndPools' | join kind = leftouter ( resources | where type =~ 'Microsoft.Network/networkInterfaces' | mv-expand properties.ipConfigurations | mv-expand properties_ipConfigurations.properties.loadBalancerBackendAddressPools | extend backendPoolId = tostring(properties_ipConfigurations_properties_loadBalancerBackendAddressPools.id) | summarize poolMembers = count() by backendPoolId | project tostring(backendPoolId), poolMembers ) on backendPoolId | where toint(poolMembers) <= 1 | extend BackendAddresses = poolMembers | project id, name, tags, Param1='backendAddresses', Param2=toint(BackendAddresses))",
+            "guid": "48682fb1-1e86-4458-a686-518ebd47393d",
+            "link": "https://learn.microsoft.com/en-us/azure/reliability/reliability-load-balancer?tabs=graph#zone-redundant",
+            "service": "Load Balancers",
+            "severity": "높다",
+            "text": "부하 분산 장치 백 엔드 풀에 두 개 이상의 인스턴스가 포함되어 있는지 확인하고, 백 엔드에 두 개 이상의 인스턴스를 사용하여 Azure Load Balancer를 배포하면 단일 실패 지점을 방지하고 확장성을 지원할 수 있습니다.",
+            "waf": "신뢰도"
+        },
+        {
             "arm-service": "microsoft.network/expressRouteCircuits",
             "checklist": "Azure Landing Zone Review",
             "guid": "de0d5973-cd4c-4d21-a088-137f5e6c4cfd",
             "link": "https://learn.microsoft.com/azure/expressroute/expressroute-howto-macsec",
             "service": "ExpressRoute",
             "severity": "보통",
-            "text": "ExpressRoute Direct를 사용하는 경우 조직의 라우터와 MSEE 간의 계층 2 레벨에서 트래픽을 암호화하도록 MACsec을 구성합니다. 다이어그램은 흐름에서 이 암호화를 보여 줍니다.",
+            "text": "ExpressRoute Direct를 사용하는 경우 조직의 라우터와 MSEE 간의 계층 2 수준에서 트래픽을 암호화하도록 MACsec을 구성합니다. 다이어그램은 흐름에서 이 암호화를 보여 줍니다.",
             "training": "https://learn.microsoft.com/training/modules/design-implement-azure-expressroute/",
             "waf": "안전"
         },
@@ -8524,7 +8555,7 @@
             "link": "https://learn.microsoft.com/azure/vpn-gateway/site-to-site-vpn-private-peering",
             "service": "ExpressRoute",
             "severity": "보통",
-            "text": "MACsec을 사용할 수 없는 시나리오(예: ExpressRoute Direct를 사용하지 않음)의 경우 VPN 게이트웨이를 사용하여 ExpressRoute 개인 피어링을 통해 IPsec 터널을 설정합니다.",
+            "text": "MACsec을 사용할 수 없는 시나리오(예: ExpressRoute Direct를 사용하지 않음)의 경우 VPN Gateway를 사용하여 ExpressRoute 개인 피어링을 통해 IPsec 터널을 설정합니다.",
             "training": "https://learn.microsoft.com/learn/paths/implement-network-security/",
             "waf": "안전"
         },
@@ -8575,13 +8606,24 @@
             "waf": "신뢰도"
         },
         {
+            "checklist": "Azure Landing Zone Review",
+            "graph": "Resources | where type =~ 'Microsoft.Network/publicIPAddresses' and sku.tier =~ 'Regional' | where isempty(zones) or array_length(zones) <= 1 | extend az = case(isempty(zones), 'Non-zonal', array_length(zones) <= 1, strcat('Zonal (', strcat_array(zones, ','), ')'), zones) | project name, id, tags, param1 = strcat('sku: ', sku.name), param2 = strcat('availabilityZone: ', az)",
+            "guid": "0c47f486-656d-4699-8c30-edef5b8a93c4",
+            "link": "https://learn.microsoft.com/azure/virtual-network/ip-services/public-ip-addresses#availability-zone",
+            "service": "Public IP Addresses",
+            "severity": "높다",
+            "text": "해당하는 경우 표준 SKU 및 영역 중복 IP를 사용하며, Azure의 공용 IP 주소는 비영역, 영역 또는 영역 중복으로 사용할 수 있는 표준 SKU일 수 있습니다. 영역 중복 IP는 모든 영역에서 액세스할 수 있으므로 단일 영역 오류에 저항하여 더 높은 복원력을 제공합니다. ",
+            "training": "https://learn.microsoft.com/en-gb/training/modules/configure-virtual-networks/6-create-public-ip-addressing",
+            "waf": "신뢰도"
+        },
+        {
             "arm-service": "Microsoft.Network/dnsZones",
             "checklist": "Azure Landing Zone Review",
             "guid": "153e8908-ae28-4c84-a33b-6b7808b9fe5c",
             "link": "https://learn.microsoft.com/azure/dns/private-dns-getstarted-portal",
             "service": "DNS",
             "severity": "보통",
-            "text": "Azure의 이름 확인만 필요한 환경의 경우 이름 확인을 위해 위임된 영역(예: 'azure.contoso.com')을 사용하여 확인을 위해 Azure 프라이빗 DNS를 사용합니다.",
+            "text": "Azure의 이름 확인만 필요한 환경의 경우 이름 확인을 위해 위임된 영역(예: 'azure.contoso.com')을 사용하여 Azure 프라이빗 DNS를 확인합니다.",
             "training": "https://learn.microsoft.com/learn/paths/az-104-manage-virtual-networks/",
             "waf": "작업"
         },
@@ -8603,7 +8645,7 @@
             "link": "https://learn.microsoft.com/azure/virtual-network/virtual-networks-name-resolution-for-vms-and-role-instances",
             "service": "DNS",
             "severity": "낮다",
-            "text": "자체 DNS(예: Red Hat OpenShift)가 필요하고 배포하는 특수 워크로드는 선호하는 DNS 솔루션을 사용해야 합니다.",
+            "text": "자체 DNS(예: Red Hat OpenShift)를 요구하고 배포하는 특수 워크로드는 선호하는 DNS 솔루션을 사용해야 합니다.",
             "training": "https://learn.microsoft.com/training/courses/az-700t00",
             "waf": "작업"
         },
@@ -8648,7 +8690,7 @@
             "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/afds-overview",
             "service": "WAF",
             "severity": "보통",
-            "text": "Azure Front Door 및 WAF 정책을 사용하여 랜딩 존에 대한 인바운드 HTTP/S 연결을 위해 Azure 지역 전체에서 전역 보호를 제공합니다.",
+            "text": "Azure Front Door 및 WAF 정책을 사용하여 랜딩 존에 대한 인바운드 HTTP/S 연결을 위해 Azure 지역 전체에서 글로벌 보호를 제공합니다.",
             "training": "https://learn.microsoft.com/learn/paths/secure-application-delivery/",
             "waf": "안전"
         },
@@ -8681,7 +8723,7 @@
             "link": "https://learn.microsoft.com/azure/ddos-protection/ddos-protection-reference-architectures",
             "service": "VNet",
             "severity": "높다",
-            "text": "Azure DDoS 네트워크 또는 IP 보호 플랜을 사용하여 가상 네트워크 내의 공용 IP 주소 엔드포인트를 보호할 수 있습니다.",
+            "text": "Azure DDoS 네트워크 또는 IP 보호 계획을 사용하여 가상 네트워크 내의 공용 IP 주소 엔드포인트를 보호할 수 있습니다.",
             "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
             "waf": "안전"
         },
@@ -8761,7 +8803,7 @@
             "link": "https://learn.microsoft.com/azure/expressroute/plan-manage-cost",
             "service": "ExpressRoute",
             "severity": "높다",
-            "text": "비용을 정당화하는 대역폭에 도달하는 경우에만 무제한 데이터 ExpressRoute 회로를 사용해야 합니다.",
+            "text": "비용을 정당화하는 대역폭에 도달하는 경우에만 무제한 데이터 ExpressRoute 회로를 사용하고 있는지 확인합니다.",
             "training": "https://learn.microsoft.com/training/modules/design-implement-azure-expressroute/",
             "waf": "비용"
         },
@@ -8807,7 +8849,7 @@
             "link": "https://learn.microsoft.com/azure/expressroute/about-fastpath",
             "service": "ExpressRoute",
             "severity": "보통",
-            "text": "짧은 대기 시간이 필요하거나 온-프레미스에서 Azure로의 처리량이 10Gbps보다 커야 하는 경우 FastPath를 사용하도록 설정하여 데이터 경로에서 ExpressRoute 게이트웨이를 우회합니다.",
+            "text": "짧은 대기 시간이 필요하거나 온-프레미스에서 Azure로의 처리량이 10Gbps보다 커야 하는 경우 FastPath를 사용하여 데이터 경로에서 ExpressRoute 게이트웨이를 우회할 수 있습니다.",
             "training": "https://learn.microsoft.com/learn/modules/design-implement-azure-expressroute/",
             "waf": "공연"
         },
@@ -8852,7 +8894,7 @@
             "link": "https://learn.microsoft.com/azure/architecture/framework/services/networking/expressroute/reliability",
             "service": "ExpressRoute",
             "severity": "보통",
-            "text": "트래픽 격리 또는 전용 대역폭이 필요한 경우(예: 프로덕션 환경과 비프로덕션 환경 분리) 다른 ExpressRoute 회로를 사용합니다. 이는 격리된 라우팅 도메인을 보장하고 시끄러운 이웃 위험을 완화하는 데 도움이 됩니다.",
+            "text": "트래픽 격리 또는 전용 대역폭이 필요한 경우(예: 프로덕션 환경과 비프로덕션 환경을 분리하기 위해) 다른 ExpressRoute 회로를 사용합니다. 이는 격리된 라우팅 도메인을 보장하고 시끄러운 이웃 위험을 완화하는 데 도움이 됩니다.",
             "training": "https://learn.microsoft.com/learn/modules/design-implement-azure-expressroute/",
             "waf": "안전"
         },
@@ -8874,7 +8916,7 @@
             "link": "https://learn.microsoft.com/azure/expressroute/how-to-configure-connection-monitor",
             "service": "ExpressRoute",
             "severity": "보통",
-            "text": "네트워크 전반, 특히 온-프레미스와 Azure 간의 연결을 모니터링하려면 연결 모니터를 사용합니다.",
+            "text": "네트워크를 통한 연결, 특히 온-프레미스와 Azure 간의 연결을 모니터링하기 위해 연결 모니터를 사용합니다.",
             "training": "https://learn.microsoft.com/learn/modules/design-implement-azure-expressroute/",
             "waf": "작업"
         },
@@ -8919,7 +8961,7 @@
             "link": "https://learn.microsoft.com/azure/expressroute/designing-for-high-availability-with-expressroute#active-active-connections",
             "service": "ExpressRoute",
             "severity": "높다",
-            "text": "ExpressRoute를 사용하는 경우 온-프레미스 라우팅은 동적이어야 하며, 연결 오류가 발생할 경우 회로의 나머지 연결로 수렴해야 합니다. 로드는 두 연결 모두에서 이상적으로는 액티브/액티브로 공유해야 하지만 액티브/패시브도 지원됩니다.",
+            "text": "ExpressRoute를 사용하는 경우 온-프레미스 라우팅은 동적이어야 하며, 연결 오류가 발생할 경우 회로의 나머지 연결로 수렴해야 합니다. 로드는 두 연결 모두에서 액티브/액티브로 이상적으로 공유되어야 하지만 액티브/패시브도 지원됩니다.",
             "training": "https://learn.microsoft.com/training/modules/design-implement-azure-expressroute/",
             "waf": "신뢰도"
         },
@@ -8984,7 +9026,7 @@
             "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about",
             "service": "N/A",
             "severity": "낮다",
-            "text": "검사를 위해 Azure 트래픽을 하이브리드 위치로 보내지 마세요.  대신 'Azure의 트래픽이 Azure에 유지됨' 원칙을 따라 Azure의 리소스 간 통신이 Microsoft 백본 네트워크를 통해 발생하도록 합니다.",
+            "text": "검사를 위해 Azure 트래픽을 하이브리드 위치로 보내지 마세요.  대신 'Azure의 트래픽이 Azure에 유지' 원칙을 따라 Azure의 리소스 간 통신이 Microsoft 백본 네트워크를 통해 발생하도록 합니다.",
             "waf": "공연"
         },
         {
@@ -8994,7 +9036,7 @@
             "link": "https://learn.microsoft.com/azure/firewall/overview",
             "service": "Firewall",
             "severity": "높다",
-            "text": "Azure Firewall을 사용하여 인터넷에 대한 Azure 아웃바운드 트래픽, HTTP/S가 아닌 인바운드 연결 및 East/West 트래픽 필터링(조직에 필요한 경우)을 제어합니다.",
+            "text": "Azure Firewall을 사용하여 인터넷에 대한 Azure 아웃바운드 트래픽, 비 HTTP/S 인바운드 연결 및 East/West 트래픽 필터링(조직에 필요한 경우)을 제어합니다.",
             "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
             "waf": "안전"
         },
@@ -9119,7 +9161,7 @@
             "link": "https://learn.microsoft.com/azure/firewall-manager/rule-hierarchy",
             "service": "Firewall",
             "severity": "보통",
-            "text": "방화벽 정책 내의 규칙을 Rule Collection Groups(규칙 컬렉션 그룹) 및 Rule Collections(규칙 컬렉션)로 정렬하고 사용 빈도에 따라 정렬합니다.",
+            "text": "방화벽 정책 내의 규칙을 Rule Collection Groups(규칙 수집 그룹) 및 Rule Collections(규칙 컬렉션)로 정렬하고 사용 빈도에 따라 정렬합니다.",
             "training": "https://learn.microsoft.com/training/modules/intro-to-azure-firewall-manager/",
             "waf": "공연"
         },
@@ -9182,7 +9224,7 @@
             "link": "https://learn.microsoft.com/azure/architecture/example-scenario/gateway/application-gateway-before-azure-firewall",
             "service": "Firewall",
             "severity": "보통",
-            "text": "TLS 검사의 일환으로 검사를 위해 Azure App Gateway에서 트래픽을 수신하도록 계획합니다.",
+            "text": "TLS 검사의 일환으로 검사를 위해 Azure App Gateway에서 트래픽 수신을 계획합니다.",
             "training": "https://learn.microsoft.com/training/modules/configure-azure-application-gateway/",
             "waf": "공연"
         },
@@ -9204,7 +9246,7 @@
             "link": "https://learn.microsoft.com/azure/firewall/firewall-diagnostics",
             "service": "Firewall",
             "severity": "높다",
-            "text": "Azure Firewall을 Azure Monitor와 통합하고 진단 로깅을 사용하도록 설정하여 방화벽 로그를 저장하고 분석합니다.",
+            "text": "Azure Firewall을 Azure Monitor와 통합하고 진단 로깅을 사용하도록 설정하여 방화벽 로그 및 메트릭을 저장하고 분석합니다.",
             "training": "https://learn.microsoft.com/training/courses/az-700t00/",
             "waf": "작업"
         },
@@ -9218,6 +9260,29 @@
             "text": "방화벽 규칙에 대한 백업 구현Implement backups for your firewall rules",
             "training": "https://learn.microsoft.com/training/courses/az-104t00/",
             "waf": "작업"
+        },
+        {
+            "arm-service": "Microsoft.Network/azureFirewalls",
+            "checklist": "Azure Landing Zone Review",
+            "graph": "resources | where type == 'microsoft.network/azurefirewalls' | where array_length(zones) <= 1 or isnull(zones) | where isempty(properties.virtualHub.id) or isnull(properties.virtualHub.id) | project name, id, tags, param1='multipleZones:false'",
+            "guid": "d38ad60c-bc9e-4d49-b699-97e5d4dcf707",
+            "link": "https://learn.microsoft.com/azure/firewall/deploy-availability-zone-powershell",
+            "service": "Firewall",
+            "severity": "높다",
+            "text": "여러 가용성 영역에 Azure Firewall을 배포합니다. Azure Firewall은 배포에 따라 다른 SLA를 제공합니다. 단일 가용 영역 또는 여러 가용 영역에서 작동하여 안정성과 성능을 향상시킬 수 있습니다.",
+            "training": "https://learn.microsoft.com/training/courses/az-104t00/",
+            "waf": "신뢰도"
+        },
+        {
+            "arm-service": "Microsoft.Network/azureFirewalls",
+            "checklist": "Azure Landing Zone Review",
+            "graph": "resources | where type =~ 'Microsoft.Network/azureFirewalls' | where isempty(properties.virtualHub.id) or isnull(properties.virtualHub.id) | mv-expand ipConfig = properties.ipConfigurations | project name, firewallId = id, tags, vNetName = split(ipConfig.properties.subnet.id, '/', 8)[0], vNetId = tolower(substring(ipConfig.properties.subnet.id, 0, indexof(ipConfig.properties.subnet.id, /subnet'))) | join kind=fullouter ( resources | where type =~ 'Microsoft.Network/ddosProtectionPlans' | mv-expand vNet = properties.virtualNetworks | project ddosProtectionPlanId = id, vNetId = tolower(vNet.id) ) on vNetId | where isempty(ddosProtectionPlanId) | , name, id = firewallId, tags, param1 = strcat('vNet: ', vNetName), param2 = 'ddosProtection: Disabled'",
+            "guid": "e8143efa-0301-4d62-be54-ca7b5ce566dc",
+            "link": "https://learn.microsoft.com/en-gb/azure/ddos-protection/ddos-protection-overview",
+            "service": "Firewall",
+            "severity": "높다",
+            "text": "Azure Firewall VNet에서 DDoS Protection을 구성하고, DDoS 보호 계획을 Azure Firewall을 호스트하는 가상 네트워크와 연결하여 DDoS 공격에 대한 향상된 완화를 제공합니다. Azure Firewall Manager는 방화벽 인프라 및 DDoS 보호 계획 생성을 통합합니다. ",
+            "waf": "신뢰도"
         },
         {
             "arm-service": "microsoft.network/applicationGateways",
@@ -9237,7 +9302,7 @@
             "link": "https://learn.microsoft.com/azure/private-link/private-endpoint-overview",
             "service": "ExpressRoute",
             "severity": "보통",
-            "text": "프라이빗 엔드포인트 및 ExpressRoute 프라이빗 피어링을 통해 온-프레미스에서 Azure PaaS 서비스에 액세스하세요. 이 방법을 사용하면 공용 인터넷을 통해 전송되지 않습니다.",
+            "text": "프라이빗 엔드포인트 및 ExpressRoute 프라이빗 피어링을 통해 온-프레미스에서 Azure PaaS 서비스에 액세스하세요. 이 방법을 사용하면 공용 인터넷을 통해 전송하지 않아도 됩니다.",
             "training": "https://learn.microsoft.com/learn/modules/design-implement-azure-expressroute/",
             "waf": "안전"
         },
@@ -9272,7 +9337,7 @@
             "link": "https://learn.microsoft.com/azure/expressroute/expressroute-howto-add-gateway-resource-manager#add-a-gateway",
             "service": "ExpressRoute",
             "severity": "높다",
-            "text": "게이트웨이 서브넷에 /27 이상의 접두사를 사용합니다.",
+            "text": "게이트웨이 서브넷에 /27 접두사 이상을 사용합니다.",
             "waf": "안전"
         },
         {
@@ -9293,7 +9358,7 @@
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-landing-zone-network-segmentation",
             "service": "NSG",
             "severity": "보통",
-            "text": "NSG를 사용하여 서브넷 간의 트래픽과 플랫폼 전체의 동쪽/서쪽 트래픽(랜딩 존 간 트래픽)을 보호할 수 있습니다.",
+            "text": "NSG를 사용하여 서브넷 전체의 트래픽과 플랫폼 전체의 동쪽/서쪽 트래픽(랜딩 존 간 트래픽)을 보호할 수 있습니다.",
             "training": "https://learn.microsoft.com/learn/paths/implement-network-security/",
             "waf": "안전"
         },
@@ -9390,6 +9455,7 @@
         {
             "arm-service": "microsoft.network/virtualWans",
             "checklist": "Azure Landing Zone Review",
+            "graph": "resources| where type =~ 'microsoft.network/virtualwans' | extend compliant= (properties.allowBranchToBranchTraffic == 'true') | distinct id,compliant",
             "guid": "727c77e1-b9aa-4a37-a024-129d042422c1",
             "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-faq#is-branch-to-branch-connectivity-allowed-in-virtual-wan",
             "service": "VWAN",
@@ -9401,6 +9467,7 @@
         {
             "arm-service": "microsoft.network/virtualWans",
             "checklist": "Azure Landing Zone Review",
+            "graph": "resources | where type =~ 'microsoft.network/virtualhubs'| extend compliant= (properties.hubRoutingPreference =~ 'ASPath') | distinct id,compliant",
             "guid": "d49ac006-6670-4bc9-9948-d3e0a3a94f4d",
             "link": "https://learn.microsoft.com/azure/virtual-wan/about-virtual-hub-routing-preference",
             "service": "VWAN",
@@ -9427,7 +9494,7 @@
             "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-faq#what-is-the-recommended-hub-address-space-during-hub-creation",
             "service": "VWAN",
             "severity": "높다",
-            "text": "가상 허브에 /23 접두사 이상을 할당하여 충분한 IP 공간을 사용할 수 있도록 합니다.",
+            "text": "가상 허브에 /23 이상의 접두사를 할당하여 충분한 IP 공간을 사용할 수 있도록 합니다.",
             "training": "https://learn.microsoft.com/training/modules/introduction-azure-virtual-wan/",
             "waf": "신뢰도"
         },
@@ -9439,6 +9506,7 @@
             "service": "Policy",
             "severity": "높다",
             "text": "Azure Policy를 전략적으로 활용하고, 정책 이니셔티브를 사용하여 관련 정책을 그룹화하여 환경에 대한 컨트롤을 정의합니다.",
+            "training": "https://learn.microsoft.com/training/modules/configure-azure-policy/",
             "waf": "안전"
         },
         {
@@ -9449,6 +9517,7 @@
             "service": "Policy",
             "severity": "보통",
             "text": "규정 및 규정 준수 요구 사항을 Azure Policy 정의 및 Azure 역할 할당에 매핑합니다.",
+            "training": "https://learn.microsoft.com/training/modules/governance-security/",
             "waf": "안전"
         },
         {
@@ -9459,6 +9528,7 @@
             "service": "Policy",
             "severity": "보통",
             "text": "상속된 범위에서 할당할 수 있도록 중간 루트 관리 그룹에서 Azure Policy 정의를 설정합니다.",
+            "training": "https://learn.microsoft.com/training/modules/configure-azure-policy/",
             "waf": "안전"
         },
         {
@@ -9469,6 +9539,7 @@
             "service": "Policy",
             "severity": "높다",
             "text": "필요한 경우 최하위 수준에서 제외를 사용하여 가장 적절한 수준에서 정책 할당을 관리합니다.",
+            "training": "https://learn.microsoft.com/training/modules/configure-azure-policy/",
             "waf": "안전"
         },
         {
@@ -9479,6 +9550,7 @@
             "service": "Policy",
             "severity": "낮다",
             "text": "Azure Policy를 사용하여 사용자가 구독/관리 그룹 수준에서 프로비전할 수 있는 서비스를 제어합니다.",
+            "training": "https://learn.microsoft.com/training/modules/configure-azure-policy/",
             "waf": "안전"
         },
         {
@@ -9489,17 +9561,19 @@
             "service": "Policy",
             "severity": "높다",
             "text": "가능한 경우 기본 제공 정책을 사용하여 운영 오버헤드를 최소화합니다.",
+            "training": "https://learn.microsoft.com/training/modules/configure-azure-policy/",
             "waf": "안전"
         },
         {
             "arm-service": "Microsoft.Authorization/policyDefinitions",
             "checklist": "Azure Landing Zone Review",
-            "description": "Resource Policy Contributor 역할을 특정 범위에 할당하면 정책 관리를 관련 팀에 위임할 수 있습니다. 예를 들어 중앙 IT 팀은 관리 그룹 수준 정책을 감독하고 응용 프로그램 팀은 구독에 대한 정책을 처리하여 조직 표준을 준수하는 분산 거버넌스를 가능하게 할 수 있습니다.",
+            "description": "Resource Policy Contributor 역할을 특정 범위에 할당하면 정책 관리를 관련 팀에 위임할 수 있습니다. 예를 들어 중앙 IT 팀은 관리 그룹 수준 정책을 감독할 수 있고, 응용 프로그램 팀은 구독에 대한 정책을 처리하여 조직 표준을 준수하는 분산 거버넌스를 가능하게 할 수 있습니다.",
             "guid": "3f988795-25d6-4268-a6d7-0ba6c97be995",
             "link": "https://learn.microsoft.com/azure/governance/policy/overview#azure-rbac-permissions-in-azure-policy",
             "service": "Policy",
             "severity": "보통",
             "text": "특정 범위에서 기본 제공 Resource Policy Contributor 역할을 할당하여 응용 프로그램 수준 거버넌스를 사용하도록 설정합니다.",
+            "training": "https://learn.microsoft.com/training/modules/configure-azure-policy/",
             "waf": "안전"
         },
         {
@@ -9510,6 +9584,7 @@
             "service": "Policy",
             "severity": "보통",
             "text": "상속된 범위에서 제외를 통해 관리하지 않도록 루트 관리 그룹 범위에서 수행된 Azure Policy 할당 수를 제한합니다.",
+            "training": "https://learn.microsoft.com/training/modules/configure-azure-policy/",
             "waf": "안전"
         },
         {
@@ -9550,7 +9625,7 @@
             "link": "https://learn.microsoft.com/industry/sovereignty/policy-portfolio-baseline#sovereignty-baseline-policy-initiatives",
             "service": "Policy",
             "severity": "보통",
-            "text": "Sovereign Landing Zone의 경우 '정책 매핑에 대한 Sovereign Control 목표'를 관리하기 위한 프로세스가 마련되어 있는지 확인합니다.",
+            "text": "Sovereign Landing Zone의 경우 'Sovereign Control 목표를 정책 매핑에 적용'을 관리하기 위한 프로세스가 마련되어 있는지 확인합니다.",
             "waf": "안전"
         },
         {
@@ -9571,7 +9646,7 @@
             "link": "https://learn.microsoft.com/azure/azure-monitor/logs/data-retention-archive?tabs=portal-1%2Cportal-2#how-retention-and-archiving-work",
             "service": "Monitor",
             "severity": "높다",
-            "text": "로그 보존 요구 사항이 12년을 초과하는 경우 로그를 Azure Storage로 내보냅니다. Write-once, Read-Many 정책과 함께 변경할 수 없는 스토리지를 사용하여 사용자가 지정한 간격 동안 데이터를 지우거나 수정할 수 없도록 합니다.",
+            "text": "로그 보존 요구 사항이 12년을 초과하는 경우 로그를 Azure Storage로 내보냅니다. Write-Once, Read-Many 정책과 함께 변경할 수 없는 스토리지를 사용하여 사용자가 지정한 간격 동안 데이터를 지우거나 수정할 수 없도록 합니다.",
             "training": "https://learn.microsoft.com/learn/paths/architect-infrastructure-operations/",
             "waf": "작업"
         },
@@ -9593,7 +9668,7 @@
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/management-operational-compliance#update-management-considerations",
             "service": "VM",
             "severity": "보통",
-            "text": "Azure Update Manager를 Azure의 Windows 및 Linux VM에 대한 패치 메커니즘으로 사용합니다.",
+            "text": "Azure에서 Windows 및 Linux VM에 대한 패치 메커니즘으로 Azure 업데이트 관리자를 사용합니다.",
             "training": "https://learn.microsoft.com/azure/update-manager/overview?tabs=azure-vms",
             "waf": "작업"
         },
@@ -9604,7 +9679,7 @@
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/management-operational-compliance#update-management-considerations ",
             "service": "VM",
             "severity": "보통",
-            "text": "Azure Arc를 사용하여 Azure 외부의 Windows 및 Linux VM에 대한 패치 메커니즘으로 Azure Update Manager를 사용합니다.",
+            "text": "Azure Arc를 사용하여 Azure 외부의 Windows 및 Linux VM에 대한 패치 메커니즘으로 Azure 업데이트 관리자를 사용합니다.",
             "training": "https://learn.microsoft.com/azure/update-manager/overview?tabs=azure-vms",
             "waf": "작업"
         },
@@ -9676,7 +9751,7 @@
         {
             "arm-service": "Microsoft.Compute/virtualMachines",
             "checklist": "Azure Landing Zone Review",
-            "description": "Azure Policy의 게스트 구성 기능을 사용하여 컴퓨터 설정(예: OS, 애플리케이션, 환경)을 감사하고 수정하여 리소스가 예상 구성에 맞게 조정되도록 하고, 업데이트 관리는 VM에 대한 패치 관리를 적용할 수 있습니다.",
+            "description": "Azure Policy의 게스트 구성 기능을 사용하여 컴퓨터 설정(예: OS, 애플리케이션, 환경)을 감사하고 수정하여 리소스가 예상 구성에 맞는지 확인하고, 업데이트 관리는 VM에 대한 패치 관리를 적용할 수 있습니다.",
             "guid": "da6e55d7-d8a2-4adb-817d-6326af625ca4",
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/management-operational-compliance#monitoring-for-configuration-drift",
             "service": "VM",
@@ -9714,7 +9789,7 @@
             "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-best-practices#add-diagnostic-settings-to-save-your-wafs-logs",
             "service": "WAF",
             "severity": "높다",
-            "text": "Azure Front Door 및 Azure Application Gateway와 같은 애플리케이션 배달 서비스에서 WAF 로그를 저장하는 진단 설정을 추가합니다. 로그를 정기적으로 검토하여 공격 및 가양성 탐지를 확인합니다.",
+            "text": "진단 설정을 추가하여 Azure Front Door 및 Azure Application Gateway와 같은 애플리케이션 배달 서비스에서 WAF 로그를 저장합니다. 로그를 정기적으로 검토하여 공격 및 가양성 탐지를 확인합니다.",
             "training": "https://learn.microsoft.com/training/modules/capture-application-logs-app-service/",
             "waf": "작업"
         },
@@ -9836,7 +9911,7 @@
             "link": "https://learn.microsoft.com/azure/key-vault/general/best-practices",
             "service": "Key Vault",
             "severity": "보통",
-            "text": "애플리케이션별, 환경별, 지역별 Azure Key Vault를 사용합니다.",
+            "text": "애플리케이션당 환경, 지역별 Azure Key Vault를 사용합니다.",
             "training": "https://learn.microsoft.com/training/modules/implement-azure-key-vault/",
             "waf": "안전"
         },
@@ -9847,7 +9922,7 @@
             "link": "https://learn.microsoft.com/azure/key-vault/general/best-practices",
             "service": "Key Vault",
             "severity": "보통",
-            "text": "사용자 고유의 키를 가져오려는 경우 고려되는 모든 서비스에서 지원되지 않을 수 있습니다. 불일치가 원하는 결과를 방해하지 않도록 관련 완화를 구현합니다. 대기 시간을 최소화하는 적절한 지역 쌍과 재해 복구 지역을 선택합니다.",
+            "text": "사용자 고유의 키를 가져오려는 경우 고려되는 모든 서비스에서 지원되지 않을 수 있습니다. 불일치가 원하는 결과를 방해하지 않도록 관련 완화를 구현합니다. 대기 시간을 최소화하는 적절한 지역 쌍 및 재해 복구 지역을 선택합니다.",
             "training": "https://learn.microsoft.com/training/modules/configure-and-manage-azure-key-vault/",
             "waf": "안전"
         },
@@ -9888,7 +9963,7 @@
             "link": "https://learn.microsoft.com/azure/defender-for-cloud/plan-defender-for-servers-select-plan",
             "service": "Defender",
             "severity": "높다",
-            "text": "모든 구독에서 서버에 대해 Defender 클라우드 워크로드 보호 계획을 사용하도록 설정합니다.",
+            "text": "모든 구독의 서버에 대해 Defender 클라우드 워크로드 보호 계획을 사용하도록 설정합니다.",
             "training": "https://learn.microsoft.com/training/modules/understand-azure-defender-cloud-workload-protection/",
             "waf": "안전"
         },
