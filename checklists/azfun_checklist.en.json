@@ -22,7 +22,6 @@
             "id": "A01.02",
             "cost": 1,
             "severity": "High",
-            "query": "resources | where type =~ 'Microsoft.Web/sites' and kind has 'functionapp' and tolower(kind) !contains 'workflow' | extend aspResourceId = tostring(properties.serverFarmId), managedEnvId = tostring(properties.managedEnvironmentId), sku = tostring(properties.sku) | extend sku = iif(isnotempty(sku), sku, iif(isnotempty(managedEnvId), 'ContainerApps', '')) | where sku !in ('Dynamic', 'FlexConsumption', '') | extend aspName = tostring(split(aspResourceId, '/').[-1]), managedEnvName = tostring(split(managedEnvId, '/').[-1]) | extend HostingPlan = tostring(iif(isnotempty(aspName), aspName, managedEnvName)) | project functionAppName = name, functionAppId = id, HostingPlan, sku | join kind=inner ( resources | where type =~ 'Microsoft.Web/serverfarms' or type =~ 'Microsoft.App/managedEnvironments' | extend HostingPlan = tostring(name), zoneRedundant = tostring(properties.zoneRedundant) | project HostingPlan, resourceId = id, zoneRedundant ) on HostingPlan | project functionAppName, functionAppId, sku, HostingPlan, resourceId, zoneRedundant,Complaint = zoneRedundant",
             "link": "https://learn.microsoft.com/en-us/azure/azure-functions/functions-scale#overview-of-plans"
         },
         {
@@ -59,7 +58,6 @@
             "id": "A01.05",
             "cost": 1,
             "severity": "High",
-            "query": "resources | where type =~ 'Microsoft.Web/sites' and kind has 'functionapp' | where tolower(kind) !contains 'workflow' | where isnotempty(properties.serverFarmId) | extend sku = tostring(properties.sku) | where isnotempty(sku) | where sku !in ('Dynamic', 'FlexConsumption', 'ElasticPremium') | extend alwaysOn = properties.siteConfig.alwaysOn | project functionAppName = name, functionAppId = id, serverFarmId = tostring(properties.serverFarmId), sku, alwaysOn, Compliant = alwaysOn",
             "link": "https://learn.microsoft.com/en-us/azure/azure-functions/dedicated-plan#always-on"
         },
         {
