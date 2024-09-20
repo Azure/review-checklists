@@ -1726,6 +1726,7 @@
             "guid": "872e52e3-611c-4c58-a5a4-b1511e43a58a",
             "id": "D09.04",
             "severity": "Medium",
+            "graph": "resources | where type == 'microsoft.network/virtualnetworks' | mv-expand subnet = properties.subnets | where subnet.name !in~ ('GatewaySubnet', 'AzureFirewallSubnet', 'AzureFirewallManagementSubnet', 'RouteServerSubnet') | extend compliant = iff(isnotnull(subnet.properties.networkSecurityGroup.id), true, false) | project id, subnetName = subnet.name, vnetName = name, NSG = subnet.properties.networkSecurityGroup.id, compliant",
             "training": "https://learn.microsoft.com/learn/paths/implement-network-security/",
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-landing-zone-network-segmentation"
         },
@@ -1750,6 +1751,7 @@
             "guid": "dfe237de-143b-416c-91d7-aa9b64704489",
             "id": "D09.06",
             "severity": "Medium",
+            "graph": "resources | where type =~ 'Microsoft.Network/virtualnetworks' | project subscriptionId, lowerCaseVNetId = tolower(id) | join kind = leftouter (    resources    | where type =~ 'microsoft.network/networkwatchers/flowlogs' and properties.enabled == true and properties.provisioningState =~ 'succeeded'    | where properties.targetResourceId contains '/Microsoft.Network/virtualNetworks/'    | project flowlogId = id, trafficAnalyticsEnabled = properties.flowAnalyticsConfiguration.networkWatcherFlowAnalyticsConfiguration.enabled, lowerCaseTargetVNetId = tolower(properties.targetResourceId)    )    on $left.lowerCaseVNetId == $right.lowerCaseTargetVNetId | extend compliant = iff(isnotempty(lowerCaseTargetVNetId), true, false) | project id = lowerCaseVNetId, flowlogId, trafficAnalyticsEnabled, compliant",
             "training": "https://learn.microsoft.com/learn/modules/design-implement-network-monitoring/",
             "link": "https://learn.microsoft.com/azure/network-watcher/vnet-flow-logs-overview"
         },
