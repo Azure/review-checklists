@@ -5311,6 +5311,17 @@
             "waf": "安全"
         },
         {
+            "arm-service": "Microsoft.Network/virtualNetworks",
+            "checklist": "Azure Landing Zone Review",
+            "guid": "7bc1c396-2461-4698-b57f-30ca69525252",
+            "link": "https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/considerations/regions",
+            "service": "VNet",
+            "severity": "中等",
+            "text": "在多個區域中部署 Azure 登陸區域連接資源，以便可以快速支援多區域應用程式登陸區域和災難恢復方案。",
+            "training": "https://learn.microsoft.com/training/modules/hub-and-spoke-network-architecture/",
+            "waf": "可靠性"
+        },
+        {
             "checklist": "Azure Landing Zone Review",
             "guid": "70c15989-c726-42c7-b0d3-24b7375b9201",
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/multi-tenant/considerations-recommendations",
@@ -5365,7 +5376,7 @@
             "guid": "12e7f983-f630-4472-8dd6-9c5b5c2622f5",
             "link": "https://learn.microsoft.com/azure/active-directory/roles/security-planning#identify-microsoft-accounts-in-administrative-roles-that-need-to-be-switched-to-work-or-school-accounts",
             "service": "Entra",
-            "severity": "高",
+            "severity": "中等",
             "text": "僅對所有帳戶類型使用身份驗證類型 Work or school account。避免使用 Microsoft 帳戶",
             "training": "https://learn.microsoft.com/learn/modules/explore-basic-services-identity-types/",
             "waf": "安全"
@@ -5740,6 +5751,17 @@
             "waf": "操作"
         },
         {
+            "arm-service": "Microsoft.Network/dnsZones",
+            "checklist": "Azure Landing Zone Review",
+            "guid": "18c80eb0-582a-4198-bf5c-d8800b2d263b",
+            "link": "https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/private-link-and-dns-integration-at-scale#private-link-and-dns-integration-in-hub-and-spoke-network-architectures",
+            "service": "DNS",
+            "severity": "中等",
+            "text": "實施一個計劃，用於管理多個 Azure 區域之間的 DNS 解析以及服務故障轉移到另一個區域時",
+            "training": "https://learn.microsoft.com/learn/paths/az-104-manage-virtual-networks/",
+            "waf": "可靠性"
+        },
+        {
             "arm-service": "microsoft.network/bastionHosts",
             "checklist": "Azure Landing Zone Review",
             "guid": "ee1ac551-c4d5-46cf-b035-d0a3c50d87ad",
@@ -5768,7 +5790,7 @@
             "guid": "1d7aa9b6-4704-4489-a804-2d88e79d17b7",
             "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/afds-overview",
             "service": "WAF",
-            "severity": null,
+            "severity": "中等",
             "text": "使用 Azure Front Door 和 WAF 策略跨 Azure 區域為到登陸區域的入站 HTTP/S 連接提供全域保護。",
             "training": "https://learn.microsoft.com/learn/paths/secure-application-delivery/",
             "waf": "安全"
@@ -5835,7 +5857,7 @@
             "link": "https://github.com/Azure/Enterprise-Scale/wiki/ALZ-Policies#corp",
             "service": "Policy",
             "severity": "高",
-            "text": null,
+            "text": "確保有一個策略分配來拒絕直接連接到虛擬機的公有IP位址。 如果特定 VM 上需要公共 IP，請使用排除項。",
             "training": "https://learn.microsoft.com/training/modules/configure-azure-policy/",
             "waf": "安全"
         },
@@ -5858,7 +5880,7 @@
             "link": "https://learn.microsoft.com/azure/expressroute/expressroute-routing",
             "service": "ExpressRoute",
             "severity": "中等",
-            "text": null,
+            "text": "使用多個 ExpressRoute 線路或多個本地位置時，請使用 BGP 屬性來優化路由。",
             "training": "https://learn.microsoft.com/learn/modules/design-implement-azure-expressroute/",
             "waf": "可靠性"
         },
@@ -6310,6 +6332,7 @@
         {
             "arm-service": "Microsoft.Network/azureFirewalls",
             "checklist": "Azure Landing Zone Review",
+            "graph": "resources | where type =~ 'Microsoft.Network/firewallPolicies' | where array_length(properties.firewalls) > 0 | extend compliant = (properties.dnsSettings.enableProxy =~ 'true') | distinct id, compliant",
             "guid": "94f3eede-9aa3-4088-92a3-bb9a56509fad",
             "link": "https://learn.microsoft.com/azure/firewall/dns-details",
             "service": "Firewall",
@@ -6433,6 +6456,7 @@
         {
             "arm-service": "Microsoft.Network/networkSecurityGroups",
             "checklist": "Azure Landing Zone Review",
+            "graph": "resources | where type == 'microsoft.network/virtualnetworks' | mv-expand subnet = properties.subnets | where subnet.name !in~ ('GatewaySubnet', 'AzureFirewallSubnet', 'AzureFirewallManagementSubnet', 'RouteServerSubnet') | extend compliant = iff(isnotnull(subnet.properties.networkSecurityGroup.id), true, false) | project id, subnetName = subnet.name, vnetName = name, NSG = subnet.properties.networkSecurityGroup.id, compliant",
             "guid": "872e52e3-611c-4c58-a5a4-b1511e43a58a",
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-landing-zone-network-segmentation",
             "service": "NSG",
@@ -6455,6 +6479,7 @@
         {
             "arm-service": "Microsoft.Network/networkSecurityGroups",
             "checklist": "Azure Landing Zone Review",
+            "graph": "resources | where type =~ 'Microsoft.Network/virtualnetworks' | project subscriptionId, lowerCaseVNetId = tolower(id) | join kind = leftouter (    resources    | where type =~ 'microsoft.network/networkwatchers/flowlogs' and properties.enabled == true and properties.provisioningState =~ 'succeeded'    | where properties.targetResourceId contains '/Microsoft.Network/virtualNetworks/'    | project flowlogId = id, trafficAnalyticsEnabled = properties.flowAnalyticsConfiguration.networkWatcherFlowAnalyticsConfiguration.enabled, lowerCaseTargetVNetId = tolower(properties.targetResourceId)    )    on $left.lowerCaseVNetId == $right.lowerCaseTargetVNetId | extend compliant = iff(isnotempty(lowerCaseTargetVNetId), true, false) | project id = lowerCaseVNetId, flowlogId, trafficAnalyticsEnabled, compliant",
             "guid": "dfe237de-143b-416c-91d7-aa9b64704489",
             "link": "https://learn.microsoft.com/azure/network-watcher/vnet-flow-logs-overview",
             "service": "NSG",
@@ -6569,6 +6594,7 @@
         {
             "arm-service": "microsoft.network/virtualWans",
             "checklist": "Azure Landing Zone Review",
+            "graph": "resources | where type =~ 'microsoft.network/virtualhubs' | extend addressSpace = properties.addressPrefix | extend compliant= (toint(substring(addressSpace, indexof(addressSpace, '/') + 1)) < 23) | distinct name, id, compliant",
             "guid": "9c75dfef-573c-461c-a698-68598595581a",
             "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-faq#what-is-the-recommended-hub-address-space-during-hub-creation",
             "service": "VWAN",
@@ -6711,12 +6737,23 @@
             "arm-service": "Microsoft.Insights/components",
             "checklist": "Azure Landing Zone Review",
             "guid": "67e7a8ed-4b30-4e38-a3f2-9812b2363cef",
-            "link": "https://learn.microsoft.com/azure/azure-monitor/logs/design-logs-deployment",
+            "link": "https://learn.microsoft.com/en-us/azure/azure-monitor/logs/workspace-design#azure-regions",
             "service": "Monitor",
             "severity": "中等",
             "text": "使用單個監視器日誌工作區集中管理平臺，除非 Azure 基於角色的訪問控制 （Azure RBAC）、數據主權要求或數據保留策略要求單獨的工作區。",
             "training": "https://learn.microsoft.com/azure/azure-monitor/logs/design-logs-deployment",
             "waf": "操作"
+        },
+        {
+            "arm-service": "Microsoft.Insights/components",
+            "checklist": "Azure Landing Zone Review",
+            "guid": "7418ada9-4199-4c28-8286-d15e9433e8f3",
+            "link": "https://learn.microsoft.com/azure/azure-monitor/logs/design-logs-deployment",
+            "service": "Monitor",
+            "severity": "中等",
+            "text": "決定是對所有區域使用單個 Azure Monitor 日誌工作區，還是創建多個工作區以涵蓋不同的地理區域。每種方法都有優點和缺點，包括潛在的跨區域網路費用",
+            "training": "https://learn.microsoft.com/azure/azure-monitor/logs/design-logs-deployment",
+            "waf": "可靠性"
         },
         {
             "arm-service": "Microsoft.Insights/components",

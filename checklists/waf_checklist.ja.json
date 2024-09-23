@@ -2293,6 +2293,17 @@
             "waf": "オペレーションズ"
         },
         {
+            "arm-service": "Microsoft.Network/virtualNetworks",
+            "checklist": "Azure Landing Zone Review",
+            "guid": "7bc1c396-2461-4698-b57f-30ca69525252",
+            "link": "https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/considerations/regions",
+            "service": "VNet",
+            "severity": "中程度",
+            "text": "Azure ランディング ゾーン接続リソースを複数のリージョンにデプロイして、複数リージョンのアプリケーション ランディング ゾーンとディザスター リカバリー シナリオを迅速にサポートできるようにします。",
+            "training": "https://learn.microsoft.com/training/modules/hub-and-spoke-network-architecture/",
+            "waf": "確実"
+        },
+        {
             "checklist": "Azure Landing Zone Review",
             "guid": "70c15989-c726-42c7-b0d3-24b7375b9201",
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/multi-tenant/considerations-recommendations",
@@ -2347,7 +2358,7 @@
             "guid": "12e7f983-f630-4472-8dd6-9c5b5c2622f5",
             "link": "https://learn.microsoft.com/azure/active-directory/roles/security-planning#identify-microsoft-accounts-in-administrative-roles-that-need-to-be-switched-to-work-or-school-accounts",
             "service": "Entra",
-            "severity": "高い",
+            "severity": "中程度",
             "text": "すべてのアカウントの種類に対して、認証の種類である [職場または学校アカウント] のみを使用します。Microsoftアカウントの使用は避けてください",
             "training": "https://learn.microsoft.com/learn/modules/explore-basic-services-identity-types/",
             "waf": "安全"
@@ -2720,6 +2731,17 @@
             "text": "Azure DNS の自動登録を有効にすると、仮想ネットワーク内にデプロイされた仮想マシンの DNS レコードのライフサイクルが自動的に管理されます。",
             "training": "https://learn.microsoft.com/learn/paths/az-104-manage-virtual-networks/",
             "waf": "オペレーションズ"
+        },
+        {
+            "arm-service": "Microsoft.Network/dnsZones",
+            "checklist": "Azure Landing Zone Review",
+            "guid": "18c80eb0-582a-4198-bf5c-d8800b2d263b",
+            "link": "https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/private-link-and-dns-integration-at-scale#private-link-and-dns-integration-in-hub-and-spoke-network-architectures",
+            "service": "DNS",
+            "severity": "中程度",
+            "text": "複数の Azure リージョン間の DNS 解決を管理し、サービスが別のリージョンにフェールオーバーするときの計画を実装します",
+            "training": "https://learn.microsoft.com/learn/paths/az-104-manage-virtual-networks/",
+            "waf": "確実"
         },
         {
             "arm-service": "microsoft.network/bastionHosts",
@@ -3292,6 +3314,7 @@
         {
             "arm-service": "Microsoft.Network/azureFirewalls",
             "checklist": "Azure Landing Zone Review",
+            "graph": "resources | where type =~ 'Microsoft.Network/firewallPolicies' | where array_length(properties.firewalls) > 0 | extend compliant = (properties.dnsSettings.enableProxy =~ 'true') | distinct id, compliant",
             "guid": "94f3eede-9aa3-4088-92a3-bb9a56509fad",
             "link": "https://learn.microsoft.com/azure/firewall/dns-details",
             "service": "Firewall",
@@ -3415,6 +3438,7 @@
         {
             "arm-service": "Microsoft.Network/networkSecurityGroups",
             "checklist": "Azure Landing Zone Review",
+            "graph": "resources | where type == 'microsoft.network/virtualnetworks' | mv-expand subnet = properties.subnets | where subnet.name !in~ ('GatewaySubnet', 'AzureFirewallSubnet', 'AzureFirewallManagementSubnet', 'RouteServerSubnet') | extend compliant = iff(isnotnull(subnet.properties.networkSecurityGroup.id), true, false) | project id, subnetName = subnet.name, vnetName = name, NSG = subnet.properties.networkSecurityGroup.id, compliant",
             "guid": "872e52e3-611c-4c58-a5a4-b1511e43a58a",
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-landing-zone-network-segmentation",
             "service": "NSG",
@@ -3437,6 +3461,7 @@
         {
             "arm-service": "Microsoft.Network/networkSecurityGroups",
             "checklist": "Azure Landing Zone Review",
+            "graph": "resources | where type =~ 'Microsoft.Network/virtualnetworks' | project subscriptionId, lowerCaseVNetId = tolower(id) | join kind = leftouter (    resources    | where type =~ 'microsoft.network/networkwatchers/flowlogs' and properties.enabled == true and properties.provisioningState =~ 'succeeded'    | where properties.targetResourceId contains '/Microsoft.Network/virtualNetworks/'    | project flowlogId = id, trafficAnalyticsEnabled = properties.flowAnalyticsConfiguration.networkWatcherFlowAnalyticsConfiguration.enabled, lowerCaseTargetVNetId = tolower(properties.targetResourceId)    )    on $left.lowerCaseVNetId == $right.lowerCaseTargetVNetId | extend compliant = iff(isnotempty(lowerCaseTargetVNetId), true, false) | project id = lowerCaseVNetId, flowlogId, trafficAnalyticsEnabled, compliant",
             "guid": "dfe237de-143b-416c-91d7-aa9b64704489",
             "link": "https://learn.microsoft.com/azure/network-watcher/vnet-flow-logs-overview",
             "service": "NSG",
@@ -3551,6 +3576,7 @@
         {
             "arm-service": "microsoft.network/virtualWans",
             "checklist": "Azure Landing Zone Review",
+            "graph": "resources | where type =~ 'microsoft.network/virtualhubs' | extend addressSpace = properties.addressPrefix | extend compliant= (toint(substring(addressSpace, indexof(addressSpace, '/') + 1)) < 23) | distinct name, id, compliant",
             "guid": "9c75dfef-573c-461c-a698-68598595581a",
             "link": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-faq#what-is-the-recommended-hub-address-space-during-hub-creation",
             "service": "VWAN",
@@ -3693,12 +3719,23 @@
             "arm-service": "Microsoft.Insights/components",
             "checklist": "Azure Landing Zone Review",
             "guid": "67e7a8ed-4b30-4e38-a3f2-9812b2363cef",
-            "link": "https://learn.microsoft.com/azure/azure-monitor/logs/design-logs-deployment",
+            "link": "https://learn.microsoft.com/en-us/azure/azure-monitor/logs/workspace-design#azure-regions",
             "service": "Monitor",
             "severity": "中程度",
             "text": "Azure ロールベースのアクセス制御 (Azure RBAC)、データ主権要件、またはデータ保持ポリシーで個別のワークスペースが義務付けられている場合を除き、1 つのモニター ログ ワークスペースを使用してプラットフォームを一元的に管理します。",
             "training": "https://learn.microsoft.com/azure/azure-monitor/logs/design-logs-deployment",
             "waf": "オペレーションズ"
+        },
+        {
+            "arm-service": "Microsoft.Insights/components",
+            "checklist": "Azure Landing Zone Review",
+            "guid": "7418ada9-4199-4c28-8286-d15e9433e8f3",
+            "link": "https://learn.microsoft.com/azure/azure-monitor/logs/design-logs-deployment",
+            "service": "Monitor",
+            "severity": "中程度",
+            "text": "すべてのリージョンで 1 つの Azure Monitor ログ ワークスペースを使用するか、さまざまな地理的リージョンをカバーする複数のワークスペースを作成するかを決定します。各アプローチには、リージョン間のネットワーク料金の可能性など、長所と短所があります",
+            "training": "https://learn.microsoft.com/azure/azure-monitor/logs/design-logs-deployment",
+            "waf": "確実"
         },
         {
             "arm-service": "Microsoft.Insights/components",
