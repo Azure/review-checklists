@@ -505,6 +505,7 @@
             "ammp": true,
             "arm-service": "microsoft.network/applicationGateways",
             "checklist": "Azure Application Delivery Networking",
+            "graph": "resources | where type =~ 'microsoft.network/applicationgatewaywebapplicationfirewallpolicies' | extend compliant = (properties['policySettings']['requestBodyCheck'] == 'true' and properties['policySettings']['state'] =~ 'Enabled') | distinct id, name, compliant",
             "guid": "8ea8e0d4-84e8-4b33-aeab-493f6391b4d6",
             "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/application-gateway-waf-request-size-limits#request-body-inspection",
             "service": "AppGW",
@@ -3777,12 +3778,13 @@
         {
             "arm-service": "Microsoft.ServiceBus/namespaces",
             "checklist": "Service Bus Review Checklist",
-            "description": "A Service Bus client app running inside an Azure App Service application or in a virtual machine with enabled managed entities for Azure resources support does not need to handle SAS rules and keys, or any other access tokens. The client app only needs the endpoint address of the Service Bus Messaging namespace. ",
+            "description": "Microsoft Entra ID provides superior security and ease of use over shared access signatures (SAS). With Microsoft Entra ID, there’s no need to store the tokens in your code and risk potential security vulnerabilities. We recommend that you use Microsoft Entra ID with your Azure Service Bus applications when possible.",
+            "graph": "Resources | where type =~ 'microsoft.servicebus/namespaces' | extend compliant = iif(properties.disableLocalAuth == 'false', 'No', 'Yes') | project id, compliant",
             "guid": "786d60f9-6c96-4ad8-a55d-04c2b39c986b",
-            "link": "https://learn.microsoft.com/azure/service-bus-messaging/service-bus-managed-service-identity",
+            "link": "https://learn.microsoft.com/en-us/azure/service-bus-messaging/disable-local-authentication",
             "service": "Service Bus",
             "severity": "Medium",
-            "text": "When possible, your application should be using a managed identity to authenticate to Azure Service Bus. If not, consider having the storage credential (SAS, service principal credential) in Azure Key Vault or an equivalent service",
+            "text": "When possible, disable SAS key authentication (or local authentication) and use only Microsoft Entra ID for authentication",
             "training": "https://learn.microsoft.com/learn/modules/azure-ad-privileged-identity-management/",
             "waf": "Reliability"
         },
@@ -10620,6 +10622,7 @@
         {
             "arm-service": "microsoft.network/frontdoors",
             "checklist": "Azure Application Delivery Networking",
+            "graph": "cdnresources | where type =~ 'microsoft.Cdn/profiles/secrets' | extend frontDoorId = substring(id, 0, indexof(id, '/secrets')) | where properties.parameters.type =~ 'CustomerCertificate' | extend compliant = properties.parameters.useLatestVersion == true | project compliant, id=frontDoorId, certificateName = name | distinct id, certificateName, compliant",
             "guid": "f00a69de-7076-4734-a734-6e4552cad9e1",
             "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-latest-version-for-customer-managed-certificates",
             "service": "Front Door",
@@ -10630,6 +10633,7 @@
         {
             "arm-service": "microsoft.network/frontdoors",
             "checklist": "Azure Application Delivery Networking",
+            "graph": "resources | where type =~ 'microsoft.cdn/profiles' and sku has 'AzureFrontDoor' | project name, cdnprofileid=tolower(id), tostring(tags), resourceGroup, subscriptionId,skuname=tostring(sku.name) | join kind= fullouter ( cdnresources | where type == 'microsoft.cdn/profiles/securitypolicies' | extend wafpolicyid=tostring(properties['parameters']['wafPolicy']['id']) | extend splitid=split(id, '/') | extend cdnprofileid=tolower(strcat_array(array_slice(splitid, 0, 8), '/')) | project secpolname=name, cdnprofileid, wafpolicyid ) on cdnprofileid | project name, cdnprofileid, secpolname, wafpolicyid,skuname | join kind = fullouter ( resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | extend managedrulesenabled=iff(tostring(properties.managedRules.managedRuleSets) != '[]', true, false), enabledState = tostring(properties.policySettings.enabledState) | project afdwafname=name, managedrulesenabled, wafpolicyid=id, enabledState, tostring(tags) ) on wafpolicyid | where name != '' | summarize associatedsecuritypolicies=countif(secpolname != ''), wafswithmanagedrules=countif(managedrulesenabled == 1) by name, id=cdnprofileid, tags,skuname | extend compliant = (associatedsecuritypolicies > 0 and wafswithmanagedrules > 0) | project id, compliant",
             "guid": "e79d17b7-3b22-4a5a-97e7-a8ed4b30e38c",
             "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/ag-overview",
             "service": "Front Door",
@@ -10674,6 +10678,7 @@
         {
             "arm-service": "microsoft.network/frontdoors",
             "checklist": "Azure Application Delivery Networking",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origins')) | extend compliant = isempty(properties.originHostHeader) or (tostring(properties.hostName) =~ tostring(properties.originHostHeader)) | project id=frontDoorId, originName = name, compliant",
             "guid": "5efeb96a-003f-4b18-8fcd-b4d84459c2b2",
             "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-the-same-domain-name-on-front-door-and-your-origin",
             "service": "Front Door",
