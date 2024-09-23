@@ -68,7 +68,7 @@
                         "version": "KqlParameterItem/1.0",
                         "name": "Query0Stats",
                         "type": 1,
-                        "query": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "query": "cdnresources | where type =~ 'microsoft.Cdn/profiles/secrets' | extend frontDoorId = substring(id, 0, indexof(id, '/secrets')) | where properties.parameters.type =~ 'CustomerCertificate' | extend compliant = properties.parameters.useLatestVersion == true | project compliant, id=frontDoorId, certificateName = name | distinct id, certificateName, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
                         "crossComponentResources": [
                             "{Subscription}"
                         ],
@@ -96,7 +96,7 @@
                         "version": "KqlParameterItem/1.0",
                         "name": "Query1Stats",
                         "type": 1,
-                        "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend compliant = properties['hostName'] !endswith '.trafficmanager.net' | project compliant, id=frontDoorId| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "query": "resources | where type =~ 'microsoft.cdn/profiles' and sku has 'AzureFrontDoor' | project name, cdnprofileid=tolower(id), tostring(tags), resourceGroup, subscriptionId,skuname=tostring(sku.name) | join kind= fullouter ( cdnresources | where type == 'microsoft.cdn/profiles/securitypolicies' | extend wafpolicyid=tostring(properties['parameters']['wafPolicy']['id']) | extend splitid=split(id, '/') | extend cdnprofileid=tolower(strcat_array(array_slice(splitid, 0, 8), '/')) | project secpolname=name, cdnprofileid, wafpolicyid ) on cdnprofileid | project name, cdnprofileid, secpolname, wafpolicyid,skuname | join kind = fullouter ( resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | extend managedrulesenabled=iff(tostring(properties.managedRules.managedRuleSets) != '[]', true, false), enabledState = tostring(properties.policySettings.enabledState) | project afdwafname=name, managedrulesenabled, wafpolicyid=id, enabledState, tostring(tags) ) on wafpolicyid | where name != '' | summarize associatedsecuritypolicies=countif(secpolname != ''), wafswithmanagedrules=countif(managedrulesenabled == 1) by name, id=cdnprofileid, tags,skuname | extend compliant = (associatedsecuritypolicies > 0 and wafswithmanagedrules > 0) | project id, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
                         "crossComponentResources": [
                             "{Subscription}"
                         ],
@@ -124,7 +124,7 @@
                         "version": "KqlParameterItem/1.0",
                         "name": "Query2Stats",
                         "type": 1,
-                        "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend originGroupId = substring(id, 0, indexof(id, '/origins')) | join kind=inner (cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend originGroupName = name | extend hasHealthProbe = isnotnull(properties.healthProbeSettings)) on $left.originGroupId == $right.id | summarize numberOrigins = count() by originGroupId, subscriptionId, frontDoorId, hasHealthProbe, originGroupName | extend compliant = not(numberOrigins == 1 and hasHealthProbe) | project id = frontDoorId, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "query": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
                         "crossComponentResources": [
                             "{Subscription}"
                         ],
@@ -152,7 +152,7 @@
                         "version": "KqlParameterItem/1.0",
                         "name": "Query3Stats",
                         "type": 1,
-                        "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups/')) | extend compliant = (isnull(properties['healthProbeSettings']['probeRequestType']) or toupper(properties['healthProbeSettings']['probeRequestType']) == 'HEAD') | project compliant, id=frontDoorId| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend compliant = properties['hostName'] !endswith '.trafficmanager.net' | project compliant, id=frontDoorId| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
                         "crossComponentResources": [
                             "{Subscription}"
                         ],
@@ -180,7 +180,7 @@
                         "version": "KqlParameterItem/1.0",
                         "name": "Query4Stats",
                         "type": 1,
-                        "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/customdomains' | extend frontDoorId = substring(id, 0, indexof(id, '/customdomains')) | extend compliant = (isnull(properties['tlsSettings']['certificateType']) or tolower(properties['tlsSettings']['certificateType']) =~ 'customercertificate') | project compliant, id = frontDoorId| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origins')) | extend compliant = isempty(properties.originHostHeader) or (tostring(properties.hostName) =~ tostring(properties.originHostHeader)) | project id=frontDoorId, originName = name, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
                         "crossComponentResources": [
                             "{Subscription}"
                         ],
@@ -208,7 +208,7 @@
                         "version": "KqlParameterItem/1.0",
                         "name": "Query5Stats",
                         "type": 1,
-                        "query": "cdnresources | where type == 'microsoft.cdn/profiles/afdendpoints/routes' | extend frontDoorId = substring(id, 0, indexof(id, '/afdendpoints')) | extend forwardingProtocol=tostring(properties.forwardingProtocol),supportedProtocols=properties.supportedProtocols,httpsRedirect=properties.httpsRedirect | extend compliant = forwardingProtocol =~ 'httpsonly' and (supportedProtocols has 'https' or httpsRedirect =~ 'enabled') | project id = frontDoorId, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend originGroupId = substring(id, 0, indexof(id, '/origins')) | join kind=inner (cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend originGroupName = name | extend hasHealthProbe = isnotnull(properties.healthProbeSettings)) on $left.originGroupId == $right.id | summarize numberOrigins = count() by originGroupId, subscriptionId, frontDoorId, hasHealthProbe, originGroupName | extend compliant = not(numberOrigins == 1 and hasHealthProbe) | project id = frontDoorId, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
                         "crossComponentResources": [
                             "{Subscription}"
                         ],
@@ -236,7 +236,7 @@
                         "version": "KqlParameterItem/1.0",
                         "name": "Query6Stats",
                         "type": 1,
-                        "query": "cdnresources | where type == 'microsoft.cdn/profiles/afdendpoints/routes' | extend frontDoorId = substring(id, 0, indexof(id, '/afdendpoints')) | extend forwardingProtocol=tostring(properties.forwardingProtocol),supportedProtocols=properties.supportedProtocols,httpsRedirect=properties.httpsRedirect | extend compliant = httpsRedirect =~ 'enabled' | project id = frontDoorId, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups/')) | extend compliant = (isnull(properties['healthProbeSettings']['probeRequestType']) or toupper(properties['healthProbeSettings']['probeRequestType']) == 'HEAD') | project compliant, id=frontDoorId| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
                         "crossComponentResources": [
                             "{Subscription}"
                         ],
@@ -264,7 +264,7 @@
                         "version": "KqlParameterItem/1.0",
                         "name": "Query7Stats",
                         "type": 1,
-                        "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend healthprobe=tostring(properties.healthProbeSettings) | project origingroupname=name, id, tags, resourceGroup, subscriptionId, healthprobe, frontDoorId | join ( cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/Origins' | extend origingroupname = tostring(properties.originGroupName) ) on origingroupname | summarize origincount=count(), enabledhealthprobecount=countif(healthprobe != '') by origingroupname, id, tostring(tags), resourceGroup, subscriptionId, frontDoorId | extend compliant = origincount > 1 | project id = frontDoorId, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/customdomains' | extend frontDoorId = substring(id, 0, indexof(id, '/customdomains')) | extend compliant = (isnull(properties['tlsSettings']['certificateType']) or tolower(properties['tlsSettings']['certificateType']) =~ 'customercertificate') | project compliant, id = frontDoorId| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
                         "crossComponentResources": [
                             "{Subscription}"
                         ],
@@ -292,7 +292,7 @@
                         "version": "KqlParameterItem/1.0",
                         "name": "Query8Stats",
                         "type": 1,
-                        "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend healthprobe=tostring(properties.healthProbeSettings) | project origingroupname=name, id, tags, resourceGroup, subscriptionId, healthprobe, frontDoorId | join ( cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/Origins' | extend origingroupname = tostring(properties.originGroupName) ) on origingroupname | summarize origincount=count(), enabledhealthprobecount=countif(healthprobe != '') by origingroupname, id, tostring(tags), resourceGroup, subscriptionId, frontDoorId | extend compliant = origincount > 1 or (origincount == 1 and enabledhealthprobecount == 0) | project id = frontDoorId, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "query": "cdnresources | where type == 'microsoft.cdn/profiles/afdendpoints/routes' | extend frontDoorId = substring(id, 0, indexof(id, '/afdendpoints')) | extend forwardingProtocol=tostring(properties.forwardingProtocol),supportedProtocols=properties.supportedProtocols,httpsRedirect=properties.httpsRedirect | extend compliant = forwardingProtocol =~ 'httpsonly' and (supportedProtocols has 'https' or httpsRedirect =~ 'enabled') | project id = frontDoorId, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
                         "crossComponentResources": [
                             "{Subscription}"
                         ],
@@ -320,7 +320,7 @@
                         "version": "KqlParameterItem/1.0",
                         "name": "Query9Stats",
                         "type": 1,
-                        "query": "resources | where type =~ 'microsoft.network/frontdoors' and properties['resourceState'] !~ 'migrated' | extend compliant = false | project id, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "query": "cdnresources | where type == 'microsoft.cdn/profiles/afdendpoints/routes' | extend frontDoorId = substring(id, 0, indexof(id, '/afdendpoints')) | extend forwardingProtocol=tostring(properties.forwardingProtocol),supportedProtocols=properties.supportedProtocols,httpsRedirect=properties.httpsRedirect | extend compliant = httpsRedirect =~ 'enabled' | project id = frontDoorId, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
                         "crossComponentResources": [
                             "{Subscription}"
                         ],
@@ -346,6 +346,90 @@
                     {
                         "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
                         "version": "KqlParameterItem/1.0",
+                        "name": "Query10Stats",
+                        "type": 1,
+                        "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend healthprobe=tostring(properties.healthProbeSettings) | project origingroupname=name, id, tags, resourceGroup, subscriptionId, healthprobe, frontDoorId | join ( cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/Origins' | extend origingroupname = tostring(properties.originGroupName) ) on origingroupname | summarize origincount=count(), enabledhealthprobecount=countif(healthprobe != '') by origingroupname, id, tostring(tags), resourceGroup, subscriptionId, frontDoorId | extend compliant = origincount > 1 | project id = frontDoorId, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "crossComponentResources": [
+                            "{Subscription}"
+                        ],
+                        "isHiddenWhenLocked": true,
+                        "timeContext": {
+                            "durationMs": 86400000
+                        },
+                        "queryType": 1,
+                        "resourceType": "microsoft.resourcegraph/resources"
+                    },
+                    {
+                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "Query10FullyCompliant",
+                        "type": 1,
+                        "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query10Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                        "isHiddenWhenLocked": true,
+                        "timeContext": {
+                            "durationMs": 86400000
+                        },
+                        "queryType": 8
+                    },
+                    {
+                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "Query11Stats",
+                        "type": 1,
+                        "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups' | extend frontDoorId = substring(id, 0, indexof(id, '/origingroups')) | extend healthprobe=tostring(properties.healthProbeSettings) | project origingroupname=name, id, tags, resourceGroup, subscriptionId, healthprobe, frontDoorId | join ( cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/Origins' | extend origingroupname = tostring(properties.originGroupName) ) on origingroupname | summarize origincount=count(), enabledhealthprobecount=countif(healthprobe != '') by origingroupname, id, tostring(tags), resourceGroup, subscriptionId, frontDoorId | extend compliant = origincount > 1 or (origincount == 1 and enabledhealthprobecount == 0) | project id = frontDoorId, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "crossComponentResources": [
+                            "{Subscription}"
+                        ],
+                        "isHiddenWhenLocked": true,
+                        "timeContext": {
+                            "durationMs": 86400000
+                        },
+                        "queryType": 1,
+                        "resourceType": "microsoft.resourcegraph/resources"
+                    },
+                    {
+                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "Query11FullyCompliant",
+                        "type": 1,
+                        "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query11Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                        "isHiddenWhenLocked": true,
+                        "timeContext": {
+                            "durationMs": 86400000
+                        },
+                        "queryType": 8
+                    },
+                    {
+                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "Query12Stats",
+                        "type": 1,
+                        "query": "resources | where type =~ 'microsoft.network/frontdoors' and properties['resourceState'] !~ 'migrated' | extend compliant = false | project id, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "crossComponentResources": [
+                            "{Subscription}"
+                        ],
+                        "isHiddenWhenLocked": true,
+                        "timeContext": {
+                            "durationMs": 86400000
+                        },
+                        "queryType": 1,
+                        "resourceType": "microsoft.resourcegraph/resources"
+                    },
+                    {
+                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "Query12FullyCompliant",
+                        "type": 1,
+                        "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query12Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                        "isHiddenWhenLocked": true,
+                        "timeContext": {
+                            "durationMs": 86400000
+                        },
+                        "queryType": 8
+                    },
+                    {
+                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                        "version": "KqlParameterItem/1.0",
                         "name": "Tab0Success",
                         "type": 1,
                         "isHiddenWhenLocked": true,
@@ -357,7 +441,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query0Stats:$.Success}+{Query1Stats:$.Success}+{Query2Stats:$.Success}+{Query3Stats:$.Success}+{Query4Stats:$.Success}+{Query5Stats:$.Success}+{Query6Stats:$.Success}+{Query7Stats:$.Success}+{Query8Stats:$.Success}+{Query9Stats:$.Success}"
+                                    "resultVal": "{Query0Stats:$.Success}+{Query1Stats:$.Success}+{Query2Stats:$.Success}+{Query3Stats:$.Success}+{Query4Stats:$.Success}+{Query5Stats:$.Success}+{Query6Stats:$.Success}+{Query7Stats:$.Success}+{Query8Stats:$.Success}+{Query9Stats:$.Success}+{Query10Stats:$.Success}+{Query11Stats:$.Success}+{Query12Stats:$.Success}"
                                 }
                             }
                         ]
@@ -376,7 +460,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query0Stats:$.Total}+{Query1Stats:$.Total}+{Query2Stats:$.Total}+{Query3Stats:$.Total}+{Query4Stats:$.Total}+{Query5Stats:$.Total}+{Query6Stats:$.Total}+{Query7Stats:$.Total}+{Query8Stats:$.Total}+{Query9Stats:$.Total}"
+                                    "resultVal": "{Query0Stats:$.Total}+{Query1Stats:$.Total}+{Query2Stats:$.Total}+{Query3Stats:$.Total}+{Query4Stats:$.Total}+{Query5Stats:$.Total}+{Query6Stats:$.Total}+{Query7Stats:$.Total}+{Query8Stats:$.Total}+{Query9Stats:$.Total}+{Query10Stats:$.Total}+{Query11Stats:$.Total}+{Query12Stats:$.Total}"
                                 }
                             }
                         ]
@@ -414,7 +498,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query0Stats:$.Total}+{Query1Stats:$.Total}+{Query2Stats:$.Total}+{Query3Stats:$.Total}+{Query4Stats:$.Total}+{Query5Stats:$.Total}+{Query6Stats:$.Total}+{Query7Stats:$.Total}+{Query8Stats:$.Total}+{Query9Stats:$.Total}"
+                                    "resultVal": "{Query0Stats:$.Total}+{Query1Stats:$.Total}+{Query2Stats:$.Total}+{Query3Stats:$.Total}+{Query4Stats:$.Total}+{Query5Stats:$.Total}+{Query6Stats:$.Total}+{Query7Stats:$.Total}+{Query8Stats:$.Total}+{Query9Stats:$.Total}+{Query10Stats:$.Total}+{Query11Stats:$.Total}+{Query12Stats:$.Total}"
                                 }
                             }
                         ]
@@ -433,7 +517,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query0Stats:$.Success}+{Query1Stats:$.Success}+{Query2Stats:$.Success}+{Query3Stats:$.Success}+{Query4Stats:$.Success}+{Query5Stats:$.Success}+{Query6Stats:$.Success}+{Query7Stats:$.Success}+{Query8Stats:$.Success}+{Query9Stats:$.Success}"
+                                    "resultVal": "{Query0Stats:$.Success}+{Query1Stats:$.Success}+{Query2Stats:$.Success}+{Query3Stats:$.Success}+{Query4Stats:$.Success}+{Query5Stats:$.Success}+{Query6Stats:$.Success}+{Query7Stats:$.Success}+{Query8Stats:$.Success}+{Query9Stats:$.Success}+{Query10Stats:$.Success}+{Query11Stats:$.Success}+{Query12Stats:$.Success}"
                                 }
                             }
                         ]
@@ -507,7 +591,7 @@
                 "style": "tabs",
                 "links": [
                     {
-                        "id": "e730fd0a-8a3b-4426-a6b7-e18c393d731e",
+                        "id": "e0666cdc-d6d5-4b75-8571-6bfdb11bab3a",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Network Topology and Connectivity ({Tab0Success:value}/{Tab0Total:value})",
@@ -535,9 +619,133 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Deploy your WAF policy for Front Door in 'Prevention' mode' so that Web Application Firewall takes appropriate action to allow or deny traffic. Check [this link](https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings) for further information."
+                            "json": "If you use customer-managed TLS certificates with Azure Front Door, use the 'Latest' certificate version. Reduce the risk of outages caused by manual certificate renewal. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-latest-version-for-customer-managed-certificates) for further information."
                         },
                         "name": "querytext0"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "cdnresources | where type =~ 'microsoft.Cdn/profiles/secrets' | extend frontDoorId = substring(id, 0, indexof(id, '/secrets')) | where properties.parameters.type =~ 'CustomerCertificate' | extend compliant = properties.parameters.useLatestVersion == true | project compliant, id=frontDoorId, certificateName = name | distinct id, certificateName, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query0"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Use Azure Front Door with WAF policies to deliver and help protect global HTTP/S apps that span multiple Azure regions. Check [this link](https://learn.microsoft.com/azure/web-application-firewall/ag/ag-overview) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/) can help to educate yourself on this."
+                        },
+                        "name": "querytext1"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type =~ 'microsoft.cdn/profiles' and sku has 'AzureFrontDoor' | project name, cdnprofileid=tolower(id), tostring(tags), resourceGroup, subscriptionId,skuname=tostring(sku.name) | join kind= fullouter ( cdnresources | where type == 'microsoft.cdn/profiles/securitypolicies' | extend wafpolicyid=tostring(properties['parameters']['wafPolicy']['id']) | extend splitid=split(id, '/') | extend cdnprofileid=tolower(strcat_array(array_slice(splitid, 0, 8), '/')) | project secpolname=name, cdnprofileid, wafpolicyid ) on cdnprofileid | project name, cdnprofileid, secpolname, wafpolicyid,skuname | join kind = fullouter ( resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | extend managedrulesenabled=iff(tostring(properties.managedRules.managedRuleSets) != '[]', true, false), enabledState = tostring(properties.policySettings.enabledState) | project afdwafname=name, managedrulesenabled, wafpolicyid=id, enabledState, tostring(tags) ) on wafpolicyid | where name != '' | summarize associatedsecuritypolicies=countif(secpolname != ''), wafswithmanagedrules=countif(managedrulesenabled == 1) by name, id=cdnprofileid, tags,skuname | extend compliant = (associatedsecuritypolicies > 0 and wafswithmanagedrules > 0) | project id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query1"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Deploy your WAF policy for Front Door in 'Prevention' mode' so that Web Application Firewall takes appropriate action to allow or deny traffic. Check [this link](https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings) for further information."
+                        },
+                        "name": "querytext2"
                     },
                     {
                         "type": 3,
@@ -592,14 +800,14 @@
                                 ]
                             }
                         },
-                        "name": "query0"
+                        "name": "query2"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Avoid placing Traffic Manager behind Front Door. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#avoid-combining-traffic-manager-and-front-door) for further information."
                         },
-                        "name": "querytext1"
+                        "name": "querytext3"
                     },
                     {
                         "type": 3,
@@ -654,14 +862,76 @@
                                 ]
                             }
                         },
-                        "name": "query1"
+                        "name": "query3"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Use the same domain name on Azure Front Door and your origin. Mismatched host names can cause subtle bugs. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-the-same-domain-name-on-front-door-and-your-origin) for further information."
+                        },
+                        "name": "querytext4"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origins')) | extend compliant = isempty(properties.originHostHeader) or (tostring(properties.hostName) =~ tostring(properties.originHostHeader)) | project id=frontDoorId, originName = name, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query4"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Disable health probes when there is only one origin in an Azure Front Door origin group. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group) for further information."
                         },
-                        "name": "querytext2"
+                        "name": "querytext5"
                     },
                     {
                         "type": 3,
@@ -716,14 +986,14 @@
                                 ]
                             }
                         },
-                        "name": "query2"
+                        "name": "query5"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Use HEAD health probes with Azure Front Door, to reduce the traffic that Front Door sends to your application. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-head-health-probes) for further information."
                         },
-                        "name": "querytext3"
+                        "name": "querytext6"
                     },
                     {
                         "type": 3,
@@ -778,14 +1048,14 @@
                                 ]
                             }
                         },
-                        "name": "query3"
+                        "name": "query6"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Use managed TLS certificates with Azure Front Door. Reduce operational cost and risk of outages due to certificate renewals. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-managed-tls-certificates) for further information."
                         },
-                        "name": "querytext4"
+                        "name": "querytext7"
                     },
                     {
                         "type": 3,
@@ -840,14 +1110,14 @@
                                 ]
                             }
                         },
-                        "name": "query4"
+                        "name": "query7"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Use end-to-end TLS with Azure Front Door. Use TLS for connections from your clients to Front Door, and from Front Door to your origin. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-end-to-end-tls) for further information."
                         },
-                        "name": "querytext5"
+                        "name": "querytext8"
                     },
                     {
                         "type": 3,
@@ -902,14 +1172,14 @@
                                 ]
                             }
                         },
-                        "name": "query5"
+                        "name": "query8"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Use HTTP to HTTPS redirection with Azure Front Door. Support older clients by redirecting them to an HTTPS request automatically. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-http-to-https-redirection) for further information."
                         },
-                        "name": "querytext6"
+                        "name": "querytext9"
                     },
                     {
                         "type": 3,
@@ -964,14 +1234,14 @@
                                 ]
                             }
                         },
-                        "name": "query6"
+                        "name": "query9"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Support redundancy by having multiple origins in one or more back-end pools. Always have redundant instances of your application and make sure each instance exposes an endpoint or origin. You can place those origins in one or more back-end pools. Check [this link](https://learn.microsoft.com/azure/frontdoor/quickstart-create-front-door) for further information."
                         },
-                        "name": "querytext7"
+                        "name": "querytext10"
                     },
                     {
                         "type": 3,
@@ -1026,14 +1296,14 @@
                                 ]
                             }
                         },
-                        "name": "query7"
+                        "name": "query10"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Disable health checks in single back-end pools. If you have only one origin configured in your Azure Front Door origin group, these calls are unnecessary. This is only recommended if you can't have multiple origins in your endpoint. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group) for further information."
                         },
-                        "name": "querytext8"
+                        "name": "querytext11"
                     },
                     {
                         "type": 3,
@@ -1088,14 +1358,14 @@
                                 ]
                             }
                         },
-                        "name": "query8"
+                        "name": "query11"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Consider migrating to Standard or Premium SKU if you are using Classic Azure Front Door currently as Classic Azure Front Door will be deprecated by March 2027. Check [this link](https://learn.microsoft.com/azure/cdn/tier-migration) for further information."
                         },
-                        "name": "querytext9"
+                        "name": "querytext12"
                     },
                     {
                         "type": 3,
@@ -1150,7 +1420,7 @@
                                 ]
                             }
                         },
-                        "name": "query9"
+                        "name": "query12"
                     }
                 ]
             },
