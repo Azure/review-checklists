@@ -196,6 +196,153 @@
             "waf": "Security"
         },
         {
+            "checklist": "Azure Service Fabric Review Checklist",
+            "graph": "resources | where type=~'Microsoft.ServiceFabric/managedClusters' | extend compliant = (sku=~'{\"name\":\"Standard\"}') | distinct id,compliant",
+            "guid": "182840d2-9ef8-4238-8fd6-0d76186830ac",
+            "link": "https://learn.microsoft.com/azure/service-fabric/overview-managed-cluster#service-fabric-managed-cluster-skus",
+            "service": "Azure Service Fabric",
+            "severity": "Medium",
+            "text": "Use Standard SKU for production scenarios.",
+            "waf": "Reliability"
+        },
+        {
+            "checklist": "Azure Service Fabric Review Checklist",
+            "graph": "resources | where type=~'Microsoft.ServiceFabric/clusters' | extend nodeTypes= array_concat(properties.nodeTypes) | mv-expand nodeTypes | summarize BronzeDurabilityCount = countif(nodeTypes.durabilityLevel == 'Bronze') by id | extend compliant = (BronzeDurabilityCount == 0) | distinct id,compliant",
+            "guid": "182840d2-9ef8-4238-8fd6-0d76186830ac",
+            "link": "https://learn.microsoft.com/azure/service-fabric/service-fabric-cluster-capacity#durability-characteristics-of-the-cluster",
+            "service": "Azure Service Fabric",
+            "severity": "Medium",
+            "text": "Use durability level Silver (5 VMs) or greater for production scenarios",
+            "waf": "Reliability"
+        },
+        {
+            "checklist": "Azure Service Fabric Review Checklist",
+            "graph": "resources | where type=~'Microsoft.ServiceFabric/managedClusters' | extend compliant= ( properties.zonalResiliency =~ 'true') | distinct id,compliant",
+            "guid": "2363878d-55c4-4cbd-9bc2-94523c85f12e",
+            "link": "https://learn.microsoft.com/azure/service-fabric/how-to-managed-cluster-availability-zones",
+            "service": "Azure Service Fabric",
+            "severity": "Medium",
+            "text": "Consider using Availability Zones for your Service Fabric clusters. Service Fabric managed cluster supports deployments that span across multiple Availability Zones to provide zone resiliency. This configuration will ensure high-availability of the critical system services and your applications to protect from single-points-of-failure.",
+            "waf": "Reliability"
+        },
+        {
+            "checklist": "Azure Service Fabric Review Checklist",
+            "guid": "5ba74cc8-3ca2-44d5-9a67-bdc8e102e7b4",
+            "link": "https://learn.microsoft.com/azure/service-fabric/service-fabric-api-management-overview",
+            "service": "Azure Service Fabric",
+            "severity": "Medium",
+            "text": "Consider using Azure API Management to expose and offload cross-cutting functionality for APIs hosted on the cluster. API Management can integrate with Service Fabric directly.",
+            "waf": "Reliability"
+        },
+        {
+            "checklist": "Azure Service Fabric Review Checklist",
+            "guid": "ef17bb8f-4e2c-488b-8ceb-a07c3d750dd3",
+            "link": "https://learn.microsoft.com/azure/service-fabric/service-fabric-reliable-services-introduction",
+            "service": "Azure Service Fabric",
+            "severity": "Medium",
+            "text": "For stateful workload scenarios, consider using Reliable Services. The Reliable Services model allows your services to stay up even in unreliable environments where your machines fail or hit network issues, or in cases where the services themselves encounter errors and crash or fail. For stateful services, your state is preserved even in the presence of network or other failures.",
+            "waf": "Reliability"
+        },
+        {
+            "checklist": "Azure Service Fabric Review Checklist",
+            "graph": "resources | where type=~'Microsoft.Compute/virtualMachineScaleSets' | extend vmssExtension= array_concat(properties.virtualMachineProfile.extensionProfile.extensions) | mv-expand vmssExtension | where vmssExtension.properties.publisher matches regex '^Microsoft.Azure.ServiceFabric.*' | summarize arg_max(id, *) | summarize compliant = countif(sku.name matches regex '^Standard_[^d]*$' ) by id",
+            "guid": "4da21268-f775-4c89-a271-eb80543c8df7",
+            "service": "Azure Service Fabric",
+            "severity": "Medium",
+            "text": "Avoid VM SKUs with temp disk offerings. Service Fabric uses managed disks by default, so avoiding temp disk offerings ensures you don't pay for unneeded resources.",
+            "waf": "Cost"
+        },
+        {
+            "checklist": "Azure Service Fabric Review Checklist",
+            "guid": "1890b796-f300-41a3-a8d4-29738c1f4ad0",
+            "link": "https://learn.microsoft.com/azure/service-fabric/how-to-managed-cluster-stateless-node-type#temporary-disk-support",
+            "service": "Azure Service Fabric",
+            "severity": "Medium",
+            "text": "If you need to select a certain VM SKU for capacity reasons and it happens to offer temp disk, consider using temporary disk support for your stateless workloads.",
+            "waf": "Cost"
+        },
+        {
+            "checklist": "Azure Service Fabric Review Checklist",
+            "guid": "5247bb32-6778-49c7-8b40-e171c9a3ce1e",
+            "service": "Azure Service Fabric",
+            "severity": "Medium",
+            "text": "Align SKU selection and managed disk size with workload requirements. Matching your selection to your workload demands ensures you don't pay for unneeded resources.",
+            "waf": "Cost"
+        },
+        {
+            "checklist": "Azure Service Fabric Review Checklist",
+            "guid": "6028759b-446a-41bc-8b0e-7728e61ca704",
+            "link": "https://learn.microsoft.com/azure/service-fabric/how-to-managed-cluster-networking#manage-nsg-rules",
+            "service": "Azure Service Fabric",
+            "severity": "Medium",
+            "text": "Ensure Network Security Groups (NSG) are configured to restrict traffic flow between subnets and node types. For example, you may have an API Management instance (one subnet), a frontend subnet (exposing a website directly), and a backend subnet (accessible only to frontend).",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Azure Service Fabric Review Checklist",
+            "graph": "resources | where type=~'Microsoft.Compute/virtualMachineScaleSets' | extend vmssExtension= array_concat(properties.virtualMachineProfile.extensionProfile.extensions) | mv-expand vmssExtension | where vmssExtension.properties.publisher matches regex '^Microsoft.Azure.ServiceFabric.*' | summarize arg_max(id, *) | extend compliant = (isnotnull(properties.virtualMachineProfile.osProfile.secrets))",
+            "guid": "4e98c903-14cf-4c72-9c45-b8b23bc4cbd8",
+            "link": "https://learn.microsoft.com/azure/service-fabric/service-fabric-best-practices-security#deploy-key-vault-certificates-to-service-fabric-cluster-virtual-machine-scale-sets",
+            "service": "Azure Service Fabric",
+            "severity": "Medium",
+            "text": "Deploy Key Vault certificates to Service Fabric cluster virtual machine scale sets. Centralizing storage of application secrets in Azure Key Vault allows you to control their distribution. Key Vault greatly reduces the chances that secrets may be accidentally leaked.",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Azure Service Fabric Review Checklist",
+            "guid": "001cbb6f-d88d-4431-8434-d01333397776",
+            "link": "https://learn.microsoft.com/azure/service-fabric/service-fabric-best-practices-security#apply-an-access-control-list-acl-to-your-certificate-for-your-service-fabric-cluster",
+            "service": "Azure Service Fabric",
+            "severity": "Medium",
+            "text": "Apply an Access Control List (ACL) to your client certificate for your Service Fabric cluster. Using an ACL provides an additional level of authentication.",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Azure Service Fabric Review Checklist",
+            "guid": "4b74b7a5-bb1e-4fca-948c-037ba95fb73b",
+            "link": "https://learn.microsoft.com/azure/service-fabric/service-fabric-resource-governance#resource-governance-mechanism",
+            "service": "Azure Service Fabric",
+            "severity": "Medium",
+            "text": "Use resource requests and limits to govern resource usage across the nodes in your cluster. Enforcing resource limits helps ensure that one service doesn't consume too many resources and starve other services.",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Azure Service Fabric Review Checklist",
+            "guid": "cd9233ba-f3aa-4353-8d2f-7ea4a64160e6",
+            "link": "",
+            "service": "Azure Service Fabric",
+            "severity": "Medium",
+            "text": "Encrypt Service Fabric package secret values. Encryption on your secret values provides an additional level of security.",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Azure Service Fabric Review Checklist",
+            "guid": "44b989d4-9f72-42b6-99da-ec2a79f83299",
+            "link": "",
+            "service": "Azure Service Fabric",
+            "severity": "Medium",
+            "text": "Include client certificates in Service Fabric applications. Having your applications use client certificates for authentication provides opportunities for security at both the cluster and workload level.",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Azure Service Fabric Review Checklist",
+            "guid": "28e66ff7-4a77-4b2c-910d-0335f141208a",
+            "link": "https://learn.microsoft.com/azure/service-fabric/how-to-managed-identity-managed-cluster-virtual-machine-scale-sets",
+            "service": "Azure Service Fabric",
+            "severity": "Medium",
+            "text": "Authenticate Service Fabric applications to Azure Resources using Managed Identity. Using Managed Identity allow you to securely manage the credentials in your code for authenticating to various services without saving them locally on a developer workstation or in source control.",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Azure Service Fabric Review Checklist",
+            "guid": "f16c413c-00a6-43aa-852c-b97292c33a56",
+            "link": "https://learn.microsoft.com/azure/service-fabric/service-fabric-best-practices-security#hosting-untrusted-applications-in-a-service-fabric-cluster",
+            "service": "Azure Service Fabric",
+            "severity": "Medium",
+            "text": "Follow Service Fabric best practices when hosting untrusted applications. Following the best practices provides a security standard to follow.",
+            "waf": "Security"
+        },
+        {
             "arm-service": "microsoft.network/applicationGateways",
             "checklist": "Azure Application Delivery Networking",
             "graph": "resources | where type == 'microsoft.network/applicationgateways' | project id, compliant = properties.sku.name in ('Standard_v2', 'WAF_v2') | project id,compliant",
@@ -362,7 +509,7 @@
             "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/application-gateway-waf-request-size-limits#request-body-inspection",
             "service": "App Gateway",
             "severity": "High",
-            "text": "Enable request body inspection feature enabled in Azure Application Gateway WAF policy.",
+            "text": "Ensure if request body inspection feature is enabled in Azure Application Gateway WAF policy.",
             "waf": "Security"
         },
         {
@@ -380,9 +527,8 @@
             "ammp": true,
             "arm-service": "microsoft.network/applicationGateways",
             "checklist": "Azure Application Delivery Networking",
-            "graph": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode",
             "guid": "baf8e317-2397-4d49-b3d1-0dcc16d8778d",
-            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/policy-overview?source=recommendations",
             "service": "App Gateway",
             "severity": "High",
             "text": "Deploy your WAF policy for Application Gateway in 'Prevention' mode.",
@@ -763,6 +909,7 @@
             "checklist": "Azure Function Review",
             "guid": "a9808100-d640-4f77-ac56-1ec0600f6752",
             "link": "https://learn.microsoft.com/en-us/azure/azure-functions/functions-scale#overview-of-plans",
+            "query": "resources | where type =~ 'Microsoft.Web/sites' and kind has 'functionapp' and tolower(kind) !contains 'workflow' | extend aspResourceId = tostring(properties.serverFarmId), managedEnvId = tostring(properties.managedEnvironmentId), sku = tostring(properties.sku) | extend sku = iif(isnotempty(sku), sku, iif(isnotempty(managedEnvId), 'ContainerApps', '')) | where sku !in ('Dynamic', 'FlexConsumption', '') | extend aspName = tostring(split(aspResourceId, '/').[-1]), managedEnvName = tostring(split(managedEnvId, '/').[-1]) | extend HostingPlan = tostring(iif(isnotempty(aspName), aspName, managedEnvName)) | project functionAppName = name, functionAppId = id, HostingPlan, sku | join kind=inner ( resources | where type =~ 'Microsoft.Web/serverfarms' or type =~ 'Microsoft.App/managedEnvironments' | extend HostingPlan = tostring(name), zoneRedundant = tostring(properties.zoneRedundant), compliant = tobool(properties.zoneRedundant) | project HostingPlan, resourceId = id, zoneRedundant, compliant ) on HostingPlan | project functionAppName, functionAppId, sku, HostingPlan, resourceId, zoneRedundant, compliant",
             "service": "Azure Functions",
             "severity": "High",
             "text": "Leverage Availability Zones where regionally applicable (not available for Consumption tier)",
@@ -793,6 +940,7 @@
             "checklist": "Azure Function Review",
             "guid": "17232891-f89f-4eaa-90f1-3b34bf798ed5",
             "link": "https://learn.microsoft.com/en-us/azure/azure-functions/dedicated-plan#always-on",
+            "query": "resources | where type =~ 'Microsoft.Web/sites' and kind has 'functionapp' | where tolower(kind) !contains 'workflow' | where isnotempty(properties.serverFarmId) | extend sku = tostring(properties.sku) | where isnotempty(sku) | where sku !in ('Dynamic', 'FlexConsumption', 'ElasticPremium') | extend alwaysOn = properties.siteConfig.alwaysOn | project functionAppName = name, functionAppId = id, serverFarmId = tostring(properties.serverFarmId), sku, alwaysOn, compliant = tobool(alwaysOn)",
             "service": "Azure Functions",
             "severity": "High",
             "text": "Ensure 'Always On' is enabled for all Function Apps running on App Service Plan",
@@ -2409,6 +2557,7 @@
             "checklist": "Container Apps Review",
             "guid": "af416482-663c-4ed6-b195-b44c7068e09c",
             "link": "https://learn.microsoft.com/azure/reliability/reliability-azure-container-apps?tabs=azure-cli#availability-zone-support",
+            "query": "resources | where type =~ 'Microsoft.App/managedEnvironments' | project name, resourceGroup, location, zoneRedundancy = tolower(tostring(properties.zoneRedundant)) | extend Compliance = iff(zoneRedundancy == 'true', true, false)",
             "service": "Container Apps",
             "severity": "High",
             "text": "Leverage Availability Zones if regionally applicable",
@@ -2419,6 +2568,7 @@
             "checklist": "Container Apps Review",
             "guid": "95bc80ec-6499-4d14-a7d2-7d296b1d8abc",
             "link": "https://learn.microsoft.com/azure/reliability/reliability-azure-container-apps?tabs=azure-cli#set-up-zone-redundancy-in-your-container-apps-environment",
+            "query": "resources | where type =~ 'Microsoft.App/containerApps' | project name, resourceGroup, location, minReplicas = toint(properties.template.scale.minReplicas), maxReplicas = toint(properties.template.scale.maxReplicas) | extend Compliance = iff(minReplicas >= 1, true, false)",
             "service": "Container Apps",
             "severity": "High",
             "text": "Use more than one replica and enable Zone Redundancy.",
@@ -2763,6 +2913,7 @@
         {
             "arm-service": "Microsoft.AVS/privateClouds",
             "checklist": "Azure VMware Solution Design Review",
+            "graph": "resources| where type =~ 'Microsoft.Network/virtualNetworkGateways'| mv-expand ipConfigurations=properties.ipConfigurations| project subnetId=tostring(ipConfigurations.properties.subnet.id)| where isnotempty(subnetId)| join (resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,enableDdosProtection=tostring(properties.enableDdosProtection),subnets=properties.subnets | mv-expand subnets | project id,resourceGroup,name,enableDdosProtection,subnetId=tostring(subnets.id)) on subnetId | distinct id,resourceGroup,name,enableDdosProtection | project id, compliant = (enableDdosProtection == 'true')",
             "guid": "334fdf91-c234-4182-a652-75269440b4be",
             "service": "AVS",
             "severity": "Medium",
@@ -3006,6 +3157,7 @@
         {
             "arm-service": "Microsoft.AVS/privateClouds",
             "checklist": "Azure VMware Solution Design Review",
+            "graph": "resources| where type =~ 'Microsoft.AVS/privateClouds'| join kind=leftouter(resources| where type =~ 'Microsoft.Insights/metricalerts'| mv-expand scopes=properties.scopes| mv-expand criteria=properties.criteria.allOf| extend metricName=criteria.metricName| distinct tostring(scopes), tostring(metricName))on $left.id == $right.scopes| extend compliant=toint(metricName in ('UsageAverage', 'EffectiveCpuAverage', 'DiskUsedPercentage'))| summarize compliant=min(compliant) by id",
             "guid": "6b84ee5d-f47d-42d9-8881-b1cd5d1e54a2",
             "service": "AVS",
             "severity": "High",
@@ -3015,6 +3167,7 @@
         {
             "arm-service": "Microsoft.AVS/privateClouds",
             "checklist": "Azure VMware Solution Design Review",
+            "graph": "resources| where type =~ 'Microsoft.AVS/privateClouds'| join kind=leftouter(resources| where type =~ 'Microsoft.Insights/metricalerts'| mv-expand scopes=properties.scopes| mv-expand criteria=properties.criteria.allOf| extend metricName=criteria.metricName| distinct tostring(scopes), tostring(metricName))on $left.id == $right.scopes| extend compliant=toint(metricName in ('UsageAverage', 'EffectiveCpuAverage', 'DiskUsedPercentage'))| summarize compliant=min(compliant) by id",
             "guid": "9659e396-80e7-4828-ac93-5657d02bff45",
             "service": "AVS",
             "severity": "High",
@@ -3024,6 +3177,7 @@
         {
             "arm-service": "Microsoft.AVS/privateClouds",
             "checklist": "Azure VMware Solution Design Review",
+            "graph": "resources| distinct subscriptionId| join kind=leftouter(    resources    | where type =~ 'microsoft.insights/activitylogalerts'    | mv-expand condition1 = properties.condition.allOf    | mv-expand condition2 = condition1.anyOf    | extend alertEnabled = tostring(properties.enabled)    | summarize set_condition1=make_set(condition1.equals), set_condition2=make_set(condition2.equals) by id, name,type,tenantId,resourceGroup,subscriptionId, alertEnabled    | where set_has_element(set_condition1, 'ServiceHealth')    | extend category = 'ServiceHealth'    | extend all = iff(set_has_element(set_condition1, 'ServiceHealth') and array_length(set_condition2) == 0, true, false)    | extend incident = iff(all, true, iff(set_has_element(set_condition1, 'Incident'), true, set_has_element(set_condition2, 'Incident')))    | extend maintenance = iff(all, true, iff(set_has_element(set_condition1, 'Maintenance'), true, set_has_element(set_condition2, 'Maintenance')))    | extend informational = iff(all, true, iff(set_has_element(set_condition1, 'Informational') or set_has_element(set_condition1, 'ActionRequired'), true, set_has_element(set_condition2, 'Informational') or set_has_element(set_condition2, 'ActionRequired')))    | extend security = iff(all, true, iff(set_has_element(set_condition1, 'Security'), true, set_has_element(set_condition2, 'Security')))    | project id, name, subscriptionId, category, tostring(alertEnabled), tostring(incident), tostring(maintenance), tostring(informational), tostring(security)    | summarize count_alertEnabled=countif(alertEnabled == 'true'), count_incident=countif(incident == 'True'), count_maintenance=countif(maintenance == 'True'), count_informational=countif(informational == 'True'), count_security=countif(security == 'True') by subscriptionId)     on subscriptionId| project subscriptionId, alertEnabled=iff(isnotnull(count_alertEnabled), count_alertEnabled, 0), incident=iff(isnotnull(count_incident), count_incident, 0), security=iff(isnotnull(count_security), count_security, 0), maintenance=iff(isnotnull(count_maintenance), count_maintenance, 0), informational=iff(isnotnull(count_informational), count_informational, 0)| order by incident, maintenance, informational, security desc| project id=subscriptionId, compliant=(alertEnabled > 0 and incident > 0 and security > 0 and maintenance > 0 and informational > 0)",
             "guid": "64b0d934-a348-4726-be79-d6b5c3a36495",
             "service": "AVS",
             "severity": "High",
@@ -3623,12 +3777,13 @@
         {
             "arm-service": "Microsoft.ServiceBus/namespaces",
             "checklist": "Service Bus Review Checklist",
-            "description": "A Service Bus client app running inside an Azure App Service application or in a virtual machine with enabled managed entities for Azure resources support does not need to handle SAS rules and keys, or any other access tokens. The client app only needs the endpoint address of the Service Bus Messaging namespace. ",
+            "description": "Microsoft Entra ID provides superior security and ease of use over shared access signatures (SAS). With Microsoft Entra ID, there’s no need to store the tokens in your code and risk potential security vulnerabilities. We recommend that you use Microsoft Entra ID with your Azure Service Bus applications when possible.",
+            "graph": "Resources | where type =~ 'microsoft.servicebus/namespaces' | extend compliant = iif(properties.disableLocalAuth == 'false', 'No', 'Yes') | project id, compliant",
             "guid": "786d60f9-6c96-4ad8-a55d-04c2b39c986b",
-            "link": "https://learn.microsoft.com/azure/service-bus-messaging/service-bus-managed-service-identity",
+            "link": "https://learn.microsoft.com/en-us/azure/service-bus-messaging/disable-local-authentication",
             "service": "Service Bus",
             "severity": "Medium",
-            "text": "When possible, your application should be using a managed identity to authenticate to Azure Service Bus. If not, consider having the storage credential (SAS, service principal credential) in Azure Key Vault or an equivalent service",
+            "text": "When possible, disable SAS key authentication (or local authentication) and use only Microsoft Entra ID for authentication",
             "training": "https://learn.microsoft.com/learn/modules/azure-ad-privileged-identity-management/",
             "waf": "Security"
         },
@@ -3745,6 +3900,7 @@
             "arm-service": "Microsoft.Storage/storageAccounts",
             "checklist": "Azure Storage Review Checklist",
             "description": "Azure Storage by default has a public IP address and is Internet-reachable. Private endpoints allow to securely expose Azure Storage only to those Azure Compute resources that need access, thus eliminating exposure to the public Internet",
+            "graph": "resources | where type =~ 'Microsoft.Storage/StorageAccounts' | where isnull(properties.privateEndpointConnections) or properties.privateEndpointConnections[0].properties.provisioningState != ('Succeeded') or (isnull(properties.networkAcls) and properties.publicNetworkAccess == 'Enabled') | extend compliant = (isnotnull(properties.privateEndpointConnections) and properties.privateEndpointConnections[0].properties.provisioningState == 'Succeeded' and properties.publicNetworkAccess == 'Disabled') | distinct id, compliant",
             "guid": "f42d78e7-9d17-4a73-a22a-5a67e7a8ed4b",
             "link": "https://learn.microsoft.com/azure/storage/common/storage-private-endpoints",
             "service": "Azure Storage",
@@ -3767,6 +3923,7 @@
             "arm-service": "Microsoft.Storage/storageAccounts",
             "checklist": "Azure Storage Review Checklist",
             "description": "Leverage Microsoft Defender to learn about suspicious activity and misconfigurations.",
+            "graph": "resources | where type =~ 'Microsoft.Storage/StorageAccounts' | project storageAccountId = id | join kind=leftouter (resourceContainers | where type == 'microsoft.security/pricings' | where name == 'StorageAccounts' | project resourceId = id, pricingTier = properties.pricingTier) on $left.storageAccountId == $right.resourceId | where isnull(pricingTier) or pricingTier != 'Standard' | extend compliant = false | distinct storageAccountId, compliant",
             "guid": "fc5972cd-4cd2-41b0-a803-7f5e6b4bfd3d",
             "link": "https://learn.microsoft.com/azure/storage/common/azure-defender-storage-configure",
             "service": "Azure Storage",
@@ -3844,6 +4001,7 @@
             "arm-service": "Microsoft.Storage/storageAccounts",
             "checklist": "Azure Storage Review Checklist",
             "description": "Consider disabling unprotected HTTP/80 access to the storage account, so that all data transfers are encrypted, integrity protected, and the server is authenticated. ",
+            "graph": "resources | where type =~ 'Microsoft.Storage/StorageAccounts' | extend compliant = (properties.supportsHttpsTrafficOnly == false) | distinct id, compliant",
             "guid": "e7a8dc4a-20e2-47c3-b297-11b1352beee0",
             "link": "https://learn.microsoft.com/azure/storage/common/storage-require-secure-transfer",
             "service": "Azure Storage",
@@ -4103,7 +4261,7 @@
         {
             "arm-service": "Microsoft.Storage/storageAccounts",
             "checklist": "Azure Storage Review Checklist",
-            "description": "Leverage Resource Graph Explorer (resources | where type == 'microsoft.storage/storageaccounts' | where properties['allowBlobPublicAccess'] == true) to find storage accounts which allow anonymous blob access.",
+            "description": "Anonymous access may present a security risk. We recommend that you disable anonymous access for optimal security. Disallowing anonymous access helps to prevent data breaches caused by undesired anonymous access.",
             "graph": "resources | where type == 'microsoft.storage/storageaccounts' | extend compliant = (properties.allowBlobPublicAccess == 'false') | distinct id, compliant",
             "guid": "659ae558-b937-4d49-a5e1-112dbd7ba012",
             "link": "https://learn.microsoft.com/azure/storage/blobs/anonymous-read-access-configure?tabs=portal#allow-or-disallow-public-read-access-for-a-storage-account",
@@ -4125,6 +4283,7 @@
         {
             "arm-service": "Microsoft.Storage/storageAccounts",
             "checklist": "Azure Storage Review Checklist",
+            "graph": "resources | where type =~ 'Microsoft.Storage/StorageAccounts' | extend compliant = (sku.name != 'Standard_LRS' and sku.name != 'Premium_LRS') | distinct id, compliant",
             "guid": "e05bbe20-9d49-4fda-9777-8424d116785c",
             "link": "https://learn.microsoft.com/azure/storage/common/storage-redundancy",
             "service": "Azure Storage",
@@ -5334,6 +5493,7 @@
         {
             "arm-service": "Microsoft.Network/azureFirewalls",
             "checklist": "Azure Landing Zone Review",
+            "graph": "resources | where type =~ 'Microsoft.Network/firewallPolicies' | where array_length(properties.firewalls) > 0 | extend compliant = (properties.dnsSettings.enableProxy =~ 'true') | distinct id, compliant",
             "guid": "94f3eede-9aa3-4088-92a3-bb9a56509fad",
             "link": "https://learn.microsoft.com/azure/firewall/dns-details",
             "service": "Firewall",
@@ -5457,6 +5617,7 @@
         {
             "arm-service": "Microsoft.Network/networkSecurityGroups",
             "checklist": "Azure Landing Zone Review",
+            "graph": "resources | where type == 'microsoft.network/virtualnetworks' | mv-expand subnet = properties.subnets | where subnet.name !in~ ('GatewaySubnet', 'AzureFirewallSubnet', 'AzureFirewallManagementSubnet', 'RouteServerSubnet') | extend compliant = iff(isnotnull(subnet.properties.networkSecurityGroup.id), true, false) | project id, subnetName = subnet.name, vnetName = name, NSG = subnet.properties.networkSecurityGroup.id, compliant",
             "guid": "872e52e3-611c-4c58-a5a4-b1511e43a58a",
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-landing-zone-network-segmentation",
             "service": "NSG",
@@ -5479,6 +5640,7 @@
         {
             "arm-service": "Microsoft.Network/networkSecurityGroups",
             "checklist": "Azure Landing Zone Review",
+            "graph": "resources | where type =~ 'Microsoft.Network/virtualnetworks' | project subscriptionId, lowerCaseVNetId = tolower(id) | join kind = leftouter (    resources    | where type =~ 'microsoft.network/networkwatchers/flowlogs' and properties.enabled == true and properties.provisioningState =~ 'succeeded'    | where properties.targetResourceId contains '/Microsoft.Network/virtualNetworks/'    | project flowlogId = id, trafficAnalyticsEnabled = properties.flowAnalyticsConfiguration.networkWatcherFlowAnalyticsConfiguration.enabled, lowerCaseTargetVNetId = tolower(properties.targetResourceId)    )    on $left.lowerCaseVNetId == $right.lowerCaseTargetVNetId | extend compliant = iff(isnotempty(lowerCaseTargetVNetId), true, false) | project id = lowerCaseVNetId, flowlogId, trafficAnalyticsEnabled, compliant",
             "guid": "dfe237de-143b-416c-91d7-aa9b64704489",
             "link": "https://learn.microsoft.com/azure/network-watcher/vnet-flow-logs-overview",
             "service": "NSG",
@@ -6197,6 +6359,7 @@
         {
             "arm-service": "microsoft.web/sites",
             "checklist": "Azure App Service Review",
+            "graph": "resources | where type =~ 'microsoft.web/serverfarms' | extend compliant = (sku.tier == 'Premium' or sku.tier == 'Standard') | distinct id,compliant",
             "guid": "e4b31c6a-2e3f-4df1-8e8b-9c3aa5a27820",
             "link": "https://learn.microsoft.com/en-us/azure/app-service/overview-hosting-plans",
             "service": "App Services",
@@ -6217,6 +6380,7 @@
         {
             "arm-service": "microsoft.web/sites",
             "checklist": "Azure App Service Review",
+            "graph": "appserviceresources  | where type =~ 'microsoft.web/sites/config' | extend compliant = (properties.HealthCheckPath != '') | distinct id,compliant",
             "guid": "1275e4a9-7b6a-43c3-a9cd-5ee18d8995ad",
             "link": "https://learn.microsoft.com/en-us/azure/app-service/monitor-instances-health-check",
             "service": "App Services",
