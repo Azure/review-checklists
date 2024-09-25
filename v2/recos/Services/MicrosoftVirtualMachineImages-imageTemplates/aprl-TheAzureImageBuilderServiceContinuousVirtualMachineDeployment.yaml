@@ -1,0 +1,24 @@
+name: aprl-TheAzureImageBuilderServiceContinuousVirtualMachineDeployment
+title: Replicate your Image Templates to a secondary region
+description: |-
+  The Azure Image Builder service, used for deploying Image Templates, lacks availability zones support. By replicating Image Templates to a secondary, preferably paired, region, quick recovery from a region failure is enabled, ensuring continuous virtual machine deployment from these templates.
+source:
+  type: aprl
+  file: azure-resources/VirtualMachineImages/imageTemplates/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.VirtualMachineImages/imageTemplates
+severity: 2
+labels:
+  guid: 21fb841b-ba70-1f4e-a460-1f72fb41aa51
+  area: Disaster Recovery
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // List all Image Templates that are not replicated to another region
+    resources
+    | where type =~ "microsoft.virtualmachineimages/imagetemplates"
+    | mv-expand distribution=properties.distribute
+    | where array_length(parse_json(distribution).replicationRegions) == 1
+    | project recommendationId = "21fb841b-ba70-1f4e-a460-1f72fb41aa51", name, id, param1=strcat("replicationRegions:",parse_json(distribution).replicationRegions)

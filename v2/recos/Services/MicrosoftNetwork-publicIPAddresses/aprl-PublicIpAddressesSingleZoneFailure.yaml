@@ -1,0 +1,24 @@
+name: aprl-PublicIpAddressesSingleZoneFailure
+title: Use Standard SKU and Zone-Redundant IPs when applicable
+description: |-
+  Public IP addresses in Azure can be of standard SKU, available as non-zonal, zonal, or zone-redundant. Zone-redundant IPs are accessible across all zones, resisting any single zone failure, thereby providing higher resilience.
+source:
+  type: aprl
+  file: azure-resources/Network/publicIPAddresses/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.Network/publicIPAddresses
+severity: 0
+labels:
+  guid: c63b81fb-7afc-894c-a840-91bb8a8dcfaf
+  area: High Availability
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph query
+    // List public IP addresses that are not Zone-Redundant
+    Resources
+    | where type =~ "Microsoft.Network/publicIPAddresses" and sku.tier =~ "Regional"
+    | where isempty(zones) or array_length(zones) <= 1
+    | extend az = case(isempty(zones), "Non-zonal", array_length(zones) <= 1, strcat("Zonal (", strcat_array(zones, ","), ")"), zones)
+    | project recommendationId = "c63b81fb-7afc-894c-a840-91bb8a8dcfaf", name, id, tags, param1 = strcat("sku: ", sku.name), param2 = strcat("availabilityZone: ", az)

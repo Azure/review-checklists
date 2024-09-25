@@ -1,0 +1,31 @@
+name: aprl-HigherSingleInstanceVirtualMachineUptimeSlasHighestUptimeSla
+title: Mission Critical Workloads should consider using Premium or Ultra Disks
+description: |-
+  Compared to Standard HDD and SSD, Premium SSD, SSDv2, and Ultra SSDs offer improved performance, configurability, and higher single-instance Virtual Machine uptime SLAs. The lowest SLA of all disks on a Virtual Machine applies, so it is best to use Premium or Ultra Disks for the highest uptime SLA.
+source:
+  type: aprl
+  file: azure-resources/Compute/virtualMachines/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.Compute/virtualMachines
+severity: 0
+labels:
+  guid: df0ff862-814d-45a3-95e4-4fad5a244ba6
+  area: Scalability
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Find all VMs that have an attached disk that is not in the Premium or Ultra sku tier.
+
+    resources
+    | where type =~ 'Microsoft.Compute/virtualMachines'
+    | extend lname = tolower(name)
+    | join kind=leftouter(resources
+        | where type =~ 'Microsoft.Compute/disks'
+        | where not(sku.tier =~ 'Premium') and not(sku.tier =~ 'Ultra')
+        | extend lname = tolower(tostring(split(managedBy, '/')[8]))
+        | project lname, name
+        | summarize disks = make_list(name) by lname) on lname
+    | where isnotnull(disks)
+    | project recommendationId = "df0ff862-814d-45a3-95e4-4fad5a244ba6", name, id, tags, param1=strcat("AffectedDisks: ", disks)

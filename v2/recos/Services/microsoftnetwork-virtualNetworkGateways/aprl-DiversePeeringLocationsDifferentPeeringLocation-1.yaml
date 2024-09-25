@@ -1,0 +1,74 @@
+name: aprl-DiversePeeringLocationsDifferentPeeringLocation-1
+title: Connect ExpressRoute gateway with circuits from diverse peering locations for
+  resilience
+description: |-
+  To increase reliability, it's advised that each ExpressRoute gateway connects to at least two circuits, with each circuit originating from a different peering location than the other, ensuring diverse connectivity paths for enhanced resilience.
+source:
+  type: aprl
+  file: azure-resources/Network/virtualNetworkGateways/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.Network/virtualNetworkGateways
+severity: 0
+labels:
+  guid: d37db635-157f-584d-9bce-4f6fc8c65ce5
+  area: High Availability
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Provides a list of ExpressRoute Gateways that are not connected to two or more ExpressRoute Circuits. Baremetal circuits are excluded from consideration
+    //This query assumes that the running entity has visibilty to the gateway, connection, and circuit scopes.
+    //Start with a full list of gateways
+    (resources
+    | where type == "microsoft.network/virtualnetworkgateways"
+    | where properties.gatewayType == "ExpressRoute"
+    | extend exrGatewayId = tolower(tostring(id))
+    | join kind=inner(
+    resources
+    | where type == "microsoft.network/virtualnetworkgateways"
+    | where properties.gatewayType == "ExpressRoute"
+    | extend exrGatewayId = tolower(tostring(id))
+    | join kind=leftouter(
+    //connections joined with circuit peer info
+    resources
+    | where type == "microsoft.network/connections"
+    | extend connectionType = properties.connectionType
+    | extend exrGatewayId = tolower(tostring(properties.virtualNetworkGateway1.id))
+    | extend peerId = tolower(tostring(properties.peer.id))
+    | extend connectionId = tolower(tostring(id))
+    | where connectionType == "ExpressRoute"
+    | join kind=leftouter(
+      resources
+      | where type == "microsoft.network/expressroutecircuits"
+        //should this be location instead of peeringLocation
+      | extend circuitId = tolower(tostring(id))
+      | extend peeringLocation = tostring(properties.serviceProviderProperties.peeringLocation)
+      | extend peerId = tolower(id)
+    ) on peerId ) on exrGatewayId
+    //remove bare metal services connections/circuits
+    | where not(isnotnull(connectionId) and isnull(sku1))
+    //group by gateway ID's and peering locations
+    | summarize by exrGatewayId, peeringLocation
+    //summarize to connections with fewer than two unique connections
+    | summarize connCount = count() by exrGatewayId
+    | where connCount < 2) on exrGatewayId
+    | project recommendationId = "d37db635-157f-584d-9bce-4f6fc8c65ce5", name, id, tags, param1 = "twoOrMoreCircuitsConnectedFromDifferentPeeringLocations: false")
+    | union
+    (
+    resources
+    | where type == "microsoft.network/virtualnetworkgateways"
+    | where properties.gatewayType == "ExpressRoute"
+    | extend exrGatewayId = tolower(tostring(id))
+    | join kind=leftouter(
+    //connections joined with circuit peer info
+    resources
+    | where type == "microsoft.network/connections"
+    | extend connectionType = properties.connectionType
+    | extend exrGatewayId = tolower(tostring(properties.virtualNetworkGateway1.id))
+    | extend peerId = tolower(tostring(properties.peer.id))
+    | extend connectionId = tolower(tostring(id))
+    | where connectionType == "ExpressRoute") on exrGatewayId
+    | where isnull(connectionType)
+    | project recommendationId = "d37db635-157f-584d-9bce-4f6fc8c65ce5", name, id, tags, param1 = "twoOrMoreCircuitsConnectedFromDifferentPeeringLocations: false", param2 = "noConnectionsOnGateway: true"
+    )

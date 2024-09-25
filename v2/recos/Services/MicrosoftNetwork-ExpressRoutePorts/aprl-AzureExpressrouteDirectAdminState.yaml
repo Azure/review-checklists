@@ -1,0 +1,24 @@
+name: aprl-AzureExpressrouteDirectAdminState
+title: The Admin State of both Links of an ExpressRoute Direct should be in Enabled
+  state
+description: |-
+  In Azure ExpressRoute Direct, the "Admin State" indicates the administrative status of layer 1 links, showing if a link is enabled or disabled, effectively turning the physical port on or off.
+source:
+  type: aprl
+  file: azure-resources/Network/expressRoutePorts/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.Network/ExpressRoutePorts
+severity: 0
+labels:
+  guid: 60077378-7cb1-4b35-89bb-393884d9921d
+  area: High Availability
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Find all Express Route Directs that do not have Admin State of both Links Enabled
+    resources
+    | where type == "microsoft.network/expressrouteports"
+    | where properties['links'][0]['properties']['adminState'] == "Disabled" or properties['links'][1]['properties']['adminState'] == "Disabled"
+    | project recommendationId = "60077378-7cb1-4b35-89bb-393884d9921d", name, id, tags, param1 = strcat("Link1AdminState: ", properties['links'][0]['properties']['adminState']), param2 = strcat("Link2AdminState: ", properties['links'][1]['properties']['adminState'])

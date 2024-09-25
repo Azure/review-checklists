@@ -1,0 +1,23 @@
+name: revcl-GatewaySubnets
+title: Use at least a /27 prefix for your Gateway subnets
+source:
+  type: revcl
+  file: ./checklists/alz_checklist.en.json
+resourceTypes:
+- microsoft.network/expressRouteCircuits
+waf: Security
+severity: 0
+labels:
+  guid: f2aad7e3-bb03-4adc-8606-4123d342a917
+  area: Network Topology and Connectivity
+  subarea: Segmentation
+  id: D09.01
+links:
+- type: docs
+  url: https://learn.microsoft.com/azure/expressroute/expressroute-howto-add-gateway-resource-manager#add-a-gateway
+queries:
+  arg: resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets
+    | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix
+    | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName ==
+    'GatewaySubnet' | extend compliant = (subnetPrefixLength <= 27) | distinct id,
+    compliant

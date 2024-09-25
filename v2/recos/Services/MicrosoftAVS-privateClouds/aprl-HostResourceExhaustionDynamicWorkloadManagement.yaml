@@ -1,0 +1,38 @@
+name: aprl-HostResourceExhaustionDynamicWorkloadManagement
+title: Monitor Memory Utilization to ensure sufficient resources for workloads
+description: |-
+  Ensure sufficient memory resources to prevent host resource exhaustion in Azure VMware Solution. It uses vSphere DRS and vSphere HA for dynamic workload management. Yet, continuous memory use over 95% leads to disk swapping, affecting workloads.
+source:
+  type: aprl
+  file: azure-resources/AVS/privateClouds/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.AVS/privateClouds
+severity: 1
+labels:
+  guid: 029208c8-5186-4a76-8ee8-6e3445fef4dd
+  area: Monitoring and Alerting
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Provides a list of Azure VMware Solution resources that don't have a cluster host memory critical alert with a threshold of 95%.
+    resources
+    | where ['type'] == "microsoft.avs/privateclouds"
+    | extend scopeId = tolower(tostring(id))
+    | project ['scopeId'], name, id, tags
+    | join kind=leftouter (
+    resources
+    | where type == "microsoft.insights/metricalerts"
+    | extend alertProperties = todynamic(properties)
+    | mv-expand alertProperties.scopes
+    | mv-expand alertProperties.criteria.allOf
+    | extend scopeId = tolower(tostring(alertProperties_scopes))
+    | extend metric = alertProperties_criteria_allOf.metricName
+    | extend threshold = alertProperties_criteria_allOf.threshold
+    | project scopeId, tostring(metric), toint(['threshold'])
+    | where metric == "UsageAverage"
+    | where threshold == 95
+    ) on scopeId
+    | where isnull(['threshold'])
+    | project recommendationId = "029208c8-5186-4a76-8ee8-6e3445fef4dd", name, id, tags, param1 = "hostMemoryCriticalAlert: isNull or threshold != 95"

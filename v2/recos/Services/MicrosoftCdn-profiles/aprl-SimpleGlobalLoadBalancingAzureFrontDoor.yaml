@@ -1,0 +1,47 @@
+name: aprl-SimpleGlobalLoadBalancingAzureFrontDoor
+title: Avoid combining Traffic Manager and Front Door
+description: |-
+  For most solutions, choose either Azure Front Door for content caching, CDN, TLS termination, and WAF, or Traffic Manager for simple global load balancing.
+source:
+  type: aprl
+  file: azure-resources/Cdn/profiles/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.Cdn/profiles
+severity: 0
+labels:
+  guid: 9437634c-d69e-2747-b13e-631c13182150
+  area: Business Continuity
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Avoid combining Traffic Manager and Front Door
+    resources
+    | where type == "microsoft.network/trafficmanagerprofiles"
+    | mvexpand(properties.endpoints)
+    | extend endpoint=tostring(properties_endpoints.properties.target)
+    | project name, trafficmanager=id, matchname=endpoint, tags
+    | join (
+        resources
+        | where type =~ "microsoft.cdn/profiles/afdendpoints"
+        | extend matchname= tostring(properties.hostName)
+        | extend splitid=split(id, "/")
+        | extend frontdoorid=tolower(strcat_array(array_slice(splitid, 0, 8), "/"))
+        | project name, id, matchname, frontdoorid, type
+        | union
+            (cdnresources
+            | where type =~ "Microsoft.Cdn/Profiles/CustomDomains"
+            | extend matchname= tostring(properties.hostName)
+            | extend splitid=split(id, "/")
+            | extend frontdoorid=tolower(strcat_array(array_slice(splitid, 0, 8), "/"))
+            | project name, id, matchname, frontdoorid, type)
+        )
+        on matchname
+    | project
+        recommendationId = "9437634c-d69e-2747-b13e-631c13182150",
+        name=split(trafficmanager, "/")[-1],
+        id=trafficmanager,
+        tags,
+        param1=strcat("hostname:", matchname),
+        param2=strcat("frontdoorid:", frontdoorid)

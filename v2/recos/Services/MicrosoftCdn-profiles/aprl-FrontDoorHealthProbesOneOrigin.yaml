@@ -1,0 +1,38 @@
+name: aprl-FrontDoorHealthProbesOneOrigin
+title: Disable health probes when there is only one origin in an origin group
+description: |-
+  Front Door health probes help detect unavailable or unhealthy origins, directing traffic to alternate origins if needed.
+source:
+  type: aprl
+  file: azure-resources/Cdn/profiles/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.Cdn/profiles
+severity: 2
+labels:
+  guid: 38f3d542-6de6-a44b-86c6-97e3be690281
+  area: High Availability
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Disable health probes when there is only one origin in an origin group
+    cdnresources
+    | where type =~ "microsoft.cdn/profiles/origingroups"
+    | extend healthprobe=tostring(properties.healthProbeSettings)
+    | project origingroupname=name, id, tags, resourceGroup, subscriptionId, healthprobe
+    | join (
+        cdnresources
+        | where type =~ "microsoft.cdn/profiles/origingroups/Origins"
+        | extend origingroupname = tostring(properties.originGroupName)
+        )
+        on origingroupname
+    | summarize origincount=count(), enabledhealthprobecount=countif(healthprobe != "") by origingroupname, id, tostring(tags), resourceGroup, subscriptionId
+    | where origincount == 1 and enabledhealthprobecount != 0
+    | project
+        recommendationId = "38f3d542-6de6-a44b-86c6-97e3be690281",
+        name=origingroupname,
+        id,
+        todynamic(tags),
+        param1 = strcat("origincount:", origincount),
+        param2 = strcat("enabledhealthprobecount:", enabledhealthprobecount)

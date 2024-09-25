@@ -1,0 +1,27 @@
+name: aprl-MigrateAppServiceAppServicePlans
+title: Migrate App Service to availability Zone Support
+description: |-
+  Azure's feature of deploying App Service plans across availability zones enhances resiliency and reliability by ensuring operation during datacenter failures, providing redundancy without needing different regions, thus minimizing downtime and maintaining uninterrupted services.
+source:
+  type: aprl
+  file: azure-resources/Web/serverFarms/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.Web/serverFarms
+severity: 0
+labels:
+  guid: 88cb90c2-3b99-814b-9820-821a63f600dd
+  area: High Availability
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // The query filters the qualified App Service Plans that do not have Zone Redundancy enabled.
+    // Its important to check regions that support availability zones for Azure App Services running on multi-tenant and App Service Environments https://learn.microsoft.com/en-us/azure/reliability/reliability-app-service?tabs=graph%2Ccli#:~:text=The%20following%20regions%20support%20Azure%20App%20Services%20running%20on%20multi%2Dtenant%20environments%3A
+
+    resources
+    | where type =~ 'microsoft.web/serverfarms'
+    | extend zoneRedundant = tobool(properties.zoneRedundant)
+    | extend sku_tier = tostring(sku.tier)
+    | where (tolower(sku_tier) contains "isolated" or tolower(sku_tier) contains "premium") and zoneRedundant == false
+    | project recommendationId="88cb90c2-3b99-814b-9820-821a63f600dd", name, id, tags, param1=sku_tier, param2="Not Zone Redundant"

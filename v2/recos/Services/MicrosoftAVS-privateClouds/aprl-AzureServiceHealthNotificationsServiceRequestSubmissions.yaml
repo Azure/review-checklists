@@ -1,0 +1,56 @@
+name: aprl-AzureServiceHealthNotificationsServiceRequestSubmissions
+title: Configure Azure Service Health notifications and alerts for Azure VMware Solution
+description: |-
+  Ensure Azure Service Health notifications are set for Azure VMware Solution across all used regions and subscriptions. This communicates service/security issues and maintenance activities like host replacements and upgrades, reducing service request submissions.
+source:
+  type: aprl
+  file: azure-resources/AVS/privateClouds/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.AVS/privateClouds
+severity: 0
+labels:
+  guid: 74fcb9f2-9a25-49a6-8c42-d32851c4afb7
+  area: Monitoring and Alerting
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Provides a list of Azure VMware Solution resources that don't have one or more service health alerts covering AVS private clouds in the deployed subscription and region pairs.
+    //full list of private clouds
+    (resources
+    | where ['type'] == "microsoft.avs/privateclouds"
+    | extend locale = tolower(location)
+    | extend subscriptionId = tolower(subscriptionId)
+    | project id, name, tags, subscriptionId, locale)
+    | join kind=leftouter
+    //Alert ID's that include all incident types filtered by AVS Service Health alerts
+    ((resources
+    | where type == "microsoft.insights/activitylogalerts"
+    | extend alertproperties = todynamic(properties)
+    | where alertproperties.condition.allOf[0].field == "category" and alertproperties.condition.allOf[0].equals == "ServiceHealth"
+    | where alertproperties.condition.allOf[1].field == "properties.impactedServices[*].ServiceName" and set_has_element(alertproperties.condition.allOf[1].containsAny, "Azure VMware Solution")
+    | extend locale = strcat_array(split(tolower(alertproperties.condition.allOf[2].containsAny),' '), '')
+    | mv-expand todynamic(locale)
+    | where locale != "global"
+    | project subscriptionId, tostring(locale) )
+    | union
+    //Alert ID's that include only some of the incident types after filtering by service health alerts covering AVS private clouds.
+    (resources
+    | where type == "microsoft.insights/activitylogalerts"
+    | extend subscriptionId = tolower(subscriptionId)
+    | extend alertproperties = todynamic(properties)
+    | where alertproperties.condition.allOf[0].field == "category" and alertproperties.condition.allOf[0].equals == "ServiceHealth"
+    | where alertproperties.condition.allOf[2].field == "properties.impactedServices[*].ServiceName" and set_has_element(alertproperties.condition.allOf[2].containsAny, "Azure VMware Solution")
+    | extend locale = strcat_array(split(tolower(alertproperties.condition.allOf[3].containsAny),' '), '')
+    | mv-expand todynamic(locale)
+    | mv-expand alertproperties.condition.allOf[1].anyOf
+    | extend incidentType = alertproperties_condition_allOf_1_anyOf.equals
+    | where locale != "global"
+    | project id, subscriptionId, locale, incidentType
+    | distinct subscriptionId, tostring(locale), tostring(incidentType)
+    | summarize incidentTypes=count() by subscriptionId, locale
+    | where incidentTypes == 5 //only include this subscription, region pair if it includes all the incident types.
+    | project subscriptionId, locale)) on subscriptionId, locale
+    | where subscriptionId1 == "" or locale1 == "" or isnull(subscriptionId1) or isnull(locale1)
+    | project recommendationId = "74fcb9f2-9a25-49a6-8c42-d32851c4afb7", name, id, tags, param1 = "avsServiceHealthAlertsAllIncidentTypesConfigured: False"

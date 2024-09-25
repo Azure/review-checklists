@@ -42,7 +42,6 @@ def get_resource_type_name(service_name, service_dictionary=None):
     else:
         return None
 
-
 # Function to modify yaml.dump for multiline strings, see https://github.com/yaml/pyyaml/issues/240
 def str_presenter(dumper, data):
     if data.count('\n') > 0:
@@ -51,52 +50,80 @@ def str_presenter(dumper, data):
     return dumper.represent_scalar('tag:yaml.org,2002:str', data)
 
 # Function that returns a data structure with the objects in v2 format
-def generate_v2(input_file, text_analytics_endpoint=None, text_analytics_key=None, service_dictionary=None, labels=None, id_label=None, cat_label=None, subcat_label=None, verbose=False):
+def generate_v2(input_file, text_analytics_endpoint=None, text_analytics_key=None, service_dictionary=None, source_type=None, labels=None, id_label=None, cat_label=None, subcat_label=None, existing_v2recos=None, max_items=0, verbose=False):
     if verbose: print("DEBUG: Converting file", input_file)
     if verbose and not service_dictionary: print("DEBUG: unless a service dictionary is supplied, no service or resource type mappings will be done.")
     # Default values for non-mandatory labels
     if not id_label: id_label = 'id'
     if not cat_label: cat_label = 'area'
     if not subcat_label: subcat_label = 'subarea'
+    # If existing v2 reco folder specified, load them up (will be used to prevent duplicate names)
+    if not existing_v2recos:
+        print("WARNING: No existing v2 recos provided, duplicate reco names might be generated.")
+    # Load v1 recos
     try:
         with open(input_file) as f:
             checklist = json.load(f)
     except Exception as e:
         print("ERROR: Error when processing JSON file, nothing changed", input_file, ":", str(e))
         return None
+    # Process the v1 recos
     if 'items' in checklist:
         if verbose: print("DEBUG: {0} items found in JSON file {1}".format(len(checklist['items']), input_file))
         # Create a list of objects in v2 format
         v2recos = []
+        reco_counter = 0
         for item in checklist['items']:
+            # Check if we reached the maximum number of items
+            reco_counter += 1
+            if max_items > 0 and reco_counter > max_items:
+                if verbose: print("DEBUG: Maximum number of items reached, stopping.")
+                break
             # Note that the order in which items are added to the dictionary is important, since yaml.dump is configured to not sort the keys
             v2reco = {}
+            # Source (subfields file, type and timestamp). First we add the information to the original v1 reco, later we will add it to the new v2 reco
+            if 'source' in item:
+                if item['source'].lower() == 'aprl' or item['source'].lower() == 'wafsg':
+                    item['source'] = {'type': item['source'].lower()}
+                elif '.yaml' in item['source']:   # If it was imported from YAML it is coming from APRL
+                    item['source'] = {'type': 'aprl'}
+                elif '.md' in item['source']:   # If it was imported from Markdown it is coming from a WAF service guide
+                    item['source'] = {'type': 'wafsg'}
+            elif 'sourceType' in item:
+                item['source'] = {'type': item['sourceType'].lower()}
+                if 'sourceFile' in item:
+                    item['source']['file'] = item['sourceFile']
+            else:
+                item['source'] = {'type': 'revcl', 'file': input_file}
+            # If the source type was specified as a parameter, use it
+            if source_type:
+                item['source']['type'] = source_type
+            # Timestamp
+            if 'timestamp' in item:
+                item['source']['timestamp'] = item['timestamp']
             # If text analytics endpoint and key were supplied, try to guess a reco name
             if text_analytics_endpoint and text_analytics_key:
-                v2reco['name'] = guess_reco_name(item, text_analytics_endpoint, text_analytics_key, version=1, verbose=verbose)
+                v2reco['name'] = guess_reco_name(item, text_analytics_endpoint, text_analytics_key, version=1, key_phrase_no=2, verbose=verbose)
             else:
                 v2reco['name'] = ''
+            # If we have existing v2 recos, append an integer identifier until the name is unique
+            if v2reco['name'] and existing_v2recos:
+                i = 0
+                while True:
+                    # We look for recos with the same name and different GUID
+                    existing_v2recos_same_name = [x['name'].lower() for x in existing_v2recos if ((x['name'].lower() == v2reco['name'].lower()) and (('labels' in x) and ('guid' in x['labels']) and ('guid' in item) and (x['labels']['guid'] != item['guid'])))]
+                    if len(existing_v2recos_same_name) > 0:
+                        i += 1
+                        v2reco['name'] = v2reco['name'] + '-' + str(i)
+                    else:
+                        break
             # Title/description
             if 'text' in item:
                 v2reco['title'] = item['text']
             if 'description' in item:
                 v2reco['description'] = item['description']
-            # Source (subfields file, type and timestamp)
-            if 'source' in item:
-                if item['source'].lower() == 'aprl' or item['source'].lower() == 'wafsg':
-                    v2reco['source'] = {'type': item['source'].lower()}
-                elif '.yaml' in item['source']:   # If it was imported from YAML it is coming from APRL
-                    v2reco['source'] = {'type': 'aprl'}
-                elif '.md' in item['source']:   # If it was imported from Markdown it is coming from a WAF service guide
-                    v2reco['source'] = {'type': 'wafsg'}
-            elif 'sourceType' in item:
-                v2reco['source'] = {'type': item['sourceType'].lower()}
-                if 'sourceFile' in item:
-                    v2reco['source']['file'] = item['sourceFile']
-            else:
-                v2reco['source'] = {'type': 'revcl', 'file': input_file}
-            if 'timestamp' in item:
-                v2reco['source']['timestamp'] = item['timestamp']
+            # Source
+            v2reco['source'] = item['source']
             # Services
             # if 'service' in item:
             #     v2reco['services'] = []
@@ -154,20 +181,21 @@ def generate_v2(input_file, text_analytics_endpoint=None, text_analytics_key=Non
             # Links
             v2reco['links'] = []
             if 'link' in item:
-                v2reco['links'].append(item['link'])
+                v2reco['links'].append({'type': 'docs', 'url': item['link']})
             if 'training' in item:
-                v2reco['links'].append(item['training'])
+                v2reco['links'].append({'type': 'docs', 'url': item['training']})
             # If additional labels were specified as parameter, add them to the object
             if labels:
                 for key in labels.keys():
                     v2reco['labels'][key] = labels[key]
             # Queries
-            v2reco['queries'] = []
+            v2reco['queries'] = {}
             if 'graph' in item:
                 v2reco['queries'] = {}
                 v2reco['queries']['arg'] = item['graph']
             # Add to the list of v2 objects
             v2recos.append(v2reco)
+            existing_v2recos.append(v2reco)     # Add to the list of existing v2 recos to prevent duplicate names
         return v2recos
     else:
         print("ERROR: No items found in JSON file", input_file)
@@ -180,7 +208,7 @@ def remove_empty_dirs(path):
             remove_empty_dirs(os.path.realpath(os.path.join(root, dirname)))
 
 # Function that stores an object generated by generate_v2 in files in the output folder
-def store_v2(output_folder, checklist, output_format='yaml', overwrite=False, verbose=False):
+def store_v2(output_folder, checklist, output_format='yaml', existing_v2recos=None, overwrite=False, verbose=False):
     # Folder fo the services-related recos (set to None for no subfolder)
     services_folder = 'Services'
     if verbose: print("DEBUG: Storing v2 objects in folder", output_folder)
@@ -199,11 +227,8 @@ def store_v2(output_folder, checklist, output_format='yaml', overwrite=False, ve
             file_name = item['name']
         elif 'guid' in item:
             file_name = item['guid']
-        elif 'labels' in item:
-            if 'guid' in item['labels']:
-                file_name = item['labels']['guid']
-            else:
-                file_name = None
+        elif 'labels' in item and 'guid' in item['labels']:
+            file_name = item['labels']['guid']
         else:
             file_name = None
         if file_name:
@@ -231,12 +256,37 @@ def store_v2(output_folder, checklist, output_format='yaml', overwrite=False, ve
             # Create the output folder if it doesn't exist
             if not os.path.exists(this_output_folder):
                 os.makedirs(this_output_folder)
+            # Delete any existing file with the same GUID (if we have a GUID)
+            if 'labels' in item and 'guid' in item['labels']:
+                recos_with_same_guid = [x for x in existing_v2recos if 'filepath' in x and 'labels' in x and 'guid' in x['labels'] and x['labels']['guid'] == item['labels']['guid']]
+                if verbose:
+                    print("DEBUG: Deleting {0} existing recos with GUID {1}".format(len(recos_with_same_guid), item['labels']['guid']))
+                for existing_reco in recos_with_same_guid:
+                    # Delete filename specified in the filepath attribute
+                    if 'filepath' in existing_reco:
+                        if os.path.exists(existing_reco['filepath']):
+                            if verbose:
+                                print("DEBUG: Deleting existing reco at", existing_reco['filepath'])
+                            os.remove(existing_reco['filepath'])
+                        else:
+                            print("WARNING: reco not found at", existing_reco['filepath'])
+            # Delete any existing file for the same name (it might be in a different folder)
+            # We can do this because the name is unique
+            if overwrite:
+                # cl_analyze_v2.delete_v2_reco(output_folder, item['name'], output_format, verbose=verbose)
+                recos_with_same_name = [x for x in existing_v2recos if x['name'] == item['name'] and 'filepath' in x]
+                if verbose:
+                    print("DEBUG: Deleting {0} existing recos with name {1}".format(len(recos_with_same_name), item['name']))
+                for existing_reco in recos_with_same_name:
+                    # Delete filename specified in the filepath attribute
+                    if 'filepath' in existing_reco:
+                        if os.path.exists(existing_reco['filepath']):
+                            if verbose:
+                                print("DEBUG: Deleting existing reco at", existing_reco['filepath'])
+                            os.remove(existing_reco['filepath'])
             # Export JSON or YAML, depending on the output format
             if output_format in ['yaml', 'yml']:
                 output_file = os.path.join(this_output_folder, file_name + ".yaml")
-                # Delete any existing file for the same name (this does not generate unique names)
-                if overwrite:
-                    cl_analyze_v2.delete_v2_reco(output_folder, item['name'], output_format, verbose=verbose)
                 # If the new file exists, append a number to the name
                 i = 1
                 while os.path.exists(output_file):
@@ -252,9 +302,6 @@ def store_v2(output_folder, checklist, output_format='yaml', overwrite=False, ve
             # JSON not finished (not using JSON for now)
             elif output_format == 'json':
                 output_file = os.path.join(this_output_folder, file_name + ".json")
-                # Delete any existing file for the same name (this does not generate unique names)
-                if overwrite:
-                    cl_analyze_v2.delete_v2_reco(output_folder, item['name'], output_format, verbose=verbose)
                 # If the new file exists, append a number to the name
                 i = 1
                 while os.path.exists(output_file):
@@ -278,10 +325,18 @@ def store_v2(output_folder, checklist, output_format='yaml', overwrite=False, ve
             print("ERROR: Error when removing empty directories in output folder", output_folder, ":", str(e))
 
 # Function that guesses a reco name from a reco v2 object by querying Azure Cognitive Services for key phrases
-def guess_reco_name(reco, cognitive_services_endpoint, cognitive_services_key, version=2, verbose=False):
+# The guessed name will be a concatenation of key phrases. The parameter key_phrase_no specifies how many key phrases to use (default is 1)
+def guess_reco_name(reco, cognitive_services_endpoint, cognitive_services_key, key_phrase_no=1, version=2, verbose=False):
     # Dependencies
     from azure.ai.textanalytics import TextAnalyticsClient
     from azure.core.credentials import AzureKeyCredential
+    # Put the reco's GUID in a variable
+    if 'guid' in reco:
+        reco_guid = reco['guid']
+    elif 'labels' in reco and 'guid' in reco['labels']:
+        reco_guid = reco['labels']['guid']
+    else:
+        reco_guid = None
     # Authenticate
     ta_credential = AzureKeyCredential(cognitive_services_key)
     text_analytics_client = TextAnalyticsClient(
@@ -296,7 +351,7 @@ def guess_reco_name(reco, cognitive_services_endpoint, cognitive_services_key, v
         elif 'description' in reco:
             documents = [reco['description']]
         else:
-            if verbose: print("ERROR: No title or description found for reco {0} that can be used to derive name".format(reco['guid']))
+            if verbose: print("ERROR: No title or description found for reco {0} that can be used to derive name".format(reco_guid))
             return ''
     elif version == 2:
         if 'title' in reco and 'description' in reco:
@@ -306,32 +361,33 @@ def guess_reco_name(reco, cognitive_services_endpoint, cognitive_services_key, v
         elif 'description' in reco:
             documents = [reco['description']]
         else:
-            if verbose: print("ERROR: No title or description found for reco {0} that can be used to derive name".format(reco['guid']))
+            if verbose: print("ERROR: No title or description found for reco {0} that can be used to derive name".format(reco_guid))
             return ''
     else:
         print("ERROR: Unsupported version for name guessing", version)
     # Extract key phrases
-    if verbose: print("DEBUG: Guessing recommendation name for reco '{0}'. Using endpoint {2} and string '{1}'...".format(reco['guid'], documents[0], cognitive_services_endpoint))
+    if verbose: print("DEBUG: Guessing recommendation name for reco '{0}'. Using endpoint {2} and string '{1}'...".format(reco_guid, documents[0], cognitive_services_endpoint))
     try:
         response = text_analytics_client.extract_key_phrases(documents = documents)[0]
     except Exception as err:
         print("Encountered exception. {}".format(err))
         return None
-    # Return first key phrase as the guessed name formated without blanks
+    # Return first key phrase(s) as the guessed name formated without blanks
     if not response.is_error:
-        # The first key phrase is used as the guessed name
-        guessed_name = response.key_phrases[0].title().replace(' ', '')
-        # Replace other special characters that might be present in the key phrase
-        guessed_name = guessed_name.replace('/', '')
-        guessed_name = guessed_name.replace('\\', '')
-        guessed_name = guessed_name.replace('"', '')
-        guessed_name = guessed_name.replace("'", '')
-        guessed_name = guessed_name.replace('-', '')
-        guessed_name = guessed_name.replace('_', '')
+        # Concatenate the first n key phrases
+        i = 0
+        guessed_name = ''
+        while i < key_phrase_no and i < len(response.key_phrases):
+            guessed_name += response.key_phrases[i].title()
+            i += 1
+        # Remove non alphanumeric characters
+        guessed_name = ''.join(c for c in guessed_name if c.isalpha())
         # The source is used as prefix, if there is one
-        if 'source' in reco:
-            if 'type' in reco['source']:
-                guessed_name = reco['source']['type'].lower() + '-' + guessed_name
+        if 'source' in reco and 'type' in reco['source']:
+            guessed_name = reco['source']['type'].lower() + '-' + guessed_name
+        else:
+            if verbose:
+                print("WARNING: No source type found for reco", reco_guid)
         if verbose:
             print("DEBUG: Key Phrases for reco:", str(response.key_phrases), '- Guessed name:', guessed_name)
         return guessed_name
