@@ -99,6 +99,7 @@ def reco_matches_criteria(reco, labels=None, services=None, resource_types=None,
 
 # Extracts certain recos based on include and optionally exclude selectors
 def filter_v2_recos(input_recos, include=None, exclude=None):
+    # The include/exclude parameters are dictionaries provided by the function get_object_selectors
     if include:
         waf_pillars = include['waf']
         services = include['service']
@@ -325,9 +326,9 @@ def v2_stats_from_folder(input_folder, format='yaml', labels=None, services=None
 
 # Return an object with the recos fulfilling the specified criteria
 # ToDo: the parameter guid should be an array, to support a list of guids
-def get_recos(input_folder, labels=None, services=None, waf_pillars=None, sources=None, guids=None, names=None, arg=False, format='yaml', verbose=False):
+def get_recos(input_folder, labels=None, services=None, waf_pillars=None, sources=None, guids=None, names=None, arg=False, format='yaml', import_filepaths=False, verbose=False):
     # Load the v2 objects from the folder
-    v2recos = load_v2_files(input_folder, format=format, verbose=verbose)
+    v2recos = load_v2_files(input_folder, format=format, import_filepaths=import_filepaths, verbose=verbose)
     if v2recos:
         # Create a list of recos that fulfill the criteria
         recos = []
@@ -338,6 +339,29 @@ def get_recos(input_folder, labels=None, services=None, waf_pillars=None, source
         return recos
     else:
         print("ERROR: no recos could be loaded from folder", input_folder)
+
+def get_checklists(input_folder, verbose=False):
+    # Banner
+    if verbose: print("DEBUG: Loading v2 checklist files from folder", input_folder)
+    # Look for files in the input folder
+    v2cls = []
+    # If the input folder exists
+    if os.path.exists(input_folder):
+        files = list(Path(input_folder).rglob( '*.*' ))
+        for file in files:
+            if (file.suffix == '.yaml') or (file.suffix == '.yml'):
+                if verbose: print("DEBUG: Loading file", file)
+                try:
+                    with open(file.resolve()) as f:
+                        v2cl = yaml.safe_load(f)
+                except Exception as e:
+                    print("ERROR: Error when loading YAML checklist file {0} - {1}". format(file, str(e)))
+                v2cls.append(v2cl)
+        # Return the object with all the v2 objects
+        return v2cls
+    else:
+        print("ERROR: Input folder", input_folder, "does not exist.")
+        return None
 
 # Return a single reco per GUID from a list of recos. The file can be identified by the file name
 # We could look for a file with the GUID in the name, but Linux file systems are case sensitive, plus
@@ -393,24 +417,24 @@ def print_reco(reco):
 
 # Print in screen a v2 recommendation in one line with fixed width columns
 def print_recos(recos, show_labels=False, show_arg=False):
-    print("{0:<37} {1:<80} {2:<30} {3:<15}".format('GUID', 'TITLE', 'SERVICE', 'WAF'), end="")
+    print("{0:<37} {1:<80} {2:<30} {3:<15}".format('NAME', 'TITLE', 'RESOURCE TYPE', 'WAF'), end="")
     if show_labels:
         print("{0:<40}".format("LABELS"), end="")
     if show_arg:
         print("{0:<40}".format("AZURE RESOURCE GRAPH QUERY"), end="")
     print()
-    print("{0:<37} {1:<80} {2:<30} {3:<15}".format('====', '=====', '=======', '==='), end="")
+    print("{0:<37} {1:<80} {2:<30} {3:<15}".format('====', '=====', '=============', '==='), end="")
     if show_labels:
         print("{0:<40}".format("======"), end="")
     if show_arg:
         print("{0:<40}".format("=========================="), end="")
     print()
     for reco in recos:
-        guid=reco['guid'] if 'guid' in reco else ''
+        name=reco['name'] if 'name' in reco else ''
         title=reco['title'] if 'title' in reco else ''
-        service=reco['service'] if 'service' in reco else ''
+        resource_type=reco['resourceTypes'][0] if 'resourceTypes' in reco and len(reco['resourceTypes']) > 0 else ''
         waf=reco['waf'] if 'waf' in reco else ''
-        print("{0:<37} {1:<80} {2:<30} {3:<15}".format(guid, title[:79], service[:29], waf), end="")
+        print("{0:<37} {1:<80} {2:<30} {3:<15}".format(name[:37], title[:79], resource_type[:29], waf), end="")
         if show_labels:
             if 'labels' in reco:
                 print("{0:<40}".format(str(reco['labels'])), end="")
@@ -427,49 +451,49 @@ def get_object_selectors(checklist_object, verbose=False):
     if 'labelSelector' in checklist_object:
         labelSelector = checklist_object['labelSelector']
         for key in labelSelector.keys():
-            print ("DEBUG: Label selector found:", key + ":" + labelSelector[key])
+            if verbose: print ("DEBUG: Label selector found:", key + ":" + labelSelector[key])
     else:
         labelSelector = None
     # Service
     if 'serviceSelector' in checklist_object:
         serviceSelector = checklist_object['serviceSelector']
         for service in serviceSelector:
-            print ("DEBUG: Service selector found:", service)
+            if verbose: print ("DEBUG: Service selector found:", service)
     else:
         serviceSelector = None
     # ResourceType
     if 'resourceTypeSelector' in checklist_object:
         resourceTypeSelector = checklist_object['resourceTypeSelector']
         for resourceType in resourceTypeSelector:
-            print ("DEBUG: resourceType selector found:", resourceType)
+            if verbose: print ("DEBUG: resourceType selector found:", resourceType)
     else:
         resourceTypeSelector = None
     # WAF
     if 'wafSelector' in checklist_object:
         wafSelector = checklist_object['wafSelector']
         for waf in wafSelector:
-            print ("DEBUG: WAF selector found:", waf)
+            if verbose: print ("DEBUG: WAF selector found:", waf)
     else:
         wafSelector = None
     # GUID
     if 'guidSelector' in checklist_object:
         guidSelector = checklist_object['guidSelector']
         for guid in guidSelector:
-            print ("DEBUG: GUID selector found:", guid)
+            if verbose: print ("DEBUG: GUID selector found:", guid)
     else:
         guidSelector = None
     # Names
     if 'nameSelector' in checklist_object:
         nameSelector = checklist_object['nameSelector']
         for name in nameSelector:
-            print ("DEBUG: name selector found:", name)
+            if verbose: print ("DEBUG: name selector found:", name)
     else:
         nameSelector = None
     # Source
     if 'sourceSelector' in checklist_object:
         sourceSelector = checklist_object['sourceSelector']
         for source in sourceSelector:
-            print ("DEBUG: source selector found:", source)
+            if verbose: print ("DEBUG: source selector found:", source)
     else:
         sourceSelector = None
     # Return the selectors
@@ -606,8 +630,8 @@ def delete_file(file_name, verbose=False):
 # Function that returns a reco name provided its GUID. It takes as argument an object with the full list of recos
 def get_reco_name_from_guid(recos, guid):
     for reco in recos:
-        if 'guid' in reco:
-            if reco['guid'].lower() == guid.lower():
+        if 'labels' in reco and 'guid' in reco['labels']:
+            if reco['labels']['guid'].lower() == guid.lower():
                 if 'name' in reco:
                     return reco['name']
                 else:

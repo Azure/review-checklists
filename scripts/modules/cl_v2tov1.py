@@ -114,9 +114,8 @@ def get_v1_from_v2(reco_v2, service_dictionary=None):
     # GUID (not mandatory in v2)
     if 'guid' in reco_v2:
         reco_v1['guid'] = reco_v2['guid']
-    elif 'labels' in reco_v2:
-        if 'guid' in reco_v2['labels']:
-            reco_v1['guid'] = reco_v2['labels']['guid']
+    elif 'labels' in reco_v2 and 'guid' in reco_v2['labels']:
+        reco_v1['guid'] = reco_v2['labels']['guid']
     # Mandatory fields
     if 'title' in reco_v2:
         reco_v1['text'] = reco_v2['title']
@@ -134,8 +133,8 @@ def get_v1_from_v2(reco_v2, service_dictionary=None):
     # Services not there in v2
     if 'services' in reco_v2:
         reco_v1['service'] = reco_v2['service'][0]
-    elif 'resourceTypes' in reco_v2:
-        reco_v1['service'] = cl_v1tov2.get_standard_service_name(reco_v2['services'][0], service_dictionary=service_dictionary)
+    elif 'resourceTypes' in reco_v2 and len(reco_v2['resourceTypes']) > 0:
+        reco_v1['service'] = cl_v1tov2.get_standard_service_name(reco_v2['resourceTypes'][0], service_dictionary=service_dictionary)
     if 'waf' in reco_v2:
         reco_v1['waf'] = reco_v2['waf']
     return reco_v1
