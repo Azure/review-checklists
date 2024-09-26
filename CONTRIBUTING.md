@@ -58,6 +58,10 @@ where type=='microsoft.containerservice/managedclusters' | extend compliant= isn
 
 It is important for the query to return these two fields for the automation to work such as the bash script and automatic Azure Monitor Workbook generation.
 
+Some tips:
+- Use single quotes inside (`'`) of the ARG query string, double quotes (`"`) break the JSON syntax.
+- Use the case insensitive comparison operator (`=~`) whenever possible instead of the case-sensitive one (`==`).
+
 #### Microsoft approvers
 
 Specific approvers (at least two individuals) for each checklist are defined in the [CODEOWNERS](./CODEOWNERS) file. Microsoft approvers should verify the correct operation of the proposed ARG query before approving the Pull Request:
