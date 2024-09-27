@@ -22,14 +22,15 @@ jobs:
         run: |
           pip install -r ./scripts/requirements.txt
           alz_files=$(python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --checklist-file ./v2/checklists/alz.yaml --only-filenames)
-          echo "$(echo $alz_files | wc -l) reco files found in the ALZ checklist:"
-          echo "$alz_files | head -2"
+          alz_files_count=$(echo "$alz_files" | wc -l)
+          echo "$alz_files_count reco files found in the ALZ checklist:"
+          echo "$alz_files" | head -2
           echo "..."
-          echo "$alz_files | tail -2"
+          echo "$alz_files" | tail -2
           for input_file in ${{ steps.files.outputs.all }}; do
             intersection=$(echo "$alz_files" | grep "$input_file")
             echo "Evaluating changed file $input_file, intersection with ALZ files is $intersection"
-            if [[ "$intersection" == "$input_file" ]]; then 
+            if [[ -ne "$intersection" ]]; then 
               echo "Modification to file $input_file detected, which seems to be a reco leveraged by the ALZ checklist"
               echo "alz_impact=yes" >> $GITHUB_OUTPUT
             else
