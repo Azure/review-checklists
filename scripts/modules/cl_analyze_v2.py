@@ -214,7 +214,7 @@ def v2_stats_from_object(v2recos, verbose=False):
 
     if v2recos:
         # Find GUID and name duplicates
-        guid_list = [reco['guid'] for reco in v2recos if 'guid' in reco]
+        guid_list = [reco['labels']['guid'] for reco in v2recos if 'labels' in reco and 'guid' in reco['labels']]
         guid_counts = Counter(guid_list)
         stats['duplicate_guids'] = [item for item, count in guid_counts.items() if count > 1]
         name_list = [reco['name'] for reco in v2recos if 'name' in reco]
