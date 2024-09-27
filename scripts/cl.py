@@ -46,6 +46,8 @@
 # python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --format yaml --label-selector '{"checklist": "alz"}' --show-labels
 # python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --format yaml --source-selector 'aprl'
 # python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --format yaml --with-arg
+# python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --checklist-file ./v2/checklists/alz.yaml --verbose
+# python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --checklist-file ./v2/checklists/alz.yaml --only-filenames
 #
 # Usage examples for renaming:
 # python3 ./scripts/cl.py rename-reco --input-folder ./v2/recos --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
@@ -167,6 +169,8 @@ getrecos_parser.add_argument('--with-arg', dest='getrecos_arg', action='store_tr
                     default=False, help='only return queries with ARG queries (default: False)')
 getrecos_parser.add_argument('--checklist-file', dest='getrecos_checklist_file', metavar='CHECKLIST_FILE', action='store',
                     help='YAML file with a checklist definition that can include label-selectors, service-selectors and WAF-selectors as well as other metadata')
+getrecos_parser.add_argument('--only-filenames', dest='getrecos_only_filenames', action='store_true',
+                    default=False, help='only show the reco filenames (default: False)')
 # Create the 'update-recos' command
 updaterecos_parser = subparsers.add_parser('update-recos', help='Update recommendations from a folder structure containing v2 recos', parents=[base_subparser])
 updaterecos_parser.add_argument('--input-folder', dest='updaterecos_input_folder', metavar='INPUT_FOLDER', action='store',
@@ -489,7 +493,7 @@ elif args.command == 'list-recos':
     if args.getrecos_input_folder:
         if args.getrecos_checklist_file:
             # Get recos from the checklist file
-            v2recos = cl_analyze_v2.get_recos_from_checklist( args.getrecos_checklist_file, args.getrecos_input_folder, verbose=args.verbose)
+            v2recos = cl_analyze_v2.get_recos_from_checklist( args.getrecos_checklist_file, args.getrecos_input_folder, verbose=args.verbose, import_filepaths=True)
         else:
             # Convert label selectors argument to an object if specified
             if args.getrecos_labels:
@@ -518,7 +522,11 @@ elif args.command == 'list-recos':
                                             arg=args.getrecos_arg, verbose=args.verbose)
         # Print recos
         if v2recos:
-            cl_analyze_v2.print_recos(v2recos, show_labels=args.getrecos_show_labels, show_arg=args.getrecos_show_arg)
+            if args.getrecos_only_filenames:
+                for reco in v2recos:
+                    print(reco['filepath'])
+            else:
+                cl_analyze_v2.print_recos(v2recos, show_labels=args.getrecos_show_labels, show_arg=args.getrecos_show_arg)
         else:
             print("ERROR: No v2 objects found satisfying the criteria.")
     else:

@@ -1,0 +1,38 @@
+name: Autotag
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+on:
+  pull_request:
+    branches: [v2]
+    paths:
+      - '**.yml'
+      - '**.yaml'
+
+jobs:
+  autotag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: files
+        uses: masesgroup/retrieve-changed-files@v2
+      - id: alzimpact
+        name: Verify whether the modified files have an impact on the ALZ checklist
+        run: |
+          alz_files=$(python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --checklist-file ./v2/checklists/alz.yaml --only-filenames)
+          for input_file in ${{ steps.files.outputs.all }}; do
+            if [[ echo "$alz_files" | grep "$input_file" == "$input_file" ]]; then 
+              echo "Modification to file $input_file detected, which seems to be a reco leveraged by the ALZ checklist"
+              echo "alz_impact=yes" >> $GITHUB_OUTPUT
+            else
+              echo "$input_file has no ALZ impact"
+            fi
+          done
+      - name: Work with the list of modified files - sort, update timestamp, translate
+        if: ${{ steps.alzimpact.outputs.alz_impact == 'yes' }}
+        uses: actions-ecosystem/action-add-labels@v1
+        id: addalzlabel
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: 'landingzone'

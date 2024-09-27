@@ -520,14 +520,14 @@ def get_checklist_object(checklist_file, verbose=False):
         return None
 
 # Return v2 recos that match the selectors included in a checklist file
-def get_recos_from_checklist(checklist_file, input_folder, verbose=False):
+def get_recos_from_checklist(checklist_file, input_folder, import_filepaths=False, verbose=False):
     # Get checklist object and full reco list
     checklist_v2 = get_checklist_object(checklist_file, verbose)
     if not checklist_v2:
         print("ERROR: Checklist file could not be loaded.")
         return None
     if verbose: print("DEBUG: Loading recos from folder", input_folder)
-    recos_v2_full = get_recos(input_folder, verbose=False)  # Loading all recos, verbose not needed
+    recos_v2_full = get_recos(input_folder, import_filepaths=import_filepaths, verbose=False)  # Loading all recos, verbose not needed
     recos_v2 = []
     # Selectors can be at the checklist root, in an area, or a subarea
     if 'include' in checklist_v2:
