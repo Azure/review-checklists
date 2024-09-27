@@ -1,8 +1,8 @@
 # This scripts runs checks on the v2 recommendations and checklists
+import jsonschema
 import sys
 import yaml
 import json
-import jsonschema
 import os
 from pathlib import Path
 from collections import Counter
