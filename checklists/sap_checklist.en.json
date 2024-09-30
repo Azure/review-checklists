@@ -203,7 +203,7 @@
             "guid": "a78b3d31-3170-44f2-b5d7-651a29f4ccf5",
             "severity": "High",
             "training": "https://learn.microsoft.com/training/modules/implement-high-availability-for-sap-workloads-azure/?source=recommendations",
-            "link": "https://learn.microsoft.com/azure/sap/workloads/high-availability-guide-standard-load-balancer-outbound-connections"
+            "link": "https://learn.microsoft.com/azure/sap/workloads/high-availability-guide-standard-load-balancer-outbound-connections,
             "graph": "resources | where type =~ 'Microsoft.Network/loadBalancers' | extend bep = properties.backendAddressPools | extend BackEndPools = array_length(bep) | where BackEndPools == 0 | project name, id, Param1='backendPools', Param2=toint(0), tags | union (resources | where type =~ 'Microsoft.Network/loadBalancers' | where sku.name == 'Standard' | extend bep = properties.backendAddressPools | extend BackEndPools = toint(array_length(bep)) | mv-expand bip = properties.backendAddressPools | extend BackendAddresses = array_length(bip.properties.loadBalancerBackendAddresses) | where toint(BackendAddresses) <= 1 | project name, id, tags, Param1='backendAddresses', Param2=toint(BackendAddresses)) | union ( resources | where type =~ 'Microsoft.Network/loadBalancers' | where sku.name == 'Basic' | mv-expand properties.backendAddressPools | extend backendPoolId = properties_backendAddressPools.id | project id, name, tags, tostring(backendPoolId), Param1='BackEndPools' | join kind = leftouter ( resources | where type =~ 'Microsoft.Network/networkInterfaces' | mv-expand properties.ipConfigurations | mv-expand properties_ipConfigurations.properties.loadBalancerBackendAddressPools | extend backendPoolId = tostring(properties_ipConfigurations_properties_loadBalancerBackendAddressPools.id) | summarize poolMembers = count() by backendPoolId | project tostring(backendPoolId), poolMembers ) on backendPoolId | where toint(poolMembers) <= 1 | extend BackendAddresses = poolMembers | project id, name, tags, Param1='backendAddresses', Param2=toint(BackendAddresses))"
         },
         {
@@ -321,7 +321,7 @@
             "text": "Deploy both VMs in the high-availability pair in an availability set or in availability zones. These VMs should be the same size and have the same storage configuration.",
             "guid": "f656e745-0cfb-453e-8008-0528fa21c933",
             "severity": "Medium",
-            "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/scenarios/sap/eslz-business-continuity-and-disaster-recovery"
+            "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/scenarios/sap/eslz-business-continuity-and-disaster-recovery",
             "graph": "Resources | where type =~ 'Microsoft.Storage/storageAccounts' | where sku.name in~ ('Standard_LRS', 'Premium_LRS') | project name, id, tags, param1 = strcat('sku: ', sku.name)"
         },
         {
@@ -417,7 +417,7 @@
             "guid": "fda1dbf3-dc95-4d48-a7c7-91dca0f6c565",
             "severity": "High",
             "training": "https://learn.microsoft.com/training/paths/implement-resource-mgmt-security/",
-            "link": "https://learn.microsoft.com/azure/well-architected/sap/design-areas/security"
+            "link": "https://learn.microsoft.com/azure/well-architected/sap/design-areas/security",
             "graph": "resources | where type == 'microsoft.aad/domainservices' | extend replicaSets = properties.replicaSets | where array_length(replicaSets) < 2 | project name=name, id=id, tags=tags, param1=strcat('replicaSetLocation:', replicaSets[0].location)"
         },
         {
@@ -573,7 +573,7 @@
             "guid": "6ba28021-4591-4147-9e39-e5309cccd979",
             "severity": "Medium",
             "training": "https://learn.microsoft.com/training/modules/enterprise-scale-organization/4-management-group-subscription-organization",
-            "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/resource-org-management-groups"
+            "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/resource-org-management-groups",
             "graph": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend compliant =( array_length(mgmtChain) <= 4 and array_length(mgmtChain) > 1)"
         },
         {
@@ -597,7 +597,8 @@
             "guid": "9cb107d5-325a-4e52-9ba3-4d4685e2213a",
             "severity": "High",
             "training": "https://learn.microsoft.com/training/modules/configure-subscriptions/?source=recommendations",
-            "link": "https://learn.microsoft.com/azure/architecture/guide/sap/sap-whole-landscape"
+            "link": "https://learn.microsoft.com/azure/architecture/guide/sap/sap-whole-landscape",
+            "graph": "Resources | where type contains 'publicIPAddresses' and isnotempty(properties.ipAddress) | summarize count () by subscriptionId"
         },
         {
             "category": "Management Group and Subscriptions",
