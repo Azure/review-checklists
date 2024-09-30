@@ -204,6 +204,7 @@
             "severity": "High",
             "training": "https://learn.microsoft.com/training/modules/implement-high-availability-for-sap-workloads-azure/?source=recommendations",
             "link": "https://learn.microsoft.com/azure/sap/workloads/high-availability-guide-standard-load-balancer-outbound-connections"
+            "graph": "resources | where type =~ 'Microsoft.Network/loadBalancers' | extend bep = properties.backendAddressPools | extend BackEndPools = array_length(bep) | where BackEndPools == 0 | project name, id, Param1='backendPools', Param2=toint(0), tags | union (resources | where type =~ 'Microsoft.Network/loadBalancers' | where sku.name == 'Standard' | extend bep = properties.backendAddressPools | extend BackEndPools = toint(array_length(bep)) | mv-expand bip = properties.backendAddressPools | extend BackendAddresses = array_length(bip.properties.loadBalancerBackendAddresses) | where toint(BackendAddresses) <= 1 | project name, id, tags, Param1='backendAddresses', Param2=toint(BackendAddresses)) | union ( resources | where type =~ 'Microsoft.Network/loadBalancers' | where sku.name == 'Basic' | mv-expand properties.backendAddressPools | extend backendPoolId = properties_backendAddressPools.id | project id, name, tags, tostring(backendPoolId), Param1='BackEndPools' | join kind = leftouter ( resources | where type =~ 'Microsoft.Network/networkInterfaces' | mv-expand properties.ipConfigurations | mv-expand properties_ipConfigurations.properties.loadBalancerBackendAddressPools | extend backendPoolId = tostring(properties_ipConfigurations_properties_loadBalancerBackendAddressPools.id) | summarize poolMembers = count() by backendPoolId | project tostring(backendPoolId), poolMembers ) on backendPoolId | where toint(poolMembers) <= 1 | extend BackendAddresses = poolMembers | project id, name, tags, Param1='backendAddresses', Param2=toint(BackendAddresses))"
         },
         {
             "category": "Business Continuity and Disaster Recovery",
@@ -321,6 +322,7 @@
             "guid": "f656e745-0cfb-453e-8008-0528fa21c933",
             "severity": "Medium",
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/scenarios/sap/eslz-business-continuity-and-disaster-recovery"
+            "graph": "Resources | where type =~ 'Microsoft.Storage/storageAccounts' | where sku.name in~ ('Standard_LRS', 'Premium_LRS') | project name, id, tags, param1 = strcat('sku: ', sku.name)"
         },
         {
             "category": "Business Continuity and Disaster Recovery",
