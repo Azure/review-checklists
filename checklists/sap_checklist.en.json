@@ -835,7 +835,8 @@
             "guid": "579266bc-ca27-45fa-a1ab-fe9d55d04c3c",
             "severity": "Medium",
             "training": "https://learn.microsoft.com/training/modules/analyze-costs-create-budgets-azure-cost-management/?source=recommendations",
-            "link": "https://learn.microsoft.com/azure/cost-management-billing/costs/enable-tag-inheritance"
+            "link": "https://learn.microsoft.com/azure/cost-management-billing/costs/enable-tag-inheritance",
+            "graph": "resources | extend compliant = isnotnull(['tags']) | project name, id, subscriptionId, resourceGroup, tags, compliant"
         },
         {
             "category": "Management and Monitoring",
@@ -950,10 +951,12 @@
             "waf": "Reliability",
             "service": "SAP",
             "text": "Local and global VNet peering provide connectivity and are the preferred approaches to ensure connectivity between landing zones for SAP deployments across multiple Azure regions",
+            "description": "When configuring VNet peering, use the "Allow traffic to remote virtual networks" setting.",
             "guid": "a3592829-e6e2-4061-9368-6af46791f893",
             "severity": "Medium",
             "training": "https://learn.microsoft.com/training/modules/configure-vnet-peering/?source=recommendations",
-            "link": "https://learn.microsoft.com/azure/virtual-network/virtual-network-peering-overview"
+            "link": "https://learn.microsoft.com/azure/virtual-network/virtual-network-peering-overview",
+            "graph": "resources | where type == 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id, peeringName=properties_virtualNetworkPeerings.name, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess == True)"
         },
         {
             "category": "Network Topology and Connectivity",
@@ -975,7 +978,8 @@
             "guid": "7d4bc7d2-c34a-452e-8f1d-6ae3c8eafcc3",
             "severity": "Medium",
             "training": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about",
-            "link": "https://learn.microsoft.com/training/modules/introduction-azure-virtual-wan/?source=recommendations"
+            "link": "https://learn.microsoft.com/training/modules/introduction-azure-virtual-wan/?source=recommendations",
+            "graph": "resources| where type =~ 'microsoft.network/virtualwans' | extend compliant= (properties.allowBranchToBranchTraffic == 'true') | distinct id,compliant"
         },
         {
             "category": "Network Topology and Connectivity",
@@ -1008,7 +1012,8 @@
             "guid": "82734c88-6ba2-4802-8459-11475e39e530",
             "severity": "High",
             "training": "https://learn.microsoft.com/training/modules/design-ip-addressing-for-azure/?source=recommendations",
-            "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing"
+            "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing",
+            "graph": "Resources | where type =~ 'Microsoft.Network/publicIPAddresses' and sku.tier =~ 'Regional' | where isempty(zones) or array_length(zones) <= 1 | extend az = case(isempty(zones), 'Non-zonal', array_length(zones) <= 1, strcat('Zonal (', strcat_array(zones, ','), ')'), zones) | project name, id, tags, param1 = strcat('sku: ', sku.name), param2 = strcat('availabilityZone: ', az)"
         },
         {
             "category": "Network Topology and Connectivity",
@@ -1019,7 +1024,8 @@
             "guid": "9cccd979-366b-4cda-8750-ab1ab039d95d",
             "severity": "High",
             "training": "https://learn.microsoft.com/learn/paths/architect-network-infrastructure/",
-            "link": "https://learn.microsoft.com/training/modules/protect-on-premises-infrastructure-with-azure-site-recovery/?source=recommendations"
+            "link": "https://learn.microsoft.com/training/modules/protect-on-premises-infrastructure-with-azure-site-recovery/?source=recommendations",
+            "graph": "Resources | where type contains 'publicIPAddresses' and isnotempty(properties.ipAddress) | summarize count () by subscriptionId"
         },
         {
             "category": "Network Topology and Connectivity",
@@ -1052,7 +1058,8 @@
             "guid": "d8a03e97-7784-424d-9167-85d6fa96c96a",
             "severity": "Medium",
             "training": "https://learn.microsoft.com/training/paths/secure-networking-infrastructure/",
-            "link": "https://learn.microsoft.com/azure/well-architected/services/networking/azure-firewall?toc=%2Fazure%2Ffirewall%2Ftoc.json&bc=%2Fazure%2Ffirewall%2Fbreadcrumb%2Ftoc.json"
+            "link": "https://learn.microsoft.com/azure/well-architected/services/networking/azure-firewall?toc=%2Fazure%2Ffirewall%2Ftoc.json&bc=%2Fazure%2Ffirewall%2Fbreadcrumb%2Ftoc.json",
+            "graph": "resources | where type=='microsoft.network/virtualhubs' | extend compliant = isnotnull(properties.azureFirewall.id) | project id, compliant"
         },
         {
             "category": "Network Topology and Connectivity",
