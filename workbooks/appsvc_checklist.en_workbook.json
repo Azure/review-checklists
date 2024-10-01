@@ -70,12 +70,30 @@
                 "style": "tabs",
                 "links": [
                     {
-                        "id": "4f4f6c3f-a519-4f49-8df1-6a9162cd9032",
+                        "id": "47249ca8-0261-478a-8948-3c18f1c438b6",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Security",
                         "subTarget": "tab0",
                         "preText": "Security",
+                        "style": "primary"
+                    },
+                    {
+                        "id": "ca5d7645-f882-4aeb-a6e9-8a502df9e376",
+                        "cellValue": "VisibleTab",
+                        "linkTarget": "parameter",
+                        "linkLabel": "BC and DR",
+                        "subTarget": "tab1",
+                        "preText": "BC and DR",
+                        "style": "primary"
+                    },
+                    {
+                        "id": "cb4c41e6-452b-42e7-8c3c-87d05f91d3f6",
+                        "cellValue": "VisibleTab",
+                        "linkTarget": "parameter",
+                        "linkLabel": "Operations",
+                        "subTarget": "tab2",
+                        "preText": "Operations",
                         "style": "primary"
                     }
                 ]
@@ -98,9 +116,9 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Set minimum TLS policy to 1.2. Check [this link](https://learn.microsoft.com/azure/app-service/configure-ssl-bindings#enforce-tls-versions) for further information."
+                            "json": "Set minimum TLS policy to 1.2 or higher, preferably 1.3, in App Service configuration. Check [this link](https://learn.microsoft.com/azure/app-service/configure-ssl-bindings#enforce-tls-versions) for further information."
                         },
-                        "name": "querytext0"
+                        "name": "querytext2"
                     },
                     {
                         "type": 3,
@@ -155,14 +173,14 @@
                                 ]
                             }
                         },
-                        "name": "query0"
+                        "name": "query2"
                     },
                     {
                         "type": 1,
                         "content": {
-                            "json": "Use HTTPS only. Check [this link](https://learn.microsoft.com/azure/app-service/configure-ssl-bindings#enforce-https) for further information."
+                            "json": "Use HTTPS only and consider enabling HTTP Strict Transport Security (HSTS). Check [this link](https://learn.microsoft.com/azure/app-service/configure-ssl-bindings#enforce-https) for further information."
                         },
-                        "name": "querytext1"
+                        "name": "querytext3"
                     },
                     {
                         "type": 3,
@@ -217,14 +235,14 @@
                                 ]
                             }
                         },
-                        "name": "query1"
+                        "name": "query3"
                     },
                     {
                         "type": 1,
                         "content": {
-                            "json": "Turn off remote debugging. Check [this link](https://learn.microsoft.com/azure/app-service/configure-common#configure-general-settings) for further information."
+                            "json": "Turn off remote debugging in production environments. Check [this link](https://learn.microsoft.com/azure/app-service/configure-common#configure-general-settings) for further information."
                         },
-                        "name": "querytext2"
+                        "name": "querytext4"
                     },
                     {
                         "type": 3,
@@ -279,7 +297,7 @@
                                 ]
                             }
                         },
-                        "name": "query2"
+                        "name": "query4"
                     }
                 ]
             },
@@ -289,6 +307,174 @@
                 "value": "tab0"
             },
             "name": "tab0"
+        },
+        {
+            "type": 12,
+            "content": {
+                "version": "NotebookGroup/1.0",
+                "groupType": "editable",
+                "items": [
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "## BC and DR"
+                        },
+                        "name": "tab1title"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Use Premium and Standard tiers for staging slots and automated backups. Align your backup retention period with disaster recovery needs. Check [this link](https://learn.microsoft.com/azure/app-service/overview-hosting-plans) for further information."
+                        },
+                        "name": "querytext0"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type =~ 'microsoft.web/serverfarms' | extend compliant = (sku.tier == 'Premium' or sku.tier == 'Standard') | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query0"
+                    }
+                ]
+            },
+            "conditionalVisibility": {
+                "parameterName": "VisibleTab",
+                "comparison": "isEqualTo",
+                "value": "tab1"
+            },
+            "name": "tab1"
+        },
+        {
+            "type": 12,
+            "content": {
+                "version": "NotebookGroup/1.0",
+                "groupType": "editable",
+                "items": [
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "## Operations"
+                        },
+                        "name": "tab2title"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Implement health checks to monitor and detect issues with App Service instances. Health checks enable automatic instance replacement on failure. Check [this link](https://learn.microsoft.com/azure/app-service/monitor-instances-health-check) for further information."
+                        },
+                        "name": "querytext1"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "appserviceresources  | where type =~ 'microsoft.web/sites/config' | extend compliant = (properties.HealthCheckPath != '') | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query1"
+                    }
+                ]
+            },
+            "conditionalVisibility": {
+                "parameterName": "VisibleTab",
+                "comparison": "isEqualTo",
+                "value": "tab2"
+            },
+            "name": "tab2"
         }
     ],
     "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
