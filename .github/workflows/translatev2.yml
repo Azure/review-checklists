@@ -1,0 +1,129 @@
+name: Translation
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+on:
+  push:
+    branches: [ v2 ]
+    paths:
+    - '**.yaml'
+    - '**.yml'
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Get list of files that have been changed in the push
+      - id: files
+        uses: masesgroup/retrieve-changed-files@v2
+      # Set variables that indicate whether XLSX files have been modified, which would indicate that
+      #   this action has been triggered by an automated action
+      - id: automationresult
+        name: Verify whether this action is a result of another action
+        run: |
+          for input_file in ${{ steps.files.outputs.all }}; do
+            if [[ "$input_file" == *"xlsx" ]]; then 
+              echo "Modification to XLSX file $input_file detected, this seems to be the output of an automated PR"
+              echo "excel_file_changed=yes" >> $GITHUB_OUTPUT
+            else
+              echo "$input_file is not an XLSX file"
+            fi
+          done
+
+      # Find out the impacted checklists
+      - id: climpact
+        if: ${{ steps.automationresult.outputs.excel_file_changed != 'yes' }}
+        name: Verify whether the modified files have an impact on the ALZ checklist
+        run: |
+          pip install -r ./scripts/requirements.txt
+          impacted_cl_files=()
+          done_something=no
+          for cl_file in ('./v2/checklists/alz.yaml' './v2/checklists/waf.yaml'); do 
+            cl_name=$(echo $cl_file | cut -d/ -f4 | cut -d. -f1)
+            cl_reco_files=$(python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --checklist-file ./v2/checklists/alz.yaml --only-filenames)
+            cl_reco_files_count=$(echo "$cl_reco_files" | wc -l)
+            echo "$cl_reco_files_count reco files found referenced in the checklist $cl_file"
+            for input_file in ${{ steps.files.outputs.all }}; do
+              echo "Processing '$input_file'..."
+              if [[ "$cl_reco_files" == *"$input_file"* ]]; then
+                echo "Modification to file '$input_file' detected, which seems to be a reco leveraged by the checklist $cl_name in $cl_file"
+                impacted_cl_files+="$cl_file"
+                done_something=yes
+              else
+                echo "'$input_file' has no impact to the checklist $cl_name in $cl_file"
+              fi
+            done
+          done
+          echo "impacted_cl_files=($impacted_cl_files)" >> $GITHUB_OUTPUT
+      # If ALZ
+      - name: Generate v1 JSON checklists
+        id: clv1
+        env:
+          AZURE_TRANSLATOR_SUBSCRIPTION_KEY: ${{ secrets.AZURE_TRANSLATOR_SUBSCRIPTION_KEY }}
+          AZURE_TRANSLATOR_ENDPOINT: ${{ secrets.AZURE_TRANSLATOR_ENDPOINT }}
+          AZURE_TRANSLATOR_REGION: ${{ secrets.AZURE_TRANSLATOR_REGION }}
+        run: |
+          cl_v1_files=()
+          for cl_file in ${{ steps.files.outputs.impacted_cl_files }}; do 
+            cl_name=$(echo $cl_file | cut -d/ -f4 | cut -d. -f1)
+            cl_v1_file="./v2/checklists/${cl_name}_checklist.en.json"
+            cl_v1_files+="$cl_v1_file"
+            # Generate v1 JSON for the checklist
+            echo "Generating v1 JSON for checklist $cl_name in $cl_file..."
+            python3 ./scripts/cl.py export-checklist --input-folder ./v2/recos --service-dictionary ./scripts/service_dictionary.json --checklist-file $cl_file --output-file $cl_v1_file --verbose
+            # Sort modified file
+            # python3 ./scripts/sort_checklist.py --input-file $input_file
+            # Update the timestamp in the modified file
+            # python3 ./scripts/timestamp_checklist.py --input-file $input_file
+            # Translate the checklist
+            python3 ./scripts/translate.py --input-file $cl_v1_file
+          echo "cl_v1_files=($cl_v1_files)" >> $GITHUB_OUTPUT
+
+      # Generate macro-free spreadsheets and Azure Monitor workbooks
+      - name: Setup python
+        if: ${{ steps.climpact.outputs.done_something == 'yes' }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8 #install the python needed
+      - name: Install dependencies
+        if: ${{ steps.climpact.outputs.done_something == 'yes' }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests openpyxl
+      # Create Excel spreadsheets
+      - name: Execute excel python script # run file
+        if: ${{ steps.climpact.outputs.done_something == 'yes' }}
+        run: |
+          python3 ./scripts/update_excel_openpyxl.py --checklist-file="${{ steps.clv1.outputs.cl_v1_files }}" --find-all --excel-file="./spreadsheet/macrofree/review_checklist_empty.xlsx" --output-name-is-input-name --output-path="./spreadsheet/macrofree/" --verbose
+
+      # Create Azure Monitor workbooks
+      # Note that workbook creation might not work with some of the v1 checklists generated from v2, since categories and subcategories might be missing.
+      # The workbook creation script should instead pick service names instead of categories for the tabs.
+      - name: Execute workbook python script # run file
+        if: ${{ steps.climpact.outputs.done_something == 'yes' }}
+        run: |
+          # Create workbooks for the modified file, both with and without reco counters
+          echo "Generating workbooks for the modified files: ${{ steps.clv1.outputs.cl_v1_files }}..."
+          python3 ./scripts/workbook_create.py --checklist-file="${{ steps.clv1.outputs.cl_v1_files }}" --output-path="./workbooks/" --blocks-path="./workbooks/blocks/"
+          python3 ./scripts/workbook_create.py --checklist-file="${{ steps.clv1.outputs.cl_v1_files }}" --output-path="./workbooks/" --blocks-path="./workbooks/blocks/" --counters
+          # Extra static commands to generate a network-specific ALZ workbook
+          # python3 ./scripts/workbook_create.py --checklist-file ./checklists/alz_checklist.en.json --output-path ./workbooks --blocks-path ./workbooks/blocks --create-arm-template --category=network --query-size medium
+          # python3 ./scripts/workbook_create.py --checklist-file ./checklists/alz_checklist.en.json --output-file ./workbooks/alz_checklist.en_network_counters.json --blocks-path ./workbooks/blocks --create-arm-template --category=network --query-size tiny --counters
+          # python3 ./scripts/workbook_create.py --checklist-file ./checklists/alz_checklist.en.json --output-file ./workbooks/alz_checklist.en_network_tabcounters.json --blocks-path ./workbooks/blocks --create-arm-template --category=network --query-size tiny --tab-counters
+          # App delivery
+          # python3 ./scripts/workbook_create.py --checklist-file ./checklists/network_appdelivery_checklist.en.json --output-file ./workbooks/appdelivery_checklist.en_network_workbook.json --blocks-path ./workbooks/blocks --create-arm-template --category=network --query-size tiny
+          # python3 ./scripts/workbook_create.py --checklist-file ./checklists/network_appdelivery_checklist.en.json --output-file ./workbooks/appdelivery_checklist.en_network_counters_workbook.json --blocks-path ./workbooks/blocks --create-arm-template --category=network --query-size tiny --counters
+
+      # Create the PR if any change was made
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v6
+        if: ${{ steps.climpact.outputs.done_something == 'yes' }}
+        with:
+          title: 'Automatic translation of ${{ steps.clv1.outputs.cl_v1_files }}'
+          body: 'Processed changed files ${{ steps.files.outputs.all }}'
+          labels: 'automated'
+          token: ${{ secrets.WORKFLOW_PAT }}
