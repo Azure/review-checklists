@@ -16,11 +16,16 @@ jobs:
   translate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
       # Get list of files that have been changed in the push
       - id: files
         uses: masesgroup/retrieve-changed-files@v2
       # Set variables that indicate whether XLSX files have been modified, which would indicate that
+      - name: Set variables
+        id: variables
+        run: |
+          echo "v1_output_folder=v2/checklists" >> $GITHUB_OUTPUT
       #   this action has been triggered by an automated action
       - id: automationresult
         name: Verify whether this action is a result of another action
@@ -73,10 +78,10 @@ jobs:
           cl_v1_files=()
           for cl_file in ${{ steps.climpact.outputs.impacted_cl_files }}; do 
             cl_name=$(echo $cl_file | cut -d/ -f4 | cut -d. -f1)
-            cl_v1_file="./v2/checklists/${cl_name}_checklist.en.json"
+            cl_v1_file="./${{ steps.variables.outputs.v1_output_folder }}/${cl_name}_checklist.en.json"
             cl_v1_files+="$cl_v1_file"
             # Generate v1 JSON for the checklist
-            echo "Generating v1 JSON for checklist $cl_name in $cl_file..."
+            echo "Generating v1 JSON for checklist $cl_name in $cl_file into $cl_v1_file..."
             python3 ./scripts/cl.py export-checklist --input-folder ./v2/recos --service-dictionary ./scripts/service_dictionary.json --checklist-file $cl_file --output-file $cl_v1_file --verbose
             # Sort modified file
             # python3 ./scripts/sort_checklist.py --input-file $input_file
