@@ -26,6 +26,7 @@ jobs:
         id: variables
         run: |
           echo "v1_output_folder=v2/checklists" >> $GITHUB_OUTPUT
+          echo "clv2_file_list=('./v2/checklists/alz.yaml' './v2/checklists/waf.yaml')" >> $GITHUB_OUTPUT
       #   this action has been triggered by an automated action
       - id: automationresult
         name: Verify whether this action is a result of another action
@@ -47,8 +48,9 @@ jobs:
           pip install -r ./scripts/requirements.txt
           impacted_cl_files=()
           done_something=no
-          clv2_file_list=('./v2/checklists/alz.yaml' './v2/checklists/waf.yaml')  # Add more checklists here to be translated if needed
+          clv2_file_list=$(${{ steps.variables.outputs.clv2_file_list }})
           for cl_file in $clv2_file_list; do 
+            echo "Processing v2 checklist $cl_file..."
             cl_name=$(echo $cl_file | cut -d/ -f4 | cut -d. -f1)
             cl_reco_files=$(python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --checklist-file ./v2/checklists/alz.yaml --only-filenames)
             cl_reco_files_count=$(echo "$cl_reco_files" | wc -l)
@@ -67,7 +69,7 @@ jobs:
           echo "impacted_cl_files=($impacted_cl_files)" >> $GITHUB_OUTPUT
           echo "done_something=$done_something" >> $GITHUB_OUTPUT
       # If ALZ
-      - name: Generate v1 JSON checklists
+      - name: Generate v1 JSON checklists and translating them
         id: clv1
         if: ${{ steps.climpact.outputs.done_something == 'yes' }}
         env:
@@ -75,8 +77,10 @@ jobs:
           AZURE_TRANSLATOR_ENDPOINT: ${{ secrets.AZURE_TRANSLATOR_ENDPOINT }}
           AZURE_TRANSLATOR_REGION: ${{ secrets.AZURE_TRANSLATOR_REGION }}
         run: |
+          cl_v2_files=("${{ steps.climpact.outputs.impacted_cl_files }}")
           cl_v1_files=()
-          for cl_file in $(eval echo "${{ steps.climpact.outputs.impacted_cl_files }}"); do 
+          echo "Generating v1 checklists for the following v2 files: $cl_v2_files..."
+          for cl_file in $cl_v2_files; do 
             cl_name=$(echo $cl_file | cut -d/ -f4 | cut -d. -f1)
             cl_v1_file="./${{ steps.variables.outputs.v1_output_folder }}/${cl_name}_checklist.en.json"
             cl_v1_files+="$cl_v1_file"
