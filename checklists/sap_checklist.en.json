@@ -73,7 +73,7 @@
             "severity": "High",
             "training": "https://learn.microsoft.com/azure/expressroute/use-s2s-vpn-as-backup-for-expressroute-privatepeering",
             "link": "https://learn.microsoft.com/azure/expressroute/designing-for-disaster-recovery-with-expressroute-privatepeering",
-            "graph": "resources| where type == 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType == 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier contains 'AZ'| project name, id, subscriptionId, resourceGroup, Type, compliant"
+            "graph": "resources| where type =~ 'microsoft.network/virtualnetworkgateways'| where properties.gatewayType =~ 'vpn' or properties.gatewayType =~ 'ExpressRoute'| extend SKUName = properties.sku.name, SKUTier = properties.sku.tier, Type = properties.gatewayType| extend compliant = SKUTier contains 'AZ'| project name, id, subscriptionId, resourceGroup, Type, compliant"
         },
         {
             "category": "Business Continuity and Disaster Recovery",
@@ -204,7 +204,7 @@
             "severity": "High",
             "training": "https://learn.microsoft.com/training/modules/implement-high-availability-for-sap-workloads-azure/?source=recommendations",
             "link": "https://learn.microsoft.com/azure/sap/workloads/high-availability-guide-standard-load-balancer-outbound-connections",
-            "graph": "resources | where type =~ 'Microsoft.Network/loadBalancers' | extend bep = properties.backendAddressPools | extend BackEndPools = array_length(bep) | where BackEndPools == 0 | project name, id, Param1='backendPools', Param2=toint(0), tags | union (resources | where type =~ 'Microsoft.Network/loadBalancers' | where sku.name == 'Standard' | extend bep = properties.backendAddressPools | extend BackEndPools = toint(array_length(bep)) | mv-expand bip = properties.backendAddressPools | extend BackendAddresses = array_length(bip.properties.loadBalancerBackendAddresses) | where toint(BackendAddresses) <= 1 | project name, id, tags, Param1='backendAddresses', Param2=toint(BackendAddresses)) | union ( resources | where type =~ 'Microsoft.Network/loadBalancers' | where sku.name == 'Basic' | mv-expand properties.backendAddressPools | extend backendPoolId = properties_backendAddressPools.id | project id, name, tags, tostring(backendPoolId), Param1='BackEndPools' | join kind = leftouter ( resources | where type =~ 'Microsoft.Network/networkInterfaces' | mv-expand properties.ipConfigurations | mv-expand properties_ipConfigurations.properties.loadBalancerBackendAddressPools | extend backendPoolId = tostring(properties_ipConfigurations_properties_loadBalancerBackendAddressPools.id) | summarize poolMembers = count() by backendPoolId | project tostring(backendPoolId), poolMembers ) on backendPoolId | where toint(poolMembers) <= 1 | extend BackendAddresses = poolMembers | project id, name, tags, Param1='backendAddresses', Param2=toint(BackendAddresses))"
+            "graph": "resources | where type =~ 'Microsoft.Network/loadBalancers' | extend bep = properties.backendAddressPools | extend BackEndPools = array_length(bep) | where BackEndPools =~ 0 | project name, id, Param1='backendPools', Param2=toint(0), tags | union (resources | where type =~ 'Microsoft.Network/loadBalancers' | where sku.name =~ 'Standard' | extend bep = properties.backendAddressPools | extend BackEndPools = toint(array_length(bep)) | mv-expand bip = properties.backendAddressPools | extend BackendAddresses = array_length(bip.properties.loadBalancerBackendAddresses) | where toint(BackendAddresses) <= 1 | project name, id, tags, Param1='backendAddresses', Param2=toint(BackendAddresses)) | union ( resources | where type =~ 'Microsoft.Network/loadBalancers' | where sku.name =~ 'Basic' | mv-expand properties.backendAddressPools | extend backendPoolId = properties_backendAddressPools.id | project id, name, tags, tostring(backendPoolId), Param1='BackEndPools' | join kind = leftouter ( resources | where type =~ 'Microsoft.Network/networkInterfaces' | mv-expand properties.ipConfigurations | mv-expand properties_ipConfigurations.properties.loadBalancerBackendAddressPools | extend backendPoolId = tostring(properties_ipConfigurations_properties_loadBalancerBackendAddressPools.id) | summarize poolMembers = count() by backendPoolId | project tostring(backendPoolId), poolMembers ) on backendPoolId | where toint(poolMembers) <= 1 | extend BackendAddresses = poolMembers | project id, name, tags, Param1='backendAddresses', Param2=toint(BackendAddresses))"
         },
         {
             "category": "Business Continuity and Disaster Recovery",
@@ -418,7 +418,7 @@
             "severity": "High",
             "training": "https://learn.microsoft.com/training/paths/implement-resource-mgmt-security/",
             "link": "https://learn.microsoft.com/azure/well-architected/sap/design-areas/security",
-            "graph": "resources | where type == 'microsoft.aad/domainservices' | extend replicaSets = properties.replicaSets | where array_length(replicaSets) < 2 | project name=name, id=id, tags=tags, param1=strcat('replicaSetLocation:', replicaSets[0].location)"
+            "graph": "resources | where type =~ 'microsoft.aad/domainservices' | extend replicaSets = properties.replicaSets | where array_length(replicaSets) < 2 | project name=name, id=id, tags=tags, param1=strcat('replicaSetLocation:', replicaSets[0].location)"
         },
         {
             "category": "Identity and Access",
@@ -574,7 +574,7 @@
             "severity": "Medium",
             "training": "https://learn.microsoft.com/training/modules/enterprise-scale-organization/4-management-group-subscription-organization",
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/resource-org-management-groups",
-            "graph": "resourcecontainers| where type == 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend compliant =( array_length(mgmtChain) <= 4 and array_length(mgmtChain) > 1)"
+            "graph": "resourcecontainers| where type =~ 'microsoft.resources/subscriptions'| extend ManagementGroup = tostring(tags),mgmtChain = properties.managementGroupAncestorsChain| extend compliant =( array_length(mgmtChain) <= 4 and array_length(mgmtChain) > 1)"
         },
         {
             "category": "Management Group and Subscriptions",
@@ -956,7 +956,7 @@
             "severity": "Medium",
             "training": "https://learn.microsoft.com/training/modules/configure-vnet-peering/?source=recommendations",
             "link": "https://learn.microsoft.com/azure/virtual-network/virtual-network-peering-overview",
-            "graph": "resources | where type =~ 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id, peeringName=properties_virtualNetworkPeerings.name, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess == True)"
+            "graph": "resources | where type =~ 'microsoft.network/virtualnetworks' | mvexpand properties.virtualNetworkPeerings | project id, peeringName=properties_virtualNetworkPeerings.name, compliant = (properties_virtualNetworkPeerings.properties.allowVirtualNetworkAccess =~ True)"
         },
         {
             "category": "Network Topology and Connectivity",
@@ -979,7 +979,7 @@
             "severity": "Medium",
             "training": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about",
             "link": "https://learn.microsoft.com/training/modules/introduction-azure-virtual-wan/?source=recommendations",
-            "graph": "resources| where type =~ 'microsoft.network/virtualwans' | extend compliant= (properties.allowBranchToBranchTraffic == 'true') | distinct id,compliant"
+            "graph": "resources| where type =~ 'microsoft.network/virtualwans' | extend compliant= (properties.allowBranchToBranchTraffic =~ 'true') | distinct id,compliant"
         },
         {
             "category": "Network Topology and Connectivity",
@@ -1059,7 +1059,7 @@
             "severity": "Medium",
             "training": "https://learn.microsoft.com/training/paths/secure-networking-infrastructure/",
             "link": "https://learn.microsoft.com/azure/well-architected/services/networking/azure-firewall?toc=%2Fazure%2Ffirewall%2Ftoc.json&bc=%2Fazure%2Ffirewall%2Fbreadcrumb%2Ftoc.json",
-            "graph": "resources | where type=='microsoft.network/virtualhubs' | extend compliant = isnotnull(properties.azureFirewall.id) | project id, compliant"
+            "graph": "resources | where type=~'microsoft.network/virtualhubs' | extend compliant = isnotnull(properties.azureFirewall.id) | project id, compliant"
         },
         {
             "category": "Network Topology and Connectivity",
@@ -1137,7 +1137,7 @@
             "severity": "High",
             "training": "https://learn.microsoft.com/training/paths/azure-fundamentals-describe-azure-architecture-services/?source=recommendations",
             "link": "https://learn.microsoft.com/azure/virtual-network/accelerated-networking-overview?tabs=redhat",
-            "graph": "Resources | where type =~ 'Microsoft.Network/NetworkInterfaces' | where properties.enableAcceleratedNetworking == 'false' | project name, subscriptionId, properties.enableAcceleratedNetworking"
+            "graph": "Resources | where type =~ 'Microsoft.Network/NetworkInterfaces' | where properties.enableAcceleratedNetworking =~ 'false' | project name, subscriptionId, properties.enableAcceleratedNetworking"
         },
         {
             "category": "Network Topology and Connectivity",
