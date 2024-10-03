@@ -3,14 +3,15 @@
     {
       "category": "VMs and VMSS",
       "subcategory": "Capacity",
-      "text": "Review Virtual Machines quotas and limits that might pose design restrictions",
+      "text": "Create Alerts to monitor and alert on VM quotas for your subscriptions.",
       "description": "VMs have specific limits and quotas, which vary based on the type of VM or the region. There might be subscription restrictions, such as the number of VMs per subscription or the number of cores per VM. If other workloads share your subscription, then your ability to consume data might be reduced.",
       "waf": "Reliability",
       "service": "Reliability",
       "guid": "dc8ec9d1-bb73-4b26-a5a6-7eba9ed5b354",
       "id": "A01.01",
       "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits#virtual-machines-limits"
+      "link": "https://learn.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits#virtual-machines-limits",
+      "graph": "resources | where type =~ 'microsoft.insights/scheduledqueryrules' | where properties.criteria has 'arg(\"\").QuotaResources' | project id, compliant = true"
     },
     {
       "category": "VMs and VMSS",
@@ -46,7 +47,8 @@
       "guid": "dc16a1c0-75ef-49f1-91ac-ccd579376bcd",
       "id": "A02.03",
       "severity": "Low",
-      "link": "https://learn.microsoft.com/azure/virtual-machines/ephemeral-os-disks"
+      "link": "https://learn.microsoft.com/azure/virtual-machines/ephemeral-os-disks",
+      "graph":"resources | where type =~ 'microsoft.compute/virtualmachines' | extend hasDataDisk = (array_length(properties.storageProfile.dataDisks) < 1) | project id, compliant = hasDataDisk"
     },
     {
       "category": "VMs and VMSS",
@@ -58,7 +60,8 @@
       "guid": "b3750ab2-ab0e-49d6-9d15-d3c492adb1b3",
       "id": "A03.01",
       "severity": "High",
-      "link": "https://learn.microsoft.com/azure/virtual-machines/availability"
+      "link": "https://learn.microsoft.com/azure/virtual-machines/availability",
+      "graph":"resources | where type =~ 'microsoft.compute/virtualmachines' and isnotempty(zones) | project id, vmZones = zones | join (resources | where type =~ 'microsoft.compute/disks' | project id,managedBy,diskZones = zones) on $left.id == $right.managedBy |project id, compliant = iff(tostring(vmZones) != tostring(diskZones),false,true),vmZones,diskZones"
     },
     {
       "category": "VMs and VMSS",
@@ -70,7 +73,8 @@
       "guid": "d1325af2-25ca-444e-8685-edddeace4bb1",
       "id": "A03.02",
       "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/virtual-machine-scale-sets/overview"
+      "link": "https://learn.microsoft.com/azure/virtual-machine-scale-sets/overview",
+      "graph":"resources| where type == 'microsoft.compute/virtualmachinescalesets' and properties.platformFaultDomainCount == 1 and isnotempty(properties.virtualMachineProfile) and properties.virtualMachineProfile.extensionProfile.extensions !has_cs 'Microsoft.AKS' and properties.virtualMachineProfile.extensionProfile.extensions !has_cs 'Microsoft.Azure.ServiceFabric'| project id, subscriptionId| join kind=leftouter ( resources | where type == 'microsoft.insights/autoscalesettings'  and tostring(properties.targetResourceUri) has 'Microsoft.Compute/virtualMachineScaleSets'  and properties.enabled == 'true' | mv-expand profile=properties.profiles | where array_length(profile.rules) != 0 | distinct tostring(properties.targetResourceUri) | project targetResourceUri = properties_targetResourceUri ) on $left.id == $right.targetResourceUri| project id,compliant = iff( isempty(targetResourceUri),false,true) "    
     },
     {
       "category": "VMs and VMSS",
@@ -81,7 +85,8 @@
       "service": "Reliability",
       "guid": "01d6e872-e52e-4361-8cd5-8b5a4b1511e4",
       "id": "A03.03",
-      "severity": "Medium"
+      "severity": "Medium",
+      "graph": "resources | where type == 'microsoft.compute/virtualmachinescalesets' | where isnotnull(properties.virtualMachineProfile) | project id, compliant = iff( isnull(properties.automaticRepairsPolicy) or properties.automaticRepairsPolicy.enabled == false,false,true)"
     },
     {
       "category": "VMs and VMSS",
@@ -92,7 +97,8 @@
       "service": "Reliability",
       "guid": "3a58a9c2-299c-44d7-a67d-0c655562f2b3",
       "id": "A04.01",
-      "severity": "Medium"
+      "severity": "Medium",
+      "graph": "advisorresources | where properties.recommendationTypeId in ('84b1a508-fc21-49da-979e-96894f1665df') | project subscriptionId,compliant = false"
     },
     {
       "category": "VMs and VMSS",
@@ -125,7 +131,8 @@
       "service": "Reliability",
       "guid": "0448aa80-52d8-48e7-ad17-b73b22a5a67e",
       "id": "A06.01",
-      "severity": "Medium"
+      "severity": "Medium",
+      "graph": "resources | where type == 'microsoft.compute/virtualmachines' | project id, compliant = iff(isempty(properties.virtualMachineScaleSet.id),false,true)"
     },
     {
       "category": "VMS and VMSS",
@@ -137,7 +144,8 @@
       "guid": "7a8ed4b3-1e38-4c3f-8981-2b2363cefe17",
       "id": "B01.01",
       "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/virtual-machines/extensions/health-extension"
+      "link": "https://learn.microsoft.com/azure/virtual-machines/extensions/health-extension",
+      "graph": "resources| where type == 'microsoft.compute/virtualmachinescalesets'| where isnull(properties.virtualMachineProfile.networkProfile.healthProbe.id)| join kind=leftouter (     resources    | where type == 'microsoft.compute/virtualmachinescalesets'   | mv-expand extension=properties.virtualMachineProfile.extensionProfile.extensions    | where extension.properties.type in ( 'ApplicationHealthWindows', 'ApplicationHealthLinux' )    | project id) on id| project id, compliant = iff(isempty(id1),false,true)| union ( resources| where type == 'microsoft.compute/virtualmachines'| join kind=leftouter(  resources  | where type == 'microsoft.compute/virtualmachines/extensions'  | where properties.type in ( 'ApplicationHealthWindows', 'ApplicationHealthLinux' )  | extend    VMId = toupper(substring(id, 0, indexof(id, '/extensions'))),    ExtensionName = name) on $left.id == $right.VMId| summarize Extensions = make_list(ExtensionName) by id| project id,compliant = iff(Extensions != '[\"\"]',true,false))"
     },
     {
       "category": "VMS and VMSS",
@@ -149,7 +157,8 @@
       "guid": "9b599de0-d597-43cd-9cd2-1c088137f5e6",
       "id": "B01.02",
       "severity": "Low",
-      "link": "https://learn.microsoft.com/azure/virtual-machines/maintenance-and-updates#availability-considerations-during-scheduled-maintenance"
+      "link": "https://learn.microsoft.com/azure/virtual-machines/maintenance-and-updates#availability-considerations-during-scheduled-maintenance",
+      "graph": "resources | where type == 'microsoft.compute/virtualmachinescalesets' and isnotnull(zones) and isnotnull(properties.virtualMachineProfile) | project id, compliant = sku.capacity < (array_length(zones) * 2)"
     },
     {
       "category": "VMSS",
@@ -161,7 +170,8 @@
       "guid": "c4cfd3e5-0454-47c2-947e-c66138a7200f",
       "id": "C01.01",
       "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-automatic-instance-repairs"
+      "link": "https://learn.microsoft.com/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-automatic-instance-repairs",
+      "graph": "resources | where type == 'microsoft.compute/virtualmachinescalesets' | where isnotnull(properties.virtualMachineProfile) | project id, compliant = iff( isnull(properties.automaticRepairsPolicy) or properties.automaticRepairsPolicy.enabled == false,false,true)"
     },
     {
       "category": "VMSS",
@@ -173,7 +183,8 @@
       "guid": "5135a327-452a-43cb-9396-37a55119c09e",
       "id": "C02.01",
       "severity": "Low",
-      "link": "https://learn.microsoft.com/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-design-overview#overprovisioning"
+      "link": "https://learn.microsoft.com/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-design-overview#overprovisioning",
+      "graph": "resources | where type == 'microsoft.compute/virtualmachinescalesets' | project id, compliant = properties.overprovision" 
     },
     {
       "category": "VMSS",
@@ -184,7 +195,8 @@
       "service": "Reliability",
       "guid": "80595538-7e9c-4ed1-96dd-182b09b241a9",
       "id": "C03.01",
-      "link": "https://learn.microsoft.com/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-use-availability-zones#fault-domains-and-availability-zones"
+      "link": "https://learn.microsoft.com/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-use-availability-zones#fault-domains-and-availability-zones",
+      "graph": "resources | where type == 'microsoft.compute/virtualmachinescalesets' | project id, compliant = (properties.platformFaultDomainCount == 1)"
     },
     {
       "category": "VMSS",
@@ -193,7 +205,8 @@
       "waf": "Reliability",
       "service": "Reliability",
       "guid": "99a646f7-389a-47e8-8cb7-db8cfaa62a25",
-      "id": "C03.02"
+      "id": "C03.02",
+      "graph": "resources | where type == 'microsoft.compute/virtualmachinescalesets' and isnotnull(zones) and isnotnull(properties.virtualMachineProfile) | project id, compliant = sku.capacity < (array_length(zones) * 2)"
     },
     {
       "category": "VMSS",
@@ -204,7 +217,8 @@
       "guid": "94956ea9-8dc4-4a24-967b-2358705a1752",
       "id": "C03.03",
       "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-use-availability-zones#zone-balancing"
+      "link": "https://learn.microsoft.com/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-use-availability-zones#zone-balancing",
+      "graph": "resources | where type == 'microsoft.compute/virtualmachinescalesets' | project id, compliant = properties.zoneBalance"
     },
     {
       "category": "VMs and VMSS",
@@ -216,7 +230,8 @@
       "guid": "beedfa8b-488c-4eec-9862-cc3bd25bfb7f",
       "id": "D01.01",
       "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/virtual-machines/capacity-reservation-overview"
+      "link": "https://learn.microsoft.com/azure/virtual-machines/capacity-reservation-overview",
+      "graph": "resourcecontainers| where type == 'microsoft.resources/subscriptions' | project subscriptionId| join kind=leftouter (resources | where type =~ 'Microsoft.Compute/CapacityReservationGroups' | project capacityReservationGroupId = id, subscriptionId ) on subscriptionId| project id = subscriptionId, compliant = isnotnull(capacityReservationGroupId)"
     },
     {
       "category": "VM and VMSS",
@@ -240,7 +255,8 @@
       "guid": "a713435b-d09d-4d23-929d-b7128126504c",
       "id": "E01.02",
       "severity": "High",
-      "link": "https://learn.microsoft.com/security/benchmark/azure/baselines/virtual-machines-linux-security-baseline"
+      "link": "https://learn.microsoft.com/security/benchmark/azure/baselines/virtual-machines-linux-security-baseline",
+      "graph": "//check for automated security patching and upgrades via maintenanceConfigurations"
     },
     {
       "category": "VM and VMSS",
@@ -298,7 +314,8 @@
       "guid": "4eea6e69-d8d9-4a3e-bc21-8e687ab0679c",
       "id": "E01.07",
       "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/bastion/bastion-overviewhttps://learn.microsoft.com/azure/defender-for-cloud/just-in-time-access-overview"
+      "link": "https://learn.microsoft.com/azure/bastion/bastion-overviewhttps://learn.microsoft.com/azure/defender-for-cloud/just-in-time-access-overview",
+      "graph": "//check for NSGs with open mgmt ports to internet"
     },
     {
       "category": "VM and VMSS",
@@ -320,7 +337,8 @@
       "guid": "269f4fb4-aa3d-43ef-9f31-76c4b87b15b8",
       "id": "E01.09",
       "severity": "High",
-      "link": "https://learn.microsoft.com/azure/defender-for-cloud/tutorial-enable-servers-plan"
+      "link": "https://learn.microsoft.com/azure/defender-for-cloud/tutorial-enable-servers-plan",
+      "graph": "//check for Defender for Servers extension enabled on VMs"
     },
     {
       "category": "VM and VMSS",
@@ -342,7 +360,8 @@
       "guid": "c56a9481-19bf-48d7-b5c5-86b7d8cdc05a",
       "id": "E01.11",
       "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/naming-and-tagging#purpose-of-naming-and-tagging"
+      "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/naming-and-tagging#purpose-of-naming-and-tagging",
+      "graph": "resources | where type =~ 'microsoft.compute/virtualmachines' | project id, compliant = iff(isempty(tags),false,true)"
     },
     {
       "category": "VM and VMSS",
@@ -364,7 +383,8 @@
       "service": "Security",
       "guid": "a7da7be9-955d-414d-9c49-d997cb3d1325",
       "id": "E01.13",
-      "severity": "Medium"
+      "severity": "Medium",
+      "graph": "//check for VMs and VMSS with ILIPs"
     },
     {
       "category": "VM and VMSS",
@@ -376,7 +396,8 @@
       "guid": "aa225c6f-4d06-485e-bdde-a8a4b7cdeb3c",
       "id": "E01.14",
       "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/virtual-network/ip-services/public-ip-basic-upgrade-guidance"
+      "link": "https://learn.microsoft.com/azure/virtual-network/ip-services/public-ip-basic-upgrade-guidance",
+      "graph": "//check for Basic SKU public IPs and LBs"
     },
     {
       "category": "VM and VMSS",
@@ -399,7 +420,8 @@
       "guid": "7ab0679c-b49e-45b9-9033-24ecf8cc1231",
       "id": "E01.16",
       "severity": "Low",
-      "link": "https://learn.microsoft.com/azure/virtual-machines/disks-restrict-import-export-overview"
+      "link": "https://learn.microsoft.com/azure/virtual-machines/disks-restrict-import-export-overview",
+      "graph": "//check for managed disks with public access"
     },
     {
       "category": "VM and VMSS",
@@ -433,7 +455,8 @@
       "service": "Cost",
       "guid": "ca264e9a-19ae-4d8c-95d0-4c2b3919ca0b",
       "id": "E02.02",
-      "severity": "Medium"
+      "severity": "Medium",
+      "graph": "//check for resize Advsior recommondations"
     },
     {
       "category": "VM and VMSS",
@@ -468,7 +491,8 @@
       "guid": "10725769-ee66-491a-9824-ac932223ece7",
       "id": "E02.05",
       "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/advisor/advisor-cost-recommendations"
+      "link": "https://learn.microsoft.com/azure/advisor/advisor-cost-recommendations",
+      "graph": "//check for resize alerts"
     },
     {
       "category": "VM and VMSS",
@@ -480,7 +504,8 @@
       "guid": "0b123071-a540-4641-9833-ea3ad2c2de73",
       "id": "E02.06",
       "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-autoscale-overviewhttps://learn.microsoft.com/azure/azure-functions/start-stop-vms/overview"
+      "link": "https://learn.microsoft.com/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-autoscale-overviewhttps://learn.microsoft.com/azure/azure-functions/start-stop-vms/overview",
+      "graph": "//check for autoscale enabled VMSSes"
     },
     {
       "category": "VM and VMSS",
@@ -492,7 +517,8 @@
       "guid": "4387e5ce-d126-4cd1-92af-5b20c6998a64",
       "id": "E02.07",
       "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/virtual-machines/spot-vmshttps://learn.microsoft.com/azure/virtual-machine-scale-sets/spot-priority-mix"
+      "link": "https://learn.microsoft.com/azure/virtual-machines/spot-vmshttps://learn.microsoft.com/azure/virtual-machine-scale-sets/spot-priority-mix",
+      "graph": "//check for Spot VMs and VMSSes"
     },
     {
       "category": "VM and VMSS",
@@ -504,7 +530,8 @@
       "guid": "6e338997-e41c-477d-98cf-6a62a1194956",
       "id": "E03.01",
       "severity": "High",
-      "link": "https://learn.microsoft.com/azure/azure-monitor/vm/vminsights-log-queryhttps://learn.microsoft.com/azure/virtual-network/monitor-virtual-network#alerts"
+      "link": "https://learn.microsoft.com/azure/azure-monitor/vm/vminsights-log-queryhttps://learn.microsoft.com/azure/virtual-network/monitor-virtual-network#alerts",
+      "graph": "//check for VMs and VMSSes without AMA extension"
     },
     {
       "category": "VM and VMSS",
@@ -516,7 +543,8 @@
       "guid": "d697dc3a-2fd2-47b2-b187-01a1252bdedf",
       "id": "E03.02",
       "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/virtual-machines/maintenance-configurations"
+      "link": "https://learn.microsoft.com/azure/virtual-machines/maintenance-configurations",
+      "graph": "//check for vms with maintenance configurations"
     },
     {
       "category": "VM and VMSS",
@@ -552,7 +580,8 @@
       "guid": "e0bd05dc-2efc-45d7-91d4-1d2500cc47b4",
       "id": "E03.05",
       "severity": "Low",
-      "link": "https://learn.microsoft.com/azure/virtual-machines/automatic-extension-upgrade"
+      "link": "https://learn.microsoft.com/azure/virtual-machines/automatic-extension-upgrade",
+      "graph": "//check for extensions with auto-updates disabled"
     },
     {
       "category": "VM and VMSS",
@@ -564,7 +593,8 @@
       "guid": "93a040fd-3294-4798-a118-8b3c6a56ceb5",
       "id": "E03.06",
       "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/azure-monitor/agents/azure-monitor-agent-overview"
+      "link": "https://learn.microsoft.com/azure/azure-monitor/agents/azure-monitor-agent-overview",
+      "graph": "//check for VMs and VMSSes without AMA extension"
     },
     {
       "category": "VM and VMSS",
@@ -576,7 +606,8 @@
       "guid": "44451e1a-2d34-4529-9c76-38637a551c5c",
       "id": "E03.07",
       "severity": "Low",
-      "link": "https://learn.microsoft.com/azure/azure-monitor/vm/vminsights-overview"
+      "link": "https://learn.microsoft.com/azure/azure-monitor/vm/vminsights-overview",
+      "graph": "//check for VMs and VMSSes without insights DCR association"
     },
     {
       "category": "VM and VMSS",
@@ -612,7 +643,8 @@
       "guid": "a1194956-d697-4dc3-a2fd-27b2e18701a1",
       "id": "E04.03",
       "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/virtual-machine-scale-sets/proximity-placement-groups"
+      "link": "https://learn.microsoft.com/azure/virtual-machine-scale-sets/proximity-placement-groups",
+      "graph": "//check for deployed PPG per subscription"
     },
     {
       "category": "VM and VMSS",
@@ -635,7 +667,8 @@
       "guid": "77f26e5e-5b3b-4ec2-b4f3-437b1336db55",
       "id": "E04.05",
       "severity": "Medium",
-      "link": "https://learn.microsoft.com/azure/virtual-network/accelerated-networking-overview"
+      "link": "https://learn.microsoft.com/azure/virtual-network/accelerated-networking-overview",
+      "graph": "//check for VMs without AN enabled"
     }
   ],
   "categories": [
