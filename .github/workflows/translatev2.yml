@@ -43,7 +43,7 @@ jobs:
       # Find out the impacted checklists
       - id: climpact
         if: ${{ steps.automationresult.outputs.excel_file_changed != 'yes' }}
-        name: Verify whether the modified files have an impact on the ALZ checklist
+        name: Verify whether the modified files have an impact on the defined v2 checklists
         run: |
           # Install Python dependencies to run the checklist CLI
           pip install -r ./scripts/requirements.txt
@@ -51,6 +51,7 @@ jobs:
           impacted_cl_files=()
           done_something=no
           clv2_file_list=${{ steps.variables.outputs.clv2_file_list }}
+          echo "Checking the following ${#clv2_file_list[@]} v2 checklists for impact: ${clv2_file_list}..."
           for cl_file in $clv2_file_list; do 
             echo "Processing v2 checklist $cl_file..."
             cl_name=$(echo $cl_file | cut -d/ -f4 | cut -d. -f1)
@@ -58,13 +59,13 @@ jobs:
             cl_reco_files_count=$(echo "$cl_reco_files" | wc -l)
             echo "$cl_reco_files_count reco files found referenced in the checklist $cl_file"
             for input_file in ${{ steps.files.outputs.all }}; do
-              echo "Processing '$input_file'..."
+              echo "- Processing '$input_file'..."
               if [[ "$cl_reco_files" == *"$input_file"* ]]; then
-                echo "Modification to file '$input_file' detected, which seems to be a reco leveraged by the checklist $cl_name in $cl_file"
+                echo "  * Modification to file '$input_file' detected, which seems to be a reco leveraged by the checklist $cl_name in $cl_file"
                 impacted_cl_files+="$cl_file"
                 done_something=yes
               else
-                echo "'$input_file' has no impact to the checklist $cl_name in $cl_file"
+                echo "  * '$input_file' has no impact to the checklist $cl_name in $cl_file"
               fi
             done
           done
