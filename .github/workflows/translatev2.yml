@@ -45,7 +45,9 @@ jobs:
         if: ${{ steps.automationresult.outputs.excel_file_changed != 'yes' }}
         name: Verify whether the modified files have an impact on the ALZ checklist
         run: |
+          # Install Python dependencies to run the checklist CLI
           pip install -r ./scripts/requirements.txt
+          # The list of impacted checklists will be passed as an array
           impacted_cl_files=()
           done_something=no
           clv2_file_list=${{ steps.variables.outputs.clv2_file_list }}
@@ -69,7 +71,7 @@ jobs:
           echo "impacted_cl_files=$impacted_cl_files" >> $GITHUB_OUTPUT
           echo "done_something=$done_something" >> $GITHUB_OUTPUT
       # If ALZ
-      - name: Generate v1 JSON checklists and translating them
+      - name: Generate v1 JSON checklists and translate them
         id: clv1
         if: ${{ steps.climpact.outputs.done_something == 'yes' }}
         env:
@@ -77,9 +79,12 @@ jobs:
           AZURE_TRANSLATOR_ENDPOINT: ${{ secrets.AZURE_TRANSLATOR_ENDPOINT }}
           AZURE_TRANSLATOR_REGION: ${{ secrets.AZURE_TRANSLATOR_REGION }}
         run: |
+          # First we put the GH variable into a local one. Doing a loop against the GH variable directly doesn't work.
           cl_v2_files="${{ steps.climpact.outputs.impacted_cl_files }}"
+          # We will pass the list of generated v1 checklists as an array
           cl_v1_files=()
           echo "Generating v1 checklists for the following v2 files: $cl_v2_files..."
+          # We run now through the list of impacted checklists
           for cl_file in $cl_v2_files; do 
             cl_name=$(echo $cl_file | cut -d/ -f4 | cut -d. -f1)
             cl_v1_file="./${{ steps.variables.outputs.v1_output_folder }}/${cl_name}_checklist.en.json"
@@ -92,9 +97,10 @@ jobs:
             # Update the timestamp in the modified file
             # python3 ./scripts/timestamp_checklist.py --input-file $input_file
             # Translate the checklist
+            echo "Translating $cl_v1_file (this can take a few minutes)..."
             python3 ./scripts/translate.py --input-file $cl_v1_file
           done
-          echo "cl_v1_files=($cl_v1_files)" >> $GITHUB_OUTPUT
+          echo "cl_v1_files=$cl_v1_files" >> $GITHUB_OUTPUT
 
       # Generate macro-free spreadsheets and Azure Monitor workbooks
       - name: Setup python
@@ -111,7 +117,13 @@ jobs:
       - name: Execute excel python script # run file
         if: ${{ steps.climpact.outputs.done_something == 'yes' }}
         run: |
-          python3 ./scripts/update_excel_openpyxl.py --checklist-file="${{ steps.clv1.outputs.cl_v1_files }}" --find-all --excel-file="./spreadsheet/macrofree/review_checklist_empty.xlsx" --output-name-is-input-name --output-path="./spreadsheet/macrofree/" --verbose
+          # First we put the GH variable into a local one. Doing a loop against the GH variable directly doesn't work.
+          cl_v1_files="${{ steps.clv1.outputs.cl_v1_files }}"
+          # For each file we will generate a macro-free Excel file
+          for cl_file in $cl_v1_files; do 
+            echo "Generating macro-free Excel file for $cl_file..."
+            python3 ./scripts/update_excel_openpyxl.py --checklist-file="$cl_v1_file" --find-all --excel-file="./spreadsheet/macrofree/review_checklist_empty.xlsx" --output-name-is-input-name --output-path="./spreadsheet/macrofree/" --verbose
+          done
 
       # Create Azure Monitor workbooks
       # Note that workbook creation might not work with some of the v1 checklists generated from v2, since categories and subcategories might be missing.
@@ -119,24 +131,28 @@ jobs:
       - name: Execute workbook python script # run file
         if: ${{ steps.climpact.outputs.done_something == 'yes' }}
         run: |
-          # Create workbooks for the modified file, both with and without reco counters
-          echo "Generating workbooks for the modified files: ${{ steps.clv1.outputs.cl_v1_files }}..."
-          python3 ./scripts/workbook_create.py --checklist-file="${{ steps.clv1.outputs.cl_v1_files }}" --output-path="./workbooks/" --blocks-path="./workbooks/blocks/"
-          python3 ./scripts/workbook_create.py --checklist-file="${{ steps.clv1.outputs.cl_v1_files }}" --output-path="./workbooks/" --blocks-path="./workbooks/blocks/" --counters
-          # Extra static commands to generate a network-specific ALZ workbook
-          # python3 ./scripts/workbook_create.py --checklist-file ./checklists/alz_checklist.en.json --output-path ./workbooks --blocks-path ./workbooks/blocks --create-arm-template --category=network --query-size medium
-          # python3 ./scripts/workbook_create.py --checklist-file ./checklists/alz_checklist.en.json --output-file ./workbooks/alz_checklist.en_network_counters.json --blocks-path ./workbooks/blocks --create-arm-template --category=network --query-size tiny --counters
-          # python3 ./scripts/workbook_create.py --checklist-file ./checklists/alz_checklist.en.json --output-file ./workbooks/alz_checklist.en_network_tabcounters.json --blocks-path ./workbooks/blocks --create-arm-template --category=network --query-size tiny --tab-counters
-          # App delivery
-          # python3 ./scripts/workbook_create.py --checklist-file ./checklists/network_appdelivery_checklist.en.json --output-file ./workbooks/appdelivery_checklist.en_network_workbook.json --blocks-path ./workbooks/blocks --create-arm-template --category=network --query-size tiny
-          # python3 ./scripts/workbook_create.py --checklist-file ./checklists/network_appdelivery_checklist.en.json --output-file ./workbooks/appdelivery_checklist.en_network_counters_workbook.json --blocks-path ./workbooks/blocks --create-arm-template --category=network --query-size tiny --counters
-
+          # First we put the GH variable into a local one. Doing a loop against the GH variable directly doesn't work.
+          cl_v1_files="${{ steps.clv1.outputs.cl_v1_files }}"
+          # For each file we will generate a macro-free Excel file
+          for cl_file in $cl_v1_files; do 
+            # Create workbooks for the modified file, both with and without reco counters
+            echo "Generating workbooks for the v1 checklist file: $cl_file..."
+            python3 ./scripts/workbook_create.py --checklist-file="$cl_file" --output-path="./workbooks/" --blocks-path="./workbooks/blocks/"
+            python3 ./scripts/workbook_create.py --checklist-file="$cl_file" --output-path="./workbooks/" --blocks-path="./workbooks/blocks/" --counters
+            # Extra static commands to generate a network-specific ALZ workbook
+            # python3 ./scripts/workbook_create.py --checklist-file ./checklists/alz_checklist.en.json --output-path ./workbooks --blocks-path ./workbooks/blocks --create-arm-template --category=network --query-size medium
+            # python3 ./scripts/workbook_create.py --checklist-file ./checklists/alz_checklist.en.json --output-file ./workbooks/alz_checklist.en_network_counters.json --blocks-path ./workbooks/blocks --create-arm-template --category=network --query-size tiny --counters
+            # python3 ./scripts/workbook_create.py --checklist-file ./checklists/alz_checklist.en.json --output-file ./workbooks/alz_checklist.en_network_tabcounters.json --blocks-path ./workbooks/blocks --create-arm-template --category=network --query-size tiny --tab-counters
+            # App delivery
+            # python3 ./scripts/workbook_create.py --checklist-file ./checklists/network_appdelivery_checklist.en.json --output-file ./workbooks/appdelivery_checklist.en_network_workbook.json --blocks-path ./workbooks/blocks --create-arm-template --category=network --query-size tiny
+            # python3 ./scripts/workbook_create.py --checklist-file ./checklists/network_appdelivery_checklist.en.json --output-file ./workbooks/appdelivery_checklist.en_network_counters_workbook.json --blocks-path ./workbooks/blocks --create-arm-template --category=network --query-size tiny --counters
+          done
       # Create the PR if any change was made
       - name: Create pull request
         uses: peter-evans/create-pull-request@v6
         if: ${{ steps.climpact.outputs.done_something == 'yes' }}
         with:
-          title: 'Automatic translation of ${{ steps.clv1.outputs.cl_v1_files }}'
+          title: 'Automated actions after change to ${{ steps.files.outputs.all }}'
           body: 'Processed changed files ${{ steps.files.outputs.all }}'
           labels: 'automated'
           token: ${{ secrets.WORKFLOW_PAT }}
