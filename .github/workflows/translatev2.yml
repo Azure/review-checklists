@@ -51,7 +51,7 @@ jobs:
           impacted_cl_files=()
           done_something=no
           clv2_file_list=${{ steps.variables.outputs.clv2_file_list }}
-          echo "Checking impact of changes in files ${{ steps.files.outputs.all }} to the following ${#clv2_file_list[@]} v2 checklists: ${clv2_file_list}[@]}..."
+          echo "Checking impact of changes in files ${{ steps.files.outputs.all }} to the following ${#clv2_file_list[@]} v2 checklists: ${clv2_file_list[@]}..."
           for cl_file in "${clv2_file_list[@]}"; do 
             echo "Processing v2 checklist '${cl_file}'..."
             cl_name=$(echo $cl_file | cut -d/ -f4 | cut -d. -f1)
@@ -71,7 +71,7 @@ jobs:
           done
           echo "impacted_cl_files=$impacted_cl_files" >> $GITHUB_OUTPUT
           echo "done_something=$done_something" >> $GITHUB_OUTPUT
-      # If ALZ
+      # Process the impacted checklists and generate v1 versions
       - name: Generate v1 JSON checklists and translate them
         id: clv1
         if: ${{ steps.climpact.outputs.done_something == 'yes' }}
@@ -81,7 +81,7 @@ jobs:
           AZURE_TRANSLATOR_REGION: ${{ secrets.AZURE_TRANSLATOR_REGION }}
         run: |
           # First we put the GH variable into a local one. Doing a loop against the GH variable directly doesn't work.
-          cl_v2_files="${{ steps.climpact.outputs.impacted_cl_files }}"
+          cl_v2_files=${{ steps.climpact.outputs.impacted_cl_files }}
           # We will pass the list of generated v1 checklists as an array
           cl_v1_files=()
           echo "Generating v1 checklists for the following v2 files: $cl_v2_files..."
