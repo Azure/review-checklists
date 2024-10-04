@@ -531,7 +531,7 @@
       "id": "E03.01",
       "severity": "High",
       "link": "https://learn.microsoft.com/azure/azure-monitor/vm/vminsights-log-queryhttps://learn.microsoft.com/azure/virtual-network/monitor-virtual-network#alerts",
-      "graph": "//check for VMs and VMSSes without AMA extension"
+      "graph": "resources |  where type == 'microsoft.compute/virtualmachinescalesets' | join kind=leftouter (resources | where type == 'microsoft.compute/virtualmachinescalesets' | mv-expand extension=properties.virtualMachineProfile.extensionProfile.extensions | where extension.properties.type in ('AzureMonitorWindowsAgent', 'AzureMonitorLinuxAgent') | project id) on id | project id, compliant = iff(isempty(id1), false, true) | union (resources | where type == 'microsoft.compute/virtualmachines' | join kind=leftouter(resources | where type == 'microsoft.compute/virtualmachines/extensions' | where properties.type in ('AzureMonitorWindowsAgent', 'AzureMonitorLinuxAgent') | extend VMId = toupper(substring(id, 0, indexof(id, '/extensions'))), ExtensionName = name) on $left.id == $right.VMId | summarize Extensions=make_set_if(ExtensionName,isnotempty(ExtensionName)) by id | project id, compliant = (array_length(Extensions) > 0))"
     },
     {
       "category": "VM and VMSS",
@@ -581,7 +581,7 @@
       "id": "E03.05",
       "severity": "Low",
       "link": "https://learn.microsoft.com/azure/virtual-machines/automatic-extension-upgrade",
-      "graph": "//check for extensions with auto-updates disabled"
+      "graph": "resources | where type == 'microsoft.compute/virtualmachinescalesets' | mv-expand extension=properties.virtualMachineProfile.extensionProfile.extensions | summarize extensionAutoUpdateSettings=make_set_if(tostring(extension.properties.enableAutomaticUpgrade),isnotnull(extension.properties.enableAutomaticUpgrade)) by id| project id,compliant = (extensionAutoUpdateSettings notcontains 'false') | union (resources | where type == 'microsoft.compute/virtualmachines' | join kind=leftouter(resources | where type == 'microsoft.compute/virtualmachines/extensions' | where properties.enableAutomaticUpgrade == false | extend VMId = toupper(substring(id, 0, indexof(id, '/extensions'))), ExtensionName = name) on $left.id == $right.VMId | summarize Extensions=make_set_if(ExtensionName,isnotempty(ExtensionName)) by id | project id, compliant = (array_length(Extensions) > 0))"
     },
     {
       "category": "VM and VMSS",
@@ -594,7 +594,7 @@
       "id": "E03.06",
       "severity": "Medium",
       "link": "https://learn.microsoft.com/azure/azure-monitor/agents/azure-monitor-agent-overview",
-      "graph": "//check for VMs and VMSSes without AMA extension"
+      "graph": "resources |  where type == 'microsoft.compute/virtualmachinescalesets' | join kind=leftouter (resources | where type == 'microsoft.compute/virtualmachinescalesets' | mv-expand extension=properties.virtualMachineProfile.extensionProfile.extensions | where extension.properties.type in ('AzureMonitorWindowsAgent', 'AzureMonitorLinuxAgent') | project id) on id | project id, compliant = iff(isempty(id1), false, true) | union (resources | where type == 'microsoft.compute/virtualmachines' | join kind=leftouter(resources | where type == 'microsoft.compute/virtualmachines/extensions' | where properties.type in ('AzureMonitorWindowsAgent', 'AzureMonitorLinuxAgent') | extend VMId = toupper(substring(id, 0, indexof(id, '/extensions'))), ExtensionName = name) on $left.id == $right.VMId | summarize Extensions=make_set_if(ExtensionName,isnotempty(ExtensionName)) by id | project id, compliant = (array_length(Extensions) > 0))"
     },
     {
       "category": "VM and VMSS",
@@ -644,7 +644,7 @@
       "id": "E04.03",
       "severity": "Medium",
       "link": "https://learn.microsoft.com/azure/virtual-machine-scale-sets/proximity-placement-groups",
-      "graph": "//check for deployed PPG per subscription"
+      "graph": "resources | where type =~ 'Microsoft.Compute/proximityPlacementGroups' | summarize ppgCount = count() | project id = 'na',compliant = (ppgCount > 0)"
     },
     {
       "category": "VM and VMSS",
@@ -668,7 +668,7 @@
       "id": "E04.05",
       "severity": "Medium",
       "link": "https://learn.microsoft.com/azure/virtual-network/accelerated-networking-overview",
-      "graph": "//check for VMs without AN enabled"
+      "graph": "resources| where type == 'microsoft.compute/virtualmachines'| project id = tolower(id)| join kind=leftouter (   resources   | where type == 'microsoft.network/networkinterfaces' and properties.enableAcceleratedNetworking == true  | project attachedVMId = tolower(properties.virtualMachine.id),nicId = id  ) on $left.id == $right.attachedVMId| summarize attachedANNICIds=make_set_if(nicId, isnotempty(nicId)) by id| project id,compliant = array_length(attachedANNICIds) > 0| union ( resources |where type == 'microsoft.compute/virtualmachinescalesets' and id == '/subscriptions/24730882-456b-42df-a6f8-8590ca6e4e37/resourceGroups/rg-ramon/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-predictiveautoscale-test-01'| extend acceleratedNetworkingEnabled = extract(@'\"enableAcceleratedNetworking\":(true|false)',1,tostring(properties.virtualMachineProfile.networkProfile.networkInterfaceConfigurations),typeof(bool))| project id,compliant = acceleratedNetworkingEnabled)"
     }
   ],
   "categories": [
