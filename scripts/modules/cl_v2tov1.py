@@ -90,10 +90,14 @@ def generate_v1(checklist_file, input_folder, output_file, service_dictionary=No
     else:
         checklist_v1['metadata']['name'] = 'Name missing from checklist YAML file'
     # Write the output file
-    if verbose: print("DEBUG: Writing file", output_file)
+    if verbose: print("DEBUG: Dumping v1 checklist to file", output_file)
     if output_file:
-        with open(output_file, 'w') as f:
-            json.dump(checklist_v1, f, indent=4)
+        try:
+            with open(output_file, 'w') as f:
+                json.dump(checklist_v1, f, indent=4)
+        except Exception as e:
+            print("ERROR: Error writing output file {0} - {1}".format(output_file, str(e)))
+            sys.exit(1)
 
 # Function that returns a string ID for a reco of the format A01.01
 # Area and subarea are optional, but the reco_index is mandatory
