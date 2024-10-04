@@ -50,11 +50,9 @@ jobs:
           # The list of impacted checklists will be passed as an array
           impacted_cl_files=()
           done_something=no
-          #clv2_file_list=${{ steps.variables.outputs.clv2_file_list }}
-          declare -n clv2_file_list="${{ steps.variables.outputs.clv2_file_list }}"   # Name reference to the array of v2 checklists to check
-          echo "Checking impact of changes on files ${{ steps.variables.outputs.clv2_file_list }} to the following ${#clv2_file_list[@]} v2 checklists: ${clv2_file_list}..."
-          #for cl_file in $clv2_file_list; do 
-          for cl_file in ${{ steps.variables.outputs.clv2_file_list }}; do
+          clv2_file_list=${{ steps.variables.outputs.clv2_file_list }}
+          echo "Checking impact of changes in files ${{ steps.files.outputs.all }} to the following ${#clv2_file_list[@]} v2 checklists: ${clv2_file_list}[@]..."
+          for cl_file in $clv2_file_list[@]; do 
             echo "Processing v2 checklist '${cl_file}'..."
             cl_name=$(echo $cl_file | cut -d/ -f4 | cut -d. -f1)
             cl_reco_files=$(python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --checklist-file ./v2/checklists/alz.yaml --only-filenames)
@@ -88,7 +86,7 @@ jobs:
           cl_v1_files=()
           echo "Generating v1 checklists for the following v2 files: $cl_v2_files..."
           # We run now through the list of impacted checklists
-          for cl_file in $cl_v2_files; do 
+          for cl_file in $cl_v2_files[@]; do 
             cl_name=$(echo $cl_file | cut -d/ -f4 | cut -d. -f1)
             cl_v1_file="./${{ steps.variables.outputs.v1_output_folder }}/${cl_name}_checklist.en.json"
             cl_v1_files+="$cl_v1_file"
@@ -123,7 +121,7 @@ jobs:
           # First we put the GH variable into a local one. Doing a loop against the GH variable directly doesn't work.
           cl_v1_files="${{ steps.clv1.outputs.cl_v1_files }}"
           # For each file we will generate a macro-free Excel file
-          for cl_file in $cl_v1_files; do 
+          for cl_file in $cl_v1_files[@]; do 
             echo "Generating macro-free Excel file for $cl_file..."
             python3 ./scripts/update_excel_openpyxl.py --checklist-file="$cl_v1_file" --find-all --excel-file="./spreadsheet/macrofree/review_checklist_empty.xlsx" --output-name-is-input-name --output-path="./spreadsheet/macrofree/" --verbose
           done
@@ -137,7 +135,7 @@ jobs:
           # First we put the GH variable into a local one. Doing a loop against the GH variable directly doesn't work.
           cl_v1_files="${{ steps.clv1.outputs.cl_v1_files }}"
           # For each file we will generate a macro-free Excel file
-          for cl_file in $cl_v1_files; do 
+          for cl_file in $cl_v1_files[@]; do 
             # Create workbooks for the modified file, both with and without reco counters
             echo "Generating workbooks for the v1 checklist file: $cl_file..."
             python3 ./scripts/workbook_create.py --checklist-file="$cl_file" --output-path="./workbooks/" --blocks-path="./workbooks/blocks/"
