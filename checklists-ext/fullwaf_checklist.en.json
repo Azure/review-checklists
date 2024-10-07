@@ -6,6 +6,7 @@
             "description": "Disable image export to prevent data exfiltration. Note that this will prevent image import of images into another ACR instance.",
             "guid": "ab91932c-9fc9-4d1b-a880-37f5e6bfcb9e",
             "link": "https://learn.microsoft.com/azure/container-registry/data-loss-prevention",
+            "query": "resources | where type =~ 'Microsoft.ContainerRegistry/registries' | extend acrName = name, acrId = id | extend exportPolicyStatus = properties.policies.exportPolicy.status | extend compliant = iif(exportPolicyStatus =~ 'Disabled', true, false) | project acrName, acrId, exportPolicyStatus, compliant",
             "service": "ACR",
             "severity": "High",
             "text": "Disable Azure Container Registry image export",
@@ -37,6 +38,7 @@
             "arm-service": "microsoft.containerregistry/registries",
             "checklist": "Azure Container Registry Security Review",
             "description": "Azure Container Registry automatically encrypts images and other artifacts that you store. By default, Azure automatically encrypts the registry content at rest by using service-managed keys. By using a customer-managed key, you can supplement default encryption with an additional encryption layer.",
+            "graph": "resources | where type =~ 'Microsoft.ContainerRegistry/registries' | extend acrName = name, acrId = id | extend encryptionStatus = properties.encryption.status  | extend compliant = iif(encryptionStatus == 'disabled', false, true) | project acrName, acrId, encryptionStatus, compliant",
             "guid": "0bd05dc2-efd5-4d76-8d41-d2500cc47b49",
             "link": "https://learn.microsoft.com/azure/container-registry/tutorial-customer-managed-keys",
             "service": "ACR",
@@ -59,6 +61,7 @@
             "arm-service": "microsoft.containerregistry/registries",
             "checklist": "Azure Container Registry Security Review",
             "description": "The local Administrator account is disabled by default and should not be enabled. Use either Token or RBAC-based access methods instead",
+            "graph": "resources | where type =~ 'microsoft.containerregistry/registries' | extend localAdminDisabled = properties.adminUserEnabled // Adjust this property as needed | extend compliant = iif(localAdminDisabled == 'false', true, false) // Check if local admin is disabled | project compliant, name, id, tags | distinct id, compliant",
             "guid": "be0e38ce-e297-411b-b363-caaab79b198d",
             "link": "https://learn.microsoft.com/azure/container-registry/container-registry-authentication-managed-identity",
             "service": "ACR",
@@ -70,6 +73,7 @@
             "arm-service": "microsoft.containerregistry/registries",
             "checklist": "Azure Container Registry Security Review",
             "description": "Disable Administrator account and assign RBAC roles to principals for ACR Pull/Push operations",
+            "graph": "resources | where type =~ 'microsoft.containerregistry/registries' | extend localAdminDisabled = properties.adminUserEnabled // Adjust this property as needed | extend compliant = iif(localAdminDisabled == 'false', true, false) // Check if local admin is disabled | project compliant, name, id, tags | distinct id, compliant",
             "guid": "387e5ced-126c-4d13-8af5-b20c6998a646",
             "link": "https://learn.microsoft.com/azure/container-registry/container-registry-roles?tabs=azure-cli",
             "service": "ACR",
@@ -81,6 +85,7 @@
             "arm-service": "microsoft.containerregistry/registries",
             "checklist": "Azure Container Registry Security Review",
             "description": "Disable anonymous pull/push access",
+            "graph": "resources | where type =~ 'microsoft.containerregistry/registries' | extend compliant = iif(properties.anonymousPullEnabled == false, true, false) | project compliant, name, id, tags | distinct id, compliant",
             "guid": "e338997e-41c7-47d7-acf6-a62a1194956d",
             "link": "https://learn.microsoft.com/azure/container-registry/anonymous-pull-access#configure-anonymous-pull-access",
             "service": "ACR",
@@ -146,6 +151,7 @@
             "arm-service": "microsoft.containerregistry/registries",
             "checklist": "Azure Container Registry Security Review",
             "description": "Disable public network access if inbound network access is secured using Private Link",
+            "graph": "resources | where type =~ 'Microsoft.ContainerRegistry/registries' | where sku.name =~ 'Premium' // Check for Premium SKU | extend publicAccessEnabled = properties.publicNetworkAccess | extend defaultAction = tostring(properties.networkRuleSet.defaultAction) // Extract defaultAction | extend compliant = iif(publicAccessEnabled != 'Enabled' or defaultAction == 'Deny', true, false) | project name, id, publicAccessEnabled, defaultAction, compliant",
             "guid": "cd289ced-6b17-4db8-8554-62f2aee4553a",
             "link": "https://learn.microsoft.com/azure/container-registry/container-registry-access-selected-networks#disable-public-network-access",
             "service": "ACR",
@@ -157,6 +163,7 @@
             "arm-service": "microsoft.containerregistry/registries",
             "checklist": "Azure Container Registry Security Review",
             "description": "Only the ACR Premium SKU supports Private Link access",
+            "graph": "resources | where type =~ 'Microsoft.ContainerRegistry/registries' | extend skuName = sku.name // Extract the SKU name | extend compliant = iif(skuName == 'Premium', true, false) // Check if SKU is Premium | project name, id, skuName, compliant",
             "guid": "fc833934-8b26-42d6-ac5f-512925498f6d",
             "link": "https://learn.microsoft.com/azure/container-registry/container-registry-skus",
             "service": "ACR",
@@ -10852,6 +10859,7 @@
         {
             "arm-service": "microsoft.network/frontdoors",
             "checklist": "Azure Application Delivery Networking",
+            "graph": "resources | where type =~ 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=~'Enabled') and (mode=~'Prevention')), enabledState, mode",
             "guid": "28b9ee82-b2c7-45aa-bc98-6de6f59a095d",
             "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#enable-the-waf",
             "service": "Front Door",
@@ -26511,7 +26519,7 @@
     ],
     "metadata": {
         "name": "WAF checklist",
-        "timestamp": "October 02, 2024"
+        "timestamp": "October 07, 2024"
     },
     "severities": [
         {
