@@ -26,7 +26,7 @@ args = parser.parse_args()
 github_org = 'Azure'
 github_repo = 'review-checklists'
 github_file_extension = '.json'
-output_folder = './' + args.github_folder
+output_folder = os.path.join('.', args.github_folder)
 
 # Function to copy files from a remote URL into a local folder
 # Using global variables for the folders, but could be passed as parameters
@@ -43,6 +43,8 @@ def get_files():
         r = requests.get(f'https://api.github.com/repos/{github_org}/{github_repo}/git/trees/{git_tree_id}?recursive=true')
         if r.status_code == 200:
             files_processed = 0
+            files_errors = 0
+            files_success = 0
             for path in r.json()['tree']:
                 file_path = path['path']
                 # Only process files in the containing folder with the right extension
@@ -58,14 +60,19 @@ def get_files():
                     output_path = os.path.join(output_folder, file_name)
                     if args.dryrun:
                         print("INFO: Would copy file {0} to {1}".format(file_url, output_path))    
+                        files_success += 1
                     else:
                         r = requests.get(file_url)
                         if r.status_code == 200:
                             with open(output_path, 'w') as f:
                                 f.write(r.text)
+                                files_success += 1
                         else:
                             print("ERROR: Unable to download file {0} from GitHub API: {1}. Message: {2}".format(file_path, r.status_code, r.text))
-            return files_processed
+                            files_errors += 1
+            if args.verbose:
+                print("INFO: {0} files processed, {1} errors, {2} success".format(files_processed, files_errors, files_success))
+            return files_success
         else:
             print("ERROR: Unable to retrieve list of files from GitHub API")
             return None
@@ -79,4 +86,4 @@ def get_files():
 
 # Get remote files
 copied_files = get_files()
-print("INFO: {0} files synced from branch {1} of {2}/{3} to output folder {4}".format(copied_files, github_branch, github_org, github_repo, output_folder))
+print("INFO: {0} files synced from branch {1} of {2}/{3} to output folder {4}".format(copied_files, args.github_branch, github_org, github_repo, output_folder))
