@@ -48,7 +48,7 @@ def get_files():
             for path in r.json()['tree']:
                 file_path = path['path']
                 # Only process files in the containing folder with the right extension
-                if (args.github_folder in file_path) and (github_file_extension in file_path):
+                if (args.github_folder + "/" in file_path) and (github_file_extension in file_path):
                     files_processed += 1
                     if (max_files > 0) and (files_processed > max_files):
                         print("INFO: Maximum number of files processed reached: {0}".format(max_files))
