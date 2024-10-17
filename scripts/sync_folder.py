@@ -46,7 +46,7 @@ def get_files():
             for path in r.json()['tree']:
                 file_path = path['path']
                 # Only process files in the containing folder with the right extension
-                if (github_folder in file_path) and (github_file_extension in file_path):
+                if (args.github_folder in file_path) and (github_file_extension in file_path):
                     files_processed += 1
                     if (max_files > 0) and (files_processed > max_files):
                         print("INFO: Maximum number of files processed reached: {0}".format(max_files))
@@ -56,7 +56,7 @@ def get_files():
                     # Download the file to the output folder
                     file_name = file_path.split('/')[-1]
                     output_path = os.path.join(output_folder, file_name)
-                    if args.dry_run:
+                    if args.dryrun:
                         print("INFO: Would copy file {0} to {1}".format(file_url, output_path))    
                     else:
                         r = requests.get(file_url)
