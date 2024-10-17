@@ -1,0 +1,27 @@
+name: aprl-TwoGatewayIpConfigurationsTwoPublicIpAddresses
+title: Enable Active-Active VPN Gateways for redundancy
+description: |-
+  The active-active mode is available for all SKUs except Basic, allowing for two Gateway IP configurations and two public IP addresses, enhancing redundancy and traffic handling.
+source:
+  type: aprl
+  file: azure-resources/Network/virtualNetworkGateways/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.Network/virtualNetworkGateways
+severity: 1
+labels:
+  guid: 281a2713-c0e0-3c48-b596-19f590c46671
+  area: High Availability
+links: []
+queries:
+  arg: |+
+    // Azure Resource Graph Query
+    // Identifies non-active-active VPN type virtual network gateways
+    resources
+    | where type =~ 'Microsoft.Network/virtualNetworkGateways'
+    | where properties.gatewayType =~ "vpn"
+    | extend gatewayType = properties.gatewayType, vpnType = properties.vpnType, connections = properties.connections, activeactive=properties.activeActive
+    | where activeactive == false
+    | project recommendationId = "281a2713-c0e0-3c48-b596-19f590c46671", name, id, tags
+
+...

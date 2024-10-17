@@ -1,0 +1,20 @@
+name: revcl-AzureBastionSubnet
+title: Use Azure Bastion in a subnet /26 or larger.
+source:
+  type: revcl
+  file: ./checklists/waf_checklist.en.json
+resourceTypes:
+- microsoft.network/bastionhosts
+waf: Security
+severity: 1
+labels:
+  guid: 6eab9eb6-762b-485e-8ea8-15aa5dba0bd0
+links:
+- type: docs
+  url: https://learn.microsoft.com/azure/bastion/bastion-faq#subnet
+queries:
+  arg: resources | where type=='microsoft.network/virtualnetworks' | project id,subnets=properties.subnets
+    | mv-expand subnets | project id, subnetName = subnets.name, subnetPrefix = subnets.properties.addressPrefix
+    | extend subnetPrefixLength = split(subnetPrefix, '/')[1] | where subnetName ==
+    'AzureBastionSubnet' | extend compliant = (subnetPrefixLength <= 26) | distinct
+    id, compliant

@@ -1,0 +1,24 @@
+name: aprl-TenantRootManagementGroupManagementGroups
+title: Subscriptions should not be placed under the Tenant Root Management Group
+description: |-
+  The root management group in Azure is designed for organizational hierarchy, allowing for all management groups and subscriptions to fold into it.
+source:
+  type: aprl
+  file: azure-resources/Subscription/subscriptions/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.Subscription/Subscriptions
+severity: 1
+labels:
+  guid: 5ada5ffa-7149-4e49-9fbf-e67be7c2594c
+  area: Governance
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Provides a list of Azure Subscriptions that are placed under the Tenant Root Management Group
+    resourcecontainers
+    | where type == 'microsoft.resources/subscriptions'
+    | extend mgParentSize = array_length(properties.managementGroupAncestorsChain)
+    | where mgParentSize == 1
+    | project recommendationId="5ada5ffa-7149-4e49-9fbf-e67be7c2594c", name, id, tags

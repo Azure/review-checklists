@@ -1,0 +1,25 @@
+name: aprl-ExpressrouteDirectCircuitsNetworkFlow
+title: Implement rate-limiting across ExpressRoute Direct Circuits to optimize network
+  flow
+description: |-
+  Rate limiting controls traffic volume between on-premises networks and Azure via ExpressRoute Direct, applying to private or Microsoft peering. It distributes port bandwidth, ensures stability, and prevents congestion, with steps outlined for enabling on circuits.
+source:
+  type: aprl
+  file: azure-resources/Network/expressRouteCircuits/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.Network/expressRouteCircuits
+severity: 1
+labels:
+  guid: d40c769d-2f08-4980-8d8f-a386946276e6
+  area: Scalability
+links: []
+queries:
+  arg: |-
+    // Azure Resource Graph Query
+    // This query will return all the ExpressRoute circuits (Direct Based) that have Direct Port Rate Limiting disabled
+    resources
+    | where type =~ "microsoft.network/expressroutecircuits"
+    | where properties.expressRoutePort != "" or isnotnull(properties.expressRoutePort)
+    | where properties.enableDirectPortRateLimit == false
+    | project recommendationId = "d40c769d-2f08-4980-8d8f-a386946276e6", name, id, tags, param1=strcat("enableDirectPortRateLimit: ",properties.enableDirectPortRateLimit)

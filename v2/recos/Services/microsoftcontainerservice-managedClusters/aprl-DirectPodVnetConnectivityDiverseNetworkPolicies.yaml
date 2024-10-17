@@ -1,0 +1,24 @@
+name: aprl-DirectPodVnetConnectivityDiverseNetworkPolicies
+title: Configure Azure CNI networking for dynamic allocation of IPs
+description: |-
+  Azure CNI enhances cluster IP and network management, allowing dynamic IP allocation, scalable subnets, direct pod-VNET connectivity, and supports diverse network policies for pods and nodes with Azure Network Policies and Calico, optimizing network efficiency and security
+source:
+  type: aprl
+  file: azure-resources/ContainerService/managedClusters/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.ContainerService/managedClusters
+severity: 1
+labels:
+  guid: c22db132-399b-4e7c-995d-577a60881be8
+  area: Scalability
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Check AKS Clusters using kubenet network profile
+    resources
+    | where type == "microsoft.containerservice/managedclusters"
+    | extend networkProfile = tostring (parse_json(properties.networkProfile.networkPlugin))
+    | where networkProfile =="kubenet"
+    | project recommendationId="c22db132-399b-4e7c-995d-577a60881be8", name, id, tags, param1=strcat("networkProfile :",networkProfile)

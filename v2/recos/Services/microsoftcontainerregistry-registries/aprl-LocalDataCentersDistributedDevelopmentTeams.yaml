@@ -1,0 +1,32 @@
+name: aprl-LocalDataCentersDistributedDevelopmentTeams
+title: Enable geo-replication
+description: |-
+  Use Azure Container Registry's geo-replication for multi-region deployments to simplify registry management and minimize latency. It enables serving global customers from local data centers and supports distributed development teams. Regional webhooks can notify of events in replicas.
+source:
+  type: aprl
+  file: azure-resources/ContainerRegistry/registries/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.ContainerRegistry/registries
+severity: 0
+labels:
+  guid: 36ea6c09-ef6e-d743-9cfb-bd0c928a430b
+  area: Disaster Recovery
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Find all Container Registries that do not have geo-replication enabled
+    resources
+    | where type =~ "microsoft.containerregistry/registries"
+    | project registryName = name, registryId = id, tags, primaryRegion = location
+    | join kind=leftouter (
+        Resources
+        | where type =~ "microsoft.containerregistry/registries/replications"
+        | project replicationRegion=name, replicationId = id
+        | extend registryId=strcat_array(array_slice(split(replicationId, '/'), 0, -3), '/')
+        ) on registryId
+    | project-away registryId1, replicationId
+    | where isempty(replicationRegion)
+    | project recommendationId = "36ea6c09-ef6e-d743-9cfb-bd0c928a430b", name=registryName, id=registryId, tags
+    | order by id asc

@@ -90,10 +90,14 @@ def generate_v1(checklist_file, input_folder, output_file, service_dictionary=No
     else:
         checklist_v1['metadata']['name'] = 'Name missing from checklist YAML file'
     # Write the output file
-    if verbose: print("DEBUG: Writing file", output_file)
+    if verbose: print("DEBUG: Dumping v1 checklist to file", output_file)
     if output_file:
-        with open(output_file, 'w') as f:
-            json.dump(checklist_v1, f, indent=4)
+        try:
+            with open(output_file, 'w') as f:
+                json.dump(checklist_v1, f, indent=4)
+        except Exception as e:
+            print("ERROR: Error writing output file {0} - {1}".format(output_file, str(e)))
+            sys.exit(1)
 
 # Function that returns a string ID for a reco of the format A01.01
 # Area and subarea are optional, but the reco_index is mandatory
@@ -114,9 +118,8 @@ def get_v1_from_v2(reco_v2, service_dictionary=None):
     # GUID (not mandatory in v2)
     if 'guid' in reco_v2:
         reco_v1['guid'] = reco_v2['guid']
-    elif 'labels' in reco_v2:
-        if 'guid' in reco_v2['labels']:
-            reco_v1['guid'] = reco_v2['labels']['guid']
+    elif 'labels' in reco_v2 and 'guid' in reco_v2['labels']:
+        reco_v1['guid'] = reco_v2['labels']['guid']
     # Mandatory fields
     if 'title' in reco_v2:
         reco_v1['text'] = reco_v2['title']
@@ -134,8 +137,8 @@ def get_v1_from_v2(reco_v2, service_dictionary=None):
     # Services not there in v2
     if 'services' in reco_v2:
         reco_v1['service'] = reco_v2['service'][0]
-    elif 'resourceTypes' in reco_v2:
-        reco_v1['service'] = cl_v1tov2.get_standard_service_name(reco_v2['services'][0], service_dictionary=service_dictionary)
+    elif 'resourceTypes' in reco_v2 and len(reco_v2['resourceTypes']) > 0:
+        reco_v1['service'] = cl_v1tov2.get_standard_service_name(reco_v2['resourceTypes'][0], service_dictionary=service_dictionary)
     if 'waf' in reco_v2:
         reco_v1['waf'] = reco_v2['waf']
     return reco_v1

@@ -1,0 +1,27 @@
+name: revcl-ApplicationGatewaysIpPrefixes
+title: Your Application Gateways v2 should be deployed in subnets with IP prefixes
+  equal or larger than /24
+source:
+  type: revcl
+  file: ./checklists/waf_checklist.en.json
+resourceTypes:
+- microsoft.network/applicationgateways
+waf: Security
+severity: 1
+labels:
+  guid: dfc50f87-3800-424c-937b-ed5f186e7c15
+links:
+- type: docs
+  url: https://learn.microsoft.com/azure/application-gateway/configuration-infrastructure#size-of-the-subnet
+- type: docs
+  url: https://learn.microsoft.com/learn/paths/secure-application-delivery/
+queries:
+  arg: resources | where type=='microsoft.network/applicationgateways' | extend subnetId
+    = tostring(properties.gatewayIPConfigurations[0].properties.subnet.id) | project
+    id, subnetId | join (resources | where type=='microsoft.network/virtualnetworks'
+    | project id,subnets=properties.subnets | mv-expand subnets | mv-expand subnets.properties.addressPrefixes
+    | project id, subnetId = tostring(subnets.id), prefix1 = subnets.properties.addressPrefix,
+    prefix2 = subnets.properties.addressPrefixes | mv-expand prefix2 | extend prefix
+    = iff(isnotnull(prefix1), prefix1, prefix2) | extend subnetPrefixLength = split(prefix,
+    '/')[1])on subnetId | extend compliant = (subnetPrefixLength <= 24 or subnetPrefixLength
+    == 64) | distinct id,compliant

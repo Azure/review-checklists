@@ -1,0 +1,25 @@
+name: aprl-ApplicationLoadDemandsVmInstanceDistribution
+title: Disable Force strictly even balance across zones to avoid scale in and out
+  fail attempts
+description: |-
+  Microsoft advises disabling strictly even VM instance distribution across Availability Zones in VMSS to improve scalability and flexibility, noting that uneven distribution may better serve application load demands despite the potential trade-off in resilience.
+source:
+  type: aprl
+  file: azure-resources/Compute/virtualMachineScaleSets/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.Compute/virtualMachineScaleSets
+severity: 0
+labels:
+  guid: b5a63aa0-c58e-244f-b8a6-cbba0560a6db
+  area: High Availability
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Find VMSS instances where strictly zoneBalance is set to True
+    resources
+    | where type == "microsoft.compute/virtualmachinescalesets"
+    | where properties.orchestrationMode == "Uniform" and properties.zoneBalance == true
+    | project recommendationId = "b5a63aa0-c58e-244f-b8a6-cbba0560a6db", name, id, tags, param1 = "strictly zoneBalance: Enabled"
+    | order by id asc

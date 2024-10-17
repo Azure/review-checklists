@@ -1,0 +1,33 @@
+name: aprl-AzurePoliciesBestPractices
+title: Enable and remediate Azure Policies configured for AKS
+description: |-
+  Azure Policies in AKS clusters help enforce governance best practices concerning security, authentication, provisioning, networking, and more, ensuring a robust and secure environment for operations.
+source:
+  type: aprl
+  file: azure-resources/ContainerService/managedClusters/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.ContainerService/managedClusters
+severity: 2
+labels:
+  guid: 26ebaf1f-c70d-4ebd-8641-4b60a0ce0094
+  area: Governance
+links: []
+queries:
+  arg: |-
+    // Azure Resource Graph Query
+    // Returns a count of non-compliant policy items per AKS cluster
+    PolicyResources
+    | where type =~ 'Microsoft.PolicyInsights/PolicyStates'
+    | extend complianceState = tostring(properties.complianceState)
+    | where complianceState == 'NonCompliant'
+    | where properties.resourceType =~ 'Microsoft.ContainerService/managedClusters'
+    | extend
+        id = tostring(properties.resourceId)
+    | summarize count() by id
+    | join kind=inner (
+        resources
+        | where type =~ 'Microsoft.ContainerService/managedClusters'
+        | project id, name
+    ) on id
+    | project recommendationId="26ebaf1f-c70d-4ebd-8641-4b60a0ce0094", id, name, param1=strcat("numNonCompliantAlerts: ", count_)

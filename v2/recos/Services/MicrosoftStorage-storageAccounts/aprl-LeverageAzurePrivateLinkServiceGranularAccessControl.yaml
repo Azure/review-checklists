@@ -1,0 +1,25 @@
+name: aprl-LeverageAzurePrivateLinkServiceGranularAccessControl
+title: Enable Azure Private Link service for storage accounts
+description: |-
+  Leverage Azure Private Link Service for secure access to Azure Storage and services via Private Endpoint in your VNet. Eliminate the need for public IPs, ensuring data privacy. Enjoy granular access control for enhanced security.
+source:
+  type: aprl
+  file: azure-resources/Storage/storageAccounts/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.Storage/storageAccounts
+severity: 1
+labels:
+  guid: dc55be60-6f8c-461e-a9d5-a3c7686ed94e
+  area: Security
+links: []
+queries:
+  arg: |-
+    // Azure Resource Graph Query
+    // This resource graph query will return all storage accounts that does not have a Private Endpoint Connection or where a private endpoint exists but public access is enabled
+    resources
+    | where type =~ "Microsoft.Storage/StorageAccounts"
+    | where isnull(properties.privateEndpointConnections) or properties.privateEndpointConnections[0].properties.provisioningState != ("Succeeded") or (isnull(properties.networkAcls) and properties.publicNetworkAccess == 'Enabled')
+    | extend param1 = strcat('Private Endpoint: ', iif(isnotnull(properties.privateEndpointConnections),split(properties.privateEndpointConnections[0].properties.privateEndpoint.id,'/')[8],'No Private Endpoint'))
+    | extend param2 = strcat('Access: ', iif(properties.publicNetworkAccess == 'Disabled', 'Public Access Disabled', iif(isnotnull(properties.networkAcls), 'NetworkACLs in place','Public Access Enabled')))
+    | project recommendationId = "dc55be60-6f8c-461e-a9d5-a3c7686ed94e", name, id, tags, param1, param2

@@ -1,0 +1,31 @@
+name: aprl-AzureVirtualMachineScaleSetsHistoricalUsageAnalysis
+title: Enable Predictive autoscale and configure at least for Forecast Only
+description: |-
+  Predictive autoscale utilizes machine learning to efficiently manage and scale Azure Virtual Machine Scale Sets by forecasting CPU load through historical usage analysis, ensuring timely scale-out to meet demand.
+source:
+  type: aprl
+  file: azure-resources/Compute/virtualMachineScaleSets/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.Compute/virtualMachineScaleSets
+severity: 2
+labels:
+  guid: 3f85a51c-e286-9f44-b4dc-51d00768696c
+  area: Scalability
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Find VMSS instances associated with autoscale settings when predictiveAutoscalePolicy_scaleMode is disabled
+    resources
+    | where type == "microsoft.compute/virtualmachinescalesets"
+    | project name, id, tags
+    | join kind=leftouter  (
+        resources
+        | where type == "microsoft.insights/autoscalesettings"
+        | where tostring(properties.targetResourceUri) contains "Microsoft.Compute/virtualMachineScaleSets"
+        | project id = tostring(properties.targetResourceUri), autoscalesettings = properties
+    ) on id
+    | where autoscalesettings.enabled == "true" and autoscalesettings.predictiveAutoscalePolicy.scaleMode == "Disabled"
+    | project recommendationId = "3f85a51c-e286-9f44-b4dc-51d00768696c", name, id, tags, param1 = "predictiveAutoscalePolicy_scaleMode: Disabled"
+    | order by id asc

@@ -1,0 +1,46 @@
+name: Autotag
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+on:
+  pull_request:
+    branches: [v2]
+    paths:
+      - '**.yml'
+      - '**.yaml'
+
+jobs:
+  autotag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: files
+        uses: masesgroup/retrieve-changed-files@v2
+      - id: alzimpact
+        name: Verify whether the modified files have an impact on the ALZ checklist
+        run: |
+          echo "DEBUG: Running on $SHELL"
+          pip install -r ./scripts/requirements.txt
+          alz_files=$(python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --checklist-file ./v2/checklists/alz.yaml --only-filenames)
+          alz_files_count=$(echo "$alz_files" | wc -l)
+          echo "$alz_files_count reco files found in the ALZ checklist:"
+          echo "$alz_files" | head -2
+          echo "..."
+          echo "$alz_files" | tail -2
+          for input_file in ${{ steps.files.outputs.all }}; do
+            echo "Processing '$input_file'..."
+            if [[ "$alz_files" == *"$input_file"* ]]; then
+              echo "Modification to file '$input_file' detected, which seems to be a reco leveraged by the ALZ checklist"
+              echo "alz_impact=yes" >> $GITHUB_OUTPUT
+            else
+              echo "'$input_file' has no ALZ impact"
+            fi
+          done
+      - name: add ALZ label
+        if: ${{ steps.alzimpact.outputs.alz_impact == 'yes' }}
+        uses: actions-ecosystem/action-add-labels@v1
+        id: addalzlabel
+        with:
+          labels: 'landingzone'
+          github_token: ${{ secrets.WORKFLOW_PAT }}

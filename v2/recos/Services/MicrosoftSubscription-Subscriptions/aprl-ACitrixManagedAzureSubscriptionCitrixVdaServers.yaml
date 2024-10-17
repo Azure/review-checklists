@@ -1,0 +1,28 @@
+name: aprl-ACitrixManagedAzureSubscriptionCitrixVdaServers
+title: Do not create more than 2000 Citrix VDA servers per subscription
+description: |-
+  A Citrix Managed Azure subscription supports VMs with VDA for app/desktop delivery, excluding other machines like Cloud Connectors. When close to the limit, signaled by a dashboard notification, and with sufficient licenses, request another subscription. Can't exceed the given limits for catalogs.
+source:
+  type: aprl
+  file: azure-resources/Subscription/subscriptions/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.Subscription/Subscriptions
+severity: 0
+labels:
+  guid: c041d596-6c97-4c5f-b4b3-9cd37628f2e2
+  area: Governance
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Count VM instances with a tag that contains "Citrix VDA" and create output if that count is >2000 for each subscription.
+    // The Citrix published limit is 2500. This query runs an 80% check.
+
+    resources
+    | where type == 'microsoft.compute/virtualmachines'
+    | where tags contains 'Citrix VDA'
+    | summarize VMs=count() by subscriptionId
+    | where VMs > 2000
+    | join (resourcecontainers| where type =='microsoft.resources/subscriptions' | project subname=name, subscriptionId) on subscriptionId
+    | project recommendationId='c041d596-6c97-4c5f-b4b3-9cd37628f2e2', name= subname, id = subscriptionId, param1='Too many instances.', param2= VMs

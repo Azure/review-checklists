@@ -1,0 +1,25 @@
+name: aprl-NetworkSecurityGroupApplicationSecurityGroups
+title: All Subnets should have a Network Security Group associated
+description: |-
+  Network security groups and application security groups allow filtering of inbound and outbound traffic by IP, port, and protocol, adding a security layer at the Subnet level.
+source:
+  type: aprl
+  file: azure-resources/Network/virtualNetworks/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.Network/virtualNetworks
+severity: 2
+labels:
+  guid: f0bf9ae6-25a5-974d-87d5-025abec73539
+  area: Security
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Find Subnets without NSG associated
+    resources
+    | where type =~ 'Microsoft.Network/virtualnetworks'
+    | mv-expand subnets = properties.subnets
+    | extend sn = string_size(subnets.properties.networkSecurityGroup)
+    | where sn == 0 and subnets.name !in ("GatewaySubnet", "AzureFirewallSubnet", "AzureFirewallManagementSubnet", "RouteServerSubnet")
+    | project recommendationId = "f0bf9ae6-25a5-974d-87d5-025abec73539", name, id, tags, param1 = strcat("SubnetName: ", subnets.name), param2 = "NSG: False"

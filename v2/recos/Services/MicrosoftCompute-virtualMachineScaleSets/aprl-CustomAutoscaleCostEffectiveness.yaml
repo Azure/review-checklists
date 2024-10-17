@@ -1,0 +1,31 @@
+name: aprl-CustomAutoscaleCostEffectiveness
+title: Configure VMSS Autoscale to custom and configure the scaling metrics
+description: |-
+  Use custom autoscale for VMSS based on metrics and schedules to improve performance and cost effectiveness, adjusting instances as demand changes.
+source:
+  type: aprl
+  file: azure-resources/Compute/virtualMachineScaleSets/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.Compute/virtualMachineScaleSets
+severity: 0
+labels:
+  guid: ee66ff65-9aa3-2345-93c1-25827cf79f44
+  area: Scalability
+links: []
+queries:
+  arg: |
+    // Azure Resource Graph Query
+    // Find VMSS instances associated with autoscale settings when autoscale is disabled
+    resources
+    | where type == "microsoft.compute/virtualmachinescalesets"
+    | project name, id, tags
+    | join kind=leftouter  (
+        resources
+        | where type == "microsoft.insights/autoscalesettings"
+        | where tostring(properties.targetResourceUri) contains "Microsoft.Compute/virtualMachineScaleSets"
+        | project id = tostring(properties.targetResourceUri), autoscalesettings = properties
+    ) on id
+    | where isnull(autoscalesettings) or autoscalesettings.enabled == "false"
+    | project recommendationId = "ee66ff65-9aa3-2345-93c1-25827cf79f44", name, id, tags, param1 = "autoscalesettings: Disabled"
+    | order by id asc

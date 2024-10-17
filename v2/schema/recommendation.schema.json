@@ -7,21 +7,21 @@
         "name": {
             "type": "string",
             "description": "Unique identifier for the recommendation, human readable.",
-            "pattern": "^[0-9A-Za-z]+$",
+            "pattern": "^[0-9A-Za-z\\-]+$",
             "minLength": 5,
-            "maxLength": 30,
+            "maxLength": 100,
             "$comment": "Names added for human readability, even if not strictly necessary when having GUIDs."
         },
         "title": {
             "type": "string",
             "description": "Recommendation text.",
             "minLength": 5,
-            "maxLength": 100
+            "maxLength": 1000
         },
         "description": {
             "type": "string",
             "description": "More verbose recommendation description.",
-            "maxLength": 300
+            "maxLength": 2000
         },
         "severity": {
             "type": "integer",
@@ -32,8 +32,6 @@
         "waf": {
             "type": "string",
             "description": "WAF pillar.",
-            "minLength": 5,
-            "maxLength": 30,
             "enum": ["Security", "Performance", "Reliability", "Cost", "Operations"]
         },
         "source": {
@@ -62,14 +60,18 @@
             "items": {
                 "type": "string",
                 "minLength": 5,
-                "maxLength": 30
+                "maxLength": 100
             }
         },
-        "query": {
+        "automatable": {
+            "type": "boolean",
+            "description": "Whether this check can be automated via some kind of query, such as Azure Resource Graph."
+        },
+        "queries": {
             "type": "object",
             "description": "Query to find the resources that this recommendation applies to.",
             "properties": {
-                "args": {
+                "arg": {
                     "type": "string",
                     "description": "Azure Resource Graph query"
                 }
@@ -83,9 +85,10 @@
                 "properties": {
                     "type": {
                         "type": "string",
-                        "description": "Link text."
+                        "description": "target type.",
+                        "enum": ["docs", "training", "other"]
                     },
-                    "target": {
+                    "url": {
                         "type": "string",
                         "description": "Link URL."
                     }
@@ -126,7 +129,7 @@
         },
         "duplicates": {
             "type": "array",
-            "description": "List of GUIDs of recommendations that are duplicates of this one.",
+            "description": "List of names of recommendations that are duplicates of this one.",
             "items": {
                 "type": "string",
                 "minLength": 36,
@@ -134,23 +137,5 @@
             }
         }
     },
-    "required": ["guid", "name", "title", "severity"],
-    "allOf": [
-        { 
-            "if": {
-                "properties": {
-                    "source": {
-                        "properties": {
-                            "type": {
-                                "enum": [ "revcl" ]
-                            }
-                        }
-                    }
-                }
-            },
-            "then": {
-                "required": ["reviewedDate"]
-            }
-        }
-    ]
+    "required": ["name", "title", "severity"]
 }

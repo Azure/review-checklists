@@ -11,51 +11,63 @@
 # - v1tov2: Convert a v1 checklist to v2
 # - run-arg: Run Azure Resource Graph queries stored in v2 recommendations
 # 
-# Usage examples for v1-to-v2 conversion:
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/aks_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./v2/recos --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose 
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/alz_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./v2/recos --output-format yaml --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/waf_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./v2/recos --output-format yaml --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/aprl_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./v2/recos --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
-# python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/wafsg_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./v2/recos --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --verbose
+# Usage examples for v1-to-v2 conversion (use the --max-items parameter to limit the number of items to convert):
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/aks_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./v2/recos --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --source-type revcl --verbose 
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/alz_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./v2/recos --output-format yaml --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --source-type revcl --verbose
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists/waf_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./v2/recos --output-format yaml --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --source-type revcl --verbose
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/aprl_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./v2/recos --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --source-type aprl --verbose
+# python3 ./scripts/cl.py v1tov2 --input-file ./checklists-ext/wafsg_checklist.en.json --service-dictionary ./scripts/service_dictionary.json --output-folder ./v2/recos --text-analytics-endpoint $text_endpoint --text-analytics-key $text_key --overwrite --source-type wafsg --verbose
+#
+# Usage examples for v2 analysis:
+# python3 ./scripts/cl.py analyze-v2 --input-folder ./v2/recos --format yaml
+# python3 ./scripts/cl.py analyze-v2 --input-folder ./v2/recos --format yaml --show-sources
+# python3 ./scripts/cl.py analyze-v2 --input-folder ./v2/recos --format yaml --show-sources --source-selector revcl
+# python3 ./scripts/cl.py analyze-v2 --input-folder ./v2/recos --format yaml --delete-assistant
+# python3 ./scripts/cl.py analyze-v2 --input-folder ./v2/recos --format yaml --show-resource-types
+#
+# Usage examples for specific reco inspection:
+# python3 ./scripts/cl.py show-reco --input-folder ./v2/recos --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
+# python3 ./scripts/cl.py show-reco --input-folder ./v2/recos --name revcl-AzureSiteRecoveryMonitoringDisasterRecoveryService
+# python3 ./scripts/cl.py open-reco --input-folder ./v2/recos --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
+# python3 ./scripts/cl.py open-reco --input-folder ./v2/recos --name revcl-AzureSiteRecoveryMonitoringDisasterRecoveryService
+#
+# Validate reco files
+# python3 ./scripts/cl.py validate-recos --input-folder ./v2/recos --schema ./v2/schema/recommendation.schema.json --verbose --max-items 10
+# python3 ./scripts/cl.py validate-recos --input-folder ./v2/recos --schema ./v2/schema/recommendation.schema.json --verbose --max-findings 1
+# python3 ./scripts/cl.py validate-recos --input-folder ./v2/recos --schema ./v2/schema/recommendation.schema.json --verbose
+#
+# Validate checklist files
+# python3 ./scripts/cl.py validate-checklists --input-folder ./v2/checklists --schema ./v2/schema/checklist.schema.json --verbose
 #
 # Disambiguate names
 # python3 ./scripts/cl.py disambiguate-names --input-folder ./v2/recos --verbose
-#
-# Validate reco files
-# python3 ./scripts/cl.py validate-recos --input-folder ./v2/recos --schema ./v2/schema/recommendation.schema.json --verbose
-#
-# Usage examples for v2 analysis:
-# python3 ./scripts/cl.py analyze-v2 --input-folder ./v2/recos --format yaml --show-sources
-# python3 ./scripts/cl.py analyze-v2 --input-folder ./v2/recos --format yaml --show-services
-# python3 ./scripts/cl.py analyze-v2 --input-folder ./v2/recos --format yaml --show-labels
 #
 # Usage examples for v2 reco listing:
 # python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --format yaml --label-selector '{"checklist": "alz"}' --show-labels
 # python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --format yaml --source-selector 'aprl'
 # python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --format yaml --with-arg
-#
-# Usage examples for specific reco inspection:
-# python3 ./scripts/cl.py show-reco --input-folder ./v2/recos --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
-# python3 ./scripts/cl.py open-reco --input-folder ./v2/recos --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
+# python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --checklist-file ./v2/checklists/alz.yaml --verbose
+# python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --checklist-file ./v2/checklists/alz.yaml --only-filenames
 #
 # Usage examples for renaming:
 # python3 ./scripts/cl.py rename-reco --input-folder ./v2/recos --guid 1b1b1b1b-1b1b-1b1b-1b1b-1b1b1b1b1b1b
 #
 # Usage examples for updating recos:
 # python3 ./scripts/cl.py update-recos --input-folder ./v2/recos --reviewed --verbose
+# python3 ./scripts/cl.py update-recos --input-folder ./v2/recos --default-severity 1 --verbose
 #
 # Create a v2 checklist file out of a v1 checklist file:
-# python3 ./scripts/cl.py checklist-to-v2 --checklist-file ./checklists/alz_checklist.en.json --output-file ./v2/checklists/alz_export.yaml --verbose
-# python3 ./scripts/cl.py checklist-to-v2 --checklist-file ./checklists/alz_checklist.en.json --output-file ./v2/checklists/alz_export.yaml --input-folder .\recos-v2\ --use-names --verbose
+# python3 ./scripts/cl.py checklist-to-v2 --checklist-file .\checklists\alz_checklist.en.json --output-file .\v2\checklists\alz.yaml --input-folder .\v2\recos --verbose
 #
 # Usage examples for analysis of checklist files:
 # Analyze a single checklist file:
-# python3 ./scripts/cl.py analyze-v2 --input-folder ./v2/recos --checklist-file .\checklists-v2\alz.yaml --show-areas --verbose
-# python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --checklist-file .\checklists-v2\alz_export.yaml --verbose
+# python3 ./scripts/cl.py analyze-v2 --input-folder ./v2/recos --checklist-file ./v2/checklists/alz.yaml --verbose
+# python3 ./scripts/cl.py analyze-v2 --input-folder ./v2/recos --checklist-file ./v2/checklists/alz.yaml --show-areas --verbose
+# python3 ./scripts/cl.py list-recos --input-folder ./v2/recos --checklist-file ./v2/checklists/alz.yaml --verbose
 #
 # Export v2 checklist to v1 JSON format:
-# python3 ./scripts/cl.py export-checklist --input-folder ./v2/recos --checklist-file ./v2/checklists/alz.yaml --output-file ./v2/checklists/alz.json
-# python3 ./scripts/cl.py export-checklist --input-folder ./v2/recos --checklist-file ./v2/checklists/alz_export.yaml --output-file ./v2/checklists/alz.json --verbose
+# python3 ./scripts/cl.py export-checklist --input-folder ./v2/recos --service-dictionary ./scripts/service_dictionary.json --checklist-file ./v2/checklists/alz.yaml --output-file ./v2/checklists/alz.json
+# python3 ./scripts/cl.py export-checklist --input-folder ./v2/recos --service-dictionary ./scripts/service_dictionary.json --checklist-file ./v2/checklists/app_delivery.yaml --output-file ./v2/checklists/app_delivery.json
 #
 # Appendix: importing latest rules from APRL and WAF service guides (maybe useful before using v1-to-v2):
 # python3 ./.github/actions/get_aprl/entrypoint.py './checklists-ext/aprl_checklist.en.json' 'true'
@@ -131,6 +143,9 @@ analyzev2_parser.add_argument('--source-selector', dest='analyzev2_sources', met
                     help='comma-separated source types for the items to analyze, for example "aprl,internal,wafsg"')
 analyzev2_parser.add_argument('--checklist-file', dest='analyzev2_checklist_file', metavar='CHECKLIST_FILE', action='store',
                     help='YAML file with a checklist definition that can include label-selectors, service-selectors and WAF-selectors as well as other metadata')
+analyzev2_parser.add_argument('--delete-assistant', dest='analyzev2_delete_assistant', action='store_true',
+                    default=False,
+                    help='run delete assistant to delete duplicate recos (default: False)')
 # Create the 'list-recos' command
 getrecos_parser = subparsers.add_parser('list-recos', help='List recommendations from a folder structure containing v2 recos', parents=[base_subparser])
 getrecos_parser.add_argument('--input-folder', dest='getrecos_input_folder', metavar='INPUT_FOLDER', action='store',
@@ -154,6 +169,8 @@ getrecos_parser.add_argument('--with-arg', dest='getrecos_arg', action='store_tr
                     default=False, help='only return queries with ARG queries (default: False)')
 getrecos_parser.add_argument('--checklist-file', dest='getrecos_checklist_file', metavar='CHECKLIST_FILE', action='store',
                     help='YAML file with a checklist definition that can include label-selectors, service-selectors and WAF-selectors as well as other metadata')
+getrecos_parser.add_argument('--only-filenames', dest='getrecos_only_filenames', action='store_true',
+                    default=False, help='only show the reco filenames (default: False)')
 # Create the 'update-recos' command
 updaterecos_parser = subparsers.add_parser('update-recos', help='Update recommendations from a folder structure containing v2 recos', parents=[base_subparser])
 updaterecos_parser.add_argument('--input-folder', dest='updaterecos_input_folder', metavar='INPUT_FOLDER', action='store',
@@ -165,23 +182,41 @@ updaterecos_parser.add_argument('--format', dest='updaterecos_format', metavar='
                     help='format of the v2 checklist items (default: yaml)')
 updaterecos_parser.add_argument('--reviewed', dest='updaterecos_reviewed', action='store_true',
                     default=False, help='Set the reviewed field to the current date (default: False)')
-updaterecos_parser.add_argument('--standard-service-names', dest='updaterecos_standardsvc', action='store_true',
-                    default=False, help='Set the names in the services field to standard names (default: False, service dictionary needs to be provided)')
+updaterecos_parser.add_argument('--default-severity', dest='updaterecos_default_severity', metavar='DEFAULT_SEVERITY', action='store',
+                    default='yaml', type=int,
+                    help='Set any missing severity to the default value (default: None)')
 # Create the 'validate-recos' command
 validaterecos_parser = subparsers.add_parser('validate-recos', help='Validate recommendations to the reco schema', parents=[base_subparser])
 validaterecos_parser.add_argument('--input-folder', dest='validaterecos_input_folder', metavar='INPUT_FOLDER', action='store',
                     help='folder where the recommendations to update are stored')
 validaterecos_parser.add_argument('--schema', dest='validaterecos_schema_file', metavar='SCHEMA_FILE', action='store',
                     help='file with validation schema')
-validaterecos_parser.add_argument('--max-items', dest='validaterecos_max_items', metavar='SCHEMA_FILE', action='store',
+validaterecos_parser.add_argument('--max-items', dest='validaterecos_max_items', metavar='MAX_ITEMS', action='store',
                     default=0, type=int,
                     help='Maximum number of items to validate, default is 0 (all items)')
+validaterecos_parser.add_argument('--max-findings', dest='validaterecos_max_findings', metavar='MAX_FINDINGS', action='store',
+                    default=0, type=int,
+                    help='Maximum number of non-compliances to find, default is 0 (all non-compliances)')
+# Create the 'validate-checklists' command
+validatechecklists_parser = subparsers.add_parser('validate-checklists', help='Validate checklists to the reco schema', parents=[base_subparser])
+validatechecklists_parser.add_argument('--input-folder', dest='validatechecklists_input_folder', metavar='INPUT_FOLDER', action='store',
+                    help='folder where the recommendations to update are stored')
+validatechecklists_parser.add_argument('--schema', dest='validatechecklists_schema_file', metavar='SCHEMA_FILE', action='store',
+                    help='file with validation schema')
+validatechecklists_parser.add_argument('--max-items', dest='validatechecklists_max_items', metavar='MAX_ITEMS', action='store',
+                    default=0, type=int,
+                    help='Maximum number of items to validate, default is 0 (all items)')
+validatechecklists_parser.add_argument('--max-findings', dest='validatechecklists_max_findings', metavar='MAX_FINDINGS', action='store',
+                    default=0, type=int,
+                    help='Maximum number of non-compliances to find, default is 0 (all non-compliances)')
 # Create the 'show-reco' command
 showreco_parser = subparsers.add_parser('show-reco', help='Show a specific recommendation', parents=[base_subparser])
 showreco_parser.add_argument('--input-folder', dest='showreco_input_folder', metavar='INPUT_FOLDER', action='store',
                     help='input folder where the recommendations to show are stored')
 showreco_parser.add_argument('--guid', dest='showreco_guid', metavar='GUID', action='store',
                     help='GUID of the recommendation to show')
+showreco_parser.add_argument('--name', dest='showreco_name', metavar='NAME', action='store',
+                    help='Name of the recommendation to show')
 # Create the 'rename-reco' command
 showreco_parser = subparsers.add_parser('rename-reco', help='Show a specific recommendation', parents=[base_subparser])
 showreco_parser.add_argument('--input-folder', dest='renamereco_input_folder', metavar='INPUT_FOLDER', action='store',
@@ -199,7 +234,9 @@ openreco_parser = subparsers.add_parser('open-reco', help='Open with a text edit
 openreco_parser.add_argument('--input-folder', dest='openreco_input_folder', metavar='INPUT_FOLDER', action='store',
                     help='input folder where the recommendations to verify are stored')
 openreco_parser.add_argument('--guid', dest='openreco_guid', metavar='GUID', action='store',
-                    help='GUID of the recommendation to show')
+                    help='GUID of the recommendation to open')
+openreco_parser.add_argument('--name', dest='openreco_name', metavar='NAME', action='store',
+                    help='NAME of the recommendation to open')
 openreco_parser.add_argument('--text-editor', dest='openreco_editor', metavar='GUID', action='store',
                     help='Text editor to use, for example "code" or "notepad"')
 # Create the 'v1tov2' command
@@ -213,6 +250,9 @@ v12_parser.add_argument('--output-folder', dest='v12_output_folder', metavar='OU
 v12_parser.add_argument('--output-format', dest='v12_output_format', metavar='OUTPUT_FORMAT', action='store',
                     default='yaml',
                     help='output format of the v12 checklist items (default: yaml)')
+v12_parser.add_argument('--source-type', dest='v12_source_type', metavar='SOURCE_TYPE', action='store',
+                    default=None,
+                    help='Override source type with a specific value (default: None, possible options: revcl, wafsg, aprl)')
 v12_parser.add_argument('--labels', dest='v12_labels', metavar='LABELS', action='store',
                     help='additional labels to add to the items, for example {"mykey1": "myvalue1", "mykey2": "myvalue2"}')
 v12_parser.add_argument('--id-label', dest='v12_id_label', metavar='ID_LABEL', action='store',
@@ -228,6 +268,9 @@ v12_parser.add_argument('--text-analytics-key', dest='v12_text_key', metavar='TE
 v12_parser.add_argument('--overwrite', dest='v12_overwrite', action='store_true',
                     default=False,
                     help='overwrite existing reco files with the same GUID (default: False)')
+v12_parser.add_argument('--max-items', dest='v12_max_items', metavar='SCHEMA_FILE', action='store',
+                    default=0, type=int,
+                    help='Maximum number of v1 recos to convert to v2, default is 0 (all items)')
 # Create the 'run-arg' command
 runarg_parser = subparsers.add_parser('run-arg', help='Run Azure Resource Graph queries stored in v2 recommendations', parents=[base_subparser])
 runarg_parser.add_argument('--input-folder', dest='runarg_input_folder', metavar='INPUT_FOLDER', action='store',
@@ -262,8 +305,8 @@ checklist_v12_parser.add_argument('--checklist-file', dest='checklist_v12_checkl
 checklist_v12_parser.add_argument('--output-file', dest='checklist_v12_output_file', metavar='OUTPUT_FILE', action='store',
                     help='output file where the v2 checklist will be stored')
 checklist_v12_parser.add_argument('--use-names', dest='checklist_v12_use_names', action='store_true',
-                    default=False,
-                    help='overwrite existing reco files with the same GUID (default: False)')
+                    default=True,
+                    help='use names instead of GUIDs (default: True)')
 checklist_v12_parser.add_argument('--input-folder', dest='checklist_v12_input_folder', metavar='INPUT_FOLDER', action='store',
                     help='input folder where the recommendations are stored. This parameter is required if using names instead of GUIDs.')
 # Create the 'disambiguate-names' command
@@ -335,14 +378,19 @@ elif args.command == 'v1tov2':
                 labels = None
         else:
             labels = None
+        # Create an array with the existing recos in the output folder
+        existing_v2recos = cl_analyze_v2.load_v2_files(args.v12_output_folder, import_filepaths=True, verbose=False)
+        if args.verbose: print("DEBUG: Found {0} existing v2 objects in folder {1}".format(len(existing_v2recos), args.v12_output_folder))
         # Generate v2 objects and store them in the output folder
-        v2recos = cl_v1tov2.generate_v2(args.v12_input_file, service_dictionary=service_dictionary,
+        new_v2recos = cl_v1tov2.generate_v2(args.v12_input_file, service_dictionary=service_dictionary,
                                         text_analytics_endpoint=args.v12_text_endpoint, text_analytics_key=args.v12_text_key,
                                         labels=labels, id_label=args.v12_id_label, cat_label=args.v12_cat_label, subcat_label=args.v12_subcat_label,
+                                        source_type=args.v12_source_type,
+                                        existing_v2recos=existing_v2recos, max_items=args.v12_max_items,
                                         verbose=args.verbose)
-        if v2recos:
-            if args.verbose: print("DEBUG: Storing {0} v2 objects in folder {1}...".format(len(v2recos), args.v12_output_folder))
-            cl_v1tov2.store_v2(args.v12_output_folder, v2recos, output_format=args.v12_output_format, overwrite=args.v12_overwrite, verbose=args.verbose)
+        if new_v2recos:
+            if args.verbose: print("DEBUG: Storing {0} v2 objects in folder {1}...".format(len(new_v2recos), args.v12_output_folder))
+            cl_v1tov2.store_v2(args.v12_output_folder, new_v2recos, existing_v2recos=existing_v2recos, output_format=args.v12_output_format, overwrite=args.v12_overwrite, verbose=args.verbose)
         else:
             print("ERROR: No v2 objects generated, not storing anything.")
     else:
@@ -388,6 +436,7 @@ elif args.command == 'analyze-v2':
             print("INFO: Total items found =", v2_stats['total_items'])
             print("INFO: Duplicate GUIDs =", str(v2_stats['duplicate_guids']))
             print("INFO: Duplicate Names =", str(v2_stats['duplicate_names']))
+            print("INFO: Recos with ARG queries =", str(v2_stats['arg']))
             if args.analyzev2_show_severities:
                 print("INFO: Items per severity:")
                 for key in v2_stats['severity']:
@@ -418,6 +467,25 @@ elif args.command == 'analyze-v2':
                     print("INFO: - {0} = {1}".format(key, v2_stats['areas'][key]))
         else:
             print("ERROR: No v2 objects found.")
+        if args.analyzev2_delete_assistant:
+            print('WARNING: WIP!!')
+            if args.verbose: print("DEBUG: Running delete assistant and loading up recos...")
+            v2_recos = cl_analyze_v2.load_v2_files(args.analyzev2_input_folder, import_filepaths=True, verbose=False)
+            for reco_name in v2_stats['duplicate_names']:
+                recos = [x for x in v2_recos if x['name'].lower() == reco_name.lower()]
+                if len(recos) > 1:
+                    print("INFO: Found", len(recos), "duplicates for reco {0}:".format(reco_name))
+                    for reco in recos:
+                        print(json.dumps(reco, indent=2))
+                print("QUESTION: which reco do you want to delete? (0-{0}/none) ".format(len(recos)-1), end='')
+                answer = input()
+                if answer.isnumeric():
+                    reco_to_delete = recos[int(answer)]
+                    print("INFO: Deleting reco {0} in file {1}...".format(reco_to_delete['name'], reco_to_delete['filepath']))
+                    try:
+                        os.remove(reco_to_delete['filepath'])
+                    except Exception as e:
+                        print("ERROR: Error deleting file", reco_to_delete['filepath'], "-", str(e))
     else:
         print("ERROR: you need to use the parameter `--input-folder` to specify the folder to analyze")
 elif args.command == 'list-recos':
@@ -425,7 +493,7 @@ elif args.command == 'list-recos':
     if args.getrecos_input_folder:
         if args.getrecos_checklist_file:
             # Get recos from the checklist file
-            v2recos = cl_analyze_v2.get_recos_from_checklist( args.getrecos_checklist_file, args.getrecos_input_folder, verbose=args.verbose)
+            v2recos = cl_analyze_v2.get_recos_from_checklist( args.getrecos_checklist_file, args.getrecos_input_folder, verbose=args.verbose, import_filepaths=True)
         else:
             # Convert label selectors argument to an object if specified
             if args.getrecos_labels:
@@ -454,7 +522,11 @@ elif args.command == 'list-recos':
                                             arg=args.getrecos_arg, verbose=args.verbose)
         # Print recos
         if v2recos:
-            cl_analyze_v2.print_recos(v2recos, show_labels=args.getrecos_show_labels, show_arg=args.getrecos_show_arg)
+            if args.getrecos_only_filenames:
+                for reco in v2recos:
+                    print(reco['filepath'])
+            else:
+                cl_analyze_v2.print_recos(v2recos, show_labels=args.getrecos_show_labels, show_arg=args.getrecos_show_arg)
         else:
             print("ERROR: No v2 objects found satisfying the criteria.")
     else:
@@ -464,18 +536,24 @@ elif args.command == 'update-recos':
     if args.updaterecos_input_folder:
         # Retrieve recos
         if args.verbose: print("DEBUG: Retrieving recos from", args.updaterecos_input_folder)
-        v2recos = cl_analyze_v2.get_recos(args.updaterecos_input_folder, format=args.updaterecos_format, verbose=False)
+        v2recos = cl_analyze_v2.get_recos(args.updaterecos_input_folder, format=args.updaterecos_format, import_filepaths=True, verbose=False)
         if v2recos and len(v2recos) > 0:
+            updated_v2recos = []
             if args.updaterecos_reviewed:
                 answer = input("\nDo you want to refresh the reviewed field in {0} recommendations? (Y/n) ".format(len(v2recos)))
                 if (answer == "") or (answer.lower() == "y"):
                     updated_v2recos = cl_analyze_v2.refresh_reviewed(v2recos, verbose=args.verbose)
-            if args.updaterecos_standardsvc:
-                answer = input("\nDo you want to update the services field in {0} recommendations? (Y/n) ".format(len(v2recos)))
-                if (answer == "") or (answer.lower() == "y"):
-                    # WIP!!
-                    print('WIP!!')
-            cl_v1tov2.store_v2(args.updaterecos_input_folder, updated_v2recos, overwrite=True, output_format=args.updaterecos_format, verbose=args.verbose)
+            if args.updaterecos_default_severity:
+                for reco in v2recos:
+                    if 'severity' not in reco:
+                        if args.verbose: print("DEBUG: Setting default severity to {0} for reco {1}".format(args.updaterecos_default_severity, reco['name']))
+                        reco['severity'] = args.updaterecos_default_severity
+                        updated_v2recos.append(reco)
+            if updated_v2recos and len(updated_v2recos) > 0:
+                if args.verbose: print("DEBUG: Storing {0} updated v2 objects in folder {1}...".format(len(updated_v2recos), args.updaterecos_input_folder))
+                cl_v1tov2.store_v2(args.updaterecos_input_folder, updated_v2recos, existing_v2recos=v2recos, overwrite=True, output_format=args.updaterecos_format, verbose=args.verbose)
+            else:
+                print("INFO: No v2 objects updated.")
         else:
             print("ERROR: No v2 objects found.")
     else:
@@ -488,48 +566,98 @@ elif args.command == 'validate-recos':
         with open(args.validaterecos_schema_file, 'r') as stream:
             try:
                 reco_schema = json.load(stream)
-            except yaml.YAMLError as exception:
-                raise exception
+            except:
+                print("ERROR: Error loading JSON schema from", args.validaterecos_schema_file)
+                sys.exit(1)
         # To Do: validate that the schema is valid
         if reco_schema:
             if args.verbose: print("DEBUG: Retrieving recos from", args.validaterecos_input_folder)
             v2recos = cl_analyze_v2.get_recos(args.validaterecos_input_folder, verbose=False)
-            if args.verbose: print("DEBUG: Starting validation...", args.validaterecos_schema_file)
+            if args.verbose: print("DEBUG: Starting validation with schema {0}...".format(args.validaterecos_schema_file))
             reco_counter = 0
+            finding_counter = 0
             for reco in v2recos:
                 reco_counter +=1
                 if (args.validaterecos_max_items == 0) or (reco_counter <= args.validaterecos_max_items):
                     try:
                         jsonschema.validate(reco, reco_schema)
-                        if args.verbose: print("INFO: Reco with GUID", reco['guid'], "validates correctly against the schema.")
+                        if args.verbose: print("INFO: Reco", reco['name'], "validates correctly against the schema.")
                     except jsonschema.exceptions.ValidationError as e:
-                        print("ERROR: Reco with GUID", reco['guid'], "does not validate against the schema.")
+                        print("ERROR: Reco", reco['name'], "does not validate against the schema.")
                         if args.verbose: print("DEBUG: -", str(e))
+                        finding_counter += 1
+                        if (args.validaterecos_max_findings > 0) and (finding_counter >= args.validaterecos_max_findings):
+                            print("INFO: Maximum number of non-compliances reached, stopping validation.")
+                            break
                     except jsonschema.exceptions.SchemaError as e:
                         print("ERROR: Schema", args.validaterecos_schema_file, "does not seem to be valid.")
                         if args.verbose: print("DEBUG: -", str(e))
                         sys.exit(1)
                     except Exception as e:
-                        print("ERROR: Unknown error validating reco", reco['guid'], "against the schema", args.validaterecos_schema_file, "-", str(e))
+                        print("ERROR: Unknown error validating reco", reco['name'], "against the schema", args.validaterecos_schema_file, "-", str(e))
+            print("INFO: {0} recos validated, {1} non-compliances found.".format(reco_counter, finding_counter))
+        else:
+            print("ERROR: Schema could not be loaded.")
+    else:
+        print("ERROR: you need to use the parameters `--input-folder` and `--schema` to specify the recos folder and their schema")
+elif args.command == 'validate-checklists':
+    # We need an input folder and a schema file
+    if args.validatechecklists_input_folder and args.validatechecklists_schema_file:
+        # Retrieve checklists schema
+        if args.verbose: print("DEBUG: Loading schema from", args.validatechecklists_schema_file)
+        with open(args.validatechecklists_schema_file, 'r') as stream:
+            try:
+                cl_schema = json.load(stream)
+            except:
+                print("ERROR: Error loading JSON schema from", args.validatechecklists_schema_file)
+                sys.exit(1)
+        # Load checklists (every yaml in the folder)
+        if cl_schema:
+            if args.verbose: print("DEBUG: Retrieving checklists from", args.validatechecklists_input_folder)
+            v2cls = cl_analyze_v2.get_checklists(args.validatechecklists_input_folder, verbose=False)
+            if args.verbose: print("DEBUG: Starting validation with schema {0}...".format(args.validatechecklists_schema_file))
+            cl_counter = 0
+            finding_counter = 0
+            for cl in v2cls:
+                cl_counter +=1
+                if (args.validatechecklists_max_items == 0) or (cl_counter <= args.validatechecklists_max_items):
+                    try:
+                        jsonschema.validate(cl, cl_schema)
+                        if args.verbose: print("INFO: Checklist {0} validates correctly against the schema.".format(cl['name']))
+                    except jsonschema.exceptions.ValidationError as e:
+                        print("ERROR: Checklist '{0}' does not validate against the schema.".format(cl['name']))
+                        if args.verbose: print("DEBUG: -", str(e))
+                        finding_counter += 1
+                        if (args.validatechecklists_max_findings > 0) and (finding_counter >= args.validatechecklists_max_findings):
+                            print("INFO: Maximum number of non-compliances reached, stopping validation.")
+                            break
+                    except jsonschema.exceptions.SchemaError as e:
+                        print("ERROR: Schema", args.validatechecklists_schema_file, "does not seem to be valid.")
+                        if args.verbose: print("DEBUG: -", str(e))
+                        sys.exit(1)
+                    except Exception as e:
+                        print("ERROR: Unknown error validating checklist '{0}' against the schema {1}: {2}".format(cl['name'], args.validatechecklists_schema_file,str(e)))
+            print("INFO: {0} recos validated, {1} non-compliances found.".format(cl_counter, finding_counter))
         else:
             print("ERROR: Schema could not be loaded.")
     else:
         print("ERROR: you need to use the parameters `--input-folder` and `--schema` to specify the recos folder and their schema")
 elif args.command == 'show-reco':
-    # We need an input folder and a GUID
+    # We need an input folder and a GUID or a name
     if args.showreco_input_folder and args.showreco_guid:
-        recos = cl_analyze_v2.get_reco(args.showreco_input_folder, args.showreco_guid, verbose=args.verbose)
-        if recos:
-            if len(recos) > 1:
-                print("ERROR: {0} recos found with GUID {1}".format(len(recos), args.showreco_guid))
-            else:
-                for reco in recos:
-                    cl_analyze_v2.print_reco(reco)
-                    print("---")
-        else:
-            print("ERROR: No reco found with GUID", args.showreco_guid)
+        recos = cl_analyze_v2.get_reco_from_guid(args.showreco_input_folder, args.showreco_guid, verbose=args.verbose)
+    elif args.showreco_input_folder and args.showreco_name:
+        recos = cl_analyze_v2.get_reco_from_name(args.showreco_input_folder, args.showreco_name, verbose=args.verbose)
     else:
-        print("ERROR: you need to use the parameters `--input-folder` and `--guid` to specify the folder and GUID to analyze")
+        print("ERROR: you need to use the parameters `--input-folder` and `--guid` or `--name` to specify the folder and GUID/name to retrieve")
+    if recos:
+        if len(recos) > 1:
+            print("WARNING: {0} recos found".format(len(recos)))
+        for reco in recos:
+            cl_analyze_v2.print_reco(reco)
+            print("---")
+    else:
+        print("ERROR: No reco found with GUID", args.showreco_guid)
 elif args.command == 'rename-reco':
     # We need an input folder and a GUID
     if args.renamereco_input_folder and args.renamereco_guid:
@@ -555,6 +683,8 @@ elif args.command == 'open-reco':
     # We need an input folder and a GUID
     if args.openreco_input_folder and args.openreco_guid:
         cl_analyze_v2.load_v2_files(args.openreco_input_folder, guids=[ args.openreco_guid ], open_editor=True, text_editor=args.openreco_editor, verbose=args.verbose)
+    elif args.openreco_input_folder and args.openreco_name:
+        cl_analyze_v2.load_v2_files(args.openreco_input_folder, names=[ args.openreco_name ], open_editor=True, text_editor=args.openreco_editor, verbose=args.verbose)
     else:
         print("ERROR: you need to use the parameters `--input-folder` and `--guid` to specify the folder and GUID to open")
 elif args.command == 'run-arg':
@@ -586,9 +716,20 @@ elif args.command == 'run-arg':
             print("ERROR: No v2 objects found.")
 elif args.command == "export-checklist":
     if args.export_checklist_file and args.export_input_folder:
-        if not args.export_service_dictionary:
+        if args.export_service_dictionary:
+            try:
+                if args.verbose: print("DEBUG: Loading service dictionary from", args.export_service_dictionary)
+                with open(args.export_service_dictionary) as f:
+                    service_dictionary = json.load(f)
+                    if args.verbose: print("DEBUG: service dictionary loaded successfully with {0} elements".format(len(service_dictionary)))
+            except Exception as e:
+                service_dictionary = None
+                print("ERROR: Error when loading service dictionary from", args.export_service_dictionary, "-", str(e))
+                sys.exit(1)
+        else:
             print("WARNING: you may want to use the parameter `--service-dictionary` to extract human-readable service names from ARM resource types.")
-        cl_v2tov1.generate_v1(args.export_checklist_file, args.export_input_folder, args.export_output_file, service_dictionary=args.export_service_dictionary, verbose=args.verbose)
+            service_dictionary = None
+        cl_v2tov1.generate_v1(args.export_checklist_file, args.export_input_folder, args.export_output_file, service_dictionary=service_dictionary, verbose=args.verbose)
     else:
         print("ERROR: you need to use the parameters `--checklist-file` and `--input-folder` to specify the checklist file and the input folder")
 elif args.command == "checklist-to-v2":

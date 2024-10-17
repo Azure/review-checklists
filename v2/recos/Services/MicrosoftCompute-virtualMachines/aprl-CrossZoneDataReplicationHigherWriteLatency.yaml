@@ -1,0 +1,24 @@
+name: aprl-CrossZoneDataReplicationHigherWriteLatency
+title: Use Azure Disks with Zone Redundant Storage for higher resiliency and availability
+description: |-
+  Azure disks offers a zone-redundant storage (ZRS) option for workloads that need to be resilient to an entire zone being down. Due to the cross-zone data replication, ZRS disks have higher write latency when compared to the locally-redundant option (LRS), so make sure to benchmark your disks.
+source:
+  type: aprl
+  file: azure-resources/Compute/virtualMachines/recommendations.yaml
+  timestamp: July 24, 2024
+resourceTypes:
+- Microsoft.Compute/virtualMachines
+severity: 1
+labels:
+  guid: fa0cf4f5-0b21-47b7-89a9-ee936f193ce1
+  area: High Availability
+links: []
+queries:
+  arg: |-
+    // Azure Resource Graph Query
+    // Find eligible Disks that are not zonal nor zone redundant
+    resources
+    | where type == 'microsoft.compute/disks'
+    | where sku has "Premium_LRS" or sku has "StandardSSD_LRS"
+    | where sku.name has_cs 'ZRS' or array_length(zones) > 0
+    | project recommendationId="fa0cf4f5-0b21-47b7-89a9-ee936f193ce1", name, id, tags, param1 = sku, param2 = sku.name
