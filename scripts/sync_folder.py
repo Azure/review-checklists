@@ -5,6 +5,8 @@
 import requests
 import argparse
 import os
+import urllib.request
+
 
 # Parameters
 parser = argparse.ArgumentParser(description='Copy files from the remote branch of a GitHub repo to a local folder')
@@ -43,11 +45,10 @@ def get_files():
         r = requests.get(f'https://api.github.com/repos/{github_org}/{github_repo}/git/trees/{git_tree_id}?recursive=true')
         if r.status_code == 200:
             files_processed = 0
-            files_errors = 0
-            files_success = 0
             for path in r.json()['tree']:
                 file_path = path['path']
                 # Only process files in the containing folder with the right extension
+                # The folder check is by far not water tight, but it should work for the current use case
                 if (args.github_folder + "/" in file_path) and (github_file_extension in file_path):
                     files_processed += 1
                     if (max_files > 0) and (files_processed > max_files):
@@ -60,19 +61,21 @@ def get_files():
                     output_path = os.path.join(output_folder, file_name)
                     if args.dryrun:
                         print("INFO: Would copy file {0} to {1}".format(file_url, output_path))    
-                        files_success += 1
                     else:
-                        r = requests.get(file_url)
-                        if r.status_code == 200:
-                            with open(output_path, 'w') as f:
-                                f.write(r.text)
-                                files_success += 1
-                        else:
-                            print("ERROR: Unable to download file {0} from GitHub API: {1}. Message: {2}".format(file_path, r.status_code, r.text))
-                            files_errors += 1
+                        # r = requests.get(file_url)
+                        # if r.status_code == 200:
+                        #     with open(output_path, 'w') as f:
+                        #         f.write(r.text)
+                        #     files_success += 1
+                        # else:
+                        #     print("ERROR: Unable to download file {0} from GitHub API: {1}. Message: {2}".format(file_path, r.status_code, r.text))
+                        #     files_errors += 1
+                        if args.verbose:
+                            print("INFO: Downloading file #{3} {0} to {1}".format(file_url, output_path, files_processed))
+                        urllib.request.urlretrieve(file_url, output_path)
             if args.verbose:
-                print("INFO: {0} files processed, {1} errors, {2} success".format(files_processed, files_errors, files_success))
-            return files_success
+                print("DEBUG: {0} files processed, {1} errors, {2} success".format(files_processed, files_errors, files_success))
+            return files_processed
         else:
             print("ERROR: Unable to retrieve list of files from GitHub API")
             return None
