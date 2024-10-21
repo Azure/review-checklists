@@ -70,7 +70,7 @@
                 "style": "tabs",
                 "links": [
                     {
-                        "id": "fbc281ef-f267-4caa-9175-e0020134b644",
+                        "id": "28e753d7-7a7c-4571-9461-727a7491e40c",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Segmentation",
@@ -79,7 +79,7 @@
                         "style": "primary"
                     },
                     {
-                        "id": "e2257931-f963-455c-9f7a-ad6403c8d96f",
+                        "id": "0d078392-5b10-400f-8cfe-5f102cfe432f",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Internet",
@@ -88,7 +88,7 @@
                         "style": "primary"
                     },
                     {
-                        "id": "f7cb96d2-b731-4452-80d6-0f164b82fe4a",
+                        "id": "a4ae31cf-9d91-4adf-b04f-7bf0c4fb6461",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Hybrid",
@@ -97,7 +97,7 @@
                         "style": "primary"
                     },
                     {
-                        "id": "01360cd1-e5dd-45e5-a226-67c03dc0dccf",
+                        "id": "44466922-4038-42c0-a640-3fa602c89f62",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Firewall",
@@ -106,39 +106,39 @@
                         "style": "primary"
                     },
                     {
-                        "id": "3907955b-f4d7-41c3-aed7-fcfdbb74a516",
+                        "id": "998e7504-5f1e-41d6-8f61-331ec12599f3",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
-                        "linkLabel": "PaaS",
+                        "linkLabel": "Virtual WAN",
                         "subTarget": "tab4",
-                        "preText": "PaaS",
+                        "preText": "Virtual WAN",
                         "style": "primary"
                     },
                     {
-                        "id": "8cc858d6-a2a3-4e87-bd9e-dbb987dc89ca",
-                        "cellValue": "VisibleTab",
-                        "linkTarget": "parameter",
-                        "linkLabel": "IP plan",
-                        "subTarget": "tab5",
-                        "preText": "IP plan",
-                        "style": "primary"
-                    },
-                    {
-                        "id": "ec217b09-fef2-4a35-a7ea-a53ca431357d",
+                        "id": "4ab66f39-b8f1-4838-a5f1-1e8a8b700c9c",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Hub and spoke",
-                        "subTarget": "tab6",
+                        "subTarget": "tab5",
                         "preText": "Hub and spoke",
                         "style": "primary"
                     },
                     {
-                        "id": "01e7565a-60c5-4ab0-bf8b-3c186d62ead1",
+                        "id": "445ec745-fcd6-4480-aa47-788f7558a7b5",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
-                        "linkLabel": "Virtual WAN",
+                        "linkLabel": "IP plan",
+                        "subTarget": "tab6",
+                        "preText": "IP plan",
+                        "style": "primary"
+                    },
+                    {
+                        "id": "ee86cf1f-6a90-4dc3-8221-c81f11bf450b",
+                        "cellValue": "VisibleTab",
+                        "linkTarget": "parameter",
+                        "linkLabel": "PaaS",
                         "subTarget": "tab7",
-                        "preText": "Virtual WAN",
+                        "preText": "PaaS",
                         "style": "primary"
                     }
                 ]
@@ -2654,9 +2654,9 @@
                                 {
                                     "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
                                     "version": "KqlParameterItem/1.0",
-                                    "name": "Query26Stats",
+                                    "name": "Query32Stats",
                                     "type": 1,
-                                    "query": "resources | where type =~ 'microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets = properties.subnets | mv-expand subnets | project id = subnets.id, resourceGroup, VNet = name, serviceEndpoints = subnets.properties.serviceEndpoints, compliant = (isnull(subnets.properties.serviceEndpoints) or array_length(subnets.properties.serviceEndpoints) == 0) | order by compliant asc| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "query": "resources | where type=='microsoft.network/virtualhubs' | extend compliant = isnotnull(properties.azureFirewall.id) | project id, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
                                     "crossComponentResources": [
                                         "{Subscription}"
                                     ],
@@ -2670,9 +2670,93 @@
                                 {
                                     "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
                                     "version": "KqlParameterItem/1.0",
-                                    "name": "Query26FullyCompliant",
+                                    "name": "Query32FullyCompliant",
                                     "type": 1,
-                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query26Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query32Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query33Stats",
+                                    "type": 1,
+                                    "query": "resources| where type =~ 'microsoft.network/virtualwans' | extend compliant= (properties.allowBranchToBranchTraffic == 'true') | distinct id,compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query33FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query33Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query34Stats",
+                                    "type": 1,
+                                    "query": "resources | where type =~ 'microsoft.network/virtualhubs'| extend compliant= (properties.hubRoutingPreference =~ 'ASPath') | distinct id,compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query34FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query34Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query35Stats",
+                                    "type": 1,
+                                    "query": "resources | where type =~ 'microsoft.network/virtualhubs' | extend addressSpace = properties.addressPrefix | extend compliant= (toint(substring(addressSpace, indexof(addressSpace, '/') + 1)) < 23) | distinct name, id, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query35FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query35Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
                                     "isHiddenWhenLocked": true,
                                     "timeContext": {
                                         "durationMs": 86400000
@@ -2693,7 +2777,7 @@
                                             "criteriaContext": {
                                                 "operator": "Default",
                                                 "resultValType": "expression",
-                                                "resultVal": "{Query26Stats:$.Success}"
+                                                "resultVal": "{Query32Stats:$.Success}+{Query33Stats:$.Success}+{Query34Stats:$.Success}+{Query35Stats:$.Success}"
                                             }
                                         }
                                     ]
@@ -2712,7 +2796,7 @@
                                             "criteriaContext": {
                                                 "operator": "Default",
                                                 "resultValType": "expression",
-                                                "resultVal": "{Query26Stats:$.Total}"
+                                                "resultVal": "{Query32Stats:$.Total}+{Query33Stats:$.Total}+{Query34Stats:$.Total}+{Query35Stats:$.Total}"
                                             }
                                         }
                                     ]
@@ -2746,7 +2830,7 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "## PaaS"
+                            "json": "## Virtual WAN"
                         },
                         "customWidth": "50",
                         "name": "tab4title"
@@ -2787,15 +2871,15 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Don't enable virtual network service endpoints by default on all subnets. Check [this link](https://learn.microsoft.com/azure/virtual-network/virtual-network-service-endpoints-overview) for further information.. [This training](https://learn.microsoft.com/learn/paths/implement-network-security/?source=learn) can help to educate yourself on this."
+                            "json": "For outbound Internet traffic protection and filtering, deploy Azure Firewall in secured hubs. Check [this link](https://learn.microsoft.com/azure/virtual-wan/howto-firewall) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/) can help to educate yourself on this."
                         },
-                        "name": "querytext26"
+                        "name": "querytext32"
                     },
                     {
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type =~ 'microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets = properties.subnets | mv-expand subnets | project id = subnets.id, resourceGroup, VNet = name, serviceEndpoints = subnets.properties.serviceEndpoints, compliant = (isnull(subnets.properties.serviceEndpoints) or array_length(subnets.properties.serviceEndpoints) == 0) | order by compliant asc | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "query": "resources | where type=='microsoft.network/virtualhubs' | extend compliant = isnotnull(properties.azureFirewall.id) | project id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
                             "size": 4,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
@@ -2844,7 +2928,193 @@
                                 ]
                             }
                         },
-                        "name": "query26"
+                        "name": "query32"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Do not disable branch-to-branch traffic in Virtual WAN, unless these flows should be explicitly blocked. Check [this link](https://learn.microsoft.com/azure/virtual-wan/virtual-wan-faq#is-branch-to-branch-connectivity-allowed-in-virtual-wan) for further information.. [This training](https://learn.microsoft.com/training/modules/introduction-azure-virtual-wan/) can help to educate yourself on this."
+                        },
+                        "name": "querytext33"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources| where type =~ 'microsoft.network/virtualwans' | extend compliant= (properties.allowBranchToBranchTraffic == 'true') | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 4,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query33"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Use AS-Path as hub routing preference, since it is more flexible than ExpressRoute or VPN. Check [this link](https://learn.microsoft.com/azure/virtual-wan/about-virtual-hub-routing-preference) for further information.. [This training](https://learn.microsoft.com/training/modules/introduction-azure-virtual-wan/) can help to educate yourself on this."
+                        },
+                        "name": "querytext34"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type =~ 'microsoft.network/virtualhubs'| extend compliant= (properties.hubRoutingPreference =~ 'ASPath') | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 4,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query34"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Assign at least a /23 prefix to virtual hubs to ensure enough IP space is available. Check [this link](https://learn.microsoft.com/azure/virtual-wan/virtual-wan-faq#what-is-the-recommended-hub-address-space-during-hub-creation) for further information.. [This training](https://learn.microsoft.com/training/modules/introduction-azure-virtual-wan/) can help to educate yourself on this."
+                        },
+                        "name": "querytext35"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type =~ 'microsoft.network/virtualhubs' | extend addressSpace = properties.addressPrefix | extend compliant= (toint(substring(addressSpace, indexof(addressSpace, '/') + 1)) < 23) | distinct name, id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 4,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query35"
                     }
                 ]
             },
@@ -2854,404 +3124,6 @@
                 "value": "tab4"
             },
             "name": "tab4"
-        },
-        {
-            "type": 12,
-            "content": {
-                "version": "NotebookGroup/1.0",
-                "groupType": "editable",
-                "items": [
-                    {
-                        "type": 9,
-                        "content": {
-                            "version": "KqlParameterItem/1.0",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "parameters": [
-                                {
-                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                                    "version": "KqlParameterItem/1.0",
-                                    "name": "Query6Stats",
-                                    "type": 1,
-                                    "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)')  | project id, compliant, cidr| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
-                                    "crossComponentResources": [
-                                        "{Subscription}"
-                                    ],
-                                    "isHiddenWhenLocked": true,
-                                    "timeContext": {
-                                        "durationMs": 86400000
-                                    },
-                                    "queryType": 1,
-                                    "resourceType": "microsoft.resourcegraph/resources"
-                                },
-                                {
-                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                                    "version": "KqlParameterItem/1.0",
-                                    "name": "Query6FullyCompliant",
-                                    "type": 1,
-                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query6Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
-                                    "isHiddenWhenLocked": true,
-                                    "timeContext": {
-                                        "durationMs": 86400000
-                                    },
-                                    "queryType": 8
-                                },
-                                {
-                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                                    "version": "KqlParameterItem/1.0",
-                                    "name": "Query7Stats",
-                                    "type": 1,
-                                    "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend compliant = addressMask > 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
-                                    "crossComponentResources": [
-                                        "{Subscription}"
-                                    ],
-                                    "isHiddenWhenLocked": true,
-                                    "timeContext": {
-                                        "durationMs": 86400000
-                                    },
-                                    "queryType": 1,
-                                    "resourceType": "microsoft.resourcegraph/resources"
-                                },
-                                {
-                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                                    "version": "KqlParameterItem/1.0",
-                                    "name": "Query7FullyCompliant",
-                                    "type": 1,
-                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query7Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
-                                    "isHiddenWhenLocked": true,
-                                    "timeContext": {
-                                        "durationMs": 86400000
-                                    },
-                                    "queryType": 8
-                                },
-                                {
-                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                                    "version": "KqlParameterItem/1.0",
-                                    "name": "Query8Stats",
-                                    "type": 1,
-                                    "query": "Resources | where type =~ 'Microsoft.Network/publicIPAddresses' and sku.tier =~ 'Regional' | where isempty(zones) or array_length(zones) <= 1 | extend az = case(isempty(zones), 'Non-zonal', array_length(zones) <= 1, strcat('Zonal (', strcat_array(zones, ','), ')'), zones) | project name, id, tags, param1 = strcat('sku: ', sku.name), param2 = strcat('availabilityZone: ', az)| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
-                                    "crossComponentResources": [
-                                        "{Subscription}"
-                                    ],
-                                    "isHiddenWhenLocked": true,
-                                    "timeContext": {
-                                        "durationMs": 86400000
-                                    },
-                                    "queryType": 1,
-                                    "resourceType": "microsoft.resourcegraph/resources"
-                                },
-                                {
-                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                                    "version": "KqlParameterItem/1.0",
-                                    "name": "Query8FullyCompliant",
-                                    "type": 1,
-                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query8Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
-                                    "isHiddenWhenLocked": true,
-                                    "timeContext": {
-                                        "durationMs": 86400000
-                                    },
-                                    "queryType": 8
-                                },
-                                {
-                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                                    "version": "KqlParameterItem/1.0",
-                                    "name": "Tab5Success",
-                                    "type": 1,
-                                    "isHiddenWhenLocked": true,
-                                    "timeContext": {
-                                        "durationMs": 86400000
-                                    },
-                                    "criteriaData": [
-                                        {
-                                            "criteriaContext": {
-                                                "operator": "Default",
-                                                "resultValType": "expression",
-                                                "resultVal": "{Query6Stats:$.Success}+{Query7Stats:$.Success}+{Query8Stats:$.Success}"
-                                            }
-                                        }
-                                    ]
-                                },
-                                {
-                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                                    "version": "KqlParameterItem/1.0",
-                                    "name": "Tab5Total",
-                                    "type": 1,
-                                    "isHiddenWhenLocked": true,
-                                    "timeContext": {
-                                        "durationMs": 86400000
-                                    },
-                                    "criteriaData": [
-                                        {
-                                            "criteriaContext": {
-                                                "operator": "Default",
-                                                "resultValType": "expression",
-                                                "resultVal": "{Query6Stats:$.Total}+{Query7Stats:$.Total}+{Query8Stats:$.Total}"
-                                            }
-                                        }
-                                    ]
-                                },
-                                {
-                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                                    "version": "KqlParameterItem/1.0",
-                                    "name": "Tab5Percent",
-                                    "type": 1,
-                                    "isHiddenWhenLocked": true,
-                                    "timeContext": {
-                                        "durationMs": 86400000
-                                    },
-                                    "criteriaData": [
-                                        {
-                                            "criteriaContext": {
-                                                "operator": "Default",
-                                                "resultValType": "expression",
-                                                "resultVal": "round(100*{Tab5Success}/{Tab5Total})"
-                                            }
-                                        }
-                                    ]
-                                }
-                            ],
-                            "style": "pills",
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources"
-                        },
-                        "name": "TabInvisibleParameters"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "## IP plan"
-                        },
-                        "customWidth": "50",
-                        "name": "tab5title"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"Column1\\\": \\\"{Tab5Percent}\\\", \\\"Column2\\\": \\\"Percent of successful checks\\\"}\",\"transformers\":null}",
-                            "size": 3,
-                            "queryType": 8,
-                            "visualization": "tiles",
-                            "tileSettings": {
-                                "titleContent": {
-                                    "columnMatch": "Column1",
-                                    "formatter": 4,
-                                    "formatOptions": {
-                                        "min": 0,
-                                        "max": 100,
-                                        "palette": "redGreen"
-                                    },
-                                    "numberFormat": {
-                                        "unit": 0,
-                                        "options": {
-                                            "style": "decimal"
-                                        }
-                                    }
-                                },
-                                "subtitleContent": {
-                                    "columnMatch": "Column2"
-                                },
-                                "showBorder": true
-                            }
-                        },
-                        "customWidth": "50",
-                        "name": "TabPercentTile"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Use IP addresses from the address allocation ranges for private internets (RFC 1918). Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
-                        },
-                        "name": "querytext6"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)')  | project id, compliant, cidr | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query6"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Ensure that IP address space isn't wasted, don't create unnecessarily large virtual networks (for example /16). Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
-                        },
-                        "name": "querytext7"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend compliant = addressMask > 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query7"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Use Standard SKU and Zone-Redundant IPs when applicable, Public IP addresses in Azure can be of standard SKU, available as non-zonal, zonal, or zone-redundant. Zone-redundant IPs are accessible across all zones, resisting any single zone failure, thereby providing higher resilience. Check [this link](https://learn.microsoft.com/azure/virtual-network/ip-services/public-ip-addresses#availability-zone) for further information.. [This training](https://learn.microsoft.com/en-gb/training/modules/configure-virtual-networks/6-create-public-ip-addressing) can help to educate yourself on this."
-                        },
-                        "name": "querytext8"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "Resources | where type =~ 'Microsoft.Network/publicIPAddresses' and sku.tier =~ 'Regional' | where isempty(zones) or array_length(zones) <= 1 | extend az = case(isempty(zones), 'Non-zonal', array_length(zones) <= 1, strcat('Zonal (', strcat_array(zones, ','), ')'), zones) | project name, id, tags, param1 = strcat('sku: ', sku.name), param2 = strcat('availabilityZone: ', az) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query8"
-                    }
-                ]
-            },
-            "conditionalVisibility": {
-                "parameterName": "VisibleTab",
-                "comparison": "isEqualTo",
-                "value": "tab5"
-            },
-            "name": "tab5"
         },
         {
             "type": 12,
@@ -3438,7 +3310,7 @@
                                 {
                                     "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
                                     "version": "KqlParameterItem/1.0",
-                                    "name": "Tab6Success",
+                                    "name": "Tab5Success",
                                     "type": 1,
                                     "isHiddenWhenLocked": true,
                                     "timeContext": {
@@ -3457,7 +3329,7 @@
                                 {
                                     "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
                                     "version": "KqlParameterItem/1.0",
-                                    "name": "Tab6Total",
+                                    "name": "Tab5Total",
                                     "type": 1,
                                     "isHiddenWhenLocked": true,
                                     "timeContext": {
@@ -3476,7 +3348,7 @@
                                 {
                                     "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
                                     "version": "KqlParameterItem/1.0",
-                                    "name": "Tab6Percent",
+                                    "name": "Tab5Percent",
                                     "type": 1,
                                     "isHiddenWhenLocked": true,
                                     "timeContext": {
@@ -3487,7 +3359,7 @@
                                             "criteriaContext": {
                                                 "operator": "Default",
                                                 "resultValType": "expression",
-                                                "resultVal": "round(100*{Tab6Success}/{Tab6Total})"
+                                                "resultVal": "round(100*{Tab5Success}/{Tab5Total})"
                                             }
                                         }
                                     ]
@@ -3505,13 +3377,13 @@
                             "json": "## Hub and spoke"
                         },
                         "customWidth": "50",
-                        "name": "tab6title"
+                        "name": "tab5title"
                     },
                     {
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"Column1\\\": \\\"{Tab6Percent}\\\", \\\"Column2\\\": \\\"Percent of successful checks\\\"}\",\"transformers\":null}",
+                            "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"Column1\\\": \\\"{Tab5Percent}\\\", \\\"Column2\\\": \\\"Percent of successful checks\\\"}\",\"transformers\":null}",
                             "size": 3,
                             "queryType": 8,
                             "visualization": "tiles",
@@ -3917,6 +3789,404 @@
             "conditionalVisibility": {
                 "parameterName": "VisibleTab",
                 "comparison": "isEqualTo",
+                "value": "tab5"
+            },
+            "name": "tab5"
+        },
+        {
+            "type": 12,
+            "content": {
+                "version": "NotebookGroup/1.0",
+                "groupType": "editable",
+                "items": [
+                    {
+                        "type": 9,
+                        "content": {
+                            "version": "KqlParameterItem/1.0",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "parameters": [
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query6Stats",
+                                    "type": 1,
+                                    "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)')  | project id, compliant, cidr| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query6FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query6Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query7Stats",
+                                    "type": 1,
+                                    "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend compliant = addressMask > 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query7FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query7Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query8Stats",
+                                    "type": 1,
+                                    "query": "Resources | where type =~ 'Microsoft.Network/publicIPAddresses' and sku.tier =~ 'Regional' | where isempty(zones) or array_length(zones) <= 1 | extend az = case(isempty(zones), 'Non-zonal', array_length(zones) <= 1, strcat('Zonal (', strcat_array(zones, ','), ')'), zones) | project name, id, tags, param1 = strcat('sku: ', sku.name), param2 = strcat('availabilityZone: ', az)| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "crossComponentResources": [
+                                        "{Subscription}"
+                                    ],
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 1,
+                                    "resourceType": "microsoft.resourcegraph/resources"
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Query8FullyCompliant",
+                                    "type": 1,
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query8Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "queryType": 8
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Tab6Success",
+                                    "type": 1,
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "criteriaData": [
+                                        {
+                                            "criteriaContext": {
+                                                "operator": "Default",
+                                                "resultValType": "expression",
+                                                "resultVal": "{Query6Stats:$.Success}+{Query7Stats:$.Success}+{Query8Stats:$.Success}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Tab6Total",
+                                    "type": 1,
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "criteriaData": [
+                                        {
+                                            "criteriaContext": {
+                                                "operator": "Default",
+                                                "resultValType": "expression",
+                                                "resultVal": "{Query6Stats:$.Total}+{Query7Stats:$.Total}+{Query8Stats:$.Total}"
+                                            }
+                                        }
+                                    ]
+                                },
+                                {
+                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                                    "version": "KqlParameterItem/1.0",
+                                    "name": "Tab6Percent",
+                                    "type": 1,
+                                    "isHiddenWhenLocked": true,
+                                    "timeContext": {
+                                        "durationMs": 86400000
+                                    },
+                                    "criteriaData": [
+                                        {
+                                            "criteriaContext": {
+                                                "operator": "Default",
+                                                "resultValType": "expression",
+                                                "resultVal": "round(100*{Tab6Success}/{Tab6Total})"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ],
+                            "style": "pills",
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources"
+                        },
+                        "name": "TabInvisibleParameters"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "## IP plan"
+                        },
+                        "customWidth": "50",
+                        "name": "tab6title"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"Column1\\\": \\\"{Tab6Percent}\\\", \\\"Column2\\\": \\\"Percent of successful checks\\\"}\",\"transformers\":null}",
+                            "size": 3,
+                            "queryType": 8,
+                            "visualization": "tiles",
+                            "tileSettings": {
+                                "titleContent": {
+                                    "columnMatch": "Column1",
+                                    "formatter": 4,
+                                    "formatOptions": {
+                                        "min": 0,
+                                        "max": 100,
+                                        "palette": "redGreen"
+                                    },
+                                    "numberFormat": {
+                                        "unit": 0,
+                                        "options": {
+                                            "style": "decimal"
+                                        }
+                                    }
+                                },
+                                "subtitleContent": {
+                                    "columnMatch": "Column2"
+                                },
+                                "showBorder": true
+                            }
+                        },
+                        "customWidth": "50",
+                        "name": "TabPercentTile"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Use IP addresses from the address allocation ranges for private internets (RFC 1918). Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
+                        },
+                        "name": "querytext6"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | project name, id, location, resourceGroup, subscriptionId, cidr = addressPrefix | extend compliant = (cidr matches regex @'^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)')  | project id, compliant, cidr | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 4,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query6"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Ensure that IP address space isn't wasted, don't create unnecessarily large virtual networks (for example /16). Check [this link](https://learn.microsoft.com/azure/cloud-adoption-framework/ready/azure-best-practices/plan-for-ip-addressing) for further information.. [This training](https://learn.microsoft.com/learn/paths/architect-network-infrastructure/) can help to educate yourself on this."
+                        },
+                        "name": "querytext7"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type == 'microsoft.network/virtualnetworks' | extend addressSpace = todynamic(properties.addressSpace) | extend addressPrefix = todynamic(properties.addressSpace.addressPrefixes) | mvexpand addressSpace | mvexpand addressPrefix | extend addressMask = split(addressPrefix,'/')[1] | extend compliant = addressMask > 16 | project name, id, subscriptionId, resourceGroup, addressPrefix, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 4,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query7"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Use Standard SKU and Zone-Redundant IPs when applicable, Public IP addresses in Azure can be of standard SKU, available as non-zonal, zonal, or zone-redundant. Zone-redundant IPs are accessible across all zones, resisting any single zone failure, thereby providing higher resilience. Check [this link](https://learn.microsoft.com/azure/virtual-network/ip-services/public-ip-addresses#availability-zone) for further information.. [This training](https://learn.microsoft.com/en-gb/training/modules/configure-virtual-networks/6-create-public-ip-addressing) can help to educate yourself on this."
+                        },
+                        "name": "querytext8"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "Resources | where type =~ 'Microsoft.Network/publicIPAddresses' and sku.tier =~ 'Regional' | where isempty(zones) or array_length(zones) <= 1 | extend az = case(isempty(zones), 'Non-zonal', array_length(zones) <= 1, strcat('Zonal (', strcat_array(zones, ','), ')'), zones) | project name, id, tags, param1 = strcat('sku: ', sku.name), param2 = strcat('availabilityZone: ', az) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 4,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query8"
+                    }
+                ]
+            },
+            "conditionalVisibility": {
+                "parameterName": "VisibleTab",
+                "comparison": "isEqualTo",
                 "value": "tab6"
             },
             "name": "tab6"
@@ -3938,9 +4208,9 @@
                                 {
                                     "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
                                     "version": "KqlParameterItem/1.0",
-                                    "name": "Query32Stats",
+                                    "name": "Query26Stats",
                                     "type": 1,
-                                    "query": "resources | where type=='microsoft.network/virtualhubs' | extend compliant = isnotnull(properties.azureFirewall.id) | project id, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                                    "query": "resources | where type =~ 'microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets = properties.subnets | mv-expand subnets | project id = subnets.id, resourceGroup, VNet = name, serviceEndpoints = subnets.properties.serviceEndpoints, compliant = (isnull(subnets.properties.serviceEndpoints) or array_length(subnets.properties.serviceEndpoints) == 0) | order by compliant asc| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
                                     "crossComponentResources": [
                                         "{Subscription}"
                                     ],
@@ -3954,93 +4224,9 @@
                                 {
                                     "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
                                     "version": "KqlParameterItem/1.0",
-                                    "name": "Query32FullyCompliant",
+                                    "name": "Query26FullyCompliant",
                                     "type": 1,
-                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query32Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
-                                    "isHiddenWhenLocked": true,
-                                    "timeContext": {
-                                        "durationMs": 86400000
-                                    },
-                                    "queryType": 8
-                                },
-                                {
-                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                                    "version": "KqlParameterItem/1.0",
-                                    "name": "Query33Stats",
-                                    "type": 1,
-                                    "query": "resources| where type =~ 'microsoft.network/virtualwans' | extend compliant= (properties.allowBranchToBranchTraffic == 'true') | distinct id,compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
-                                    "crossComponentResources": [
-                                        "{Subscription}"
-                                    ],
-                                    "isHiddenWhenLocked": true,
-                                    "timeContext": {
-                                        "durationMs": 86400000
-                                    },
-                                    "queryType": 1,
-                                    "resourceType": "microsoft.resourcegraph/resources"
-                                },
-                                {
-                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                                    "version": "KqlParameterItem/1.0",
-                                    "name": "Query33FullyCompliant",
-                                    "type": 1,
-                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query33Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
-                                    "isHiddenWhenLocked": true,
-                                    "timeContext": {
-                                        "durationMs": 86400000
-                                    },
-                                    "queryType": 8
-                                },
-                                {
-                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                                    "version": "KqlParameterItem/1.0",
-                                    "name": "Query34Stats",
-                                    "type": 1,
-                                    "query": "resources | where type =~ 'microsoft.network/virtualhubs'| extend compliant= (properties.hubRoutingPreference =~ 'ASPath') | distinct id,compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
-                                    "crossComponentResources": [
-                                        "{Subscription}"
-                                    ],
-                                    "isHiddenWhenLocked": true,
-                                    "timeContext": {
-                                        "durationMs": 86400000
-                                    },
-                                    "queryType": 1,
-                                    "resourceType": "microsoft.resourcegraph/resources"
-                                },
-                                {
-                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                                    "version": "KqlParameterItem/1.0",
-                                    "name": "Query34FullyCompliant",
-                                    "type": 1,
-                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query34Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
-                                    "isHiddenWhenLocked": true,
-                                    "timeContext": {
-                                        "durationMs": 86400000
-                                    },
-                                    "queryType": 8
-                                },
-                                {
-                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                                    "version": "KqlParameterItem/1.0",
-                                    "name": "Query35Stats",
-                                    "type": 1,
-                                    "query": "resources | where type =~ 'microsoft.network/virtualhubs' | extend addressSpace = properties.addressPrefix | extend compliant= (toint(substring(addressSpace, indexof(addressSpace, '/') + 1)) < 23) | distinct name, id, compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
-                                    "crossComponentResources": [
-                                        "{Subscription}"
-                                    ],
-                                    "isHiddenWhenLocked": true,
-                                    "timeContext": {
-                                        "durationMs": 86400000
-                                    },
-                                    "queryType": 1,
-                                    "resourceType": "microsoft.resourcegraph/resources"
-                                },
-                                {
-                                    "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
-                                    "version": "KqlParameterItem/1.0",
-                                    "name": "Query35FullyCompliant",
-                                    "type": 1,
-                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query35Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                                    "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query26Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
                                     "isHiddenWhenLocked": true,
                                     "timeContext": {
                                         "durationMs": 86400000
@@ -4061,7 +4247,7 @@
                                             "criteriaContext": {
                                                 "operator": "Default",
                                                 "resultValType": "expression",
-                                                "resultVal": "{Query32Stats:$.Success}+{Query33Stats:$.Success}+{Query34Stats:$.Success}+{Query35Stats:$.Success}"
+                                                "resultVal": "{Query26Stats:$.Success}"
                                             }
                                         }
                                     ]
@@ -4080,7 +4266,7 @@
                                             "criteriaContext": {
                                                 "operator": "Default",
                                                 "resultValType": "expression",
-                                                "resultVal": "{Query32Stats:$.Total}+{Query33Stats:$.Total}+{Query34Stats:$.Total}+{Query35Stats:$.Total}"
+                                                "resultVal": "{Query26Stats:$.Total}"
                                             }
                                         }
                                     ]
@@ -4114,7 +4300,7 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "## Virtual WAN"
+                            "json": "## PaaS"
                         },
                         "customWidth": "50",
                         "name": "tab7title"
@@ -4155,15 +4341,15 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "For outbound Internet traffic protection and filtering, deploy Azure Firewall in secured hubs. Check [this link](https://learn.microsoft.com/azure/virtual-wan/howto-firewall) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/) can help to educate yourself on this."
+                            "json": "Don't enable virtual network service endpoints by default on all subnets. Check [this link](https://learn.microsoft.com/azure/virtual-network/virtual-network-service-endpoints-overview) for further information.. [This training](https://learn.microsoft.com/learn/paths/implement-network-security/?source=learn) can help to educate yourself on this."
                         },
-                        "name": "querytext32"
+                        "name": "querytext26"
                     },
                     {
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type=='microsoft.network/virtualhubs' | extend compliant = isnotnull(properties.azureFirewall.id) | project id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "query": "resources | where type =~ 'microsoft.network/virtualnetworks' | project id,resourceGroup,name,subnets = properties.subnets | mv-expand subnets | project id = subnets.id, resourceGroup, VNet = name, serviceEndpoints = subnets.properties.serviceEndpoints, compliant = (isnull(subnets.properties.serviceEndpoints) or array_length(subnets.properties.serviceEndpoints) == 0) | order by compliant asc | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
                             "size": 4,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
@@ -4212,193 +4398,7 @@
                                 ]
                             }
                         },
-                        "name": "query32"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Do not disable branch-to-branch traffic in Virtual WAN, unless these flows should be explicitly blocked. Check [this link](https://learn.microsoft.com/azure/virtual-wan/virtual-wan-faq#is-branch-to-branch-connectivity-allowed-in-virtual-wan) for further information.. [This training](https://learn.microsoft.com/training/modules/introduction-azure-virtual-wan/) can help to educate yourself on this."
-                        },
-                        "name": "querytext33"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources| where type =~ 'microsoft.network/virtualwans' | extend compliant= (properties.allowBranchToBranchTraffic == 'true') | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query33"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Use AS-Path as hub routing preference, since it is more flexible than ExpressRoute or VPN. Check [this link](https://learn.microsoft.com/azure/virtual-wan/about-virtual-hub-routing-preference) for further information.. [This training](https://learn.microsoft.com/training/modules/introduction-azure-virtual-wan/) can help to educate yourself on this."
-                        },
-                        "name": "querytext34"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type =~ 'microsoft.network/virtualhubs'| extend compliant= (properties.hubRoutingPreference =~ 'ASPath') | distinct id,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query34"
-                    },
-                    {
-                        "type": 1,
-                        "content": {
-                            "json": "Assign at least a /23 prefix to virtual hubs to ensure enough IP space is available. Check [this link](https://learn.microsoft.com/azure/virtual-wan/virtual-wan-faq#what-is-the-recommended-hub-address-space-during-hub-creation) for further information.. [This training](https://learn.microsoft.com/training/modules/introduction-azure-virtual-wan/) can help to educate yourself on this."
-                        },
-                        "name": "querytext35"
-                    },
-                    {
-                        "type": 3,
-                        "content": {
-                            "version": "KqlItem/1.0",
-                            "query": "resources | where type =~ 'microsoft.network/virtualhubs' | extend addressSpace = properties.addressPrefix | extend compliant= (toint(substring(addressSpace, indexof(addressSpace, '/') + 1)) < 23) | distinct name, id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
-                            "size": 4,
-                            "queryType": 1,
-                            "resourceType": "microsoft.resourcegraph/resources",
-                            "crossComponentResources": [
-                                "{Subscription}"
-                            ],
-                            "gridSettings": {
-                                "formatters": [
-                                    {
-                                        "columnMatch": "id",
-                                        "formatter": 0,
-                                        "numberFormat": {
-                                            "unit": 0,
-                                            "options": {
-                                                "style": "decimal"
-                                            }
-                                        }
-                                    },
-                                    {
-                                        "columnMatch": "compliant",
-                                        "formatter": 18,
-                                        "formatOptions": {
-                                            "thresholdsOptions": "icons",
-                                            "thresholdsGrid": [
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "1",
-                                                    "representation": "success",
-                                                    "text": "Success"
-                                                },
-                                                {
-                                                    "operator": "==",
-                                                    "thresholdValue": "0",
-                                                    "representation": "failed",
-                                                    "text": "Failed"
-                                                },
-                                                {
-                                                    "operator": "Default",
-                                                    "thresholdValue": null,
-                                                    "representation": "unknown",
-                                                    "text": "Unknown"
-                                                }
-                                            ]
-                                        }
-                                    }
-                                ]
-                            }
-                        },
-                        "name": "query35"
+                        "name": "query26"
                     }
                 ]
             },
