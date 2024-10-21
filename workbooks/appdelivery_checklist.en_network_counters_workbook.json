@@ -290,6 +290,34 @@
                     {
                         "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
                         "version": "KqlParameterItem/1.0",
+                        "name": "Query8Stats",
+                        "type": 1,
+                        "query": "resources | where type == 'microsoft.network/applicationgateways'| extend compliant = (properties['backendHttpSettingsCollection'][0]['properties']['port'] =~ '443') |where properties['backendHttpSettingsCollection'][0]['properties']['port'] =~ '443'|distinct id,name,compliant| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "crossComponentResources": [
+                            "{Subscription}"
+                        ],
+                        "isHiddenWhenLocked": true,
+                        "timeContext": {
+                            "durationMs": 86400000
+                        },
+                        "queryType": 1,
+                        "resourceType": "microsoft.resourcegraph/resources"
+                    },
+                    {
+                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "Query8FullyCompliant",
+                        "type": 1,
+                        "query": "{\"version\":\"1.0.0\",\"content\":\"{\\\"value\\\": \\\"{Query8Stats:$.FullyCompliant}\\\"}\",\"transformers\":null}",
+                        "isHiddenWhenLocked": true,
+                        "timeContext": {
+                            "durationMs": 86400000
+                        },
+                        "queryType": 8
+                    },
+                    {
+                        "id": "daf05c62-1d5b-4325-b241-d7ee468f23eb",
+                        "version": "KqlParameterItem/1.0",
                         "name": "Tab0Success",
                         "type": 1,
                         "isHiddenWhenLocked": true,
@@ -301,7 +329,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query0Stats:$.Success}+{Query2Stats:$.Success}+{Query3Stats:$.Success}+{Query4Stats:$.Success}+{Query6Stats:$.Success}+{Query7Stats:$.Success}"
+                                    "resultVal": "{Query0Stats:$.Success}+{Query2Stats:$.Success}+{Query3Stats:$.Success}+{Query4Stats:$.Success}+{Query6Stats:$.Success}+{Query7Stats:$.Success}+{Query8Stats:$.Success}"
                                 }
                             }
                         ]
@@ -320,7 +348,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query0Stats:$.Total}+{Query2Stats:$.Total}+{Query3Stats:$.Total}+{Query4Stats:$.Total}+{Query6Stats:$.Total}+{Query7Stats:$.Total}"
+                                    "resultVal": "{Query0Stats:$.Total}+{Query2Stats:$.Total}+{Query3Stats:$.Total}+{Query4Stats:$.Total}+{Query6Stats:$.Total}+{Query7Stats:$.Total}+{Query8Stats:$.Total}"
                                 }
                             }
                         ]
@@ -415,7 +443,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query0Stats:$.Total}+{Query2Stats:$.Total}+{Query3Stats:$.Total}+{Query4Stats:$.Total}+{Query6Stats:$.Total}+{Query7Stats:$.Total}+{Query1Stats:$.Total}+{Query5Stats:$.Total}"
+                                    "resultVal": "{Query0Stats:$.Total}+{Query2Stats:$.Total}+{Query3Stats:$.Total}+{Query4Stats:$.Total}+{Query6Stats:$.Total}+{Query7Stats:$.Total}+{Query8Stats:$.Total}+{Query1Stats:$.Total}+{Query5Stats:$.Total}"
                                 }
                             }
                         ]
@@ -434,7 +462,7 @@
                                 "criteriaContext": {
                                     "operator": "Default",
                                     "resultValType": "expression",
-                                    "resultVal": "{Query0Stats:$.Success}+{Query2Stats:$.Success}+{Query3Stats:$.Success}+{Query4Stats:$.Success}+{Query6Stats:$.Success}+{Query7Stats:$.Success}+{Query1Stats:$.Success}+{Query5Stats:$.Success}"
+                                    "resultVal": "{Query0Stats:$.Success}+{Query2Stats:$.Success}+{Query3Stats:$.Success}+{Query4Stats:$.Success}+{Query6Stats:$.Success}+{Query7Stats:$.Success}+{Query8Stats:$.Success}+{Query1Stats:$.Success}+{Query5Stats:$.Success}"
                                 }
                             }
                         ]
@@ -508,7 +536,7 @@
                 "style": "tabs",
                 "links": [
                     {
-                        "id": "df41b3e9-1513-4fd6-a452-1a73bef6e050",
+                        "id": "43376ca3-5f37-456c-95ea-d5415b1932a5",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "App Gateway ({Tab0Success:value}/{Tab0Total:value})",
@@ -517,7 +545,7 @@
                         "style": "primary"
                     },
                     {
-                        "id": "a4df8f42-c0ad-4ea5-b3b1-20aeebf8cbd6",
+                        "id": "5d7a589b-a2fe-480d-bd30-bbf36e6c306a",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Load Balancer ({Tab1Success:value}/{Tab1Total:value})",
@@ -913,6 +941,68 @@
                             }
                         },
                         "name": "query7"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "You should encrypt traffic to the backend servers. Check [this link](https://learn.microsoft.com/azure/application-gateway/ssl-overview) for further information."
+                        },
+                        "name": "querytext8"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type == 'microsoft.network/applicationgateways'| extend compliant = (properties['backendHttpSettingsCollection'][0]['properties']['port'] =~ '443') |where properties['backendHttpSettingsCollection'][0]['properties']['port'] =~ '443'|distinct id,name,compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 4,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query8"
                     }
                 ]
             },
