@@ -22,6 +22,7 @@
             "guid": "f42d78e7-9d17-4a73-a22a-5a67e7a8ed4b",
             "id": "A02.01",
             "severity": "High",
+            "graph": "resources | where type =~ 'Microsoft.Storage/StorageAccounts' | where isnull(properties.privateEndpointConnections) or properties.privateEndpointConnections[0].properties.provisioningState != ('Succeeded') or (isnull(properties.networkAcls) and properties.publicNetworkAccess == 'Enabled') | extend compliant = (isnotnull(properties.privateEndpointConnections) and properties.privateEndpointConnections[0].properties.provisioningState == 'Succeeded' and properties.publicNetworkAccess == 'Disabled') | distinct id, compliant",
             "link": "https://learn.microsoft.com/azure/storage/common/storage-private-endpoints"
         },
         {
@@ -46,6 +47,7 @@
             "guid": "fc5972cd-4cd2-41b0-a803-7f5e6b4bfd3d",
             "id": "A03.02",
             "severity": "High",
+            "graph": "resources | where type =~ 'Microsoft.Storage/StorageAccounts' | project storageAccountId = id | join kind=leftouter (resourceContainers | where type == 'microsoft.security/pricings' | where name == 'StorageAccounts' | project resourceId = id, pricingTier = properties.pricingTier) on $left.storageAccountId == $right.resourceId | where isnull(pricingTier) or pricingTier != 'Standard' | extend compliant = false | distinct storageAccountId, compliant",
             "link": "https://learn.microsoft.com/azure/storage/common/azure-defender-storage-configure"
         },
         {
@@ -130,6 +132,7 @@
             "guid": "e7a8dc4a-20e2-47c3-b297-11b1352beee0",
             "id": "A10.01",
             "severity": "High",
+            "graph": "resources | where type =~ 'Microsoft.Storage/StorageAccounts' | extend compliant = (properties.supportsHttpsTrafficOnly == false) | distinct id, compliant",
             "link": "https://learn.microsoft.com/azure/storage/common/storage-require-secure-transfer"
         },
         {
@@ -408,7 +411,7 @@
             "category": "Security",
             "subcategory": "Identity and Access Management",
             "text": "Consider whether public blob anonymous access is needed, or whether it can be disabled for certain storage accounts. ",
-            "description": "Leverage Resource Graph Explorer (resources | where type == 'microsoft.storage/storageaccounts' | where properties['allowBlobPublicAccess'] == true) to find storage accounts which allow anonymous blob access.",
+            "description": "Anonymous access may present a security risk. We recommend that you disable anonymous access for optimal security. Disallowing anonymous access helps to prevent data breaches caused by undesired anonymous access.",
             "waf": "Security",
             "service": "Azure Storage",
             "guid": "659ae558-b937-4d49-a5e1-112dbd7ba012",
@@ -437,6 +440,7 @@
             "guid": "e05bbe20-9d49-4fda-9777-8424d116785c",
             "id": "C01.01",
             "severity": "High",
+            "graph": "resources | where type =~ 'Microsoft.Storage/StorageAccounts' | extend compliant = (sku.name != 'Standard_LRS' and sku.name != 'Premium_LRS') | distinct id, compliant",
             "link": "https://learn.microsoft.com/azure/storage/common/storage-redundancy"
         },
         {
