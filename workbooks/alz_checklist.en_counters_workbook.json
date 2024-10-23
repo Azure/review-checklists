@@ -880,7 +880,7 @@
                         "version": "KqlParameterItem/1.0",
                         "name": "Query29Stats",
                         "type": 1,
-                        "query": "resources | where type =~ 'Microsoft.Network/azureFirewalls' | where isempty(properties.virtualHub.id) or isnull(properties.virtualHub.id) | mv-expand ipConfig = properties.ipConfigurations | project name, firewallId = id, tags, vNetName = split(ipConfig.properties.subnet.id, '/', 8)[0], vNetId = tolower(substring(ipConfig.properties.subnet.id, 0, indexof(ipConfig.properties.subnet.id, /subnet'))) | join kind=fullouter ( resources | where type =~ 'Microsoft.Network/ddosProtectionPlans' | mv-expand vNet = properties.virtualNetworks | project ddosProtectionPlanId = id, vNetId = tolower(vNet.id) ) on vNetId | where isempty(ddosProtectionPlanId) | , name, id = firewallId, tags, param1 = strcat('vNet: ', vNetName), param2 = 'ddosProtection: Disabled'| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
+                        "query": "resources | where type =~ 'Microsoft.Network/azureFirewalls' | where isempty(properties.virtualHub.id) or isnull(properties.virtualHub.id) | mv-expand ipConfig = properties.ipConfigurations | project name, firewallId = id, tags, vNetName = split(ipConfig.properties.subnet.id, '/', 8)[0], vNetId = tolower(substring(ipConfig.properties.subnet.id, 0, indexof(ipConfig.properties.subnet.id, '/subnet'))) | join kind=fullouter ( resources | where type =~ 'Microsoft.Network/ddosProtectionPlans' | mv-expand vNet = properties.virtualNetworks | project ddosProtectionPlanId = id, vNetId = tolower(vNet.id) ) on vNetId | extend compliant = iif(isempty(ddosProtectionPlanId), false, true) | project name, compliant, id = firewallId, tags, network = strcat('vNet: ', vNetName)| summarize Total = count(), Success = countif(compliant==1), Failed = countif(compliant==0) | extend SuccessPercent = iff(Total==0, 100, 100*toint(Success)/toint(Total)) | extend FullyCompliant = iff(SuccessPercent == 100, 'Yes', 'No') | project Query1Stats=tostring(pack_all())",
                         "crossComponentResources": [
                             "{Subscription}"
                         ],
@@ -1659,7 +1659,7 @@
                 "style": "tabs",
                 "links": [
                     {
-                        "id": "21e87bee-2331-43db-8422-edb1ede808b1",
+                        "id": "41034a90-bee4-4696-be5e-32274039ccf2",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Identity and Access Management ({Tab0Success:value}/{Tab0Total:value})",
@@ -1668,7 +1668,7 @@
                         "style": "primary"
                     },
                     {
-                        "id": "43c5ec1a-f670-4665-a564-7dd07f809d9e",
+                        "id": "69e1e5ca-18b7-409f-bc61-42f820a86d0a",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Network Topology and Connectivity ({Tab1Success:value}/{Tab1Total:value})",
@@ -1677,7 +1677,7 @@
                         "style": "primary"
                     },
                     {
-                        "id": "f358a823-770b-4848-942d-22a3e8faa39e",
+                        "id": "340fc8f4-874a-49f4-9bbb-492decda1384",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Security ({Tab2Success:value}/{Tab2Total:value})",
@@ -1686,7 +1686,7 @@
                         "style": "primary"
                     },
                     {
-                        "id": "2b719699-6e6e-481d-a719-395d488c20cf",
+                        "id": "89e712d1-af3a-4ba7-be1a-20859ea4ebe0",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Management ({Tab3Success:value}/{Tab3Total:value})",
@@ -1695,7 +1695,7 @@
                         "style": "primary"
                     },
                     {
-                        "id": "0951ad64-4cc3-418b-9912-0371f8bfd76f",
+                        "id": "896fc7fd-18b2-4d18-8c60-2c24c7511401",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Resource Organization ({Tab4Success:value}/{Tab4Total:value})",
@@ -3365,7 +3365,7 @@
                         "type": 3,
                         "content": {
                             "version": "KqlItem/1.0",
-                            "query": "resources | where type =~ 'Microsoft.Network/azureFirewalls' | where isempty(properties.virtualHub.id) or isnull(properties.virtualHub.id) | mv-expand ipConfig = properties.ipConfigurations | project name, firewallId = id, tags, vNetName = split(ipConfig.properties.subnet.id, '/', 8)[0], vNetId = tolower(substring(ipConfig.properties.subnet.id, 0, indexof(ipConfig.properties.subnet.id, /subnet'))) | join kind=fullouter ( resources | where type =~ 'Microsoft.Network/ddosProtectionPlans' | mv-expand vNet = properties.virtualNetworks | project ddosProtectionPlanId = id, vNetId = tolower(vNet.id) ) on vNetId | where isempty(ddosProtectionPlanId) | , name, id = firewallId, tags, param1 = strcat('vNet: ', vNetName), param2 = 'ddosProtection: Disabled' | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "query": "resources | where type =~ 'Microsoft.Network/azureFirewalls' | where isempty(properties.virtualHub.id) or isnull(properties.virtualHub.id) | mv-expand ipConfig = properties.ipConfigurations | project name, firewallId = id, tags, vNetName = split(ipConfig.properties.subnet.id, '/', 8)[0], vNetId = tolower(substring(ipConfig.properties.subnet.id, 0, indexof(ipConfig.properties.subnet.id, '/subnet'))) | join kind=fullouter ( resources | where type =~ 'Microsoft.Network/ddosProtectionPlans' | mv-expand vNet = properties.virtualNetworks | project ddosProtectionPlanId = id, vNetId = tolower(vNet.id) ) on vNetId | extend compliant = iif(isempty(ddosProtectionPlanId), false, true) | project name, compliant, id = firewallId, tags, network = strcat('vNet: ', vNetName) | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
                             "size": 0,
                             "queryType": 1,
                             "resourceType": "microsoft.resourcegraph/resources",
