@@ -1,6 +1,208 @@
 {
     "items": [
         {
+            "arm-service": "microsoft.containerregistry/registries",
+            "checklist": "Azure Container Registry Security Review",
+            "description": "Disable image export to prevent data exfiltration. Note that this will prevent image import of images into another ACR instance.",
+            "guid": "ab91932c-9fc9-4d1b-a880-37f5e6bfcb9e",
+            "link": "https://learn.microsoft.com/azure/container-registry/data-loss-prevention",
+            "query": "resources | where type =~ 'Microsoft.ContainerRegistry/registries' | extend acrName = name, acrId = id | extend exportPolicyStatus = properties.policies.exportPolicy.status | extend compliant = iif(exportPolicyStatus =~ 'Disabled', true, false) | project acrName, acrId, exportPolicyStatus, compliant",
+            "service": "ACR",
+            "severity": "High",
+            "text": "Disable Azure Container Registry image export",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.containerregistry/registries",
+            "checklist": "Azure Container Registry Security Review",
+            "description": "Enable audit compliance visibility by enabling Azure Policy for Azure Container Registry",
+            "guid": "d503547c-d447-4e82-9128-a7100f1cac6d",
+            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-azure-policy",
+            "service": "ACR",
+            "severity": "High",
+            "text": "Enable Azure Policies for Azure Container Registry",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.containerregistry/registries",
+            "checklist": "Azure Container Registry Security Review",
+            "description": "The Azure Key Vault (AKV) is used to store a signing key that can be utilized by?notation?with the notation AKV plugin (azure-kv) to sign and verify container images and other artifacts. The Azure Container Registry (ACR) allows you to attach these signatures using the?az?or?oras?CLI commands.",
+            "guid": "d345293c-7639-4637-a551-c5c04e401955",
+            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-tutorial-sign-build-push",
+            "service": "ACR",
+            "severity": "High",
+            "text": "Sign and Verify containers with notation (Notary v2)",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.containerregistry/registries",
+            "checklist": "Azure Container Registry Security Review",
+            "description": "Azure Container Registry automatically encrypts images and other artifacts that you store. By default, Azure automatically encrypts the registry content at rest by using service-managed keys. By using a customer-managed key, you can supplement default encryption with an additional encryption layer.",
+            "graph": "resources | where type =~ 'Microsoft.ContainerRegistry/registries' | extend acrName = name, acrId = id | extend encryptionStatus = properties.encryption.status  | extend compliant = iif(encryptionStatus == 'disabled', false, true) | project acrName, acrId, encryptionStatus, compliant",
+            "guid": "0bd05dc2-efd5-4d76-8d41-d2500cc47b49",
+            "link": "https://learn.microsoft.com/azure/container-registry/tutorial-customer-managed-keys",
+            "service": "ACR",
+            "severity": "Medium",
+            "text": "Encrypt registry with a customer managed key",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.containerregistry/registries",
+            "checklist": "Azure Container Registry Security Review",
+            "description": "Use managed identities to secure ACRPull/Push RBAC access from client applications",
+            "guid": "8f42d78e-79dc-47b3-9bd2-a1a27e7a8e90",
+            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-authentication-managed-identity",
+            "service": "ACR",
+            "severity": "High",
+            "text": "Use Managed Identities to connect instead of Service Principals",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.containerregistry/registries",
+            "checklist": "Azure Container Registry Security Review",
+            "description": "The local Administrator account is disabled by default and should not be enabled. Use either Token or RBAC-based access methods instead",
+            "graph": "resources | where type =~ 'microsoft.containerregistry/registries' | extend localAdminDisabled = properties.adminUserEnabled // Adjust this property as needed | extend compliant = iif(localAdminDisabled == 'false', true, false) // Check if local admin is disabled | project compliant, name, id, tags | distinct id, compliant",
+            "guid": "be0e38ce-e297-411b-b363-caaab79b198d",
+            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-authentication-managed-identity",
+            "service": "ACR",
+            "severity": "High",
+            "text": "Disable local authentication for management plane access",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.containerregistry/registries",
+            "checklist": "Azure Container Registry Security Review",
+            "description": "Disable Administrator account and assign RBAC roles to principals for ACR Pull/Push operations",
+            "graph": "resources | where type =~ 'microsoft.containerregistry/registries' | extend localAdminDisabled = properties.adminUserEnabled // Adjust this property as needed | extend compliant = iif(localAdminDisabled == 'false', true, false) // Check if local admin is disabled | project compliant, name, id, tags | distinct id, compliant",
+            "guid": "387e5ced-126c-4d13-8af5-b20c6998a646",
+            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-roles?tabs=azure-cli",
+            "service": "ACR",
+            "severity": "High",
+            "text": "Assign AcrPull & AcrPush RBAC roles rather than granting Administrative access to identity principals",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.containerregistry/registries",
+            "checklist": "Azure Container Registry Security Review",
+            "description": "Disable anonymous pull/push access",
+            "graph": "resources | where type =~ 'microsoft.containerregistry/registries' | extend compliant = iif(properties.anonymousPullEnabled == false, true, false) | project compliant, name, id, tags | distinct id, compliant",
+            "guid": "e338997e-41c7-47d7-acf6-a62a1194956d",
+            "link": "https://learn.microsoft.com/azure/container-registry/anonymous-pull-access#configure-anonymous-pull-access",
+            "service": "ACR",
+            "severity": "Medium",
+            "text": "Disable Anonymous pull access",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.containerregistry/registries",
+            "checklist": "Azure Container Registry Security Review",
+            "description": "Token authentication doesn't support assignment to an AAD principal. Any tokens provided are able to be used by anyone who can access the token",
+            "guid": "698dc3a2-fd27-4b2e-8870-1a1252beedf6",
+            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-authentication?tabs=azure-cli",
+            "service": "ACR",
+            "severity": "High",
+            "text": "Disable repository-scoped access tokens",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.containerregistry/registries",
+            "checklist": "Azure Container Registry Security Review",
+            "description": "Deploy container images to an ACR behind a Private endpoint within a trusted network",
+            "guid": "b3bec3d4-f343-47c1-936d-b55f27a71eee",
+            "service": "ACR",
+            "severity": "High",
+            "text": "Deploy images from a trusted environment",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.containerregistry/registries",
+            "checklist": "Azure Container Registry Security Review",
+            "description": "Only tokens with an ACR audience can be used for authentication. Used when enabling Conditional access policies for ACR",
+            "guid": "3a041fd3-2947-498b-8288-b3c6a56ceb54",
+            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-enable-conditional-access-policy",
+            "service": "ACR",
+            "severity": "Medium",
+            "text": "Disable Azure ARM audience tokens for authentication",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.containerregistry/registries",
+            "checklist": "Azure Container Registry Security Review",
+            "description": "Set up a diagnostic setting to send 'repositoryEvents' & 'LoginEvents' to Log Analytics as the central destination for logging and monitoring. This allows you to monitor control plane activity on the ACR resource itself.",
+            "guid": "8a488cde-c486-42bc-9bd2-1be77f26e5e6",
+            "link": "https://learn.microsoft.com/azure/container-registry/monitor-service",
+            "service": "ACR",
+            "severity": "Medium",
+            "text": "Enable diagnostics logging",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.containerregistry/registries",
+            "checklist": "Azure Container Registry Security Review",
+            "description": "Service supports disabling public network access either through using service-level IP ACL filtering rule (not NSG or Azure Firewall) or using a 'Disable Public Network Access' toggle switch",
+            "guid": "21d41d25-00b7-407a-b9ea-b40fd3290798",
+            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-private-link",
+            "service": "ACR",
+            "severity": "Medium",
+            "text": "Control inbound network access with Private Link",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.containerregistry/registries",
+            "checklist": "Azure Container Registry Security Review",
+            "description": "Disable public network access if inbound network access is secured using Private Link",
+            "graph": "resources | where type =~ 'Microsoft.ContainerRegistry/registries' | where sku.name =~ 'Premium' // Check for Premium SKU | extend publicAccessEnabled = properties.publicNetworkAccess | extend defaultAction = tostring(properties.networkRuleSet.defaultAction) // Extract defaultAction | extend compliant = iif(publicAccessEnabled != 'Enabled' or defaultAction == 'Deny', true, false) | project name, id, publicAccessEnabled, defaultAction, compliant",
+            "guid": "cd289ced-6b17-4db8-8554-62f2aee4553a",
+            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-access-selected-networks#disable-public-network-access",
+            "service": "ACR",
+            "severity": "Medium",
+            "text": "Disable Public Network access",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.containerregistry/registries",
+            "checklist": "Azure Container Registry Security Review",
+            "description": "Only the ACR Premium SKU supports Private Link access",
+            "graph": "resources | where type =~ 'Microsoft.ContainerRegistry/registries' | extend skuName = sku.name // Extract the SKU name | extend compliant = iif(skuName == 'Premium', true, false) // Check if SKU is Premium | project name, id, skuName, compliant",
+            "guid": "fc833934-8b26-42d6-ac5f-512925498f6d",
+            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-skus",
+            "service": "ACR",
+            "severity": "Medium",
+            "text": "Use an Azure Container Registry SKU that supports Private Link (Premium SKU)",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.containerregistry/registries",
+            "checklist": "Azure Container Registry Security Review",
+            "description": "Azure Defender for containers or equivalent service should be used to scan container images for vulnerabilities",
+            "guid": "bad37dac-43bc-46ce-8d7a-a9b24604489a",
+            "link": "https://learn.microsoft.com/azure/defender-for-cloud/defender-for-containers-introduction",
+            "service": "ACR",
+            "severity": "Low",
+            "text": "Enable Defender for Containers to scan Azure Container Registry for vulnerabilities",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.containerregistry/registries",
+            "checklist": "Azure Container Registry Security Review",
+            "description": "Deploy trusted code that was validated and scanned for vulnerabilities according to DevSecOps practices.",
+            "guid": "4451e1a2-d345-4293-a763-9637a551c5c0",
+            "service": "ACR",
+            "severity": "Medium",
+            "text": "Deploy validated container images",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.containerregistry/registries",
+            "checklist": "Azure Container Registry Security Review",
+            "description": "Use the latest versions of supported platforms, programming languages, protocols, and frameworks.",
+            "guid": "4e401955-387e-45ce-b126-cd132af5b20c",
+            "service": "ACR",
+            "severity": "High",
+            "text": "Use up-to-date platforms, languages, protocols and frameworks",
+            "waf": "Security"
+        },
+        {
             "arm-service": "Microsoft.App/containerApps",
             "checklist": "Container Apps Review",
             "guid": "af416482-663c-4ed6-b195-b44c7068e09c",
@@ -3648,46 +3850,6 @@
             "waf": "Cost"
         },
         {
-            "arm-service": "microsoft.cache/redis",
-            "checklist": "Redis Resiliency checklist",
-            "guid": "65285269-440b-44be-9d3e-0844276d4bdc",
-            "link": "https://learn.microsoft.com/azure/azure-cache-for-redis/cache-how-to-zone-redundancy",
-            "service": "Redis",
-            "severity": "High",
-            "text": "Enable zone redundancy for Azure Cache for Redis. Azure Cache for Redis supports zone redundant configurations in the Premium and Enterprise tiers. A zone redundant cache can place its nodes across different Azure Availability Zones in the same region. It eliminates data center or AZ outage as a single point of failure and increases the overall availability of your cache.",
-            "waf": "Reliability"
-        },
-        {
-            "arm-service": "microsoft.cache/redis",
-            "checklist": "Redis Resiliency checklist",
-            "guid": "bc178bdc-5a06-4ca7-8443-51e19dd34429",
-            "link": "https://learn.microsoft.com/en-us/azure/azure-cache-for-redis/cache-high-availability#persistence",
-            "service": "Redis",
-            "severity": "Medium",
-            "text": "Configure data persistence for an Azure Cache for Redis instance. Because your cache data is stored in memory, a rare and unplanned failure of multiple nodes can cause all the data to be dropped. To avoid losing data completely, Redis persistence allows you to take periodic snapshots of in-memory data, and store it to your storage account.",
-            "waf": "Reliability"
-        },
-        {
-            "arm-service": "microsoft.cache/redis",
-            "checklist": "Redis Resiliency checklist",
-            "guid": "eb722823-7a15-41c5-ab4e-4f1814387e5c",
-            "link": "https://learn.microsoft.com/en-us/azure/azure-cache-for-redis/cache-high-availability#storage-account-for-persistence",
-            "service": "Redis",
-            "severity": "Medium",
-            "text": "Use Geo-redundant storage account to persist Azure Cache for Redis data, or zonally redundant where geo-redundancy is not available",
-            "waf": "Reliability"
-        },
-        {
-            "arm-service": "microsoft.cache/redis",
-            "checklist": "Redis Resiliency checklist",
-            "guid": "a8c26c9b-32ab-45bd-bc69-98a135e33789",
-            "link": "https://learn.microsoft.com/azure/azure-cache-for-redis/cache-how-to-geo-replication",
-            "service": "Redis",
-            "severity": "Medium",
-            "text": "Configure passive geo-replication for Premium Azure Cache for Redis instances. Geo-replication is a mechanism for linking two or more Azure Cache for Redis instances, typically spanning two Azure regions. Geo-replication is designed mainly for cross-region disaster recovery. Two Premium tier cache instances are connected through geo-replication in a way that provides reads and writes to your primary cache, and that data is replicated to the secondary cache.",
-            "waf": "Reliability"
-        },
-        {
             "arm-service": "microsoft.network/frontdoors",
             "checklist": "Azure Application Delivery Networking",
             "graph": "cdnresources | where type =~ 'microsoft.Cdn/profiles/secrets' | extend frontDoorId = substring(id, 0, indexof(id, '/secrets')) | where properties.parameters.type =~ 'CustomerCertificate' | extend compliant = properties.parameters.useLatestVersion == true | project compliant, id=frontDoorId, certificateName = name | distinct id, certificateName, compliant",
@@ -6027,208 +6189,6 @@
             "waf": "Operational Excellence"
         },
         {
-            "arm-service": "microsoft.containerregistry/registries",
-            "checklist": "Azure Container Registry Security Review",
-            "description": "Disable image export to prevent data exfiltration. Note that this will prevent image import of images into another ACR instance.",
-            "guid": "ab91932c-9fc9-4d1b-a880-37f5e6bfcb9e",
-            "link": "https://learn.microsoft.com/azure/container-registry/data-loss-prevention",
-            "query": "resources | where type =~ 'Microsoft.ContainerRegistry/registries' | extend acrName = name, acrId = id | extend exportPolicyStatus = properties.policies.exportPolicy.status | extend compliant = iif(exportPolicyStatus =~ 'Disabled', true, false) | project acrName, acrId, exportPolicyStatus, compliant",
-            "service": "ACR",
-            "severity": "High",
-            "text": "Disable Azure Container Registry image export",
-            "waf": "Security"
-        },
-        {
-            "arm-service": "microsoft.containerregistry/registries",
-            "checklist": "Azure Container Registry Security Review",
-            "description": "Enable audit compliance visibility by enabling Azure Policy for Azure Container Registry",
-            "guid": "d503547c-d447-4e82-9128-a7100f1cac6d",
-            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-azure-policy",
-            "service": "ACR",
-            "severity": "High",
-            "text": "Enable Azure Policies for Azure Container Registry",
-            "waf": "Security"
-        },
-        {
-            "arm-service": "microsoft.containerregistry/registries",
-            "checklist": "Azure Container Registry Security Review",
-            "description": "The Azure Key Vault (AKV) is used to store a signing key that can be utilized by?notation?with the notation AKV plugin (azure-kv) to sign and verify container images and other artifacts. The Azure Container Registry (ACR) allows you to attach these signatures using the?az?or?oras?CLI commands.",
-            "guid": "d345293c-7639-4637-a551-c5c04e401955",
-            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-tutorial-sign-build-push",
-            "service": "ACR",
-            "severity": "High",
-            "text": "Sign and Verify containers with notation (Notary v2)",
-            "waf": "Security"
-        },
-        {
-            "arm-service": "microsoft.containerregistry/registries",
-            "checklist": "Azure Container Registry Security Review",
-            "description": "Azure Container Registry automatically encrypts images and other artifacts that you store. By default, Azure automatically encrypts the registry content at rest by using service-managed keys. By using a customer-managed key, you can supplement default encryption with an additional encryption layer.",
-            "graph": "resources | where type =~ 'Microsoft.ContainerRegistry/registries' | extend acrName = name, acrId = id | extend encryptionStatus = properties.encryption.status  | extend compliant = iif(encryptionStatus == 'disabled', false, true) | project acrName, acrId, encryptionStatus, compliant",
-            "guid": "0bd05dc2-efd5-4d76-8d41-d2500cc47b49",
-            "link": "https://learn.microsoft.com/azure/container-registry/tutorial-customer-managed-keys",
-            "service": "ACR",
-            "severity": "Medium",
-            "text": "Encrypt registry with a customer managed key",
-            "waf": "Security"
-        },
-        {
-            "arm-service": "microsoft.containerregistry/registries",
-            "checklist": "Azure Container Registry Security Review",
-            "description": "Use managed identities to secure ACRPull/Push RBAC access from client applications",
-            "guid": "8f42d78e-79dc-47b3-9bd2-a1a27e7a8e90",
-            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-authentication-managed-identity",
-            "service": "ACR",
-            "severity": "High",
-            "text": "Use Managed Identities to connect instead of Service Principals",
-            "waf": "Security"
-        },
-        {
-            "arm-service": "microsoft.containerregistry/registries",
-            "checklist": "Azure Container Registry Security Review",
-            "description": "The local Administrator account is disabled by default and should not be enabled. Use either Token or RBAC-based access methods instead",
-            "graph": "resources | where type =~ 'microsoft.containerregistry/registries' | extend localAdminDisabled = properties.adminUserEnabled // Adjust this property as needed | extend compliant = iif(localAdminDisabled == 'false', true, false) // Check if local admin is disabled | project compliant, name, id, tags | distinct id, compliant",
-            "guid": "be0e38ce-e297-411b-b363-caaab79b198d",
-            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-authentication-managed-identity",
-            "service": "ACR",
-            "severity": "High",
-            "text": "Disable local authentication for management plane access",
-            "waf": "Security"
-        },
-        {
-            "arm-service": "microsoft.containerregistry/registries",
-            "checklist": "Azure Container Registry Security Review",
-            "description": "Disable Administrator account and assign RBAC roles to principals for ACR Pull/Push operations",
-            "graph": "resources | where type =~ 'microsoft.containerregistry/registries' | extend localAdminDisabled = properties.adminUserEnabled // Adjust this property as needed | extend compliant = iif(localAdminDisabled == 'false', true, false) // Check if local admin is disabled | project compliant, name, id, tags | distinct id, compliant",
-            "guid": "387e5ced-126c-4d13-8af5-b20c6998a646",
-            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-roles?tabs=azure-cli",
-            "service": "ACR",
-            "severity": "High",
-            "text": "Assign AcrPull & AcrPush RBAC roles rather than granting Administrative access to identity principals",
-            "waf": "Security"
-        },
-        {
-            "arm-service": "microsoft.containerregistry/registries",
-            "checklist": "Azure Container Registry Security Review",
-            "description": "Disable anonymous pull/push access",
-            "graph": "resources | where type =~ 'microsoft.containerregistry/registries' | extend compliant = iif(properties.anonymousPullEnabled == false, true, false) | project compliant, name, id, tags | distinct id, compliant",
-            "guid": "e338997e-41c7-47d7-acf6-a62a1194956d",
-            "link": "https://learn.microsoft.com/azure/container-registry/anonymous-pull-access#configure-anonymous-pull-access",
-            "service": "ACR",
-            "severity": "Medium",
-            "text": "Disable Anonymous pull access",
-            "waf": "Security"
-        },
-        {
-            "arm-service": "microsoft.containerregistry/registries",
-            "checklist": "Azure Container Registry Security Review",
-            "description": "Token authentication doesn't support assignment to an AAD principal. Any tokens provided are able to be used by anyone who can access the token",
-            "guid": "698dc3a2-fd27-4b2e-8870-1a1252beedf6",
-            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-authentication?tabs=azure-cli",
-            "service": "ACR",
-            "severity": "High",
-            "text": "Disable repository-scoped access tokens",
-            "waf": "Security"
-        },
-        {
-            "arm-service": "microsoft.containerregistry/registries",
-            "checklist": "Azure Container Registry Security Review",
-            "description": "Deploy container images to an ACR behind a Private endpoint within a trusted network",
-            "guid": "b3bec3d4-f343-47c1-936d-b55f27a71eee",
-            "service": "ACR",
-            "severity": "High",
-            "text": "Deploy images from a trusted environment",
-            "waf": "Security"
-        },
-        {
-            "arm-service": "microsoft.containerregistry/registries",
-            "checklist": "Azure Container Registry Security Review",
-            "description": "Only tokens with an ACR audience can be used for authentication. Used when enabling Conditional access policies for ACR",
-            "guid": "3a041fd3-2947-498b-8288-b3c6a56ceb54",
-            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-enable-conditional-access-policy",
-            "service": "ACR",
-            "severity": "Medium",
-            "text": "Disable Azure ARM audience tokens for authentication",
-            "waf": "Security"
-        },
-        {
-            "arm-service": "microsoft.containerregistry/registries",
-            "checklist": "Azure Container Registry Security Review",
-            "description": "Set up a diagnostic setting to send 'repositoryEvents' & 'LoginEvents' to Log Analytics as the central destination for logging and monitoring. This allows you to monitor control plane activity on the ACR resource itself.",
-            "guid": "8a488cde-c486-42bc-9bd2-1be77f26e5e6",
-            "link": "https://learn.microsoft.com/azure/container-registry/monitor-service",
-            "service": "ACR",
-            "severity": "Medium",
-            "text": "Enable diagnostics logging",
-            "waf": "Security"
-        },
-        {
-            "arm-service": "microsoft.containerregistry/registries",
-            "checklist": "Azure Container Registry Security Review",
-            "description": "Service supports disabling public network access either through using service-level IP ACL filtering rule (not NSG or Azure Firewall) or using a 'Disable Public Network Access' toggle switch",
-            "guid": "21d41d25-00b7-407a-b9ea-b40fd3290798",
-            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-private-link",
-            "service": "ACR",
-            "severity": "Medium",
-            "text": "Control inbound network access with Private Link",
-            "waf": "Security"
-        },
-        {
-            "arm-service": "microsoft.containerregistry/registries",
-            "checklist": "Azure Container Registry Security Review",
-            "description": "Disable public network access if inbound network access is secured using Private Link",
-            "graph": "resources | where type =~ 'Microsoft.ContainerRegistry/registries' | where sku.name =~ 'Premium' // Check for Premium SKU | extend publicAccessEnabled = properties.publicNetworkAccess | extend defaultAction = tostring(properties.networkRuleSet.defaultAction) // Extract defaultAction | extend compliant = iif(publicAccessEnabled != 'Enabled' or defaultAction == 'Deny', true, false) | project name, id, publicAccessEnabled, defaultAction, compliant",
-            "guid": "cd289ced-6b17-4db8-8554-62f2aee4553a",
-            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-access-selected-networks#disable-public-network-access",
-            "service": "ACR",
-            "severity": "Medium",
-            "text": "Disable Public Network access",
-            "waf": "Security"
-        },
-        {
-            "arm-service": "microsoft.containerregistry/registries",
-            "checklist": "Azure Container Registry Security Review",
-            "description": "Only the ACR Premium SKU supports Private Link access",
-            "graph": "resources | where type =~ 'Microsoft.ContainerRegistry/registries' | extend skuName = sku.name // Extract the SKU name | extend compliant = iif(skuName == 'Premium', true, false) // Check if SKU is Premium | project name, id, skuName, compliant",
-            "guid": "fc833934-8b26-42d6-ac5f-512925498f6d",
-            "link": "https://learn.microsoft.com/azure/container-registry/container-registry-skus",
-            "service": "ACR",
-            "severity": "Medium",
-            "text": "Use an Azure Container Registry SKU that supports Private Link (Premium SKU)",
-            "waf": "Security"
-        },
-        {
-            "arm-service": "microsoft.containerregistry/registries",
-            "checklist": "Azure Container Registry Security Review",
-            "description": "Azure Defender for containers or equivalent service should be used to scan container images for vulnerabilities",
-            "guid": "bad37dac-43bc-46ce-8d7a-a9b24604489a",
-            "link": "https://learn.microsoft.com/azure/defender-for-cloud/defender-for-containers-introduction",
-            "service": "ACR",
-            "severity": "Low",
-            "text": "Enable Defender for Containers to scan Azure Container Registry for vulnerabilities",
-            "waf": "Security"
-        },
-        {
-            "arm-service": "microsoft.containerregistry/registries",
-            "checklist": "Azure Container Registry Security Review",
-            "description": "Deploy trusted code that was validated and scanned for vulnerabilities according to DevSecOps practices.",
-            "guid": "4451e1a2-d345-4293-a763-9637a551c5c0",
-            "service": "ACR",
-            "severity": "Medium",
-            "text": "Deploy validated container images",
-            "waf": "Security"
-        },
-        {
-            "arm-service": "microsoft.containerregistry/registries",
-            "checklist": "Azure Container Registry Security Review",
-            "description": "Use the latest versions of supported platforms, programming languages, protocols, and frameworks.",
-            "guid": "4e401955-387e-45ce-b126-cd132af5b20c",
-            "service": "ACR",
-            "severity": "High",
-            "text": "Use up-to-date platforms, languages, protocols and frameworks",
-            "waf": "Security"
-        },
-        {
             "arm-service": "Microsoft.Kusto/clusters",
             "checklist": "Azure Data Explorer Review Checklist",
             "description": "Using the correct approach to feed a datalake with cold data and having the Kusto query engine at your disposal at the same time, as in the short-term storage",
@@ -6406,6 +6366,46 @@
             "service": "Azure Data Factory",
             "severity": "Low",
             "text": "If using Keyvault integration, use SLA of Keyvault to understand your availablity",
+            "waf": "Reliability"
+        },
+        {
+            "arm-service": "microsoft.cache/redis",
+            "checklist": "Redis Resiliency checklist",
+            "guid": "65285269-440b-44be-9d3e-0844276d4bdc",
+            "link": "https://learn.microsoft.com/azure/azure-cache-for-redis/cache-how-to-zone-redundancy",
+            "service": "Redis",
+            "severity": "High",
+            "text": "Enable zone redundancy for Azure Cache for Redis. Azure Cache for Redis supports zone redundant configurations in the Premium and Enterprise tiers. A zone redundant cache can place its nodes across different Azure Availability Zones in the same region. It eliminates data center or AZ outage as a single point of failure and increases the overall availability of your cache.",
+            "waf": "Reliability"
+        },
+        {
+            "arm-service": "microsoft.cache/redis",
+            "checklist": "Redis Resiliency checklist",
+            "guid": "bc178bdc-5a06-4ca7-8443-51e19dd34429",
+            "link": "https://learn.microsoft.com/en-us/azure/azure-cache-for-redis/cache-high-availability#persistence",
+            "service": "Redis",
+            "severity": "Medium",
+            "text": "Configure data persistence for an Azure Cache for Redis instance. Because your cache data is stored in memory, a rare and unplanned failure of multiple nodes can cause all the data to be dropped. To avoid losing data completely, Redis persistence allows you to take periodic snapshots of in-memory data, and store it to your storage account.",
+            "waf": "Reliability"
+        },
+        {
+            "arm-service": "microsoft.cache/redis",
+            "checklist": "Redis Resiliency checklist",
+            "guid": "eb722823-7a15-41c5-ab4e-4f1814387e5c",
+            "link": "https://learn.microsoft.com/en-us/azure/azure-cache-for-redis/cache-high-availability#storage-account-for-persistence",
+            "service": "Redis",
+            "severity": "Medium",
+            "text": "Use Geo-redundant storage account to persist Azure Cache for Redis data, or zonally redundant where geo-redundancy is not available",
+            "waf": "Reliability"
+        },
+        {
+            "arm-service": "microsoft.cache/redis",
+            "checklist": "Redis Resiliency checklist",
+            "guid": "a8c26c9b-32ab-45bd-bc69-98a135e33789",
+            "link": "https://learn.microsoft.com/azure/azure-cache-for-redis/cache-how-to-geo-replication",
+            "service": "Redis",
+            "severity": "Medium",
+            "text": "Configure passive geo-replication for Premium Azure Cache for Redis instances. Geo-replication is a mechanism for linking two or more Azure Cache for Redis instances, typically spanning two Azure regions. Geo-replication is designed mainly for cross-region disaster recovery. Two Premium tier cache instances are connected through geo-replication in a way that provides reads and writes to your primary cache, and that data is replicated to the secondary cache.",
             "waf": "Reliability"
         },
         {
@@ -7376,6 +7376,7 @@
             "description": "Azure Event Hub provides encryption of data at rest. If you use your own key, the data is still encrypted using the Microsoft-managed key, but in addition the Microsoft-managed key will be encrypted using the customer-managed key. ",
             "guid": "7aaf12e7-b94e-4f6e-847d-2d92981b1cd6",
             "link": "https://learn.microsoft.com/azure/event-hubs/configure-customer-managed-key",
+            "query": "resources | where type =~ 'Microsoft.EventHub/namespaces' | extend SkuName = tostring(sku.name) | extend EncryptionEnabled = iif(isnotempty(properties.encryption.keySource), 'Enabled', 'Disabled') | extend compliant = iif(EncryptionEnabled == 'Enabled', true, false) | project name, resourceGroup, location, SkuName, EncryptionEnabled, compliant | where SkuName == 'Premium'",
             "service": "Event Hubs",
             "severity": "Low",
             "text": "Use customer-managed key option in data at rest encryption when required",
@@ -7388,6 +7389,7 @@
             "description": "Azure Event Hubs namespaces permit clients to send and receive data with TLS 1.0 and above. To enforce stricter security measures, you can configure your Event Hubs namespace to require that clients send and receive data with a newer version of TLS. If an Event Hubs namespace requires a minimum version of TLS, then any requests made with an older version will fail. ",
             "guid": "d2f54b29-769e-43a6-a0e7-828ac936657e",
             "link": "https://learn.microsoft.com/azure/event-hubs/transport-layer-security-configure-minimum-version",
+            "query": "resources | where type =~ 'Microsoft.EventHub/namespaces' | extend MinimumTlsVersion = tostring(properties.minimumTlsVersion) | extend compliant = iif(MinimumTlsVersion == '1.2' or MinimumTlsVersion == '1.3', true, false) | project name, resourceGroup, location, MinimumTlsVersion, compliant",
             "service": "Event Hubs",
             "severity": "Medium",
             "text": "Enforce a minimum required version of Transport Layer Security (TLS) for requests ",
@@ -7482,6 +7484,7 @@
             "description": " This will be turned on automatically for a new EH namespace created from the portal with Premium, Dedicated, or Standard SKUs in a zone-enabled region. Both the EH metadata and the event data itself are replicated across zones",
             "guid": "f15bce21-9e4a-40eb-9787-9424d226786d",
             "link": "https://learn.microsoft.com/azure/event-hubs/event-hubs-premium-overview#high-availability-with-availability-zones",
+            "query": "resources | where type =~ 'Microsoft.EventHub/namespaces' | extend zoneRedundant = tobool(properties.zoneRedundant) | extend compliant = iff(zoneRedundant == true, true, false) | project name, resourceGroup, zoneRedundant, compliant",
             "service": "Event Hubs",
             "severity": "High",
             "text": "Leverage Availability Zones if regionally applicable",
@@ -7492,6 +7495,7 @@
             "checklist": "Azure Event Hub Review",
             "guid": "20b56c56-ad58-4519-8f82-735c586bb281",
             "link": "https://learn.microsoft.com/azure/event-hubs/compare-tiers",
+            "query": "resources | where type =~ 'Microsoft.EventHub/namespaces' | extend sku = tostring(sku.name) | extend compliant = iff(sku == 'Premium', true, false) | project name, resourceGroup, location, sku, compliant",
             "service": "Event Hubs",
             "severity": "Medium",
             "text": "Use the Premium or Dedicated SKUs   for predicable performance",
@@ -7924,6 +7928,17 @@
             "waf": "Security"
         },
         {
+            "arm-service": "microsoft.eventhub/namespaces",
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "No additional configurations are required as this is enabled on a default deployment.",
+            "guid": "21d41d25-00c8-417b-b9ea-c41fd3390798",
+            "link": "https://learn.microsoft.com/azure/event-hubs/transport-layer-security-configure-minimum-version",
+            "service": "Azure Event Hubs",
+            "severity": "Medium",
+            "text": "Encrypt sensitive data in transit",
+            "waf": "Security"
+        },
+        {
             "arm-service": "Microsoft.Synapse/workspaces",
             "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
             "description": "Use Microsoft Entra ID  as the default authentication method to control your data plane access.",
@@ -7935,6 +7950,15 @@
             "waf": "Security"
         },
         {
+            "arm-service": "microsoft.eventhub/namespaces",
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "guid": "bc288bec-6a17-4ca7-8444-51e1add3452a",
+            "service": "Azure Event Hubs",
+            "severity": "Medium",
+            "text": "Enable data at rest encryption by default",
+            "waf": "Security"
+        },
+        {
             "arm-service": "Microsoft.Synapse/workspaces",
             "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
             "description": "If not required for routine administrative operations, disable or restrict any local admin accounts for only emergency use.",
@@ -7942,6 +7966,17 @@
             "service": "Azure Synapse Analytics",
             "severity": "High",
             "text": "Separate and limit highly privileged/administrative users and enable MFA and conditional policies",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.eventhub/namespaces",
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "Use Keyvaults to store your CMK",
+            "guid": "ec723923-7a15-41c5-ab5e-401915387e5c",
+            "link": "https://learn.microsoft.com/azure/event-hubs/configure-customer-managed-key?tabs=Key-Vault",
+            "service": "Azure Event Hubs",
+            "severity": "Medium",
+            "text": "Use customer-managed key option in data at rest encryption when required",
             "waf": "Security"
         },
         {
@@ -7977,6 +8012,16 @@
             "waf": "Security"
         },
         {
+            "arm-service": "microsoft.eventhub/namespaces",
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "Use Microsoft Entra ID  as the default authentication method.",
+            "guid": "a9c26d9c-42bb-45bd-8c69-99a246e3389a",
+            "service": "Azure Event Hubs",
+            "severity": "High",
+            "text": "Use Microsoft Entra ID  as the default authentication method and disable local access wherever possible",
+            "waf": "Security"
+        },
+        {
             "arm-service": "Microsoft.Synapse/workspaces",
             "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
             "description": "To protect any sensitive data, it's recommended to disable public access to the workspace endpoints entirely. By doing so, it ensures all workspace endpoints can only be accessed using�private endpoints.",
@@ -7985,6 +8030,16 @@
             "service": "Azure Synapse Analytics",
             "severity": "Medium",
             "text": "Configure private endpoints to connect to the external services and disable public access",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.eventhub/namespaces",
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "Use Microsoft Entra ID  as the default authentication method.",
+            "guid": "7e42c77d-78cb-46a2-8ad1-9f916e698d8f",
+            "service": "Azure Event Hubs",
+            "severity": "Medium",
+            "text": "Use managed identity to authenticate to the services",
             "waf": "Security"
         },
         {
@@ -7998,6 +8053,15 @@
             "waf": "Security"
         },
         {
+            "arm-service": "microsoft.eventhub/namespaces",
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "guid": "adfe27bd-e187-401a-a352-baa9b68a088c",
+            "service": "Azure Event Hubs",
+            "severity": "Medium",
+            "text": "Configure conditional access policies to restrict the access on Data plane",
+            "waf": "Security"
+        },
+        {
             "arm-service": "Microsoft.Synapse/workspaces",
             "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
             "guid": "d234292b-7528-4537-a551-c5bf4e4f1854",
@@ -8005,6 +8069,16 @@
             "service": "Azure Synapse Analytics",
             "severity": "Medium",
             "text": "Deploy SHIR VMs in your vnet if you are working with sensitive data that shouldn�t leave your corporate network",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.eventhub/namespaces",
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "Restrict exposure of keys and secerts",
+            "guid": "9a80822b-8eb9-4d1b-a77f-26e5e6beba8e",
+            "service": "Azure Event Hubs",
+            "severity": "High",
+            "text": "Use Azure Key Vaults to store secrets and crendentials.",
             "waf": "Security"
         },
         {
@@ -8019,6 +8093,37 @@
             "waf": "Security"
         },
         {
+            "arm-service": "microsoft.eventhub/namespaces",
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "guid": "d4f3437c-c336-4d81-9f27-a71efe1b9b5d",
+            "service": "Azure Event Hubs",
+            "severity": "High",
+            "text": "Separate and limit highly privileged/administrative users",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.eventhub/namespaces",
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "When you create an Event Hubs namespace, a policy rule named RootManageSharedAccessKey is automatically created for the namespace. This policy has manage permissions for the entire namespace. It�s recommended that you treat this rule like an administrative root account and don�t use it in your application. You can create additional policy rules in the Configure tab for the namespace in the portal, via PowerShell or Azure CLI. Avoid the usage of local authentication methods or accounts, these should be disabled wherever possible. Instead use Azure AD to authenticate where possible.",
+            "guid": "9de0d5d7-21d4-41d2-900c-817bf9eac41f",
+            "link": "https://learn.microsoft.com/azure/event-hubs/authenticate-shared-access-signature",
+            "service": "Azure Event Hubs",
+            "severity": "Medium",
+            "text": "Authenticate access to Event Hubs resources using shared access signatures (SAS) and restrict local users",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.eventhub/namespaces",
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "Use Azure role-based access control (Azure RBAC) to manage Azure resource access through built-in role assignments. Azure RBAC roles can be assigned to users, groups, service principals, and managed identities.",
+            "guid": "387e5ced-127d-4d14-8b06-b20c6999a646",
+            "link": "https://learn.microsoft.com/azure/event-hubs/authorize-access-azure-active-directory",
+            "service": "Azure Event Hubs",
+            "severity": "Medium",
+            "text": "Use Azure RBACs to fine grain the access ",
+            "waf": "Security"
+        },
+        {
             "arm-service": "Microsoft.Synapse/workspaces",
             "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
             "description": "First layer of encryption is done by Microsoft managed keys, you can add a second layer of encryption using Customer managed Keys",
@@ -8027,6 +8132,16 @@
             "service": "Azure Synapse Analytics",
             "severity": "Medium",
             "text": "Data Encryption at rest using Customer managed Keys for workspace",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.eventhub/namespaces",
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "Service supports disabling public network access either through using service-level IP ACL filtering rule (not NSG or Azure Firewall) or using a 'Disable Public Network Access' toggle switch.",
+            "guid": "f3389a7e-42c7-48e7-ac06-a62a2194956e",
+            "service": "Azure Event Hubs",
+            "severity": "Medium",
+            "text": "Disable Public Network Access",
             "waf": "Security"
         },
         {
@@ -8041,6 +8156,15 @@
             "waf": "Security"
         },
         {
+            "arm-service": "microsoft.eventhub/namespaces",
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "guid": "6a8dc4a2-fe27-4b2e-8870-1a1352beedf7",
+            "service": "Azure Event Hubs",
+            "severity": "Medium",
+            "text": "Use Vnets to isolate traffic over restricted network ",
+            "waf": "Security"
+        },
+        {
             "arm-service": "Microsoft.Synapse/workspaces",
             "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
             "description": "Use Keyvaults to store your secrets and credentials",
@@ -8048,6 +8172,16 @@
             "service": "Azure Synapse Analytics",
             "severity": "High",
             "text": "Store passwords, secerts and keys in Azure key vault",
+            "waf": "Security"
+        },
+        {
+            "arm-service": "microsoft.eventhub/namespaces",
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "guid": "9b488dee-c496-42cc-9cd2-1bf77f26e5e6",
+            "link": "https://learn.microsoft.com/azure/event-hubs/private-link-service",
+            "service": "Azure Event Hubs",
+            "severity": "Medium",
+            "text": "Deploy private endpoints for all Azure resources that support the Private Link feature, to establish a private access point for the resources.",
             "waf": "Security"
         },
         {
@@ -8062,6 +8196,90 @@
             "waf": "Security"
         },
         {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "Fabric controls data access using workspaces. In workspaces, data appears in the form of Fabric items, and users can't view or use items (data) unless you give them access to the workspace. You can find more information about workspace and item permissions, in Permission model.",
+            "guid": "b3bed3d5-f353-47c1-946d-c56028a71ffe",
+            "link": "https://learn.microsoft.com/fabric/security/permission-model",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "Use Workspace roles to provide access to the users on the data",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "OneLake RBAC uses role assignments to apply permissions to its members.",
+            "guid": "1bd05dd2-e0d5-4d77-8d41-e3611cc57b4a",
+            "link": "https://learn.microsoft.com/fabric/onelake/security/data-access-control-model",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "Use RBAC on Onelake to provide fine grain access on the data in Tables/Files Onelake ",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "Take into account the access of the user at both target and source location of the shortcut",
+            "guid": "4b1410d4-3958-498c-8288-b3c6a57cfc64",
+            "link": "https://learn.microsoft.com/fabric/onelake/security/data-access-control-model#shortcuts",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "When using shortcuts the user identity of the user should have access on the target location of the shortcut as well",
+            "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "Not all users need to have access on the entire workspace using roles so instead restrict giving roles on the entire workspace and only share the item to the user using share item feature or managing permission in Fabric",
+            "guid": "4451e1a3-d345-43a3-a763-9637a552d5c1",
+            "link": "https://learn.microsoft.com/fabric/get-started/share-items",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "Restrict providing workspace level role to users instead share an item only to the users",
+            "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "Use features like RLS, CLS and Dynamic data masking to enhance your data security requirements on sql workloads.",
+            "guid": "5e401965-387e-45ce-b127-dd142b06b20c",
+            "link": "https://learn.microsoft.com/fabric/data-warehouse/tutorial-row-level-security",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "Limit access to the data by defining RLS, CLS and dynamic data masking on Warehouse and SQL analytics endpoints",
+            "training": "https://learn.microsoft.com/learn/paths/implement-network-security/?source=learn",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "Use features like RLS and OLS on Power BI to have more security features on semantic models",
+            "guid": "6999a646-f338-49a7-b42c-78e78c06a62a",
+            "link": "https://learn.microsoft.com/fabric/security/service-admin-row-level-security",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "Limit access to the data by defining RLS and OLS on semantic models in Power BI",
+            "training": "https://learn.microsoft.com/learn/paths/secure-application-delivery/",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "In Fabric, all data that is stored in OneLake is encrypted at rest",
+            "guid": "2194956e-6a8d-4c4a-8fe2-7b2e28701a13",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "Encrypt Data at rest",
+            "training": "https://learn.microsoft.com/learn/modules/design-implement-azure-expressroute/",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "Data in transit across the public internet between Microsoft services is always encrypted with at least TLS 1.2. Fabric negotiates to TLS 1.3 whenever possible.",
+            "guid": "52beedf7-9b48-48de-bc49-62cc3cd21bf7",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "Encrypt data in transit",
+            "training": "https://learn.microsoft.com/learn/paths/implement-network-security/?source=learn",
+            "waf": "Security"
+        },
+        {
             "arm-service": "Microsoft.DataFactory/datafactories",
             "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
             "description": "Restrict the use of local authentication methods for data plane access. Instead, use Microsoft Entra ID  as the default authentication method to control your data plane access.",
@@ -8069,6 +8287,16 @@
             "service": "Azure Data Factory",
             "severity": "High",
             "text": "Restrict use of local users whereever necessary",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "No need to do anything. Every request to connect to Fabric is authenticated with Microsoft Entra ID, allowing users to safely connect to Fabric from their corporate office, when working at home, or from a remote location.",
+            "guid": "7f26e5e6-b3be-4d3d-9f35-37c1346dc560",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "Use Microsoft Entra ID as default authentication method",
+            "training": "https://learn.microsoft.com/learn/paths/implement-network-security/?source=learn",
             "waf": "Security"
         },
         {
@@ -8083,6 +8311,16 @@
             "waf": "Security"
         },
         {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "A Fabric workspace identity is an automatically managed service principal that can be associated with a Fabric workspace. Workspace identities can be created in the workspace settings of any workspace except My workspaces. A workspace identity is automatically assigned the workspace contributor role and has access to workspace items.  Limitation: Write to shortcut destination fails when using workspace identity as the authentication method. Connections with workspace-identity-authentication can only be used in Onelake shortcuts and data pipelines.",
+            "guid": "28a71ffe-1bd0-45dd-8e0d-5d771d41e361",
+            "link": "https://learn.microsoft.com/fabric/security/workspace-identity",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "Use workspace identity to authenticate to the services",
+            "waf": "Security"
+        },
+        {
             "arm-service": "Microsoft.DataFactory/datafactories",
             "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
             "description": "If not required for routine administrative operations, disable or restrict any local admin accounts for only emergency use.",
@@ -8090,6 +8328,16 @@
             "service": "Azure Data Factory",
             "severity": "High",
             "text": "Separate and limit highly privileged/administrative users and enable MFA and conditional policies",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "Grant the identity permissions on the storage account",
+            "guid": "1cc57b4a-4b14-410d-9395-898c2288b3c6",
+            "link": "https://learn.microsoft.com/fabric/security/workspace-identity-authenticate#step-2-grant-the-identity-permissions-on-the-storage-account",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "Provide RBAC roles on storage account to the managed identity to make a successful connection",
             "waf": "Security"
         },
         {
@@ -8102,12 +8350,33 @@
             "waf": "Security"
         },
         {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "Fabric workspaces with a workspace identity can securely read or write to firewall-enabled Azure Data Lake Storage Gen2 accounts through�trusted workspace access�for OneLake shortcuts.",
+            "guid": "a57cfc64-4451-4e1a-9d34-53a3c7639637",
+            "link": "https://learn.microsoft.com/fabric/security/security-trusted-workspace-access",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "Configure trusted workspace access to access storage account behind firewall ",
+            "waf": "Security"
+        },
+        {
             "arm-service": "Microsoft.DataFactory/datafactories",
             "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
             "guid": "6898a535-e337-4897-b31b-67d67be5962a",
             "service": "Azure Data Factory",
             "severity": "Medium",
             "text": "Deploy SHIR VMs in your vnet if you are working with sensitive data that shouldn�t leave your corporate network",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "Managed virtual networks are virtual networks that are created and managed by Microsoft Fabric for each Fabric workspace. Managed virtual networks provide network isolation for Fabric Spark workloads, meaning that the compute clusters are deployed in a dedicated network and are no longer part of the shared virtual network. It is only supported for spark workload in Fabric.",
+            "guid": "a552d5c1-5e40-4196-9387-e5ced127dd14",
+            "link": "https://learn.microsoft.com/fabric/security/security-managed-vnets-fabric-overview",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "Use managed vnet option if you have network isolation needs",
+            "training": "https://learn.microsoft.com/learn/paths/implement-resource-mgmt-security/",
             "waf": "Security"
         },
         {
@@ -8121,6 +8390,17 @@
             "waf": "Security"
         },
         {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "Managed private endpoints are feature that allows secure and private access to data sources from Fabric Spark workloads. You cannot use starter pool with managed PE",
+            "guid": "6f4a0641-addd-4ea8-a477-cdeb3861bc3b",
+            "link": "https://learn.microsoft.com/fabric/security/security-managed-private-endpoints-overview",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "Configure managed private endpoints to access Azure services",
+            "training": "https://learn.microsoft.com/learn/paths/implement-network-security/",
+            "waf": "Security"
+        },
+        {
             "arm-service": "Microsoft.DataFactory/datafactories",
             "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
             "description": "Managed private endpoints are private endpoints created in the Data Factory managed virtual network that establishes a private link to Azure resources. Data Factory manages these private endpoints on your behalf.",
@@ -8129,6 +8409,71 @@
             "service": "Azure Data Factory",
             "severity": "Medium",
             "text": "Configure managed private endpoints to connect to resources using managed azure IR",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "Fabric uses a private IP address from your virtual network. The endpoint allows users in your network to communicate with Fabric over the private IP address using private links.",
+            "guid": "c14aea6e-65d8-4d9a-9aec-218e6436b063",
+            "link": "https://learn.microsoft.com/fabric/security/security-private-links-use",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "Configure Private Links to access resources in your own Azure vnet i.e traffic coming in your Fabric environment",
+            "training": "https://learn.microsoft.com/learn/paths/implement-network-security/",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "When a user authenticates access is determined based on a set of policies that might include IP address, location, and managed devices.",
+            "guid": "6cb45e57-9603-4324-adf8-cc23318da611",
+            "link": "https://learn.microsoft.com/fabric/security/security-conditional-access",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "Configure Microsoft Entra ID conditional access if a user is trying to access your Fabric environment",
+            "training": "https://learn.microsoft.com/learn/paths/implement-network-security/",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "In Azure, a service tag is a defined group of IP addresses that is automatically managed, as a group, to minimize the complexity of updates or changes to network security rules.",
+            "guid": "70265f4b-b46a-4393-af70-317294797b15",
+            "link": "https://learn.microsoft.com/fabric/security/security-service-tags",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "You can use Azure service tags to enable connections to and from Microsoft Fabric.",
+            "training": "https://learn.microsoft.com/learn/modules/design-implement-network-monitoring/",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "optional",
+            "guid": "78a219a4-6beb-4544-9502-4922634292bb",
+            "link": "https://learn.microsoft.com/fabric/security/fabric-allow-list-urls",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "You can add Fabric URLs to your allowlist",
+            "training": "https://learn.microsoft.com/azure/virtual-network/network-security-group-how-it-works",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "optional",
+            "guid": "528537a5-4119-4bf8-b8f5-854287d9cdc1",
+            "link": "https://learn.microsoft.com/fabric/security/power-bi-allow-list-urls",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "You can add Power BI URLs to your allowlist",
+            "training": "https://learn.microsoft.com/learn/modules/introduction-azure-virtual-wan/",
+            "waf": "Security"
+        },
+        {
+            "checklist": "Use the 'Import latest checklist' button to get the latest version of a review checklist",
+            "description": "The data gateway lets you connect your Azure and other data services to Microsoft Fabric and the Power Platform to securely communicate with the data source, execute queries, and transmit results back to the service.",
+            "guid": "56cc071a-e9b1-441a-a889-535e727897e7",
+            "link": "https://learn.microsoft.com/data-integration/gateway/service-gateway-install",
+            "service": "Microsoft Fabric",
+            "severity": "Medium",
+            "text": "Configure and use On-prem data gateway or Vnet data gateway to connect to sources either on prem or behind a virtual network",
             "waf": "Security"
         },
         {
@@ -11916,7 +12261,7 @@
     ],
     "metadata": {
         "name": "WAF checklist",
-        "timestamp": "October 21, 2024"
+        "timestamp": "October 23, 2024"
     },
     "severities": [
         {
