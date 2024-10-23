@@ -7,6 +7,7 @@
     "items": [
         {
             "category": "Topologia e conectividade de rede",
+            "graph": "cdnresources | where type =~ 'microsoft.Cdn/profiles/secrets' | extend frontDoorId = substring(id, 0, indexof(id, '/secrets')) | where properties.parameters.type =~ 'CustomerCertificate' | extend compliant = properties.parameters.useLatestVersion == true | project compliant, id=frontDoorId, certificateName = name | distinct id, certificateName, compliant",
             "guid": "f00a69de-7076-4734-a734-6e4552cad9e1",
             "id": "A01.01",
             "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-latest-version-for-customer-managed-certificates",
@@ -18,6 +19,7 @@
         },
         {
             "category": "Topologia e conectividade de rede",
+            "graph": "resources | where type =~ 'microsoft.cdn/profiles' and sku has 'AzureFrontDoor' | project name, cdnprofileid=tolower(id), tostring(tags), resourceGroup, subscriptionId,skuname=tostring(sku.name) | join kind= fullouter ( cdnresources | where type == 'microsoft.cdn/profiles/securitypolicies' | extend wafpolicyid=tostring(properties['parameters']['wafPolicy']['id']) | extend splitid=split(id, '/') | extend cdnprofileid=tolower(strcat_array(array_slice(splitid, 0, 8), '/')) | project secpolname=name, cdnprofileid, wafpolicyid ) on cdnprofileid | project name, cdnprofileid, secpolname, wafpolicyid,skuname | join kind = fullouter ( resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | extend managedrulesenabled=iff(tostring(properties.managedRules.managedRuleSets) != '[]', true, false), enabledState = tostring(properties.policySettings.enabledState) | project afdwafname=name, managedrulesenabled, wafpolicyid=id, enabledState, tostring(tags) ) on wafpolicyid | where name != '' | summarize associatedsecuritypolicies=countif(secpolname != ''), wafswithmanagedrules=countif(managedrulesenabled == 1) by name, id=cdnprofileid, tags,skuname | extend compliant = (associatedsecuritypolicies > 0 and wafswithmanagedrules > 0) | project id, compliant",
             "guid": "e79d17b7-3b22-4a5a-97e7-a8ed4b30e38c",
             "id": "A01.11",
             "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/ag-overview",
@@ -66,6 +68,7 @@
         },
         {
             "category": "Topologia e conectividade de rede",
+            "graph": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origins')) | extend compliant = isempty(properties.originHostHeader) or (tostring(properties.hostName) =~ tostring(properties.originHostHeader)) | project id=frontDoorId, originName = name, compliant",
             "guid": "5efeb96a-003f-4b18-8fcd-b4d84459c2b2",
             "id": "A01.18",
             "link": "https://learn.microsoft.com/azure/frontdoor/best-practices#use-the-same-domain-name-on-front-door-and-your-origin",
@@ -450,7 +453,7 @@
     "metadata": {
         "name": "Azure Application Delivery Networking",
         "state": "GA",
-        "timestamp": "September 09, 2024",
+        "timestamp": "September 23, 2024",
         "waf": "all"
     },
     "severities": [

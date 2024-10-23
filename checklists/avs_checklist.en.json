@@ -269,7 +269,8 @@
             "service": "AVS",
             "guid": "334fdf91-c234-4182-a652-75269440b4be",
             "id": "C02.05",
-            "severity": "Medium"
+            "severity": "Medium",
+            "graph": "resources| where type =~ 'Microsoft.Network/virtualNetworkGateways'| mv-expand ipConfigurations=properties.ipConfigurations| project subnetId=tostring(ipConfigurations.properties.subnet.id)| where isnotempty(subnetId)| join (resources | where type=='microsoft.network/virtualnetworks' | project id,resourceGroup,name,enableDdosProtection=tostring(properties.enableDdosProtection),subnets=properties.subnets | mv-expand subnets | project id,resourceGroup,name,enableDdosProtection,subnetId=tostring(subnets.id)) on subnetId | distinct id,resourceGroup,name,enableDdosProtection | project id, compliant = (enableDdosProtection == 'true')"
         },
         {
             "category": "Governance",
@@ -539,7 +540,8 @@
             "service": "AVS",
             "guid": "6b84ee5d-f47d-42d9-8881-b1cd5d1e54a2",
             "id": "D01.02",
-            "severity": "High"
+            "severity": "High",
+            "graph": "resources| where type =~ 'Microsoft.AVS/privateClouds'| join kind=leftouter(resources| where type =~ 'Microsoft.Insights/metricalerts'| mv-expand scopes=properties.scopes| mv-expand criteria=properties.criteria.allOf| extend metricName=criteria.metricName| distinct tostring(scopes), tostring(metricName))on $left.id == $right.scopes| extend compliant=toint(metricName in ('UsageAverage', 'EffectiveCpuAverage', 'DiskUsedPercentage'))| summarize compliant=min(compliant) by id"
         },
         {
             "category": "Management",
@@ -549,7 +551,8 @@
             "service": "AVS",
             "guid": "9659e396-80e7-4828-ac93-5657d02bff45",
             "id": "D01.03",
-            "severity": "High"
+            "severity": "High",
+            "graph": "resources| where type =~ 'Microsoft.AVS/privateClouds'| join kind=leftouter(resources| where type =~ 'Microsoft.Insights/metricalerts'| mv-expand scopes=properties.scopes| mv-expand criteria=properties.criteria.allOf| extend metricName=criteria.metricName| distinct tostring(scopes), tostring(metricName))on $left.id == $right.scopes| extend compliant=toint(metricName in ('UsageAverage', 'EffectiveCpuAverage', 'DiskUsedPercentage'))| summarize compliant=min(compliant) by id"
         },
         {
             "category": "Management",
@@ -559,7 +562,8 @@
             "service": "AVS",
             "guid": "64b0d934-a348-4726-be79-d6b5c3a36495",
             "id": "D01.04",
-            "severity": "High"
+            "severity": "High",
+            "graph": "resources| distinct subscriptionId| join kind=leftouter(    resources    | where type =~ 'microsoft.insights/activitylogalerts'    | mv-expand condition1 = properties.condition.allOf    | mv-expand condition2 = condition1.anyOf    | extend alertEnabled = tostring(properties.enabled)    | summarize set_condition1=make_set(condition1.equals), set_condition2=make_set(condition2.equals) by id, name,type,tenantId,resourceGroup,subscriptionId, alertEnabled    | where set_has_element(set_condition1, 'ServiceHealth')    | extend category = 'ServiceHealth'    | extend all = iff(set_has_element(set_condition1, 'ServiceHealth') and array_length(set_condition2) == 0, true, false)    | extend incident = iff(all, true, iff(set_has_element(set_condition1, 'Incident'), true, set_has_element(set_condition2, 'Incident')))    | extend maintenance = iff(all, true, iff(set_has_element(set_condition1, 'Maintenance'), true, set_has_element(set_condition2, 'Maintenance')))    | extend informational = iff(all, true, iff(set_has_element(set_condition1, 'Informational') or set_has_element(set_condition1, 'ActionRequired'), true, set_has_element(set_condition2, 'Informational') or set_has_element(set_condition2, 'ActionRequired')))    | extend security = iff(all, true, iff(set_has_element(set_condition1, 'Security'), true, set_has_element(set_condition2, 'Security')))    | project id, name, subscriptionId, category, tostring(alertEnabled), tostring(incident), tostring(maintenance), tostring(informational), tostring(security)    | summarize count_alertEnabled=countif(alertEnabled == 'true'), count_incident=countif(incident == 'True'), count_maintenance=countif(maintenance == 'True'), count_informational=countif(informational == 'True'), count_security=countif(security == 'True') by subscriptionId)     on subscriptionId| project subscriptionId, alertEnabled=iff(isnotnull(count_alertEnabled), count_alertEnabled, 0), incident=iff(isnotnull(count_incident), count_incident, 0), security=iff(isnotnull(count_security), count_security, 0), maintenance=iff(isnotnull(count_maintenance), count_maintenance, 0), informational=iff(isnotnull(count_informational), count_informational, 0)| order by incident, maintenance, informational, security desc| project id=subscriptionId, compliant=(alertEnabled > 0 and incident > 0 and security > 0 and maintenance > 0 and informational > 0)"
         },
         {
             "category": "Management",
