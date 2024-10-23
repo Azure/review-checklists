@@ -1,0 +1,512 @@
+{
+    "version": "Notebook/1.0",
+    "items": [
+        {
+            "type": 9,
+            "content": {
+                "version": "KqlParameterItem/1.0",
+                "parameters": [
+                    {
+                        "id": "497a107e-dde8-433e-b263-35ac8e8f7834",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "Subscription",
+                        "type": 6,
+                        "multiSelect": true,
+                        "quote": "'",
+                        "delimiter": ",",
+                        "typeSettings": {
+                            "additionalResourceOptions": [
+                                "value::all"
+                            ],
+                            "includeAll": true,
+                            "showDefault": false
+                        },
+                        "timeContext": {
+                            "durationMs": 86400000
+                        },
+                        "value": [
+                            "value::all"
+                        ]
+                    },
+                    {
+                        "id": "844e4f4e-df51-4e3c-8eaf-0dc78b92c721",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "OnlyFailed",
+                        "label": "Only show failed",
+                        "type": 2,
+                        "typeSettings": {
+                            "additionalResourceOptions": [],
+                            "showDefault": false
+                        },
+                        "jsonData": "[\r\n    { \"value\":true, \"label\":\"True\" },\r\n    { \"value\":false, \"label\":\"False\", \"selected\":true }\r\n]"
+                    }
+                ],
+                "style": "pills",
+                "queryType": 0,
+                "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "WorkbookSelectors"
+        },
+        {
+            "type": 1,
+            "content": {
+                "json": "If you set \"Only show failed\" to \"Yes\", the different queries will only show items that have failed their compliance checks.",
+                "style": "info"
+            },
+            "name": "InfoBox"
+        },
+        {
+            "type": 1,
+            "content": {
+                "json": "## Azure Container Registry Security Review\n\n---\n\nThis workbook has been automatically generated out of the checklists in the [Azure Review Checklists repo](https://github.com/Azure/review-checklists). This repo contains best practices and recommendations around generic Landing Zones as well as specific services such as Azure Virtual Desktop, Azure Kubernetes Service or Azure VMware Solution, to name a few. This repository of best practices is curated by Azure engineers, but open to anybody to contribute.\n\nIf you see a problem in the queries that are part of this workbook, please open a Github issue [here](https://github.com/Azure/review-checklists/issues/new)."
+            },
+            "customWidth": "100",
+            "name": "MarkdownHeader"
+        },
+        {
+            "type": 11,
+            "content": {
+                "version": "LinkItem/1.0",
+                "style": "tabs",
+                "links": [
+                    {
+                        "id": "cf5981b3-681d-4a2c-b897-2eb4729d7bfa",
+                        "cellValue": "VisibleTab",
+                        "linkTarget": "parameter",
+                        "linkLabel": "Security",
+                        "subTarget": "tab0",
+                        "preText": "Security",
+                        "style": "primary"
+                    },
+                    {
+                        "id": "879625b5-e394-4c93-865e-068b19b7cbbb",
+                        "cellValue": "VisibleTab",
+                        "linkTarget": "parameter",
+                        "linkLabel": "Security",
+                        "subTarget": "tab1",
+                        "preText": "Security",
+                        "style": "primary"
+                    }
+                ]
+            },
+            "name": "Tabs"
+        },
+        {
+            "type": 12,
+            "content": {
+                "version": "NotebookGroup/1.0",
+                "groupType": "editable",
+                "items": [
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "## Security"
+                        },
+                        "name": "tab0title"
+                    }
+                ]
+            },
+            "conditionalVisibility": {
+                "parameterName": "VisibleTab",
+                "comparison": "isEqualTo",
+                "value": "tab0"
+            },
+            "name": "tab0"
+        },
+        {
+            "type": 12,
+            "content": {
+                "version": "NotebookGroup/1.0",
+                "groupType": "editable",
+                "items": [
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "## Security"
+                        },
+                        "name": "tab1title"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Encrypt registry with a customer managed key. Check [this link](https://learn.microsoft.com/azure/container-registry/tutorial-customer-managed-keys) for further information."
+                        },
+                        "name": "querytext0"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type =~ 'Microsoft.ContainerRegistry/registries' | extend acrName = name, acrId = id | extend encryptionStatus = properties.encryption.status  | extend compliant = iif(encryptionStatus == 'disabled', false, true) | project acrName, acrId, encryptionStatus, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query0"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Disable local authentication for management plane access. Check [this link](https://learn.microsoft.com/azure/container-registry/container-registry-authentication-managed-identity) for further information."
+                        },
+                        "name": "querytext1"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type =~ 'microsoft.containerregistry/registries' | extend localAdminDisabled = properties.adminUserEnabled // Adjust this property as needed | extend compliant = iif(localAdminDisabled == 'false', true, false) // Check if local admin is disabled | project compliant, name, id, tags | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query1"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Assign AcrPull & AcrPush RBAC roles rather than granting Administrative access to identity principals. Check [this link](https://learn.microsoft.com/azure/container-registry/container-registry-roles?tabs=azure-cli) for further information."
+                        },
+                        "name": "querytext2"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type =~ 'microsoft.containerregistry/registries' | extend localAdminDisabled = properties.adminUserEnabled // Adjust this property as needed | extend compliant = iif(localAdminDisabled == 'false', true, false) // Check if local admin is disabled | project compliant, name, id, tags | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query2"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Disable Anonymous pull access. Check [this link](https://learn.microsoft.com/azure/container-registry/anonymous-pull-access#configure-anonymous-pull-access) for further information."
+                        },
+                        "name": "querytext3"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type =~ 'microsoft.containerregistry/registries' | extend compliant = iif(properties.anonymousPullEnabled == false, true, false) | project compliant, name, id, tags | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query3"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Disable Public Network access. Check [this link](https://learn.microsoft.com/azure/container-registry/container-registry-access-selected-networks#disable-public-network-access) for further information."
+                        },
+                        "name": "querytext4"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type =~ 'Microsoft.ContainerRegistry/registries' | where sku.name =~ 'Premium' // Check for Premium SKU | extend publicAccessEnabled = properties.publicNetworkAccess | extend defaultAction = tostring(properties.networkRuleSet.defaultAction) // Extract defaultAction | extend compliant = iif(publicAccessEnabled != 'Enabled' or defaultAction == 'Deny', true, false) | project name, id, publicAccessEnabled, defaultAction, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query4"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Use an Azure Container Registry SKU that supports Private Link (Premium SKU). Check [this link](https://learn.microsoft.com/azure/container-registry/container-registry-skus) for further information."
+                        },
+                        "name": "querytext5"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type =~ 'Microsoft.ContainerRegistry/registries' | extend skuName = sku.name // Extract the SKU name | extend compliant = iif(skuName == 'Premium', true, false) // Check if SKU is Premium | project name, id, skuName, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query5"
+                    }
+                ]
+            },
+            "conditionalVisibility": {
+                "parameterName": "VisibleTab",
+                "comparison": "isEqualTo",
+                "value": "tab1"
+            },
+            "name": "tab1"
+        }
+    ],
+    "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
