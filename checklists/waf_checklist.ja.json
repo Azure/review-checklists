@@ -1485,21 +1485,23 @@
             "waf": "確実"
         },
         {
+            "arm-service": "Microsoft.Network/loadBalancers",
             "checklist": "Azure Landing Zone Review",
             "graph": "resources | where type == 'microsoft.network/loadbalancers' | where tolower(sku.name) != 'basic' | mv-expand feIPconfigs = properties.frontendIPConfigurations | extend feConfigName = (feIPconfigs.name), PrivateSubnetId = toupper(feIPconfigs.properties.subnet.id), PrivateIPZones = feIPconfigs.zones, PIPid = toupper(feIPconfigs.properties.publicIPAddress.id), JoinID = toupper(id) | where isnotempty(PrivateSubnetId) | where isnull(PrivateIPZones) or array_length(PrivateIPZones) < 2 | project name, feConfigName, id | union (resources | where type == 'microsoft.network/loadbalancers' | where tolower(sku.name) != 'basic' | mv-expand feIPconfigs = properties.frontendIPConfigurations | extend feConfigName = (feIPconfigs.name), PIPid = toupper(feIPconfigs.properties.publicIPAddress.id), JoinID = toupper(id) | where isnotempty(PIPid) | join kind=innerunique ( resources | where type == 'microsoft.network/publicipaddresses' | where isnull(zones) or array_length(zones) < 2 | extend LBid = toupper(substring(properties.ipConfiguration.id, 0, indexof(properties.ipConfiguration.id, '/frontendIPConfigurations'))), InnerID = toupper(id) ) on $left.PIPid == $right.InnerID) | project name, id, tags, param1='Zones: No Zone or Zonal', param2=strcat('Frontend IP Configuration:', ' ', feConfigName)",
             "guid": "9dcd6250-9c4a-4382-aa9b-5b84c64fc1fe",
             "link": "https://learn.microsoft.com/en-us/azure/reliability/reliability-load-balancer?tabs=graph#zone-redundant",
-            "service": "Load Balancers",
+            "service": "Load Balancer",
             "severity": "高い",
             "text": "Standard Load Balancer SKU をゾーン冗長デプロイで使用すると、Standard SKU Load Balancer を選択すると、可用性ゾーンとゾーンの回復性によって信頼性が向上し、デプロイがゾーンとリージョンの障害に耐えられるようになります。Basic とは異なり、グローバル負荷分散をサポートし、SLA を提供します。",
             "waf": "確実"
         },
         {
+            "arm-service": "Microsoft.Network/loadBalancers",
             "checklist": "Azure Landing Zone Review",
             "graph": "resources | where type =~ 'Microsoft.Network/loadBalancers' | extend bep = properties.backendAddressPools | extend BackEndPools = array_length(bep) | where BackEndPools == 0 | project name, id, Param1='backendPools', Param2=toint(0), tags | union (resources | where type =~ 'Microsoft.Network/loadBalancers' | where sku.name == 'Standard' | extend bep = properties.backendAddressPools | extend BackEndPools = toint(array_length(bep)) | mv-expand bip = properties.backendAddressPools | extend BackendAddresses = array_length(bip.properties.loadBalancerBackendAddresses) | where toint(BackendAddresses) <= 1 | project name, id, tags, Param1='backendAddresses', Param2=toint(BackendAddresses)) | union ( resources | where type =~ 'Microsoft.Network/loadBalancers' | where sku.name == 'Basic' | mv-expand properties.backendAddressPools | extend backendPoolId = properties_backendAddressPools.id | project id, name, tags, tostring(backendPoolId), Param1='BackEndPools' | join kind = leftouter ( resources | where type =~ 'Microsoft.Network/networkInterfaces' | mv-expand properties.ipConfigurations | mv-expand properties_ipConfigurations.properties.loadBalancerBackendAddressPools | extend backendPoolId = tostring(properties_ipConfigurations_properties_loadBalancerBackendAddressPools.id) | summarize poolMembers = count() by backendPoolId | project tostring(backendPoolId), poolMembers ) on backendPoolId | where toint(poolMembers) <= 1 | extend BackendAddresses = poolMembers | project id, name, tags, Param1='backendAddresses', Param2=toint(BackendAddresses))",
             "guid": "48682fb1-1e86-4458-a686-518ebd47393d",
             "link": "https://learn.microsoft.com/en-us/azure/reliability/reliability-load-balancer?tabs=graph#zone-redundant",
-            "service": "Load Balancers",
+            "service": "Load Balancer",
             "severity": "高い",
             "text": "Load Balancer バックエンド プールに少なくとも 2 つのインスタンスが含まれていることを確認し、バックエンドに少なくとも 2 つのインスタンスがある Azure Load Balancers をデプロイすると、単一障害点が防止され、スケーラビリティがサポートされます。",
             "waf": "確実"
