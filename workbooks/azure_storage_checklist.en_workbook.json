@@ -70,11 +70,20 @@
                 "style": "tabs",
                 "links": [
                     {
-                        "id": "96368cbd-901b-4d5b-99ae-0aff2aa05fc0",
+                        "id": "1e70e6c8-bab6-4f75-b6fa-38bc60ac9432",
+                        "cellValue": "VisibleTab",
+                        "linkTarget": "parameter",
+                        "linkLabel": "BC and DR",
+                        "subTarget": "tab0",
+                        "preText": "BC and DR",
+                        "style": "primary"
+                    },
+                    {
+                        "id": "1df32940-2624-4478-9fd3-25f816378703",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Security",
-                        "subTarget": "tab0",
+                        "subTarget": "tab1",
                         "preText": "Security",
                         "style": "primary"
                     }
@@ -91,16 +100,286 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "## Security"
+                            "json": "## BC and DR"
                         },
                         "name": "tab0title"
                     },
                     {
                         "type": 1,
                         "content": {
-                            "json": "Enforce the latest TLS version for a storage account. Check [this link](https://learn.microsoft.com/azure/storage/common/transport-layer-security-configure-minimum-version) for further information."
+                            "json": "Leverage GRS, ZRS or GZRS storage for the highest availability. Check [this link](https://learn.microsoft.com/azure/storage/common/storage-redundancy) for further information."
+                        },
+                        "name": "querytext6"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type =~ 'Microsoft.Storage/StorageAccounts' | extend compliant = (sku.name != 'Standard_LRS' and sku.name != 'Premium_LRS') | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query6"
+                    }
+                ]
+            },
+            "conditionalVisibility": {
+                "parameterName": "VisibleTab",
+                "comparison": "isEqualTo",
+                "value": "tab0"
+            },
+            "name": "tab0"
+        },
+        {
+            "type": 12,
+            "content": {
+                "version": "NotebookGroup/1.0",
+                "groupType": "editable",
+                "items": [
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "## Security"
+                        },
+                        "name": "tab1title"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Consider using private endpoints for Azure Storage. Check [this link](https://learn.microsoft.com/azure/storage/common/storage-private-endpoints) for further information."
                         },
                         "name": "querytext0"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type =~ 'Microsoft.Storage/StorageAccounts' | where isnull(properties.privateEndpointConnections) or properties.privateEndpointConnections[0].properties.provisioningState != ('Succeeded') or (isnull(properties.networkAcls) and properties.publicNetworkAccess == 'Enabled') | extend compliant = (isnotnull(properties.privateEndpointConnections) and properties.privateEndpointConnections[0].properties.provisioningState == 'Succeeded' and properties.publicNetworkAccess == 'Disabled') | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query0"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Enable Microsoft Defender for all of your storage accounts. Check [this link](https://learn.microsoft.com/azure/storage/common/azure-defender-storage-configure) for further information."
+                        },
+                        "name": "querytext1"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type =~ 'Microsoft.Storage/StorageAccounts' | project storageAccountId = id | join kind=leftouter (resourceContainers | where type == 'microsoft.security/pricings' | where name == 'StorageAccounts' | project resourceId = id, pricingTier = properties.pricingTier) on $left.storageAccountId == $right.resourceId | where isnull(pricingTier) or pricingTier != 'Standard' | extend compliant = false | distinct storageAccountId, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query1"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Require HTTPS, i.e. disable port 80 on the storage account. Check [this link](https://learn.microsoft.com/azure/storage/common/storage-require-secure-transfer) for further information."
+                        },
+                        "name": "querytext2"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type =~ 'Microsoft.Storage/StorageAccounts' | extend compliant = (properties.supportsHttpsTrafficOnly == false) | distinct id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query2"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Enforce the latest TLS version for a storage account. Check [this link](https://learn.microsoft.com/azure/storage/common/transport-layer-security-configure-minimum-version) for further information."
+                        },
+                        "name": "querytext3"
                     },
                     {
                         "type": 3,
@@ -155,14 +434,14 @@
                                 ]
                             }
                         },
-                        "name": "query0"
+                        "name": "query3"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Consider disabling storage account keys, so that only Microsoft Entra ID access (and user delegation SAS) is supported. Check [this link](https://learn.microsoft.com/rest/api/storageservices/authorize-with-shared-key) for further information."
                         },
-                        "name": "querytext1"
+                        "name": "querytext4"
                     },
                     {
                         "type": 3,
@@ -217,14 +496,14 @@
                                 ]
                             }
                         },
-                        "name": "query1"
+                        "name": "query4"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Consider whether public blob anonymous access is needed, or whether it can be disabled for certain storage accounts. Check [this link](https://learn.microsoft.com/azure/storage/blobs/anonymous-read-access-configure?tabs=portal#allow-or-disallow-public-read-access-for-a-storage-account) for further information."
                         },
-                        "name": "querytext2"
+                        "name": "querytext5"
                     },
                     {
                         "type": 3,
@@ -279,16 +558,16 @@
                                 ]
                             }
                         },
-                        "name": "query2"
+                        "name": "query5"
                     }
                 ]
             },
             "conditionalVisibility": {
                 "parameterName": "VisibleTab",
                 "comparison": "isEqualTo",
-                "value": "tab0"
+                "value": "tab1"
             },
-            "name": "tab0"
+            "name": "tab1"
         }
     ],
     "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
