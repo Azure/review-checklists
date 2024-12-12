@@ -45,7 +45,7 @@ If you wish to make a contribution, please create the proposed changes in a fork
 
 ### 1. Adding or modifying Resource Graph queries
 
-When adding Azure Resource Graph queries to existing recommendations the query is expected to return (at least) two fields:
+When adding Azure Resource Graph queries to existing recommendations using the `graph` key, the query is expected to return the following two fields at a minimum (feel free to included additional columns as needed):
 
 * `id`: ARM ID of the resource being evaluated
 * `compliant`: boolean value that indicates whether the resource is compliant or non-compliant with the recommendation
@@ -57,6 +57,10 @@ where type=='microsoft.containerservice/managedclusters' | extend compliant= isn
 ```
 
 It is important for the query to return these two fields for the automation to work such as the bash script and automatic Azure Monitor Workbook generation.
+
+Some tips:
+- Use single quotes inside (`'`) of the ARG query string, double quotes (`"`) break the JSON syntax.
+- Use the case insensitive comparison operator (`=~`) whenever possible instead of the case-sensitive one (`==`).
 
 #### Microsoft approvers
 

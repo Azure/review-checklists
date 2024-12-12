@@ -70,7 +70,7 @@
                 "style": "tabs",
                 "links": [
                     {
-                        "id": "483e5adc-7cae-4f81-aed8-e31e3be1c310",
+                        "id": "db75997b-7c67-4e30-bd45-7c02ecd76369",
                         "cellValue": "VisibleTab",
                         "linkTarget": "parameter",
                         "linkLabel": "Network Topology and Connectivity",
@@ -98,9 +98,133 @@
                     {
                         "type": 1,
                         "content": {
-                            "json": "Deploy your WAF policy for Front Door in 'Prevention' mode' so that Web Application Firewall takes appropriate action to allow or deny traffic. Check [this link](https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings) for further information."
+                            "json": "If you use customer-managed TLS certificates with Azure Front Door, use the 'Latest' certificate version. Reduce the risk of outages caused by manual certificate renewal. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-latest-version-for-customer-managed-certificates) for further information."
                         },
                         "name": "querytext0"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "cdnresources | where type =~ 'microsoft.Cdn/profiles/secrets' | extend frontDoorId = substring(id, 0, indexof(id, '/secrets')) | where properties.parameters.type =~ 'CustomerCertificate' | extend compliant = properties.parameters.useLatestVersion == true | project compliant, id=frontDoorId, certificateName = name | distinct id, certificateName, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query0"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Use Azure Front Door with WAF policies to deliver and help protect global HTTP/S apps that span multiple Azure regions. Check [this link](https://learn.microsoft.com/azure/web-application-firewall/ag/ag-overview) for further information.. [This training](https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/) can help to educate yourself on this."
+                        },
+                        "name": "querytext1"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "resources | where type =~ 'microsoft.cdn/profiles' and sku has 'AzureFrontDoor' | project name, cdnprofileid=tolower(id), tostring(tags), resourceGroup, subscriptionId,skuname=tostring(sku.name) | join kind= fullouter ( cdnresources | where type == 'microsoft.cdn/profiles/securitypolicies' | extend wafpolicyid=tostring(properties['parameters']['wafPolicy']['id']) | extend splitid=split(id, '/') | extend cdnprofileid=tolower(strcat_array(array_slice(splitid, 0, 8), '/')) | project secpolname=name, cdnprofileid, wafpolicyid ) on cdnprofileid | project name, cdnprofileid, secpolname, wafpolicyid,skuname | join kind = fullouter ( resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | extend managedrulesenabled=iff(tostring(properties.managedRules.managedRuleSets) != '[]', true, false), enabledState = tostring(properties.policySettings.enabledState) | project afdwafname=name, managedrulesenabled, wafpolicyid=id, enabledState, tostring(tags) ) on wafpolicyid | where name != '' | summarize associatedsecuritypolicies=countif(secpolname != ''), wafswithmanagedrules=countif(managedrulesenabled == 1) by name, id=cdnprofileid, tags,skuname | extend compliant = (associatedsecuritypolicies > 0 and wafswithmanagedrules > 0) | project id, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query1"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Deploy your WAF policy for Front Door in 'Prevention' mode' so that Web Application Firewall takes appropriate action to allow or deny traffic. Check [this link](https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings) for further information."
+                        },
+                        "name": "querytext2"
                     },
                     {
                         "type": 3,
@@ -155,14 +279,14 @@
                                 ]
                             }
                         },
-                        "name": "query0"
+                        "name": "query2"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Avoid placing Traffic Manager behind Front Door. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#avoid-combining-traffic-manager-and-front-door) for further information."
                         },
-                        "name": "querytext1"
+                        "name": "querytext3"
                     },
                     {
                         "type": 3,
@@ -217,14 +341,76 @@
                                 ]
                             }
                         },
-                        "name": "query1"
+                        "name": "query3"
+                    },
+                    {
+                        "type": 1,
+                        "content": {
+                            "json": "Use the same domain name on Azure Front Door and your origin. Mismatched host names can cause subtle bugs. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-the-same-domain-name-on-front-door-and-your-origin) for further information."
+                        },
+                        "name": "querytext4"
+                    },
+                    {
+                        "type": 3,
+                        "content": {
+                            "version": "KqlItem/1.0",
+                            "query": "cdnresources | where type =~ 'microsoft.cdn/profiles/origingroups/origins' | extend frontDoorId = substring(id, 0, indexof(id, '/origins')) | extend compliant = isempty(properties.originHostHeader) or (tostring(properties.hostName) =~ tostring(properties.originHostHeader)) | project id=frontDoorId, originName = name, compliant | extend onlyFailed = {OnlyFailed:label} | where compliant == 0 or not (onlyFailed == 1) | project-away onlyFailed",
+                            "size": 0,
+                            "queryType": 1,
+                            "resourceType": "microsoft.resourcegraph/resources",
+                            "crossComponentResources": [
+                                "{Subscription}"
+                            ],
+                            "gridSettings": {
+                                "formatters": [
+                                    {
+                                        "columnMatch": "id",
+                                        "formatter": 0,
+                                        "numberFormat": {
+                                            "unit": 0,
+                                            "options": {
+                                                "style": "decimal"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "columnMatch": "compliant",
+                                        "formatter": 18,
+                                        "formatOptions": {
+                                            "thresholdsOptions": "icons",
+                                            "thresholdsGrid": [
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "1",
+                                                    "representation": "success",
+                                                    "text": "Success"
+                                                },
+                                                {
+                                                    "operator": "==",
+                                                    "thresholdValue": "0",
+                                                    "representation": "failed",
+                                                    "text": "Failed"
+                                                },
+                                                {
+                                                    "operator": "Default",
+                                                    "thresholdValue": null,
+                                                    "representation": "unknown",
+                                                    "text": "Unknown"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "name": "query4"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Disable health probes when there is only one origin in an Azure Front Door origin group. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group) for further information."
                         },
-                        "name": "querytext2"
+                        "name": "querytext5"
                     },
                     {
                         "type": 3,
@@ -279,14 +465,14 @@
                                 ]
                             }
                         },
-                        "name": "query2"
+                        "name": "query5"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Use HEAD health probes with Azure Front Door, to reduce the traffic that Front Door sends to your application. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-head-health-probes) for further information."
                         },
-                        "name": "querytext3"
+                        "name": "querytext6"
                     },
                     {
                         "type": 3,
@@ -341,14 +527,14 @@
                                 ]
                             }
                         },
-                        "name": "query3"
+                        "name": "query6"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Use managed TLS certificates with Azure Front Door. Reduce operational cost and risk of outages due to certificate renewals. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-managed-tls-certificates) for further information."
                         },
-                        "name": "querytext4"
+                        "name": "querytext7"
                     },
                     {
                         "type": 3,
@@ -403,14 +589,14 @@
                                 ]
                             }
                         },
-                        "name": "query4"
+                        "name": "query7"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Use end-to-end TLS with Azure Front Door. Use TLS for connections from your clients to Front Door, and from Front Door to your origin. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-end-to-end-tls) for further information."
                         },
-                        "name": "querytext5"
+                        "name": "querytext8"
                     },
                     {
                         "type": 3,
@@ -465,14 +651,14 @@
                                 ]
                             }
                         },
-                        "name": "query5"
+                        "name": "query8"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Use HTTP to HTTPS redirection with Azure Front Door. Support older clients by redirecting them to an HTTPS request automatically. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#use-http-to-https-redirection) for further information."
                         },
-                        "name": "querytext6"
+                        "name": "querytext9"
                     },
                     {
                         "type": 3,
@@ -527,14 +713,14 @@
                                 ]
                             }
                         },
-                        "name": "query6"
+                        "name": "query9"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Support redundancy by having multiple origins in one or more back-end pools. Always have redundant instances of your application and make sure each instance exposes an endpoint or origin. You can place those origins in one or more back-end pools. Check [this link](https://learn.microsoft.com/azure/frontdoor/quickstart-create-front-door) for further information."
                         },
-                        "name": "querytext7"
+                        "name": "querytext10"
                     },
                     {
                         "type": 3,
@@ -589,14 +775,14 @@
                                 ]
                             }
                         },
-                        "name": "query7"
+                        "name": "query10"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Disable health checks in single back-end pools. If you have only one origin configured in your Azure Front Door origin group, these calls are unnecessary. This is only recommended if you can't have multiple origins in your endpoint. Check [this link](https://learn.microsoft.com/azure/frontdoor/best-practices#disable-health-probes-when-theres-only-one-origin-in-an-origin-group) for further information."
                         },
-                        "name": "querytext8"
+                        "name": "querytext11"
                     },
                     {
                         "type": 3,
@@ -651,14 +837,14 @@
                                 ]
                             }
                         },
-                        "name": "query8"
+                        "name": "query11"
                     },
                     {
                         "type": 1,
                         "content": {
                             "json": "Consider migrating to Standard or Premium SKU if you are using Classic Azure Front Door currently as Classic Azure Front Door will be deprecated by March 2027. Check [this link](https://learn.microsoft.com/azure/cdn/tier-migration) for further information."
                         },
-                        "name": "querytext9"
+                        "name": "querytext12"
                     },
                     {
                         "type": 3,
@@ -713,7 +899,7 @@
                                 ]
                             }
                         },
-                        "name": "query9"
+                        "name": "query12"
                     }
                 ]
             },

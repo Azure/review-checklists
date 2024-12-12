@@ -1,0 +1,255 @@
+{
+    "items": [
+        {
+            "category": "Managed clusters",
+            "subcategory": "Cluster architecture",
+            "text": "Use Standard SKU for production scenarios.",
+            "waf": "Reliability",
+            "service": "Azure Service Fabric",
+            "guid": "182840d2-9ef8-4238-8fd6-0d76186830ac",
+            "id": "A01.01",
+            "graph": "resources | where type=~'Microsoft.ServiceFabric/managedClusters' | extend compliant = (sku=~'{\"name\":\"Standard\"}') | distinct id,compliant",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/service-fabric/overview-managed-cluster#service-fabric-managed-cluster-skus"
+        },
+        {
+            "category": "Standard clusters",
+            "subcategory": "Cluster architecture",
+            "text": "Use durability level Silver (5 VMs) or greater for production scenarios",
+            "waf": "Reliability",
+            "service": "Azure Service Fabric",
+            "guid": "182840d2-9ef8-4238-8fd6-0d76186830ac",
+            "id": "A01.02",
+            "graph": "resources | where type=~'Microsoft.ServiceFabric/clusters' | extend nodeTypes= array_concat(properties.nodeTypes) | mv-expand nodeTypes | summarize BronzeDurabilityCount = countif(nodeTypes.durabilityLevel == 'Bronze') by id | extend compliant = (BronzeDurabilityCount == 0) | distinct id,compliant",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/service-fabric/service-fabric-cluster-capacity#durability-characteristics-of-the-cluster"
+        },
+        {
+            "category": "Managed clusters",
+            "subcategory": "Cluster architecture",
+            "text": "Consider using Availability Zones for your Service Fabric clusters. Service Fabric managed cluster supports deployments that span across multiple Availability Zones to provide zone resiliency. This configuration will ensure high-availability of the critical system services and your applications to protect from single-points-of-failure.",
+            "waf": "Reliability",
+            "service": "Azure Service Fabric",
+            "guid": "2363878d-55c4-4cbd-9bc2-94523c85f12e",
+            "id": "A01.03",
+            "graph": "resources | where type=~'Microsoft.ServiceFabric/managedClusters' | extend compliant= ( properties.zonalResiliency =~ 'true') | distinct id,compliant",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/service-fabric/how-to-managed-cluster-availability-zones"
+        },
+        {
+            "category": "Managed clusters",
+            "subcategory": "Cluster architecture",
+            "text": "Consider using Azure API Management to expose and offload cross-cutting functionality for APIs hosted on the cluster. API Management can integrate with Service Fabric directly.",
+            "waf": "Reliability",
+            "service": "Azure Service Fabric",
+            "guid": "5ba74cc8-3ca2-44d5-9a67-bdc8e102e7b4",
+            "id": "A01.04",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/service-fabric/service-fabric-api-management-overview"
+        },
+        {
+            "category": "Managed clusters",
+            "subcategory": "Workload architecture",
+            "text": "For stateful workload scenarios, consider using Reliable Services. The Reliable Services model allows your services to stay up even in unreliable environments where your machines fail or hit network issues, or in cases where the services themselves encounter errors and crash or fail. For stateful services, your state is preserved even in the presence of network or other failures.",
+            "waf": "Reliability",
+            "service": "Azure Service Fabric",
+            "guid": "ef17bb8f-4e2c-488b-8ceb-a07c3d750dd3",
+            "id": "A01.05",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/service-fabric/service-fabric-reliable-services-introduction"
+        },
+        {
+            "category": "Managed clusters",
+            "subcategory": "Cluster architecture",
+            "text": "Avoid VM SKUs with temp disk offerings. Service Fabric uses managed disks by default, so avoiding temp disk offerings ensures you don't pay for unneeded resources.",
+            "waf": "Cost",
+            "service": "Azure Service Fabric",
+            "guid": "4da21268-f775-4c89-a271-eb80543c8df7",
+            "id": "B01.01",
+            "graph": "resources | where type=~'Microsoft.Compute/virtualMachineScaleSets' | extend vmssExtension= array_concat(properties.virtualMachineProfile.extensionProfile.extensions) | mv-expand vmssExtension | where vmssExtension.properties.publisher matches regex '^Microsoft.Azure.ServiceFabric.*' | summarize arg_max(id, *) | summarize compliant = countif(sku.name matches regex '^Standard_[^d]*$' ) by id",
+            "severity": "Medium"
+        },
+        {
+            "category": "Managed clusters",
+            "subcategory": "Cluster architecture",
+            "text": "If you need to select a certain VM SKU for capacity reasons and it happens to offer temp disk, consider using temporary disk support for your stateless workloads.",
+            "waf": "Cost",
+            "service": "Azure Service Fabric",
+            "guid": "1890b796-f300-41a3-a8d4-29738c1f4ad0",
+            "id": "B01.02",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/service-fabric/how-to-managed-cluster-stateless-node-type#temporary-disk-support"
+        },
+        {
+            "category": "Managed clusters",
+            "subcategory": "Cluster and workload architectures",
+            "text": "Align SKU selection and managed disk size with workload requirements. Matching your selection to your workload demands ensures you don't pay for unneeded resources.",
+            "waf": "Cost",
+            "service": "Azure Service Fabric",
+            "guid": "5247bb32-6778-49c7-8b40-e171c9a3ce1e",
+            "id": "B01.03",
+            "severity": "Medium"
+        },
+        {
+            "category": "Managed clusters",
+            "subcategory": "Cluster architecture",
+            "text": "Ensure Network Security Groups (NSG) are configured to restrict traffic flow between subnets and node types. For example, you may have an API Management instance (one subnet), a frontend subnet (exposing a website directly), and a backend subnet (accessible only to frontend).",
+            "waf": "Security",
+            "service": "Azure Service Fabric",
+            "guid": "6028759b-446a-41bc-8b0e-7728e61ca704",
+            "id": "C01.01",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/service-fabric/how-to-managed-cluster-networking#manage-nsg-rules"
+        },
+        {
+            "category": "Managed clusters",
+            "subcategory": "Cluster architecture",
+            "text": "Deploy Key Vault certificates to Service Fabric cluster virtual machine scale sets. Centralizing storage of application secrets in Azure Key Vault allows you to control their distribution. Key Vault greatly reduces the chances that secrets may be accidentally leaked.",
+            "waf": "Security",
+            "service": "Azure Service Fabric",
+            "guid": "4e98c903-14cf-4c72-9c45-b8b23bc4cbd8",
+            "id": "C01.02",
+            "graph": "resources | where type=~'Microsoft.Compute/virtualMachineScaleSets' | extend vmssExtension= array_concat(properties.virtualMachineProfile.extensionProfile.extensions) | mv-expand vmssExtension | where vmssExtension.properties.publisher matches regex '^Microsoft.Azure.ServiceFabric.*' | summarize arg_max(id, *) | extend compliant = (isnotnull(properties.virtualMachineProfile.osProfile.secrets))",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/service-fabric/service-fabric-best-practices-security#deploy-key-vault-certificates-to-service-fabric-cluster-virtual-machine-scale-sets"
+        },
+        {
+            "category": "Managed clusters",
+            "subcategory": "Cluster architecture",
+            "text": "Apply an Access Control List (ACL) to your client certificate for your Service Fabric cluster. Using an ACL provides an additional level of authentication.",
+            "waf": "Security",
+            "service": "Azure Service Fabric",
+            "guid": "001cbb6f-d88d-4431-8434-d01333397776",
+            "id": "C01.03",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/service-fabric/service-fabric-best-practices-security#apply-an-access-control-list-acl-to-your-certificate-for-your-service-fabric-cluster"
+        },
+        {
+            "category": "Managed clusters",
+            "subcategory": "Cluster architecture",
+            "text": "Use resource requests and limits to govern resource usage across the nodes in your cluster. Enforcing resource limits helps ensure that one service doesn't consume too many resources and starve other services.",
+            "waf": "Security",
+            "service": "Azure Service Fabric",
+            "guid": "4b74b7a5-bb1e-4fca-948c-037ba95fb73b",
+            "id": "C01.04",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/service-fabric/service-fabric-resource-governance#resource-governance-mechanism"
+        },
+        {
+            "category": "Managed clusters",
+            "subcategory": "Workload architecture",
+            "text": "Encrypt Service Fabric package secret values. Encryption on your secret values provides an additional level of security.",
+            "waf": "Security",
+            "service": "Azure Service Fabric",
+            "guid": "cd9233ba-f3aa-4353-8d2f-7ea4a64160e6",
+            "id": "C01.05",
+            "severity": "Medium",
+            "link": ""
+        },
+        {
+            "category": "Managed clusters",
+            "subcategory": "Workload architecture",
+            "text": "Include client certificates in Service Fabric applications. Having your applications use client certificates for authentication provides opportunities for security at both the cluster and workload level.",
+            "waf": "Security",
+            "service": "Azure Service Fabric",
+            "guid": "44b989d4-9f72-42b6-99da-ec2a79f83299",
+            "id": "C01.06",
+            "severity": "Medium",
+            "link": ""
+        },
+        {
+            "category": "Managed clusters",
+            "subcategory": "Workload architecture",
+            "text": "Authenticate Service Fabric applications to Azure Resources using Managed Identity. Using Managed Identity allow you to securely manage the credentials in your code for authenticating to various services without saving them locally on a developer workstation or in source control.",
+            "waf": "Security",
+            "service": "Azure Service Fabric",
+            "guid": "28e66ff7-4a77-4b2c-910d-0335f141208a",
+            "id": "C01.07",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/service-fabric/how-to-managed-identity-managed-cluster-virtual-machine-scale-sets"
+        },
+        {
+            "category": "Managed clusters",
+            "subcategory": "Cluster and workload architectures",
+            "text": "Follow Service Fabric best practices when hosting untrusted applications. Following the best practices provides a security standard to follow.",
+            "waf": "Security",
+            "service": "Azure Service Fabric",
+            "guid": "f16c413c-00a6-43aa-852c-b97292c33a56",
+            "id": "C01.08",
+            "severity": "Medium",
+            "link": "https://learn.microsoft.com/azure/service-fabric/service-fabric-best-practices-security#hosting-untrusted-applications-in-a-service-fabric-cluster"
+        }
+    ],
+    "categories": [
+        {
+            "name": "Managed clusters"
+        },
+        {
+            "name": "Standard clusters"
+        }
+    ],
+    "waf": [
+        {
+            "name": "Reliability"
+        },
+        {
+            "name": "Security"
+        },
+        {
+            "name": "Cost"
+        },
+        {
+            "name": "Operations"
+        },
+        {
+            "name": "Performance"
+        }
+    ],
+    "yesno": [
+        {
+            "name": "Yes"
+        },
+        {
+            "name": "No"
+        }
+    ],
+    "status": [
+        {
+            "name": "Not verified",
+            "description": "This check has not been looked at yet"
+        },
+        {
+            "name": "Open",
+            "description": "There is an action item associated to this check"
+        },
+        {
+            "name": "Fulfilled",
+            "description": "This check has been verified, and there are no further action items associated to it"
+        },
+        {
+            "name": "Not required",
+            "description": "Recommendation understood, but not needed by current requirements"
+        },
+        {
+            "name": "N/A",
+            "description": "Not applicable for current design"
+        }
+    ],
+    "severities": [
+        {
+            "name": "High"
+        },
+        {
+            "name": "Medium"
+        },
+        {
+            "name": "Low"
+        }
+    ],
+    "metadata": {
+        "name": "Azure Service Fabric Review Checklist",
+        "state": "Preview",
+        "waf": "All",
+        "timestamp": "September 18, 2024"
+    }
+}

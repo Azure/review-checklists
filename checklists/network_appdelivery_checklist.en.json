@@ -83,7 +83,7 @@
             "id": "A01.08",
             "severity": "Medium",
             "training": "https://learn.microsoft.com/learn/paths/secure-networking-infrastructure/",
-            "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/ag-overview"
+            "link": "https://learn.microsoft.com/azure/application-gateway/tutorial-protect-application-gateway-ddos"
         },
         {
             "category": "Network Topology and Connectivity",
@@ -189,13 +189,14 @@
         {
             "category": "Network Topology and Connectivity",
             "subcategory": "App Gateway",
-            "text": "Enable request body inspection feature enabled in Azure Application Gateway WAF policy.",
+            "text": "Ensure if request body inspection feature is enabled in Azure Application Gateway WAF policy.",
             "waf": "Security",
             "service": "App Gateway",
             "guid": "8ea8e0d4-84e8-4b33-aeab-493f6391b4d6",
             "id": "A01.38",
             "ammp": true,
             "severity": "High",
+            "graph": "resources | where type =~ 'microsoft.network/applicationgatewaywebapplicationfirewallpolicies' | extend compliant = (properties['policySettings']['requestBodyCheck'] == 'true' and properties['policySettings']['state'] =~ 'Enabled') | distinct id, name, compliant",
             "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/application-gateway-waf-request-size-limits#request-body-inspection"
         },
         {
@@ -220,8 +221,8 @@
             "id": "A01.40",
             "ammp": true,
             "severity": "High",
-            "graph": "resources | where type == 'microsoft.network/frontdoorwebapplicationfirewallpolicies' | project policyName=name, policyId=id,policySku=sku.name, links=properties.securityPolicyLinks, enabledState=properties.policySettings.enabledState, mode=properties.policySettings.mode | mvexpand links | extend securityPolicy=links.id | extend securityPolicyParts=split(securityPolicy, '/') | extend profileId=strcat_array(array_slice(securityPolicyParts, 0, -3), '/') | project id=profileId, compliant=((enabledState=='Enabled') and (mode=='Prevention')), enabledState, mode",
-            "link": "https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-policy-settings"
+            "graph": "resources | where type =~ 'microsoft.network/applicationgatewaywebapplicationfirewallpolicies' | extend compliant = (properties['policySettings']['mode'] =~ 'Prevention')| where properties['policySettings']['mode'] =~ 'Prevention' | distinct id, name, compliant",
+            "link": "https://learn.microsoft.com/azure/web-application-firewall/ag/policy-overview?source=recommendations"                                                                                                                                                                                                                            
         },
         {
             "category": "Network Topology and Connectivity",
@@ -342,7 +343,9 @@
             "guid": "a66f0fd8-2ca4-422e-8df3-235148127ca2",
             "id": "A01.54",
             "severity": "High",
+            "graph": "resources | where type == 'microsoft.network/applicationgateways'| extend compliant = (properties['backendHttpSettingsCollection'][0]['properties']['port'] =~ '443') |where properties['backendHttpSettingsCollection'][0]['properties']['port'] =~ '443'|distinct id,name,compliant",
             "link": "https://learn.microsoft.com/azure/application-gateway/ssl-overview"
+            
         },
         {
             "category": "Network Topology and Connectivity",
@@ -533,6 +536,6 @@
         "name": "Azure Application Delivery Networking",
         "state": "GA",
         "waf": "all",
-        "timestamp": "August 08, 2024"
+        "timestamp": "September 23, 2024"
     }
 }
