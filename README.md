@@ -24,7 +24,8 @@ Summary of checklists supported and the respective responsible owners:
 
 | Checklist | Status | CodeOwners |
 | --- | --- | --- |
-| ALZ  | GA | FTA-ALZ-vTeam, ALZ-checklist-contributors  |
+| Azure Landing Zone  | GA | FTA-ALZ-vTeam, ALZ-checklist-contributors  |
+| AI Landing Zone  | Preview | [@mbilalamjad](https://github.com/mbilalamjad) [@prwani](https://github.com/prwani)  |
 | WAF | GA | Dynamically generated |
 | AKS | GA | [@msftnadavbh](https://github.com/msftnadavbh) [@seenu433](https://github.com/seenu433) [@erjosito](https://github.com/erjosito) |
 | ARO | Preview | [@msftnadavbh](https://github.com/msftnadavbh) [@naioja](https://github.com/naioja) [@erjosito](https://github.com/erjosito) |
