@@ -11,8 +11,7 @@ When doing Azure design reviews (or any review for that matter), Microsoft emplo
 There are three ways to use these checklists.
 
 1) Via [Excel](./spreadsheet/README.md)
-2) Via Web Application hosted at [https://aka.ms/ftaaas](https://aka.ms/ftaaas).
-3) [Azure Resource Graph Queries](./scripts/README.md)
+2) [Azure Resource Graph Queries](./scripts/README.md)
 
 ## Reporting errors and contributing
 
