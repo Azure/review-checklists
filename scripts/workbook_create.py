@@ -371,7 +371,11 @@ def generate_workbook(output_file, checklist_data):
                 # Create new query
                 new_query = block_query.copy()
                 new_query['name'] = 'query' + str(query_id)
-                new_query['content']['query'] = graph_query + query_suffix
+                if 'compliant' in graph_query:
+                    full_query = graph_query + query_suffix
+                else:
+                    full_query = graph_query 
+                new_query['content']['query'] = full_query
                 new_query['content']['size'] = query_size
                 # Add text and query to the workbook
                 if args.counters:
