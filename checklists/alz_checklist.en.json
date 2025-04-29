@@ -212,6 +212,7 @@
             "guid": "4b69bad3-3aad-45e8-a68e-1d76667313b4",
             "id": "B03.03",
             "severity": "Medium",
+            "graph": "resourcecontainers | where type == 'microsoft.resources/subscriptions' | project subscriptionId = id | join kind=inner (authorizationresources | where type == 'microsoft.authorization/roleassignments' | extend principalType = tostring(properties.principalType), roleDefinitionName = tostring(properties.roleDefinitionName), principalName = tostring(properties.principalName), scope = tostring(properties.scope), compliant = iff(principalType == 'Group', 1, 0)) on $left.subscriptionId == $right.scope | project subscriptionId, principalName, roleDefinitionName, principalType, compliant",
             "training": "https://learn.microsoft.com/learn/paths/manage-identity-and-access/",
             "link": "https://learn.microsoft.com/entra/fundamentals/how-to-manage-groups"
         },
@@ -262,7 +263,7 @@
             "training": "https://learn.microsoft.com/learn/modules/azure-ad-privileged-identity-management/",
             "link": "https://learn.microsoft.com/azure/active-directory/privileged-identity-management/pim-configure"
         },
-                {
+        {
             "category": "Identity and Access Management",
             "subcategory": "Identity",
             "text": "Microsoft recommends that you use roles with the fewest permissions. Global Administrator is a highly privileged role that should be limited to emergency scenarios when you can't use an existing role.",
@@ -282,6 +283,7 @@
             "guid": "1559ab91-53e8-4908-ae28-c84c33b6b780",
             "id": "B03.09",
             "severity": "High",
+            "graph": "resources | where type == 'microsoft.compute/virtualmachines' | where tolower(name) has 'dc' or tostring(tags['Role']) has 'domain' | extend zoneConfigured = iff(isnotempty(tostring(zones)), true, false), availSetConfigured = iff(isnotempty(tostring(properties.availabilitySet.id)), true, false) | extend compliant = iff(zoneConfigured or availSetConfigured, 1, 0) | project name, location, zoneConfigured, availSetConfigured, compliant",
             "training": "https://learn.microsoft.com/learn/modules/azure-active-directory/",
             "link": "https://learn.microsoft.com/azure/architecture/reference-architectures/identity/adds-extend-domain#vm-recommendations"
         },
@@ -304,6 +306,7 @@
             "guid": "f5664b5e-984a-4859-a773-e7d261623a76",
             "id": "B03.11",
             "severity": "Medium",
+            "graph": "authorizationresources | where type == 'microsoft.authorization/roledefinitions' | where tostring(properties.type) == 'CustomRole' | extend roleName = tostring(properties.roleName), compliant = 1 | project roleName, compliant",
             "training": "https://learn.microsoft.com/learn/modules/create-custom-azure-roles-with-rbac/",
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/identity-access#prerequisites-for-a-landing-zone---design-recommendations"
         },
@@ -400,6 +403,7 @@
             "guid": "9cf5418b-1520-4b7b-add7-88eb28f833e8",
             "id": "B04.01",
             "severity": "High",
+            "graph": "resources | where type == 'microsoft.network/virtualnetworks/virtualnetworkpeerings' | extend remoteVnetId = tostring(properties.remoteVirtualNetwork.id), peeringName = name | extend compliant = iff(tolower(peeringName) has 'hub' or tolower(remoteVnetId) has 'hub', 1, 0) | project name, remoteVnetId, compliant",
             "training": "https://learn.microsoft.com/azure/architecture/example-scenario/identity/adds-extend-domain",
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/identity-access-landing-zones#identity-and-access-management-in-the-azure-landing-zone-accelerator"
         },
@@ -433,6 +437,7 @@
             "guid": "0ce74f19-9abb-47e4-ae95-6b057a1d2be9",
             "id": "B04.04",
             "severity": "Medium",
+            "graph": "authorizationresources | where type == 'microsoft.authorization/roleassignments' | extend roleDefinitionId = tostring(properties.roleDefinitionId), scope = tostring(properties.scope) | where roleDefinitionId has '8e3af657-a8ff-443c-a75c-2fe8c4bcb635' | summarize ownerCount = count() by scope | extend compliant = iff(ownerCount > 3, 0, 1)",
             "link": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/design-area/azure-billing-enterprise-agreement",
             "training": "https://learn.microsoft.com/training/paths/configure-manage-entitlement-microsoft-entra-id/?source=recommendations"
         },
