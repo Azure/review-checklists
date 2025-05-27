@@ -57,17 +57,23 @@ jobs:
         run: |
           echo "DEBUG: steps.automationresult.outputs.excel_file_changed: ${{ steps.automationresult.outputs.excel_file_changed }}"
           for input_file in ${{ steps.files.outputs.all }}; do 
-            input_file_extension=${input_file: -7}
-            # Only process English checklists (.en.json)
-            if [[ "$input_file_extension" == "en.json" ]]; then
-              echo "Processing ${input_file}..."
-              echo "done_something=yes" >> $GITHUB_OUTPUT
-              # Sort modified file
-              python3 ./scripts/sort_checklist.py --input-file $input_file
-              # Update the timestamp in the modified file
-              python3 ./scripts/timestamp_checklist.py --input-file $input_file
-              # Translate modified file
-              python3 ./scripts/translate.py --input-file $input_file
+            # Check if the file exists before processing
+            if [[ -f "$input_file" ]]; then
+              input_file_extension=${input_file: -7}
+              # Only process English checklists (.en.json)
+              if [[ "$input_file_extension" == "en.json" ]]; then
+                echo "Processing ${input_file}..."
+                echo "done_something=yes" >> $GITHUB_OUTPUT
+                # Sort modified file
+                python3 ./scripts/sort_checklist.py --input-file $input_file
+                # Update the timestamp in the modified file
+                python3 ./scripts/timestamp_checklist.py --input-file $input_file
+                # Translate modified file
+                python3 ./scripts/translate.py --input-file $input_file
+              fi
+            else
+              # Log the skipped file
+              echo "Skipping deleted file: ${input_file}"
             fi
           done
 
