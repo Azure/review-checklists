@@ -7,7 +7,7 @@ import uuid
 
 # Variables
 translate_keys = ('description', 'name', 'category', 'subcategory', 'waf', 'text', 'severity')
-translate_languages = ['es', 'ja', 'pt', 'ko', 'zh-Hant']
+translate_languages = ['es', 'ja', 'pt', 'ko', 'zh-Hant', 'de', 'fr', 'hi', 'ru', 'it', 'ar', 'nl', 'tr']
 
 # Get environment variables
 translator_endpoint = os.environ["AZURE_TRANSLATOR_ENDPOINT"]
