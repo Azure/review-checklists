@@ -17,10 +17,10 @@
 #    -d/--debug: increase verbosity
 #
 # Example:
-#       ./checklist_graph.sh --list-technologies
-#       ./checklist_graph.sh --technology=aks --list-categories
-#       ./checklist_graph.sh --technology=aks --category=0 --format=text
-#       ./checklist_graph.sh --technology=aks --format=json >graph_results.json
+#       ./checklist_graph.sh --list-checklists
+#       ./checklist_graph.sh --checklist=aks --list-categories
+#       ./checklist_graph.sh --checklist=aks --category=0 --format=text
+#       ./checklist_graph.sh --checklist=aks --format=json >graph_results.json
 #
 # Jose Moreno, October 2021
 ###################################################################################################
@@ -57,7 +57,7 @@ do
                base_url="${i#*=}"
                shift # past argument=value
                ;;
-          -t=*|--technology=*)
+          -t=*|--technology=*|--checklist=*)
                technology="${i#*=}"
                shift # past argument=value
                ;;
@@ -65,7 +65,7 @@ do
                list_categories="yes"
                shift # past argument with no value
                ;;
-          -t*|--list-technologies*)
+          -t*|--list-technologies*|--list-checklists*)
                list_technologies="yes"
                shift # past argument with no value
                ;;
@@ -109,10 +109,10 @@ if [[ "$help" == "yes" ]]
 then
     script_name="$0"
      echo "Please run this script as:
-        $script_name [--list-technologies] [--base-url=<base_url>] [--debug]
-        $script_name [--list-categories] [--base-url=<base_url>] [--technology=<technology>] [--debug]
-        $script_name [--technology=<technology>] [--category=<category_id>] [--format=json|text] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--debug]
-        $script_name [--technology=<technology>] [--category=<category_id>] [--file=<json_file_path>] [--format=json|text] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--debug]"
+        $script_name [--list-checklists] [--base-url=<base_url>] [--debug]
+        $script_name [--list-categories] [--base-url=<base_url>] [--checklist=<checklist>] [--debug]
+        $script_name [--checklist=<checklist>] [--category=<category_id>] [--format=json|text] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--debug]
+        $script_name [--checklist=<checklist>] [--category=<category_id>] [--file=<json_file_path>] [--format=json|text] [--management-group=<mgmt_group>] [--base-url=<base_url>] [--debug]"
     exit
 fi
 
