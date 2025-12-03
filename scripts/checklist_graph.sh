@@ -1,4 +1,4 @@
-#!/usr/bin/zsh
+#!/usr/bin/env bash
 
 ##################################################################################################
 # This script downloads the latest JSON checklist in https://github.com/Azure/review-checklists
@@ -197,20 +197,20 @@ fi
 if [[ "$debug" == "yes" ]]; then echo "DEBUG: Extracting information from JSON..."; fi
 if [[ -n "$category_name" ]]
 then
-    graph_query_list=$(print -r "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .graph')
-    category_list=$(print -r "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .category')
-    text_list=$(print -r "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .text')
-    guid_list=$(print -r "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .guid')
+    graph_query_list=$(echo -E "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .graph')
+    category_list=$(echo -E "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .category')
+    text_list=$(echo -E "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .text')
+    guid_list=$(echo -E "$checklist_json" | jq -r '.items[] | select(.category=="'$category_name'") | .guid')
     if [[ -z "$text_list" ]]; then
         echo "ERROR: error processing JSON file, please verify the syntax"
         exit
     fi
     if [[ "$debug" == "yes" ]]; then echo "DEBUG: $(echo $text_list | wc -l) tests found in the checklist for category ${category_name}."; fi
 else
-    graph_query_list=$(print -r "$checklist_json" | jq -r '.items[] | .graph')
-    category_list=$(print -r "$checklist_json" | jq -r '.items[] | .category')
-    text_list=$(print -r "$checklist_json" | jq -r '.items[] | .text')
-    guid_list=$(print -r "$checklist_json" | jq -r '.items[] | .guid')
+    graph_query_list=$(echo -E "$checklist_json" | jq -r '.items[] | .graph')
+    category_list=$(echo -E "$checklist_json" | jq -r '.items[] | .category')
+    text_list=$(echo -E "$checklist_json" | jq -r '.items[] | .text')
+    guid_list=$(echo -E "$checklist_json" | jq -r '.items[] | .guid')
     if [[ -z "$text_list" ]]; then
         echo "ERROR: error processing JSON file, please verify the syntax"
         exit
@@ -284,7 +284,7 @@ while IFS= read -r graph_query; do
             graph_query=$(echo "$graph_query")  # Fix for backslashes
             if [[ "$debug" == "yes" ]]; then echo "DEBUG: Running query \"$graph_query\"..."; fi
             # The query should return one line per result. Fields ID and Compliant and mandatory
-            query_result=$(az graph query -q "$graph_query" ${(z)mg_option} -o tsv 2>$error_file --query 'data[].[id,compliant]' | sort -u)
+            query_result=$(az graph query -q "$graph_query" ${mg_option} -o tsv 2>$error_file --query 'data[].[id,compliant]' | sort -u)
             rm $error_file 2>/dev/null; touch $error_file
             while IFS= read -r result
             do
