@@ -18,7 +18,7 @@ The script [checklist_graph.sh](./checklist_graph.sh) can do the automated graph
 You can download the script in any environment that supports Azure CLI, such as the [Azure Cloud Shell](https://shell.azure.com). In order to download the script and prepare it for execution you can run this command:
 
 ```Shell
-wget –quiet –output-document ./checklist_graph.sh https://raw.githubusercontent.com/Azure/review-checklists/main/scripts/checklist_graph.sh
+wget -quiet -output-document=./checklist_graph.sh https://raw.githubusercontent.com/Azure/review-checklists/main/scripts/checklist_graph.sh
 chmod +xr ./checklist_graph.sh
 ```
 
