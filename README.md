@@ -8,7 +8,7 @@ When doing Azure design reviews (or any review for that matter), Microsoft emplo
 
 ![](./pictures/overview.png)
 
-There are three ways to use these checklists.
+There are two ways to use these checklists.
 
 1) Via [Excel](./spreadsheet/README.md)
 2) [Azure Resource Graph Queries](./scripts/README.md)
