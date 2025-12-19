@@ -28,7 +28,7 @@
 
 # Defaults
 base_url="https://raw.githubusercontent.com/Azure/review-checklists/main/"
-technology="aks"
+technology="alz"
 category_id=""
 debug="no"
 help="no"
@@ -120,7 +120,7 @@ fi
 if [[ "$format" == "json" ]]; then
     check_text=no
     no_empty=yes
-    if [[ "$debug" == "yes" ]]; then echo "DEBUG: Output is $output, setting --check-text=${check_text} and --no-empty=${no_empty}..."; fi
+    if [[ "$debug" == "yes" ]]; then echo "DEBUG: Output is $format, setting --check-text=${check_text} and --no-empty=${no_empty}..."; fi
 fi
 
 # If a Management Group was specified, use it in the az graph command
