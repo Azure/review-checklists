@@ -205,7 +205,7 @@ then
         echo "ERROR: error processing JSON file, please verify the syntax"
         exit
     fi
-    if [[ "$debug" == "yes" ]]; then echo "DEBUG: $(echo $text_list | wc -l) tests found in the checklist for category ${category_name}."; fi
+    if [[ "$debug" == "yes" ]]; then echo "DEBUG: $(echo "$text_list" | wc -l) tests found in the checklist for category ${category_name}."; fi
 else
     graph_query_list=$(echo -E "$checklist_json" | jq -r '.items[] | .graph')
     category_list=$(echo -E "$checklist_json" | jq -r '.items[] | .category')
@@ -215,20 +215,20 @@ else
         echo "ERROR: error processing JSON file, please verify the syntax"
         exit
     fi
-    if [[ "$debug" == "yes" ]]; then echo "DEBUG: $(echo $text_list | wc -l) tests found in the checklist."; fi
+    if [[ "$debug" == "yes" ]]; then echo "DEBUG: $(echo "$text_list" | wc -l) tests found in the checklist."; fi
 fi
 
 # Debug
 if [[ "$debug" == "yes" ]]; then 
-    echo "DEBUG: $(echo $graph_query_list | wc -l) graph queries found in the checklist."
+    echo "DEBUG: $(echo "$graph_query_list" | wc -l) graph queries found in the checklist."
     # echo "$graph_success_list"
 fi
 if [[ "$debug" == "yes" ]]; then 
-    echo "DEBUG: $(echo $graph_failure_list | wc -l) graph queries for failure tests found in the checklist."
+    echo "DEBUG: $(echo "$graph_failure_list" | wc -l) graph queries for failure tests found in the checklist."
     # echo "$graph_failure_list"
 fi
 if [[ "$debug" == "yes" ]]; then 
-    echo "DEBUG: $(echo $guid_list | wc -l) GUIDs with a defined Graph query found in the checklist"
+    echo "DEBUG: $(echo "$guid_list" | wc -l) GUIDs with a defined Graph query found in the checklist"
     # echo "$guid_list"
 fi
 
@@ -254,7 +254,7 @@ json_output="{ \"metadata\": {\"format\": \"${format}\", \"timestamp\": \"$(date
 json_output_empty="yes"
 while IFS= read -r graph_query; do
     i=$(($i+1))
-    this_guid=$(echo $guid_list | head -$i | tail -1)
+    this_guid=$(echo "$guid_list" | head -$i | tail -1)
     if [[ "$debug" == "yes" ]]; then echo "DEBUG: Processing check item $i, GUID '$this_guid'..."; fi
     if [[ "$this_guid" == "null" ]] && [[ "$output" == "json" ]]; then
         if [[ "$debug" == "yes" ]]; then echo "ERROR: GUID not defined for check number $i"; fi
@@ -266,7 +266,7 @@ while IFS= read -r graph_query; do
             if [[ "$no_empty" != "yes" ]]; then
                 # Print title if required
                 if [[ "$check_text" == "yes" ]]; then
-                    this_text=$(echo $text_list | head -$i | tail -1)
+                    this_text=$(echo "$text_list" | head -$i | tail -1)
                     echo "${blue}CHECKLIST ITEM: ${this_text} (${this_guid}):${normal} "
                 fi
                 # Print output
@@ -277,7 +277,7 @@ while IFS= read -r graph_query; do
             query_no=$(($query_no+1))
             # Print title if text format
             if [[ "$format" == "text" ]]; then
-                this_text=$(echo $text_list | head -$i | tail -1)
+                this_text=$(echo "$text_list" | head -$i | tail -1)
                 echo "${blue}CHECKLIST ITEM: ${this_text} (${this_guid}):${normal}"
             fi
             rm $error_file 2>/dev/null; touch $error_file
