@@ -170,6 +170,12 @@ else
     checklist_url="${base_url}checklists/${technology}_checklist.en.json"
     if [[ "$debug" == "yes" ]]; then echo "DEBUG: Getting checklist from $checklist_url..."; fi
     checklist_json=$(curl -s "$checklist_url")
+    # Check if the downloaded content is valid JSON (not a 404 error page)
+    if ! echo "$checklist_json" | jq empty 2>/dev/null; then
+        echo "ERROR: Could not download checklist for technology '$technology'. Please verify the technology parameter is correct."
+        echo "       Run '$0 --list-technologies' to see available technologies."
+        exit 1
+    fi
 fi
 
 # If in "list_categories" mode, just get the categories part:
